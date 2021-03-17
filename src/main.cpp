@@ -2,8 +2,12 @@
 #include "core/mem.hpp"
 
 #include <cstdint>
+#include <cstring>
 #include <cassert>
 #include <array>
+#include <span>
+#include <optional>
+#include <string_view>
 
 namespace dmg {
 
@@ -11,6 +15,41 @@ using u8 = std::uint8_t;
 using s8 = std::int8_t;
 using u16 = std::uint16_t;
 using s16 = std::int16_t;
+
+constexpr auto SCREEN_WIDTH = 160;
+constexpr auto SCREEN_HEIGHT = 144;
+
+struct CartHeader {
+	u8 entry_point[0x4];
+	u8 logo[0x30];
+	char title[0x10];
+	u16 new_licensee_code;
+	u8 sgb_flag;
+	u8 cart_type;
+	u8 rom_size;
+	u8 ram_size;
+	u8 destination_code;
+	u8 old_licensee_code;
+	u8 rom_version;
+	u8 header_checksum;
+	u16 global_checksum;
+
+    constexpr auto get_title() -> std::string_view {
+        return std::string_view{this->title, std::size(this->title)};
+    }
+};
+
+[[nodiscard]]
+auto get_cart_header(std::span<const u8> data) -> std::optional<CartHeader> {
+    if (data.size() < sizeof(CartHeader)) {
+        return {};
+    }
+
+    CartHeader header{};
+    std::memcpy(&header, data.data(), sizeof(header));
+
+    return header;
+}
 
 struct Mmio {
     std::array<const u8*, 0x10> mmap{};
@@ -133,14 +172,15 @@ struct System {
     u16 reg_pc;
     u16 reg_sp;
 
-    u16 cycles : 11;
+    u16 cycles;
 
     // might just represent these are bytes to avoid shifting
-    u16 flag_z : 1;
-    u16 flag_n : 1;
-    u16 flag_h : 1;
-    u16 flag_c : 1;
-    u16 ime : 1;
+    u8 flag_z : 1;
+    u8 flag_n : 1;
+    u8 flag_h : 1;
+    u8 flag_c : 1;
+    u8 ime : 1;
+    u8 halt : 1;
 
     u8 reg_b;
     u8 reg_c;
@@ -170,8 +210,7 @@ struct System {
 
     [[nodiscard]]
     constexpr auto get_reg_f() const noexcept -> u8 {
-        return (this->get_flag<Flag::Z>() << 7) | (this->get_flag<Flag::N>() << 6)
-            | (this->get_flag<Flag::H>() << 5) | (this->get_flag<Flag::C>() << 4);
+        return (this->get_flag<Flag::Z>() << 7) | (this->get_flag<Flag::N>() << 6) | (this->get_flag<Flag::H>() << 5) | (this->get_flag<Flag::C>() << 4);
     }
 
     constexpr auto set_reg_f(const u8 v) noexcept {
