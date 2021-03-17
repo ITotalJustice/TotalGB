@@ -107,6 +107,7 @@ struct Mmio {
     }
 
     constexpr auto read(const u16 addr) -> u8 {
+        return 0;
         if (addr < 0xFE00) [[likely]] {
             return this->mmap[(addr >> 12)][addr & 0x0FFF];
         } else if (addr <= 0xFE9F) {
@@ -118,6 +119,8 @@ struct Mmio {
         } else if (addr == 0xFFFF) {
             return 0xFF;
         }
+
+        return 0xFF;
     }
 
     constexpr auto write(const u16 addr, const u8 v) -> void {
@@ -208,6 +211,24 @@ struct System {
         if constexpr(flag == Flag::Z) { this->flag_z = v; }
     }
 
+    // todo: try and replace the set_flags with something that sets the
+    // flags at compile time...
+    constexpr auto set_flag(const Flag flag, const bool v) noexcept -> void {
+        switch (flag) {
+            case Flag::C: this->flag_c = v; break;
+            case Flag::H: this->flag_h = v; break;
+            case Flag::N: this->flag_n = v; break;
+            case Flag::Z: this->flag_z = v; break;
+        }
+    }
+
+    constexpr auto set_flags(const Flag flag, const bool v, const auto ...args) noexcept -> void {
+        this->set_flag(flag, v);
+        if constexpr(sizeof...(args) > 0) {
+            this->set_flags(args...);
+        }
+    }
+
     [[nodiscard]]
     constexpr auto get_reg_f() const noexcept -> u8 {
         return (this->get_flag<Flag::Z>() << 7) | (this->get_flag<Flag::N>() << 6) | (this->get_flag<Flag::H>() << 5) | (this->get_flag<Flag::C>() << 4);
@@ -254,6 +275,16 @@ struct System {
         if constexpr(type == Reg16::PC) { return this->reg_pc; }
     }
 
+    template <Reg16 type> [[nodiscard]]
+    constexpr auto get_reg2() const noexcept {
+        if constexpr(type == Reg16::BC) { return pair_u16(this->get_reg<Reg8::B>(), this->get_reg<Reg8::C>()); }
+        if constexpr(type == Reg16::DE) { return pair_u16(this->get_reg<Reg8::D>(), this->get_reg<Reg8::E>()); }
+        if constexpr(type == Reg16::HL) { return pair_u16(this->get_reg<Reg8::H>(), this->get_reg<Reg8::L>()); }
+        if constexpr(type == Reg16::AF) { return pair_u16(this->get_reg<Reg8::A>(), this->get_reg<Reg8::F>()); }
+        if constexpr(type == Reg16::SP) { return this->reg_sp; }
+        if constexpr(type == Reg16::PC) { return this->reg_pc; }
+    }
+
     template <Reg16 type>
     constexpr auto set_reg(const u16 v) noexcept -> void {
         if constexpr(type == Reg16::BC) { this->set_reg<Reg8::B>(v >> 8); this->set_reg<Reg8::C>(v & 0xFF); }
@@ -287,9 +318,7 @@ constexpr auto get_reg(System& sys) noexcept {
     if constexpr(type == Reg8Type::H) { return sys.get_reg<Reg8::H>(); }
     if constexpr(type == Reg8Type::L) { return sys.get_reg<Reg8::L>(); }
     if constexpr(type == Reg8Type::A) { return sys.get_reg<Reg8::A>(); }
-    if constexpr(type == Reg8Type::HL) { // todo:
-        return sys.reg_b;
-    }
+    if constexpr(type == Reg8Type::HL) { return sys.mmio->read(sys.get_reg<Reg16::HL>()); }
 }
 
 template <Reg8Type type>
@@ -301,9 +330,7 @@ constexpr auto set_reg(System& sys, const u8 v) noexcept -> void {
     if constexpr(type == Reg8Type::H) { sys.set_reg<Reg8::H>(v); }
     if constexpr(type == Reg8Type::L) { sys.set_reg<Reg8::L>(v); }
     if constexpr(type == Reg8Type::A) { sys.set_reg<Reg8::A>(v); }
-    if constexpr(type == Reg8Type::HL) { // todo:
-        sys.reg_b = v;
-    }
+    if constexpr(type == Reg8Type::HL) { sys.mmio->write(sys.get_reg<Reg16::HL>(), v); }
 }
 
 template <Reg16Type type>
@@ -354,80 +381,206 @@ template <Reg8Type type>
 constexpr auto inst_sra([[maybe_unused]] System& sys) noexcept -> void { }
 
 template <Reg8Type type>
-constexpr auto inst_swap([[maybe_unused]] System& sys) noexcept -> void { }
+constexpr auto inst_swap([[maybe_unused]] System& sys) noexcept -> void {
+    const auto value = get_reg<type>(sys);
+    const auto result = (value << 4) | (value >> 4);
+    set_reg<type>(sys, result);
+    sys.set_flags(
+        Flag::C, false, 
+        Flag::H, false, 
+        Flag::N, false,
+        Flag::Z, result == 0
+    );
+}
 
 template <Reg8Type type>
 constexpr auto inst_srl([[maybe_unused]] System& sys) noexcept -> void { }
 
 template <Reg8Type type, u8 Bit>
-constexpr auto inst_bit([[maybe_unused]] System& sys) noexcept -> void { }
+constexpr auto inst_bit([[maybe_unused]] System& sys) noexcept -> void {
+    const auto value = get_reg<type>(sys);
+    const auto result = bit::is_set<Bit>(value);
+    sys.set_flags(
+        Flag::H, true,
+        Flag::N, false,
+        Flag::Z, result == 0
+    );
+}
 
 template <Reg8Type type, u8 Bit>
 constexpr auto inst_res([[maybe_unused]] System& sys) noexcept -> void {
-    const auto reg = get_reg<type>(sys);
-    const auto result = bit::unset<Bit>(reg);
+    const auto value = get_reg<type>(sys);
+    const auto result = bit::unset<Bit>(value);
     set_reg<type>(sys, result);
 }
 
 template <Reg8Type type, u8 Bit>
 constexpr auto inst_set([[maybe_unused]] System& sys) noexcept -> void {
-    const auto reg = get_reg<type>(sys);
-    const auto result = bit::set<Bit>(reg, true);
+    const auto value = get_reg<type>(sys);
+    const auto result = bit::set<Bit>(value, true);
     set_reg<type>(sys, result);
 }
 
 template <Reg8Type src, Reg8Type dst>
 constexpr auto inst_ld([[maybe_unused]] System& sys) noexcept -> void {
-    set_reg<dst>(sys, get_reg<src>(sys));
+    const auto result = get_reg<src>(sys);
+    set_reg<dst>(sys, result);
 }
 
 template <Reg16Type src, Reg8Type dst>
 constexpr auto inst_ld([[maybe_unused]] System& sys) noexcept -> void { }
 
 template <Reg8Type dst>
-constexpr auto inst_ld_u8([[maybe_unused]] System& sys) noexcept -> void { }
+constexpr auto inst_ld_u8([[maybe_unused]] System& sys) noexcept -> void {
+    const auto result = sys.mmio->read(sys.reg_pc++);
+    set_reg<dst>(sys, result);
+}
 
 template <Reg8Type type>
-constexpr auto inst_add([[maybe_unused]] System& sys) noexcept -> void { }
+constexpr auto inst_add(System& sys, const bool carry) noexcept -> void {
+    const auto value = get_reg<type>(sys) + carry;
+    const auto result = sys.reg_a + value;
+    sys.set_flags(
+        Flag::C, sys.reg_a + value > 0xFF, 
+        Flag::H, (sys.reg_a & 0xF) + (value & 0xF) > 0xF, 
+        Flag::N, false,
+        Flag::Z, result == 0
+    );
+    sys.reg_a = result;
+}
 
 template <Reg8Type type>
-constexpr auto inst_adc([[maybe_unused]] System& sys) noexcept -> void { }
+constexpr auto inst_add(System& sys) noexcept -> void {
+    inst_add<type>(sys, false);
+}
 
 template <Reg8Type type>
-constexpr auto inst_sub([[maybe_unused]] System& sys) noexcept -> void { }
+constexpr auto inst_adc(System& sys) noexcept -> void {
+    inst_add<type>(sys, sys.get_flag<Flag::C>());
+}
 
 template <Reg8Type type>
-constexpr auto inst_sbc([[maybe_unused]] System& sys) noexcept -> void { }
+constexpr auto inst_sub(System& sys, const bool carry) noexcept -> void {
+    const auto value = get_reg<type>(sys) + carry;
+    const auto result = sys.reg_a - value;
+    sys.set_flags(
+        Flag::C, value < sys.reg_a, 
+        Flag::H, (sys.reg_a & 0xF) < (value & 0xF), 
+        Flag::N, true,
+        Flag::Z, result == 0
+    );
+    sys.reg_a = result;
+}
 
 template <Reg8Type type>
-constexpr auto inst_and([[maybe_unused]] System& sys) noexcept -> void { }
+constexpr auto inst_sub(System& sys) noexcept -> void {
+    inst_sub<type>(sys, false);
+}
 
 template <Reg8Type type>
-constexpr auto inst_xor([[maybe_unused]] System& sys) noexcept -> void { }
+constexpr auto inst_sbc(System& sys) noexcept -> void {
+    inst_sub<type>(sys, sys.get_flag<Flag::C>());
+}
 
 template <Reg8Type type>
-constexpr auto inst_or([[maybe_unused]] System& sys) noexcept -> void { }
+constexpr auto inst_and(System& sys) noexcept -> void {
+    const auto value = get_reg<type>(sys);
+    const auto result = sys.reg_a & value;
+    sys.set_flags(
+        Flag::C, false, 
+        Flag::H, false, 
+        Flag::N, false,
+        Flag::Z, result == 0
+    );
+    sys.reg_a = result;
+}
 
 template <Reg8Type type>
-constexpr auto inst_cp([[maybe_unused]] System& sys) noexcept -> void { }
+constexpr auto inst_xor(System& sys) noexcept -> void {
+    const auto value = get_reg<type>(sys);
+    const auto result = sys.reg_a ^ value;
+    sys.set_flags(
+        Flag::C, false, 
+        Flag::H, false, 
+        Flag::N, false,
+        Flag::Z, result == 0
+    );
+    sys.reg_a = result;
+}
 
 template <Reg8Type type>
-constexpr auto inst_inc([[maybe_unused]] System& sys) noexcept -> void { }
+constexpr auto inst_or(System& sys) noexcept -> void {
+    const auto value = get_reg<type>(sys);
+    const auto result = sys.reg_a | value;
+    sys.set_flags(
+        Flag::C, false, 
+        Flag::H, false, 
+        Flag::N, false,
+        Flag::Z, result == 0
+    );
+    sys.reg_a = result;
+}
+
+template <Reg8Type type>
+constexpr auto inst_cp(System& sys) noexcept -> void {
+    const auto value = get_reg<type>(sys);
+    const auto result = sys.reg_a - value;
+    sys.set_flags(
+        Flag::C, value < sys.reg_a, 
+        Flag::H, (sys.reg_a & 0xF) < (value & 0xF), 
+        Flag::N, true,
+        Flag::Z, result == 0
+    );
+}
+
+template <Reg8Type type>
+constexpr auto inst_inc(System& sys) noexcept -> void { 
+    const auto value = get_reg<type>(sys);
+    const auto result = value + 1;
+    sys.set_flags(
+        Flag::H, (result & 0xF) == 0,
+        Flag::N, false,
+        Flag::Z, result == 0
+    );
+    set_reg<type>(sys, result);
+}
 
 template <Reg16Type type>
-constexpr auto inst_inc([[maybe_unused]] System& sys) noexcept -> void { }
+constexpr auto inst_inc(System& sys) noexcept -> void { 
+    const auto value = get_reg<type>(sys);
+    const auto result = value + 1;
+    set_reg<type>(sys, result);
+}
 
 template <Reg8Type type>
-constexpr auto inst_dec([[maybe_unused]] System& sys) noexcept -> void { }
+constexpr auto inst_dec(System& sys) noexcept -> void {
+    const auto value = get_reg<type>(sys);
+    const auto result = value + 1;
+    sys.set_flags(
+        Flag::H, (result & 0xF) == 0xF,
+        Flag::N, true,
+        Flag::Z, result == 0
+    );
+    set_reg<type>(sys, result);
+}
 
 template <Reg16Type type>
-constexpr auto inst_dec([[maybe_unused]] System& sys) noexcept -> void { }
+constexpr auto inst_dec(System& sys) noexcept -> void { 
+    const auto value = get_reg<type>(sys);
+    const auto result = value - 1;
+    set_reg<type>(sys, result);
+}
 
 constexpr auto inst_nop([[maybe_unused]] System& sys) noexcept -> void { }
 
-constexpr auto inst_stop([[maybe_unused]] System& sys) noexcept -> void { }
+constexpr auto inst_stop([[maybe_unused]] System& sys) noexcept -> void {
+    // should never be called by a game...
+}
 
-constexpr auto inst_halt([[maybe_unused]] System& sys) noexcept -> void { }
+constexpr auto inst_halt([[maybe_unused]] System& sys) noexcept -> void { 
+    // todo: finish this...
+    sys.halt = true;
+}
 
 constexpr auto inst_cb([[maybe_unused]] System& sys) noexcept -> void { }
 
@@ -543,16 +696,16 @@ static_assert(INSTRUCTION_TABLE_CB.size() == 0x100);
 constexpr void test() {
     constexpr auto func = []() {
         dmg::System system{};
+        auto mmio = mem::make_shared<Mmio>();
+        mmio->setup_mmap();
+        mmio->vram[0][0] = 0x69;
+        system.mmio = mmio;
+
         for (auto function : INSTRUCTION_TABLE_CB) {
             function(system);
         }
 
-        auto mmio = mem::make_shared<Mmio>();
-
-        mmio->setup_mmap();
-        mmio->vram[0][0] = 0x69;
-    
-        return mmio->read(0) == 0x69;
+        // return system.mmio->read(0) == 0x69;
         return system.reg_pc == 0;
     };
 
