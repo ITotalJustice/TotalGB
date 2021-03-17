@@ -9,8 +9,16 @@ enum class Reg8Type {
     B, C, D, E, H, L, HL, A
 };
 
-enum class Reg16Type {
+enum class Reg16TypeA {
     BC, DE, HL, SP
+};
+
+enum class Reg16TypeB {
+    BC, DE, HL, AF
+};
+
+enum class Reg16TypeC { // used for LD (R16)
+    BC, DE, HLp, HLn
 };
 
 template <Reg8Type type>
@@ -37,24 +45,88 @@ constexpr auto set_reg(System& sys, const u8 v) noexcept -> void {
     if constexpr(type == Reg8Type::HL) { sys.mmio->write(sys.get_reg<Reg16::HL>(), v); }
 }
 
-template <Reg16Type type>
+template <Reg16TypeA type>
 constexpr auto get_reg(System& sys) noexcept {
-    if constexpr(type == Reg16Type::BC) { return sys.get_reg<Reg16::BC>(); }
-    if constexpr(type == Reg16Type::DE) { return sys.get_reg<Reg16::DE>(); }
-    if constexpr(type == Reg16Type::HL) { return sys.get_reg<Reg16::HL>(); }
-    if constexpr(type == Reg16Type::SP) { return sys.get_reg<Reg16::SP>(); }
+    if constexpr(type == Reg16TypeA::BC) { return sys.get_reg<Reg16::BC>(); }
+    if constexpr(type == Reg16TypeA::DE) { return sys.get_reg<Reg16::DE>(); }
+    if constexpr(type == Reg16TypeA::HL) { return sys.get_reg<Reg16::HL>(); }
+    if constexpr(type == Reg16TypeA::SP) { return sys.get_reg<Reg16::SP>(); }
 }
 
-template <Reg16Type type>
+template <Reg16TypeA type>
 constexpr auto set_reg(System& sys, const u16 v) noexcept -> void {
-    if constexpr(type == Reg16Type::BC) { sys.set_reg<Reg16::BC>(v); }
-    if constexpr(type == Reg16Type::DE) { sys.set_reg<Reg16::DE>(v); }
-    if constexpr(type == Reg16Type::HL) { sys.set_reg<Reg16::HL>(v); }
-    if constexpr(type == Reg16Type::SP) { sys.set_reg<Reg16::SP>(v); }
+    if constexpr(type == Reg16TypeA::BC) { sys.set_reg<Reg16::BC>(v); }
+    if constexpr(type == Reg16TypeA::DE) { sys.set_reg<Reg16::DE>(v); }
+    if constexpr(type == Reg16TypeA::HL) { sys.set_reg<Reg16::HL>(v); }
+    if constexpr(type == Reg16TypeA::SP) { sys.set_reg<Reg16::SP>(v); }
+}
+
+template <Reg16TypeB type>
+constexpr auto get_reg(System& sys) noexcept {
+    if constexpr(type == Reg16TypeB::BC) { return sys.get_reg<Reg16::BC>(); }
+    if constexpr(type == Reg16TypeB::DE) { return sys.get_reg<Reg16::DE>(); }
+    if constexpr(type == Reg16TypeB::HL) { return sys.get_reg<Reg16::HL>(); }
+    if constexpr(type == Reg16TypeB::AF) { return sys.get_reg<Reg16::AF>(); }
+}
+
+template <Reg16TypeB type>
+constexpr auto set_reg(System& sys, const u16 v) noexcept -> void {
+    if constexpr(type == Reg16TypeB::BC) { sys.set_reg<Reg16::BC>(v); }
+    if constexpr(type == Reg16TypeB::DE) { sys.set_reg<Reg16::DE>(v); }
+    if constexpr(type == Reg16TypeB::HL) { sys.set_reg<Reg16::HL>(v); }
+    if constexpr(type == Reg16TypeB::AF) { sys.set_reg<Reg16::AF>(v); }
+}
+
+template <Reg16TypeC type>
+constexpr auto get_reg(System& sys) noexcept {
+    if constexpr(type == Reg16TypeC::BC) {
+        const auto value = sys.get_reg<Reg16::BC>();
+        const auto result = sys.mmio->read16(value);
+        return result;
+    }
+    if constexpr(type == Reg16TypeC::DE) {
+        const auto value = sys.get_reg<Reg16::DE>();
+        const auto result = sys.mmio->read16(value);
+        return result;
+    }
+    if constexpr(type == Reg16TypeC::HLp) {
+        const auto value = sys.get_reg<Reg16::HL>();
+        const auto result = sys.mmio->read16(value);
+        sys.set_reg<Reg16::HL>(value + 1);
+        return result;
+    }
+    if constexpr(type == Reg16TypeC::HLn) {
+        const auto value = sys.get_reg<Reg16::HL>();
+        const auto result = sys.mmio->read16(value);
+        sys.set_reg<Reg16::HL>(value - 1);
+        return result;
+    }
+}
+
+template <Reg16TypeC type>
+constexpr auto set_reg(System& sys, const u16 v) noexcept -> void {
+    if constexpr(type == Reg16TypeC::BC) {
+        const auto value = sys.get_reg<Reg16::BC>();
+        sys.mmio->write16(value, v);
+    }
+    if constexpr(type == Reg16TypeC::DE) {
+        const auto value = sys.get_reg<Reg16::DE>();
+        sys.mmio->write16(value, v);
+    }
+    if constexpr(type == Reg16TypeC::HLp) {
+        const auto value = sys.get_reg<Reg16::HL>();
+        sys.mmio->write16(value, v);
+        sys.set_reg<Reg16::HL>(value + 1);
+    }
+    if constexpr(type == Reg16TypeC::HLn) {
+        const auto value = sys.get_reg<Reg16::SP>();
+        sys.mmio->write16(value, v);
+        sys.set_reg<Reg16::HL>(value - 1);
+    }
 }
 
 enum class CondType {
-    NZ, Z, NC, C, NONE /* NONE = always jump */
+    NZ, Z, NC, C
 };
 
 template <CondType type> [[nodiscard]] // TODO:
@@ -63,7 +135,6 @@ constexpr auto helper_cond([[maybe_unused]] System& sys) noexcept {
     if constexpr (type == CondType::Z) { return false; }
     if constexpr (type == CondType::NC) { return false; }
     if constexpr (type == CondType::C) { return false; }
-    if constexpr (type == CondType::NONE) { return false; }
 }
 
 template <Reg8Type type>
@@ -131,11 +202,17 @@ constexpr auto inst_ld([[maybe_unused]] System& sys) noexcept -> void {
     set_reg<dst>(sys, result);
 }
 
-template <Reg16Type src, Reg8Type dst>
+template <Reg16TypeA dst>
+constexpr auto inst_ld([[maybe_unused]] System& sys) noexcept -> void { }
+
+template <Reg16TypeC src, Reg8Type dst>
+constexpr auto inst_ld([[maybe_unused]] System& sys) noexcept -> void { }
+
+template <Reg8Type dst, Reg16TypeC src>
 constexpr auto inst_ld([[maybe_unused]] System& sys) noexcept -> void { }
 
 template <Reg8Type dst>
-constexpr auto inst_ld_u8([[maybe_unused]] System& sys) noexcept -> void {
+constexpr auto inst_ld([[maybe_unused]] System& sys) noexcept -> void {
     const auto result = sys.mmio->read(sys.reg_pc++);
     set_reg<dst>(sys, result);
 }
@@ -249,7 +326,7 @@ constexpr auto inst_inc(System& sys) noexcept -> void {
     set_reg<type>(sys, result);
 }
 
-template <Reg16Type type>
+template <Reg16TypeA type>
 constexpr auto inst_inc(System& sys) noexcept -> void { 
     const auto value = get_reg<type>(sys);
     const auto result = value + 1;
@@ -268,11 +345,98 @@ constexpr auto inst_dec(System& sys) noexcept -> void {
     set_reg<type>(sys, result);
 }
 
-template <Reg16Type type>
+template <Reg16TypeA type>
 constexpr auto inst_dec(System& sys) noexcept -> void { 
     const auto value = get_reg<type>(sys);
     const auto result = value - 1;
     set_reg<type>(sys, result);
+}
+
+[[nodiscard]]
+constexpr auto inst_pop(System& sys) noexcept -> u16 {
+    const auto result = sys.mmio->read16(sys.reg_sp);
+    sys.reg_sp += 2;
+    return result;
+}
+
+constexpr auto inst_push(System& sys, const u16 v) noexcept -> void {
+    sys.mmio->write(--sys.reg_sp, v >> 8);
+    sys.mmio->write(--sys.reg_sp, v & 0xFF);
+}
+
+template <Reg16TypeB type>
+constexpr auto inst_pop(System& sys) noexcept -> void {
+    const auto result = inst_pop(sys);
+    set_reg<type>(sys, result);
+}
+
+template <Reg16TypeB type>
+constexpr auto inst_push(System& sys) noexcept -> void {
+    const auto result = get_reg<type>(sys);
+    inst_push(sys, result);
+}
+
+constexpr auto inst_rst(System& sys, const u8 v) noexcept -> void {
+    inst_push(sys, sys.reg_pc);
+    sys.reg_pc = v;
+}
+
+template <u8 Value>
+constexpr auto inst_rst(System& sys) noexcept -> void {
+    inst_rst(sys, Value);
+}
+
+constexpr auto inst_jr(System& sys) noexcept -> void {
+    const auto value = static_cast<s8>(sys.mmio->read(sys.reg_pc) + 1);
+    sys.reg_pc += value;
+}
+
+constexpr auto inst_ret(System& sys) noexcept -> void {
+    sys.reg_pc = inst_pop(sys);
+}
+
+constexpr auto inst_jp(System& sys) noexcept -> void {
+    sys.reg_pc = sys.mmio->read16(sys.reg_pc);
+}
+
+constexpr auto inst_call(System& sys) noexcept -> void {
+    const auto result = sys.mmio->read16(sys.reg_pc);
+    inst_push(sys, sys.reg_pc + 2);
+    sys.reg_pc = result;
+}
+
+template <CondType type>
+constexpr auto inst_jr(System& sys) noexcept -> void {
+    if (helper_cond<type>(sys)) {
+        inst_jr(sys);
+    } else {
+        ++sys.reg_pc;
+    }
+}
+
+template <CondType type>
+constexpr auto inst_ret(System& sys) noexcept -> void {
+     if (helper_cond<type>(sys)) {
+        inst_ret(sys);
+    }
+}
+
+template <CondType type>
+constexpr auto inst_jp(System& sys) noexcept -> void {
+     if (helper_cond<type>(sys)) {
+        inst_jp(sys);
+    } else {
+        sys.reg_pc += 2;
+    }
+}
+
+template <CondType type>
+constexpr auto inst_call(System& sys) noexcept -> void {
+     if (helper_cond<type>(sys)) {
+        inst_call(sys);
+    } else {
+        sys.reg_pc += 2;
+    }
 }
 
 constexpr auto inst_nop([[maybe_unused]] System& sys) noexcept -> void { }
@@ -303,46 +467,69 @@ auto inst_unk([[maybe_unused]] System& sys) -> void { assert(0); }
 
 template <std::size_t Start = 0x00>
 consteval auto setup_top_row(auto& table) {
-    if constexpr (Start == 0x100) { return; }
+    if constexpr(Start == 0x100) { return; }
 
     // todo: give better names
     #define SET_REG2(func, idx) table[idx] = func<static_cast<Reg8Type>((idx >> 3) & 7)>;
-    #define SET_REG3(func, idx) table[idx] = func<static_cast<Reg16Type>((idx >> 4) & 3)>;
+    // used for inc / dec, LD (u16)
+    #define SET_REG3(func, idx) table[idx] = func<static_cast<Reg16TypeA>((idx >> 4) & 3)>;
+    // used for pop / push
+    #define SET_REG4(func, idx) table[idx] = func<static_cast<Reg16TypeB>((idx >> 4) & 3)>;
+    // used for RST
+    #define SET_REG5(func, idx) table[idx] = func<idx & 0x38>;
+    // used for COND jumps
+    #define SET_REG6(func, idx) table[idx] = func<static_cast<CondType>((idx >> 3) & 3)>;
+    // used ld (r16), A
+    #define SET_REG7(func, idx) table[idx] = func<static_cast<Reg16TypeC>((idx >> 4) & 3), Reg8Type::A>;
+    // used ld A,(r16)
+    #define SET_REG8(func, idx) table[idx] = func<Reg8Type::A, static_cast<Reg16TypeC>((idx >> 4) & 3)>;
 
     else {
-        if constexpr (Start < 0x40) { // top
-            // if constexpr ((Start & 0xF) == 0x01) { SET_REG(inst_add, Start);    }
-            // if constexpr ((Start & 0xF) == 0x02) { SET_REG(inst_adc, Start);    }
-            if constexpr ((Start & 0xF) == 0x03) { SET_REG3(inst_inc, Start);    }
-            if constexpr ((Start & 0xF) == 0x04) { SET_REG2(inst_inc, Start);    }
-            if constexpr ((Start & 0xF) == 0x05) { SET_REG2(inst_dec, Start);    }
-            if constexpr ((Start & 0xF) == 0x06) { SET_REG2(inst_ld_u8, Start);    }
+        if constexpr(Start < 0x40) { // top
+            if constexpr ((Start & 0xF) == 0x01) { SET_REG3(inst_ld, Start);    }
+            if constexpr ((Start & 0xF) == 0x02) { SET_REG7(inst_ld, Start);    }
+            if constexpr ((Start & 0xF) == 0x0A) { SET_REG8(inst_ld, Start);    }
+
+            if constexpr((Start & 0xF) == 0x03) { SET_REG3(inst_inc, Start);    }
+            if constexpr((Start & 0xF) == 0x04) { SET_REG2(inst_inc, Start);    }
+            if constexpr((Start & 0xF) == 0x05) { SET_REG2(inst_dec, Start);    }
+            if constexpr((Start & 0xF) == 0x06) { SET_REG2(inst_ld, Start);    }
             //
-            // if constexpr ((Start & 0xF) == 0x09) { SET_REG(inst_add, Start);    }
-            // if constexpr ((Start & 0xF) == 0x0A) { SET_REG(inst_adc, Start);    }
-            if constexpr ((Start & 0xF) == 0x0B) { SET_REG3(inst_dec, Start);    }
-            if constexpr ((Start & 0xF) == 0x0C) { SET_REG2(inst_inc, Start);    }
-            if constexpr ((Start & 0xF) == 0x0D) { SET_REG2(inst_dec, Start);    }
-            if constexpr ((Start & 0xF) == 0x0E) { SET_REG2(inst_ld_u8, Start);    }
+            // if constexpr((Start & 0xF) == 0x09) { SET_REG(inst_add, Start);    }
+            // if constexpr((Start & 0xF) == 0x0A) { SET_REG(inst_adc, Start);    }
+            if constexpr((Start & 0xF) == 0x0B) { SET_REG3(inst_dec, Start);    }
+            if constexpr((Start & 0xF) == 0x0C) { SET_REG2(inst_inc, Start);    }
+            if constexpr((Start & 0xF) == 0x0D) { SET_REG2(inst_dec, Start);    }
+            if constexpr((Start & 0xF) == 0x0E) { SET_REG2(inst_ld, Start);    }
         }
         
-        if constexpr (Start >= 0x40 && Start <= 0x7F) { // mid ld
+        if constexpr(Start >= 0x40 && Start <= 0x7F) { // mid ld
             SET_LD(inst_ld, Start);
         }
 
-        if constexpr (Start >= 0x80 && Start <= 0xBF) { // mid alu
-            if constexpr (Start >= 0x80 && Start <= 0x87) { SET_REG(inst_add, Start);    }
-            if constexpr (Start >= 0x88 && Start <= 0x8F) { SET_REG(inst_adc, Start);    }
-            if constexpr (Start >= 0x90 && Start <= 0x97) { SET_REG(inst_sub, Start);    }
-            if constexpr (Start >= 0x98 && Start <= 0x9F) { SET_REG(inst_sbc, Start);    }
-            if constexpr (Start >= 0xA0 && Start <= 0xA7) { SET_REG(inst_and, Start);    }
-            if constexpr (Start >= 0xA8 && Start <= 0xAF) { SET_REG(inst_xor, Start);    }
-            if constexpr (Start >= 0xB0 && Start <= 0xB7) { SET_REG(inst_or, Start);     }
-            if constexpr (Start >= 0xB8 && Start <= 0xBF) { SET_REG(inst_cp, Start);     }
+        if constexpr(Start >= 0x80 && Start <= 0xBF) { // mid alu
+            if constexpr(Start >= 0x80 && Start <= 0x87) { SET_REG(inst_add, Start);    }
+            if constexpr(Start >= 0x88 && Start <= 0x8F) { SET_REG(inst_adc, Start);    }
+            if constexpr(Start >= 0x90 && Start <= 0x97) { SET_REG(inst_sub, Start);    }
+            if constexpr(Start >= 0x98 && Start <= 0x9F) { SET_REG(inst_sbc, Start);    }
+            if constexpr(Start >= 0xA0 && Start <= 0xA7) { SET_REG(inst_and, Start);    }
+            if constexpr(Start >= 0xA8 && Start <= 0xAF) { SET_REG(inst_xor, Start);    }
+            if constexpr(Start >= 0xB0 && Start <= 0xB7) { SET_REG(inst_or, Start);     }
+            if constexpr(Start >= 0xB8 && Start <= 0xBF) { SET_REG(inst_cp, Start);     }
         }
 
-        if constexpr (Start >= 0xC0 && Start <= 0xFF) { // bottom
+        if constexpr(Start >= 0xC0 && Start <= 0xFF) { // bottom
+            if constexpr(Start < 0xE0 && (Start & 0xF) == 0x00) { SET_REG6(inst_ret, Start); }
+            if constexpr(Start < 0xE0 && (Start & 0xF) == 0x08) { SET_REG6(inst_ret, Start); }
+            if constexpr(Start < 0xE0 && (Start & 0xF) == 0x02) { SET_REG6(inst_jp, Start); }
+            if constexpr(Start < 0xE0 && (Start & 0xF) == 0x0A) { SET_REG6(inst_jp, Start); }
+            if constexpr(Start < 0xE0 && (Start & 0xF) == 0x04) { SET_REG6(inst_call, Start); }
+            if constexpr(Start < 0xE0 && (Start & 0xF) == 0x0C) { SET_REG6(inst_call, Start); }
 
+            if constexpr((Start & 0xF) == 0x01) { SET_REG4(inst_pop, Start); }
+            if constexpr((Start & 0xF) == 0x05) { SET_REG4(inst_push, Start); }
+            if constexpr((Start & 0xF) == 0x07) { SET_REG5(inst_rst, Start); }
+            if constexpr((Start & 0xF) == 0x0F) { SET_REG5(inst_rst, Start); }
         }
 
         setup_top_row<Start + 1>(table);
@@ -389,6 +576,11 @@ consteval auto gen_table_cb() {
 #undef SET_REG
 #undef SET_BIT
 #undef SET_LD
+#undef SET_REG2
+#undef SET_REG3
+#undef SET_REG4
+#undef SET_REG5
+#undef SET_REG6
 
 constexpr std::array INSTRUCTION_TABLE = gen_table();
 constexpr std::array INSTRUCTION_TABLE_CB = gen_table_cb();
@@ -409,7 +601,6 @@ constexpr void test() {
             function(system);
         }
 
-        // return system.mmio->read(0) == 0x69;
         return system.reg_pc == 0;
     };
 

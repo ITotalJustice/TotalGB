@@ -103,6 +103,18 @@ struct Mmio {
             // IE
         }
     }
+
+    constexpr auto read16(const u16 addr) -> u16 {
+        const auto lo = this->read(addr + 0);
+        const auto hi = this->read(addr + 1);
+        return (hi << 8) | lo;
+    }
+
+    constexpr auto write16(const u16 addr, const u16 v) -> void {
+        this->write(addr + 0, v & 0xFF);
+        this->write(addr + 1, v >> 8);
+    }
+
 };
 
 } // namespace dmg
