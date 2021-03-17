@@ -15,9 +15,32 @@ enum class Flag {
     C, H, N, Z
 };
 
+enum class Reg8 {
+    B, C, D, E, H, L, A, F
+};
+
+enum class Reg16 {
+    BC, DE, HL, AF, SP, PC
+};
+
+[[nodiscard]]
+constexpr auto pair_u16(const u8 lo, const u8 hi) -> u16 {
+    return (lo << 8) | hi;
+}
+
+// 13, gets padded by 1 byte
 struct System {
     u16 reg_pc;
     u16 reg_sp;
+
+    u16 cycles : 12;
+    
+    // might just represent these are bytes to avoid shifting
+    u16 flag_z : 1;
+    u16 flag_n : 1;
+    u16 flag_h : 1;
+    u16 flag_c : 1;
+
     u8 reg_b;
     u8 reg_c;
     u8 reg_d;
@@ -26,10 +49,7 @@ struct System {
     u8 reg_l;
     u8 reg_a;
 
-    bool flag_c;
-    bool flag_h;
-    bool flag_n;
-    bool flag_z;
+    u8 _pad_; // free byte added because of padding
 
     template <Flag flag> [[nodiscard]]
     constexpr auto get_flag() const noexcept {
@@ -49,17 +69,65 @@ struct System {
 
     [[nodiscard]]
     constexpr auto get_reg_f() const noexcept -> u8 {
-        return (this->get_flag<Flag::C>() << 7) | (this->get_flag<Flag::H>() << 6)
-            | (this->get_flag<Flag::N>() << 5) | (this->get_flag<Flag::Z>() << 4);
+        return (this->get_flag<Flag::Z>() << 7) | (this->get_flag<Flag::N>() << 6)
+            | (this->get_flag<Flag::H>() << 5) | (this->get_flag<Flag::C>() << 4);
     }
 
     constexpr auto set_reg_f(const u8 v) noexcept {
-        this->set_flag<Flag::C>(bit::is_set<7>(v));
-        this->set_flag<Flag::H>(bit::is_set<6>(v));
-        this->set_flag<Flag::N>(bit::is_set<5>(v));
-        this->set_flag<Flag::Z>(bit::is_set<4>(v));
+        this->set_flag<Flag::Z>(bit::is_set<7>(v));
+        this->set_flag<Flag::N>(bit::is_set<6>(v));
+        this->set_flag<Flag::H>(bit::is_set<5>(v));
+        this->set_flag<Flag::C>(bit::is_set<4>(v));
+    }
+
+    template <Reg8 type>
+    constexpr auto get_reg() noexcept {
+        if constexpr(type == Reg8::B) { return this->reg_b; }
+        if constexpr(type == Reg8::C) { return this->reg_c; }
+        if constexpr(type == Reg8::D) { return this->reg_d; }
+        if constexpr(type == Reg8::E) { return this->reg_e; }
+        if constexpr(type == Reg8::H) { return this->reg_h; }
+        if constexpr(type == Reg8::L) { return this->reg_l; }
+        if constexpr(type == Reg8::A) { return this->reg_a; }
+        if constexpr(type == Reg8::F) { return this->get_reg_f(); }
+    }
+
+    template <Reg8 type>
+    constexpr auto set_reg(const u8 v) noexcept -> void {
+        if constexpr(type == Reg8::B) { this->reg_b = v; }
+        if constexpr(type == Reg8::C) { this->reg_c = v; }
+        if constexpr(type == Reg8::D) { this->reg_d = v; }
+        if constexpr(type == Reg8::E) { this->reg_e = v; }
+        if constexpr(type == Reg8::H) { this->reg_h = v; }
+        if constexpr(type == Reg8::L) { this->reg_l = v; }
+        if constexpr(type == Reg8::A) { this->reg_a = v; }
+        if constexpr(type == Reg8::F) { this->set_reg_f(v); }
+    }
+
+    template <Reg16 type> [[nodiscard]]
+    constexpr auto get_reg() noexcept {
+        if constexpr(type == Reg16::BC) { return pair_u16(this->get_reg<Reg8::B>(), this->get_reg<Reg8::C>()); }
+        if constexpr(type == Reg16::DE) { return pair_u16(this->get_reg<Reg8::D>(), this->get_reg<Reg8::E>()); }
+        if constexpr(type == Reg16::HL) { return pair_u16(this->get_reg<Reg8::H>(), this->get_reg<Reg8::L>()); }
+        if constexpr(type == Reg16::AF) { return pair_u16(this->get_reg<Reg8::A>(), this->get_reg<Reg8::F>()); }
+        if constexpr(type == Reg16::SP) { return this->reg_sp; }
+        if constexpr(type == Reg16::PC) { return this->reg_pc; }
+    }
+
+    template <Reg16 type>
+    constexpr auto set_reg(const u16 v) noexcept -> void {
+        if constexpr(type == Reg16::BC) { this->set_reg<Reg8::B>(v >> 8); this->set_reg<Reg8::C>(v & 0xFF); }
+        if constexpr(type == Reg16::DE) { this->set_reg<Reg8::D>(v >> 8); this->set_reg<Reg8::E>(v & 0xFF); }
+        if constexpr(type == Reg16::HL) { this->set_reg<Reg8::H>(v >> 8); this->set_reg<Reg8::L>(v & 0xFF); }
+        if constexpr(type == Reg16::AF) { this->set_reg<Reg8::A>(v >> 8); this->set_reg<Reg8::F>(v & 0xFF); }
+        if constexpr(type == Reg16::SP) { this->reg_sp = v; }
+        if constexpr(type == Reg16::PC) { this->reg_pc = v; }
     }
 };
+
+static_assert(14 == sizeof(System), "Sys size changed!");
+
+namespace inst {
 
 enum class Reg8Type {
     B, C, D, E, H, L, HL, A
@@ -71,13 +139,13 @@ enum class Reg16Type {
 
 template <Reg8Type type>
 constexpr auto get_reg(System& sys) noexcept {
-    if constexpr(type == Reg8Type::B) { return sys.reg_b; }
-    if constexpr(type == Reg8Type::C) { return sys.reg_c; }
-    if constexpr(type == Reg8Type::D) { return sys.reg_d; }
-    if constexpr(type == Reg8Type::E) { return sys.reg_e; }
-    if constexpr(type == Reg8Type::H) { return sys.reg_h; }
-    if constexpr(type == Reg8Type::L) { return sys.reg_l; }
-    if constexpr(type == Reg8Type::A) { return sys.reg_a; }
+    if constexpr(type == Reg8Type::B) { return sys.get_reg<Reg8::B>(); }
+    if constexpr(type == Reg8Type::C) { return sys.get_reg<Reg8::C>(); }
+    if constexpr(type == Reg8Type::D) { return sys.get_reg<Reg8::D>(); }
+    if constexpr(type == Reg8Type::E) { return sys.get_reg<Reg8::E>(); }
+    if constexpr(type == Reg8Type::H) { return sys.get_reg<Reg8::H>(); }
+    if constexpr(type == Reg8Type::L) { return sys.get_reg<Reg8::L>(); }
+    if constexpr(type == Reg8Type::A) { return sys.get_reg<Reg8::A>(); }
     if constexpr(type == Reg8Type::HL) { // todo:
         return sys.reg_b;
     }
@@ -85,13 +153,13 @@ constexpr auto get_reg(System& sys) noexcept {
 
 template <Reg8Type type>
 constexpr auto set_reg(System& sys, const u8 v) noexcept -> void {
-    if constexpr(type == Reg8Type::B) { sys.reg_b = v; }
-    if constexpr(type == Reg8Type::C) { sys.reg_c = v; }
-    if constexpr(type == Reg8Type::D) { sys.reg_d = v; }
-    if constexpr(type == Reg8Type::E) { sys.reg_e = v; }
-    if constexpr(type == Reg8Type::H) { sys.reg_h = v; }
-    if constexpr(type == Reg8Type::L) { sys.reg_l = v; }
-    if constexpr(type == Reg8Type::A) { sys.reg_a = v; }
+    if constexpr(type == Reg8Type::B) { sys.set_reg<Reg8::B>(v); }
+    if constexpr(type == Reg8Type::C) { sys.set_reg<Reg8::C>(v); }
+    if constexpr(type == Reg8Type::D) { sys.set_reg<Reg8::D>(v); }
+    if constexpr(type == Reg8Type::E) { sys.set_reg<Reg8::E>(v); }
+    if constexpr(type == Reg8Type::H) { sys.set_reg<Reg8::H>(v); }
+    if constexpr(type == Reg8Type::L) { sys.set_reg<Reg8::L>(v); }
+    if constexpr(type == Reg8Type::A) { sys.set_reg<Reg8::A>(v); }
     if constexpr(type == Reg8Type::HL) { // todo:
         sys.reg_b = v;
     }
@@ -99,18 +167,18 @@ constexpr auto set_reg(System& sys, const u8 v) noexcept -> void {
 
 template <Reg16Type type>
 constexpr auto get_reg(System& sys) noexcept {
-    if constexpr(type == Reg16Type::BC) { return sys.reg_b; }
-    if constexpr(type == Reg16Type::DE) { return sys.reg_c; }
-    if constexpr(type == Reg16Type::HL) { return sys.reg_d; }
-    if constexpr(type == Reg16Type::SP) { return sys.reg_e; }
+    if constexpr(type == Reg16Type::BC) { return sys.get_reg<Reg16::BC>(); }
+    if constexpr(type == Reg16Type::DE) { return sys.get_reg<Reg16::DE>(); }
+    if constexpr(type == Reg16Type::HL) { return sys.get_reg<Reg16::HL>(); }
+    if constexpr(type == Reg16Type::SP) { return sys.get_reg<Reg16::SP>(); }
 }
 
 template <Reg16Type type>
 constexpr auto set_reg(System& sys, const u16 v) noexcept -> void {
-    if constexpr(type == Reg16Type::BC) { sys.reg_b = v; }
-    if constexpr(type == Reg16Type::DE) { sys.reg_c = v; }
-    if constexpr(type == Reg16Type::HL) { sys.reg_d = v; }
-    if constexpr(type == Reg16Type::SP) { sys.reg_e = v; }
+    if constexpr(type == Reg16Type::BC) { sys.set_reg<Reg16::BC>(v); }
+    if constexpr(type == Reg16Type::DE) { sys.set_reg<Reg16::DE>(v); }
+    if constexpr(type == Reg16Type::HL) { sys.set_reg<Reg16::HL>(v); }
+    if constexpr(type == Reg16Type::SP) { sys.set_reg<Reg16::SP>(v); }
 }
 
 enum class CondType {
@@ -315,6 +383,7 @@ consteval auto gen_table() {
 
 consteval auto gen_table_cb() {
     std::array<std::enable_if<true, auto (*)(dmg::System &sys)->void>::type, 0x100> table{};
+    table.fill(inst_unk);
     setup_cb(table);
     return table;
 }
@@ -333,7 +402,7 @@ static_assert(INSTRUCTION_TABLE_CB.size() == 0x100);
 constexpr void test() {
     constexpr auto func = []() {
         dmg::System system{};
-        for (auto function : dmg::INSTRUCTION_TABLE_CB) {
+        for (auto function : INSTRUCTION_TABLE_CB) {
             function(system);
         }
     
@@ -343,7 +412,8 @@ constexpr void test() {
     static_assert(func());
 }
 
-} // dmg
+} // namespace inst
+} // namespace dmg
 
 auto main() -> int {
 
