@@ -11,19 +11,6 @@ extern "C" {
 /* Hash:    https://tcrf.net/Notes:Game_Boy_Color_Bootstrap_ROM#Assigned_Palette_Configurations */
 /* Unused:  https://tcrf.net/Game_Boy_Color_Bootstrap_ROM#Unused_Palette_Configurations */
 
-/* BUTTONS: */
-/* enum GB_Button {
-    GB_BUTTON_A = 1 << 0,
-    GB_BUTTON_B = 1 << 1,
-    GB_BUTTON_SELECT = 1 << 2,
-    GB_BUTTON_START = 1 << 3,
-
-    GB_BUTTON_RIGHT = 1 << 4,
-    GB_BUTTON_LEFT = 1 << 5,
-    GB_BUTTON_UP = 1 << 6,
-    GB_BUTTON_DOWN = 1 << 7
-}; */
-
 #define GB_PALETTE_TABLE_MIN 0x0
 #define GB_PALETTE_TABLE_MAX 0x5
 

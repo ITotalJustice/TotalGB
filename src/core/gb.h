@@ -63,9 +63,9 @@ void GB_set_hblank_callback(struct GB_Data* gb, GB_hblank_callback_t cb);
 /* set the cb param to NULL to remove the callback */
 void GB_set_dma_callback(struct GB_Data* gb, GB_dma_callback_t cb);
 
-GB_BOOL GB_get_rom_palette_hash_from_header(const struct GB_CartHeader* header, GB_U8* hash);
+GB_BOOL GB_get_rom_palette_hash_from_header(const struct GB_CartHeader* header, GB_U8* hash, GB_U8* forth);
 
-GB_BOOL GB_get_rom_palette_hash(const struct GB_Data* gb, GB_U8* hash);
+GB_BOOL GB_get_rom_palette_hash(const struct GB_Data* gb, GB_U8* hash, GB_U8* forth);
 
 GB_BOOL GB_set_palette_from_table_entry(struct GB_Data* gb, GB_U8 table, GB_U8 entry);
 

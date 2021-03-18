@@ -142,9 +142,9 @@ static void cart_header_print(const struct GB_CartHeader* header) {
     printf("RAM SIZE: 0x%02X\n", header->ram_size);
 	printf("HEADER CHECKSUM: 0x%02X\n", header->header_checksum);
 	printf("GLOBAL CHECKSUM: 0x%04X\n", header->global_checksum);
-	GB_U8 hash;
-	GB_get_rom_palette_hash_from_header(header, &hash);
-	printf("HASH: 0x%02X\n", hash);
+	GB_U8 hash, forth;
+	GB_get_rom_palette_hash_from_header(header, &hash, &forth);
+	printf("HASH: 0x%02X, 0x%02X\n", hash, forth);
     putchar('\n');
 }
 
@@ -158,10 +158,10 @@ const struct GB_CartHeader* GB_get_rom_header(const struct GB_Data* gb) {
 	return GB_get_rom_header_from_data(gb->cart.rom);
 }
 
-GB_BOOL GB_get_rom_palette_hash_from_header(const struct GB_CartHeader* header, GB_U8* hash) {
-	assert(header && hash);
+GB_BOOL GB_get_rom_palette_hash_from_header(const struct GB_CartHeader* header, GB_U8* hash, GB_U8* forth) {
+	assert(header && hash && forth);
 
-	if (!header || !hash) {
+	if (!header || !hash || !forth) {
 		return GB_FALSE;
 	}
 
@@ -171,11 +171,12 @@ GB_BOOL GB_get_rom_palette_hash_from_header(const struct GB_CartHeader* header, 
 	}
 
 	*hash = temp_hash & 0xFF;
+	*forth = header->title[0x3];
 
 	return GB_TRUE;
 }
 
-GB_BOOL GB_get_rom_palette_hash(const struct GB_Data* gb, GB_U8* hash) {
+GB_BOOL GB_get_rom_palette_hash(const struct GB_Data* gb, GB_U8* hash, GB_U8* forth) {
 	assert(gb && hash);
 
 	if (!gb || !hash) {
@@ -184,8 +185,20 @@ GB_BOOL GB_get_rom_palette_hash(const struct GB_Data* gb, GB_U8* hash) {
 
 	return GB_get_rom_palette_hash_from_header(
 		GB_get_rom_header(gb),
-		hash
+		hash, forth
 	);
+}
+
+GB_BOOL GB_set_palette_from_palette(struct GB_Data* gb, const struct GB_PaletteEntry* palette) {
+	assert(gb && palette);
+
+	if (!gb || !palette) {
+		return GB_FALSE;
+	}
+
+	gb->palette = *palette;
+
+	return GB_TRUE;
 }
 
 // these 3 funcs can be simplified by making a mem IFile struct
@@ -213,7 +226,17 @@ int GB_loadrom_data(struct GB_Data* gb, GB_U8* data, GB_U32 size, void(*free_fun
 	GB_reset(gb);
 	GB_setup_mmap(gb);
 
+	GB_U8 hash, forth;
+	if (GB_get_rom_palette_hash_from_header(header, &hash, &forth)) {
+		struct GB_PaletteEntry palette;
+		
+		if (0 == GB_palette_fill_from_hash(hash, forth, &palette)) {
+			GB_set_palette_from_palette(gb, &palette);
+		}
+	}
+
 	gb->rom_free_func = free_func;
+
 	return 0;
 }
 
