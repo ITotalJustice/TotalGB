@@ -34,3 +34,5 @@
 # my ignores
 .vscode/
 roms/
+unused/
+tests/

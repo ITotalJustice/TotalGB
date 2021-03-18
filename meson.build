@@ -50,6 +50,9 @@ cflags = [
     '-Wfatal-errors',
     '-Wdouble-promotion',
     '-Wframe-larger-than=100KB',
+
+    # '-DLOG_3',
+    '-DGB_DEBUG',
     # '-Wno-format',
 ]
 

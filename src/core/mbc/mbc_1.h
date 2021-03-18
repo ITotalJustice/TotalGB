@@ -64,6 +64,7 @@ static const GB_U8* GB_mbc1_get_ram_bank(struct GB_Data* gb, GB_U8 bank) {
 	if (gb->cart.bank_mode) {
 		return gb->cart.ram + (0x2000 * gb->cart.ram_bank);
 	}
+    
 	return gb->cart.ram;
 }
 

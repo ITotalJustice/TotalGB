@@ -199,7 +199,7 @@ int GB_loadrom_data(struct GB_Data* gb, GB_U8* data, GB_U32 size, void(*free_fun
 	cart_header_print(header);
 
 	const GB_U32 rom_size = ROM_SIZE_MULT << header->rom_size;
-	if (rom_size > (size)) {
+	if (rom_size > size) {
 		return -1;
 	}
 
@@ -383,6 +383,7 @@ void GB_run_frame(struct GB_Data* gb) {
 
 	do {
 		cycles = GB_cpu_run(gb, 0 /*unused*/);
+		// ++cycles;
 		GB_timer_run(gb, cycles);
 		GB_ppu_run(gb, cycles);
 		cycles_elapsed += cycles;

@@ -2,29 +2,9 @@
 #include "internal.h"
 #include "tables/cycle_table.h"
 
-#ifdef GB_DEBUG
-#include "tables/cycle_table_debug.h"
-#include <stdio.h>
 #include <assert.h>
 
-#define UNK_OP() \
-printf("\nMISSING OP: 0x%02X\n", opcode); \
-LOG_INST() \
-assert(0);
-
-#define UNK_OP_CB() \
-printf("\nMISSING OP: 0xCB%02X\n", opcode); \
-LOG_INST_CB() \
-assert(0); \
-
-#define LOG_INST() \
-printf("name: %s flags: %s len: %u\n", \
-	OP_TABLE[opcode].name, OP_TABLE[opcode].flags, OP_TABLE[opcode].len);
-#define LOG_INST_CB() \
-printf("name: %s flags: %s len: %u\n", \
-	OPCB_TABLE[opcode].name, OPCB_TABLE[opcode].flags, OPCB_TABLE[opcode].len);
-
-#elif GB_SPEED
+#if GB_SPEED
 #define UNK_OP() __builtin_unreachable()
 #define UNK_OP_CB() __builtin_unreachable()
 #else
@@ -173,8 +153,8 @@ SET_FLAG_Z(z);
 #define write16(addr,value) GB_write16(gb, addr, value)
 
 // fwd
-static GB_U8 GB_execute(struct GB_Data* gb);
-static GB_U8 GB_execute_cb(struct GB_Data* gb);
+static void GB_execute(struct GB_Data* gb);
+static void GB_execute_cb(struct GB_Data* gb);
 
 static void GB_PUSH(struct GB_Data* gb, GB_U16 value) {
 	write8(--REG_SP, (value >> 8) & 0xFF);
@@ -815,6 +795,7 @@ static void GB_interrupt_handler(struct GB_Data* gb) {
 	}
 
 	gb->cpu.halt = GB_FALSE;
+	
 	if (!gb->cpu.ime) {
 		return;
 	}
@@ -840,7 +821,7 @@ static void GB_interrupt_handler(struct GB_Data* gb) {
 	gb->cpu.cycles += 20;
 }
 
-static GB_U8 GB_execute(struct GB_Data* gb) {
+static void GB_execute(struct GB_Data* gb) {
 	const GB_U8 opcode = read8(REG_PC++);
 
 	switch (opcode) {
@@ -1046,7 +1027,7 @@ static GB_U8 GB_execute(struct GB_Data* gb) {
 	case 0xC8: RET_Z(); break;
 	case 0xC9: RET(); break;
 	case 0xCA: JP_Z(); break;
-	case 0xCB: return GB_execute_cb(gb);
+	case 0xCB: GB_execute_cb(gb); break;
 	case 0xCC: CALL_Z(); break;
 	case 0xCD: CALL(); break;
 	case 0xCE: ADC_u8(); break;
@@ -1091,10 +1072,10 @@ static GB_U8 GB_execute(struct GB_Data* gb) {
 	default: UNK_OP(); break;
 	}
 
-	return CYCLE_TABLE[opcode] + gb->cpu.cycles;
+	gb->cpu.cycles += CYCLE_TABLE_CB[opcode];
 }
 
-static GB_U8 GB_execute_cb(struct GB_Data* gb) {
+static void GB_execute_cb(struct GB_Data* gb) {
 	const GB_U8 opcode = read8(REG_PC++);
 
 	switch (opcode) {
@@ -1357,7 +1338,7 @@ static GB_U8 GB_execute_cb(struct GB_Data* gb) {
 	default: UNK_OP_CB(); break;
 	}
 
-	return CYCLE_TABLE_CB[opcode] + gb->cpu.cycles;
+	gb->cpu.cycles += CYCLE_TABLE_CB[opcode];
 }
 
 GB_U16 GB_cpu_run(struct GB_Data* gb, GB_U16 cycles) {
@@ -1366,6 +1347,7 @@ GB_U16 GB_cpu_run(struct GB_Data* gb, GB_U16 cycles) {
 	// reset cycles counter
 	gb->cpu.cycles = 0;
 
+	// check and handle interrupts
 	GB_interrupt_handler(gb);
 
 	// if halted, return early
@@ -1375,6 +1357,8 @@ GB_U16 GB_cpu_run(struct GB_Data* gb, GB_U16 cycles) {
 	}
 
 	GB_execute(gb);
+
+	assert(gb->cpu.cycles != 0);
 
 	return gb->cpu.cycles;
 }
