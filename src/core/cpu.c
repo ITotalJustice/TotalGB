@@ -825,251 +825,160 @@ static void GB_execute(struct GB_Data* gb) {
 	const GB_U8 opcode = read8(REG_PC++);
 
 	switch (opcode) {
-	case 0x00: break; // nop
-	case 0x01: LD_BC_u16(); break;
-	case 0x02: LD_BCa_A(); break;
-	case 0x03: INC_BC(); break;
-	case 0x04: INC_r(); break;
-	case 0x05: DEC_r(); break;
-	case 0x06: LD_r_u8(); break;
-	case 0x07: RLCA(); break;
-	case 0x08: LD_u16_SP(); break;
-	case 0x0A: LD_A_BCa(); break;
-	case 0x09: ADD_HL_BC(); break;
-	case 0x0B: DEC_BC(); break;
-	case 0x0C: INC_r(); break;
-	case 0x0D: DEC_r(); break;
-	case 0x0E: LD_r_u8(); break;
-	case 0x0F: RRCA(); break;
-	case 0x11: LD_DE_u16(); break;
-	case 0x12: LD_DEa_A(); break;
-	case 0x13: INC_DE(); break;
-	case 0x14: INC_r(); break;
-	case 0x15: DEC_r(); break;
-	case 0x16: LD_r_u8(); break;
-	case 0x17: RLA(); break;
-	case 0x18: JR(); break;
-	case 0x19: ADD_HL_DE(); break;
-	case 0x1A: LD_A_DEa(); break;
-	case 0x1B: DEC_DE(); break;
-	case 0x1C: INC_r(); break;
-	case 0x1D: DEC_r(); break;
-	case 0x1E: LD_r_u8(); break;
-	case 0x1F: RRA(); break;
-	case 0x20: JR_NZ(); break;
-	case 0x21: LD_HL_u16(); break;
-	case 0x22: LD_HLi_A(); break;
-	case 0x23: INC_HL(); break;
-	case 0x24: INC_r(); break;
-	case 0x25: DEC_r(); break;
-	case 0x26: LD_r_u8(); break;
-	case 0x27: DAA(); break;
-	case 0x28: JR_Z(); break;
-	case 0x29: ADD_HL_HL(); break;
-	case 0x2A: LD_A_HLi(); break;
-	case 0x2B: DEC_HL(); break;
-	case 0x2C: INC_r(); break;
-	case 0x2D: DEC_r(); break;
-	case 0x2E: LD_r_u8(); break;
-	case 0x2F: CPL(); break;
-	case 0x30: JR_NC(); break;
-	case 0x31: LD_SP_u16(); break;
-	case 0x32: LD_HLd_A(); break;
-	case 0x33: INC_SP(); break;
-	case 0x34: INC_HLa(); break;
-	case 0x35: DEC_HLa(); break;
-	case 0x36: LD_HLa_u8(); break;
-	case 0x37: SCF(); break;
-	case 0x38: JR_C(); break;
-	case 0x39: ADD_HL_SP(); break;
-	case 0x3A: LD_A_HLd(); break;
-	case 0x3B: DEC_SP(); break;
-	case 0x3C: INC_r(); break;
-	case 0x3D: DEC_r(); break;
-	case 0x3E: LD_r_u8(); break;
-	case 0x3F: CCF(); break;
-	case 0x40: break; // nop b,b
-	case 0x41: LD_r_r(); break;
-	case 0x42: LD_r_r(); break;
-	case 0x43: LD_r_r(); break;
-	case 0x44: LD_r_r(); break;
-	case 0x45: LD_r_r(); break;
-	case 0x46: LD_r_HLa(); break;
-	case 0x47: LD_r_r(); break;
-	case 0x48: LD_r_r(); break;
-	case 0x49: break; // nop c,c
-	case 0x4A: LD_r_r(); break;
-	case 0x4B: LD_r_r(); break;
-	case 0x4C: LD_r_r(); break;
-	case 0x4D: LD_r_r(); break;
-	case 0x4E: LD_r_HLa(); break;
-	case 0x4F: LD_r_r(); break;
-	case 0x50: LD_r_r(); break;
-	case 0x51: LD_r_r(); break;
-	case 0x52: break; // nop d,d
-	case 0x53: LD_r_r(); break;
-	case 0x54: LD_r_r(); break;
-	case 0x55: LD_r_r(); break;
-	case 0x56: LD_r_HLa(); break;
-	case 0x57: LD_r_r(); break;
-	case 0x58: LD_r_r(); break;
-	case 0x59: LD_r_r(); break;
-	case 0x5A: LD_r_r(); break;
-	case 0x5B: break; // nop e,e
-	case 0x5C: LD_r_r(); break;
-	case 0x5D: LD_r_r(); break;
-	case 0x5E: LD_r_HLa(); break;
-	case 0x5F: LD_r_r(); break;
-	case 0x60: LD_r_r(); break;
-	case 0x61: LD_r_r(); break;
-	case 0x62: LD_r_r(); break;
-	case 0x63: LD_r_r(); break;
-	case 0x64: break; // nop h,h
-	case 0x65: LD_r_r(); break;
-	case 0x66: LD_r_HLa(); break;
-	case 0x67: LD_r_r(); break;
-	case 0x68: LD_r_r(); break;
-	case 0x69: LD_r_r(); break;
-	case 0x6A: LD_r_r(); break;
-	case 0x6B: LD_r_r(); break;
-	case 0x6C: LD_r_r(); break;
-	case 0x6D: break; // nop l,l
-	case 0x6E: LD_r_HLa(); break;
-	case 0x6F: LD_r_r(); break;
-	case 0x70: LD_HLa_r(); break;
-	case 0x71: LD_HLa_r(); break;
-	case 0x72: LD_HLa_r(); break;
-	case 0x73: LD_HLa_r(); break;
-	case 0x74: LD_HLa_r(); break;
-	case 0x75: LD_HLa_r(); break;
-	case 0x76: HALT(); break;
-	case 0x77: LD_HLa_r(); break;
-	case 0x78: LD_r_r(); break;
-	case 0x79: LD_r_r(); break;
-	case 0x7A: LD_r_r(); break;
-	case 0x7B: LD_r_r(); break;
-	case 0x7C: LD_r_r(); break;
-	case 0x7D: LD_r_r(); break;
-	case 0x7E: LD_A_HLa(); break;
-	case 0x7F: break; // nop a,a
-	case 0x80: ADD_r(); break;
-	case 0x81: ADD_r(); break;
-	case 0x82: ADD_r(); break;
-	case 0x83: ADD_r(); break;
-	case 0x84: ADD_r(); break;
-	case 0x85: ADD_r(); break;
-	case 0x86: ADD_HLa(); break;
-	case 0x87: ADD_r(); break;
-	case 0x88: ADC_r(); break;
-	case 0x89: ADC_r(); break;
-	case 0x8A: ADC_r(); break;
-	case 0x8B: ADC_r(); break;
-	case 0x8C: ADC_r(); break;
-	case 0x8D: ADC_r(); break;
-	case 0x8E: ADC_HLa(); break;
-	case 0x8F: ADC_r(); break;
-	case 0x90: SUB_r(); break;
-	case 0x91: SUB_r(); break;
-	case 0x92: SUB_r(); break;
-	case 0x93: SUB_r(); break;
-	case 0x94: SUB_r(); break;
-	case 0x95: SUB_r(); break;
-	case 0x96: SUB_HLa(); break;
-	case 0x97: SUB_r(); break;
-	case 0x98: SBC_r(); break;
-	case 0x99: SBC_r(); break;
-	case 0x9A: SBC_r(); break;
-	case 0x9B: SBC_r(); break;
-	case 0x9C: SBC_r(); break;
-	case 0x9D: SBC_r(); break;
-	case 0x9E: SBC_HLa(); break;
-	case 0x9F: SBC_r(); break;
-	case 0xA0: AND_r(); break;
-	case 0xA1: AND_r(); break;
-	case 0xA2: AND_r(); break;
-	case 0xA3: AND_r(); break;
-	case 0xA4: AND_r(); break;
-	case 0xA5: AND_r(); break;
-	case 0xA6: AND_HLa(); break;
-	case 0xA7: AND_r(); break;
-	case 0xA8: XOR_r(); break;
-	case 0xA9: XOR_r(); break;
-	case 0xAA: XOR_r(); break;
-	case 0xAB: XOR_r(); break;
-	case 0xAC: XOR_r(); break;
-	case 0xAD: XOR_r(); break;
-	case 0xAE: XOR_HLa(); break;
-	case 0xAF: XOR_r(); break;
-	case 0xB0: OR_r(); break;
-	case 0xB1: OR_r(); break;
-	case 0xB2: OR_r(); break;
-	case 0xB3: OR_r(); break;
-	case 0xB4: OR_r(); break;
-	case 0xB5: OR_r(); break;
-	case 0xB6: OR_HLa(); break;
-	case 0xB7: OR_r(); break;
-	case 0xB8: CP_r(); break;
-	case 0xB9: CP_r(); break;
-	case 0xBA: CP_r(); break;
-	case 0xBB: CP_r(); break;
-	case 0xBC: CP_r(); break;
-	case 0xBD: CP_r(); break;
-	case 0xBE: CP_HLa(); break;
-	case 0xBF: CP_r(); break;
-	case 0xC0: RET_NZ(); break;
-	case 0xC1: POP_BC(); break;
-	case 0xC2: JP_NZ(); break;
-	case 0xC3: JP();  break;
-	case 0xC4: CALL_NZ(); break;
-	case 0xC5: PUSH(REG_BC); break;
-	case 0xC6: ADD_u8(); break;
-	case 0xC7: RST(0x00); break;
-	case 0xC8: RET_Z(); break;
-	case 0xC9: RET(); break;
-	case 0xCA: JP_Z(); break;
-	case 0xCB: GB_execute_cb(gb); break;
-	case 0xCC: CALL_Z(); break;
-	case 0xCD: CALL(); break;
-	case 0xCE: ADC_u8(); break;
-	case 0xCF: RST(0x08); break;
-	case 0xD0: RET_NC(); break;
-	case 0xD1: POP_DE();  break;
-	case 0xD2: JP_NC(); break;
-	case 0xD4: CALL_NC(); break;
-	case 0xD5: PUSH(REG_DE); break;
-	case 0xD6: SUB_u8(); break;
-	case 0xD7: RST(0x10); break;
-	case 0xD8: RET_C(); break;
-	case 0xD9: RETI(); break;
-	case 0xDA: JP_C(); break;
-	case 0xDC: CALL_C(); break;
-	case 0xDE: SBC_u8(); break;
-	case 0xDF: RST(0x18); break;
-	case 0xE0: LD_FFu8_A(); break;
-	case 0xE1: POP_HL(); break;
-	case 0xE2: LD_FFRC_A(); break;
-	case 0xE5: PUSH(REG_HL); break;
-	case 0xE6: AND_u8(); break;
-	case 0xE7: RST(0x20); break;
-	case 0xE8: ADD_SP_i8(); break;
-	case 0xE9: JP_HL(); break;
-	case 0xEA: LD_u16_A(); break;
-	case 0xEE: XOR_u8(); break;
-	case 0xEF: RST(0x28); break;
-	case 0xF0: LD_A_FFu8(); break;
-	case 0xF1: POP_AF(); break;
-	case 0xF2: LD_A_FFRC(); break;
-	case 0xF3: DI(); break;
-	case 0xF5: PUSH(REG_AF); break;
-	case 0xF6: OR_u8(); break;
-	case 0xF7: RST(0x30); break;
-	case 0xF8: LD_HL_SP_i8(); break;
-	case 0xF9: LD_SP_HL(); break;
-	case 0xFA: LD_A_u16(); break;
-	case 0xFB: EI(); break;
-	case 0xFE: CP_u8(); break;
-	case 0xFF: RST(0x38); break;
-	default: UNK_OP(); break;
+		case 0x00: break; // nop
+		case 0x01: LD_BC_u16(); break;
+		case 0x02: LD_BCa_A(); break;
+		case 0x03: INC_BC(); break;
+		
+		case 0x04: case 0x0C: case 0x14: case 0x1C: case 0x24: case 0x2C: case 0x3C: INC_r(); break;
+		case 0x05: case 0x0D: case 0x15: case 0x1D: case 0x25: case 0x2D: case 0x3D: DEC_r(); break;
+
+		case 0x06: LD_r_u8(); break;
+		case 0x07: RLCA(); break;
+		case 0x08: LD_u16_SP(); break;
+		case 0x0A: LD_A_BCa(); break;
+		case 0x09: ADD_HL_BC(); break;
+		case 0x0B: DEC_BC(); break;
+		case 0x0E: LD_r_u8(); break;
+		case 0x0F: RRCA(); break;
+		case 0x11: LD_DE_u16(); break;
+		case 0x12: LD_DEa_A(); break;
+		case 0x13: INC_DE(); break;
+		case 0x16: LD_r_u8(); break;
+		case 0x17: RLA(); break;
+		case 0x18: JR(); break;
+		case 0x19: ADD_HL_DE(); break;
+		case 0x1A: LD_A_DEa(); break;
+		case 0x1B: DEC_DE(); break;
+		case 0x1E: LD_r_u8(); break;
+		case 0x1F: RRA(); break;
+		case 0x20: JR_NZ(); break;
+		case 0x21: LD_HL_u16(); break;
+		case 0x22: LD_HLi_A(); break;
+		case 0x23: INC_HL(); break;
+		case 0x26: LD_r_u8(); break;
+		case 0x27: DAA(); break;
+		case 0x28: JR_Z(); break;
+		case 0x29: ADD_HL_HL(); break;
+		case 0x2A: LD_A_HLi(); break;
+		case 0x2B: DEC_HL(); break;
+		case 0x2E: LD_r_u8(); break;
+		case 0x2F: CPL(); break;
+		case 0x30: JR_NC(); break;
+		case 0x31: LD_SP_u16(); break;
+		case 0x32: LD_HLd_A(); break;
+		case 0x33: INC_SP(); break;
+		case 0x34: INC_HLa(); break;
+		case 0x35: DEC_HLa(); break;
+		case 0x36: LD_HLa_u8(); break;
+		case 0x37: SCF(); break;
+		case 0x38: JR_C(); break;
+		case 0x39: ADD_HL_SP(); break;
+		case 0x3A: LD_A_HLd(); break;
+		case 0x3B: DEC_SP(); break;
+		case 0x3E: LD_r_u8(); break;
+		case 0x3F: CCF(); break;
+
+		case 0x41: case 0x42: case 0x43: case 0x44:
+		case 0x45: case 0x47: case 0x48: case 0x4A:
+		case 0x4B: case 0x4C: case 0x4D: case 0x4F:
+		case 0x50: case 0x51: case 0x53: case 0x54:
+		case 0x55: case 0x57: case 0x58: case 0x59:
+		case 0x5A: case 0x5C: case 0x5D: case 0x5F:
+		case 0x60: case 0x61: case 0x62: case 0x63:
+		case 0x65: case 0x67: case 0x68: case 0x69:
+		case 0x6A: case 0x6B: case 0x6C: case 0x6F:
+		case 0x78: case 0x79: case 0x7A: case 0x7B:
+		case 0x7C: case 0x7D:
+			LD_r_r();
+			break;
+
+		case 0x46: case 0x4E: case 0x56: case 0x5E: case 0x66: case 0x6E: LD_r_HLa(); break;
+
+		case 0x40: break; // nop LD b,b
+		case 0x49: break; // nop LD c,c
+		case 0x52: break; // nop LD d,d
+		case 0x5B: break; // nop LD e,e
+		case 0x64: break; // nop LD h,h
+		case 0x6D: break; // nop LD l,l
+		case 0x7F: break; // nop LD a,a
+
+		case 0x70: case 0x71: case 0x72: case 0x73: case 0x74: case 0x75: case 0x77: LD_HLa_r(); break;
+
+		case 0x76: HALT(); break;
+		case 0x7E: LD_A_HLa(); break;
+
+		case 0x80: case 0x81: case 0x82: case 0x83: case 0x84: case 0x85: case 0x87: ADD_r(); break;
+		case 0x88: case 0x89: case 0x8A: case 0x8B: case 0x8C: case 0x8D: case 0x8F: ADC_r(); break;
+		case 0x90: case 0x91: case 0x92: case 0x93: case 0x94: case 0x95: case 0x97: SUB_r(); break;
+		case 0x98: case 0x99: case 0x9A: case 0x9B: case 0x9C: case 0x9D: case 0x9F: SBC_r(); break;
+		case 0xA0: case 0xA1: case 0xA2: case 0xA3: case 0xA4: case 0xA5: case 0xA7: AND_r(); break;
+		case 0xA8: case 0xA9: case 0xAA: case 0xAB: case 0xAC: case 0xAD: case 0xAF: XOR_r(); break;
+		case 0xB0: case 0xB1: case 0xB2: case 0xB3: case 0xB4: case 0xB5: case 0xB7: OR_r(); break;
+		case 0xB8: case 0xB9: case 0xBA: case 0xBB: case 0xBC: case 0xBD: case 0xBF: CP_r(); break;
+
+		case 0x86: ADD_HLa(); break;
+		case 0x8E: ADC_HLa(); break;
+		case 0x96: SUB_HLa(); break;
+		case 0x9E: SBC_HLa(); break;
+		case 0xA6: AND_HLa(); break;
+		case 0xAE: XOR_HLa(); break;
+		case 0xB6: OR_HLa(); break;
+		case 0xBE: CP_HLa(); break;
+		case 0xC0: RET_NZ(); break;
+		case 0xC1: POP_BC(); break;
+		case 0xC2: JP_NZ(); break;
+		case 0xC3: JP();  break;
+		case 0xC4: CALL_NZ(); break;
+		case 0xC5: PUSH(REG_BC); break;
+		case 0xC6: ADD_u8(); break;
+		case 0xC7: RST(0x00); break;
+		case 0xC8: RET_Z(); break;
+		case 0xC9: RET(); break;
+		case 0xCA: JP_Z(); break;
+		case 0xCB: GB_execute_cb(gb); break;
+		case 0xCC: CALL_Z(); break;
+		case 0xCD: CALL(); break;
+		case 0xCE: ADC_u8(); break;
+		case 0xCF: RST(0x08); break;
+		case 0xD0: RET_NC(); break;
+		case 0xD1: POP_DE();  break;
+		case 0xD2: JP_NC(); break;
+		case 0xD4: CALL_NC(); break;
+		case 0xD5: PUSH(REG_DE); break;
+		case 0xD6: SUB_u8(); break;
+		case 0xD7: RST(0x10); break;
+		case 0xD8: RET_C(); break;
+		case 0xD9: RETI(); break;
+		case 0xDA: JP_C(); break;
+		case 0xDC: CALL_C(); break;
+		case 0xDE: SBC_u8(); break;
+		case 0xDF: RST(0x18); break;
+		case 0xE0: LD_FFu8_A(); break;
+		case 0xE1: POP_HL(); break;
+		case 0xE2: LD_FFRC_A(); break;
+		case 0xE5: PUSH(REG_HL); break;
+		case 0xE6: AND_u8(); break;
+		case 0xE7: RST(0x20); break;
+		case 0xE8: ADD_SP_i8(); break;
+		case 0xE9: JP_HL(); break;
+		case 0xEA: LD_u16_A(); break;
+		case 0xEE: XOR_u8(); break;
+		case 0xEF: RST(0x28); break;
+		case 0xF0: LD_A_FFu8(); break;
+		case 0xF1: POP_AF(); break;
+		case 0xF2: LD_A_FFRC(); break;
+		case 0xF3: DI(); break;
+		case 0xF5: PUSH(REG_AF); break;
+		case 0xF6: OR_u8(); break;
+		case 0xF7: RST(0x30); break;
+		case 0xF8: LD_HL_SP_i8(); break;
+		case 0xF9: LD_SP_HL(); break;
+		case 0xFA: LD_A_u16(); break;
+		case 0xFB: EI(); break;
+		case 0xFE: CP_u8(); break;
+		case 0xFF: RST(0x38); break;
+		default: UNK_OP(); break;
 	}
 
 	gb->cpu.cycles += CYCLE_TABLE_CB[opcode];
@@ -1079,263 +988,144 @@ static void GB_execute_cb(struct GB_Data* gb) {
 	const GB_U8 opcode = read8(REG_PC++);
 
 	switch (opcode) {
-	case 0x00: RLC_r(); break;
-	case 0x01: RLC_r(); break;
-	case 0x02: RLC_r(); break;
-	case 0x03: RLC_r(); break;
-	case 0x04: RLC_r(); break;
-	case 0x05: RLC_r(); break;
-	case 0x06: RLC_HLa(); break;
-	case 0x07: RLC_r(); break;
-	case 0x08: RRC_r(); break;
-	case 0x09: RRC_r(); break;
-	case 0x0A: RRC_r(); break;
-	case 0x0B: RRC_r(); break;
-	case 0x0C: RRC_r(); break;
-	case 0x0D: RRC_r(); break;
-	case 0x0E: RRC_HLa(); break;
-	case 0x0F: RRC_r(); break;
-	case 0x10: RL_r(); break;
-	case 0x11: RL_r(); break;
-	case 0x12: RL_r(); break;
-	case 0x13: RL_r(); break;
-	case 0x14: RL_r(); break;
-	case 0x15: RL_r(); break;
-	case 0x16: RL_HLa(); break;
-	case 0x17: RL_r(); break;
-	case 0x18: RR_r(); break;
-	case 0x19: RR_r(); break;
-	case 0x1A: RR_r(); break;
-	case 0x1B: RR_r(); break;
-	case 0x1C: RR_r(); break;
-	case 0x1D: RR_r(); break;
-	case 0x1E: RR_HLa(); break;
-	case 0x1F: RR_r(); break;
-	case 0x20: SLA_r(); break;
-	case 0x21: SLA_r(); break;
-	case 0x22: SLA_r(); break;
-	case 0x23: SLA_r(); break;
-	case 0x24: SLA_r(); break;
-	case 0x25: SLA_r(); break;
-	case 0x26: SLA_HLa(); break;
-	case 0x27: SLA_r(); break;
-	case 0x28: SRA_r(); break;
-	case 0x29: SRA_r(); break;
-	case 0x2A: SRA_r(); break;
-	case 0x2B: SRA_r(); break;
-	case 0x2C: SRA_r(); break;
-	case 0x2D: SRA_r(); break;
-	case 0x2E: SRA_HLa(); break;
-	case 0x2F: SRA_r(); break;
-	case 0x30: SWAP_r(); break;
-	case 0x31: SWAP_r(); break;
-	case 0x32: SWAP_r(); break;
-	case 0x33: SWAP_r(); break;
-	case 0x34: SWAP_r(); break;
-	case 0x35: SWAP_r(); break;
-	case 0x36: SWAP_HLa(); break;
-	case 0x37: SWAP_r(); break;
-	case 0x38: SRL_r(); break;
-	case 0x39: SRL_r(); break;
-	case 0x3A: SRL_r(); break;
-	case 0x3B: SRL_r(); break;
-	case 0x3C: SRL_r(); break;
-	case 0x3D: SRL_r(); break;
-	case 0x3E: SRL_HLa(); break;
-	case 0x3F: SRL_r(); break;
-	case 0x40: BIT_r(); break;
-	case 0x41: BIT_r(); break;
-	case 0x42: BIT_r(); break;
-	case 0x43: BIT_r(); break;
-	case 0x44: BIT_r(); break;
-	case 0x45: BIT_r(); break;
-	case 0x46: BIT_HLa(); break;
-	case 0x47: BIT_r(); break;
-	case 0x48: BIT_r(); break;
-	case 0x49: BIT_r(); break;
-	case 0x4A: BIT_r(); break;
-	case 0x4B: BIT_r(); break;
-	case 0x4C: BIT_r(); break;
-	case 0x4D: BIT_r(); break;
-	case 0x4E: BIT_HLa(); break;
-	case 0x4F: BIT_r(); break;
-	case 0x50: BIT_r(); break;
-	case 0x51: BIT_r(); break;
-	case 0x52: BIT_r(); break;
-	case 0x53: BIT_r(); break;
-	case 0x54: BIT_r(); break;
-	case 0x55: BIT_r(); break;
-	case 0x56: BIT_HLa(); break;
-	case 0x57: BIT_r(); break;
-	case 0x58: BIT_r(); break;
-	case 0x59: BIT_r(); break;
-	case 0x5A: BIT_r(); break;
-	case 0x5B: BIT_r(); break;
-	case 0x5C: BIT_r(); break;
-	case 0x5D: BIT_r(); break;
-	case 0x5E: BIT_HLa(); break;
-	case 0x5F: BIT_r(); break;
-	case 0x60: BIT_r(); break;
-	case 0x61: BIT_r(); break;
-	case 0x62: BIT_r(); break;
-	case 0x63: BIT_r(); break;
-	case 0x64: BIT_r(); break;
-	case 0x65: BIT_r(); break;
-	case 0x66: BIT_HLa(); break;
-	case 0x67: BIT_r(); break;
-	case 0x68: BIT_r(); break;
-	case 0x69: BIT_r(); break;
-	case 0x6A: BIT_r(); break;
-	case 0x6B: BIT_r(); break;
-	case 0x6C: BIT_r(); break;
-	case 0x6D: BIT_r(); break;
-	case 0x6E: BIT_HLa(); break;
-	case 0x6F: BIT_r(); break;
-	case 0x70: BIT_r(); break;
-	case 0x71: BIT_r(); break;
-	case 0x72: BIT_r(); break;
-	case 0x73: BIT_r(); break;
-	case 0x74: BIT_r(); break;
-	case 0x75: BIT_r(); break;
-	case 0x76: BIT_HLa(); break;
-	case 0x77: BIT_r(); break;
-	case 0x78: BIT_r(); break;
-	case 0x79: BIT_r(); break;
-	case 0x7A: BIT_r(); break;
-	case 0x7B: BIT_r(); break;
-	case 0x7C: BIT_r(); break;
-	case 0x7D: BIT_r(); break;
-	case 0x7E: BIT_HLa(); break;
-	case 0x7F: BIT_r(); break;
-	case 0x80: RES_r(); break;
-	case 0x81: RES_r(); break;
-	case 0x82: RES_r(); break;
-	case 0x83: RES_r(); break;
-	case 0x84: RES_r(); break;
-	case 0x85: RES_r(); break;
-	case 0x86: RES_HLa(); break;
-	case 0x87: RES_r(); break;
-	case 0x88: RES_r(); break;
-	case 0x89: RES_r(); break;
-	case 0x8A: RES_r(); break;
-	case 0x8B: RES_r(); break;
-	case 0x8C: RES_r(); break;
-	case 0x8D: RES_r(); break;
-	case 0x8E: RES_HLa(); break;
-	case 0x8F: RES_r(); break;
-	case 0x90: RES_r(); break;
-	case 0x91: RES_r(); break;
-	case 0x92: RES_r(); break;
-	case 0x93: RES_r(); break;
-	case 0x94: RES_r(); break;
-	case 0x95: RES_r(); break;
-	case 0x96: RES_HLa(); break;
-	case 0x97: RES_r(); break;
-	case 0x98: RES_r(); break;
-	case 0x99: RES_r(); break;
-	case 0x9A: RES_r(); break;
-	case 0x9B: RES_r(); break;
-	case 0x9C: RES_r(); break;
-	case 0x9D: RES_r(); break;
-	case 0x9E: RES_HLa(); break;
-	case 0x9F: RES_r(); break;
-	case 0xA0: RES_r(); break;
-	case 0xA1: RES_r(); break;
-	case 0xA2: RES_r(); break;
-	case 0xA3: RES_r(); break;
-	case 0xA4: RES_r(); break;
-	case 0xA5: RES_r(); break;
-	case 0xA6: RES_HLa(); break;
-	case 0xA7: RES_r(); break;
-	case 0xA8: RES_r(); break;
-	case 0xA9: RES_r(); break;
-	case 0xAA: RES_r(); break;
-	case 0xAB: RES_r(); break;
-	case 0xAC: RES_r(); break;
-	case 0xAD: RES_r(); break;
-	case 0xAE: RES_HLa(); break;
-	case 0xAF: RES_r(); break;
-	case 0xB0: RES_r(); break;
-	case 0xB1: RES_r(); break;
-	case 0xB2: RES_r(); break;
-	case 0xB3: RES_r(); break;
-	case 0xB4: RES_r(); break;
-	case 0xB5: RES_r(); break;
-	case 0xB6: RES_HLa(); break;
-	case 0xB7: RES_r(); break;
-	case 0xB8: RES_r(); break;
-	case 0xB9: RES_r(); break;
-	case 0xBA: RES_r(); break;
-	case 0xBB: RES_r(); break;
-	case 0xBC: RES_r(); break;
-	case 0xBD: RES_r(); break;
-	case 0xBE: RES_HLa(); break;
-	case 0xBF: RES_r(); break;
-	case 0xC0: SET_r(); break;
-	case 0xC1: SET_r(); break;
-	case 0xC2: SET_r(); break;
-	case 0xC3: SET_r(); break;
-	case 0xC4: SET_r(); break;
-	case 0xC5: SET_r(); break;
-	case 0xC6: SET_HLa(); break;
-	case 0xC7: SET_r(); break;
-	case 0xC8: SET_r(); break;
-	case 0xC9: SET_r(); break;
-	case 0xCA: SET_r(); break;
-	case 0xCB: SET_r(); break;
-	case 0xCC: SET_r(); break;
-	case 0xCD: SET_r(); break;
-	case 0xCE: SET_HLa(); break;
-	case 0xCF: SET_r(); break;
-	case 0xD0: SET_r(); break;
-	case 0xD1: SET_r(); break;
-	case 0xD2: SET_r(); break;
-	case 0xD3: SET_r(); break;
-	case 0xD4: SET_r(); break;
-	case 0xD5: SET_r(); break;
-	case 0xD6: SET_HLa(); break;
-	case 0xD7: SET_r(); break;
-	case 0xD8: SET_r(); break;
-	case 0xD9: SET_r(); break;
-	case 0xDA: SET_r(); break;
-	case 0xDB: SET_r(); break;
-	case 0xDC: SET_r(); break;
-	case 0xDD: SET_r(); break;
-	case 0xDE: SET_HLa(); break;
-	case 0xDF: SET_r(); break;
-	case 0xE0: SET_r(); break;
-	case 0xE1: SET_r(); break;
-	case 0xE2: SET_r(); break;
-	case 0xE3: SET_r(); break;
-	case 0xE4: SET_r(); break;
-	case 0xE5: SET_r(); break;
-	case 0xE6: SET_HLa(); break;
-	case 0xE7: SET_r(); break;
-	case 0xE8: SET_r(); break;
-	case 0xE9: SET_r(); break;
-	case 0xEA: SET_r(); break;
-	case 0xEB: SET_r(); break;
-	case 0xEC: SET_r(); break;
-	case 0xED: SET_r(); break;
-	case 0xEE: SET_HLa(); break;
-	case 0xEF: SET_r(); break;
-	case 0xF0: SET_r(); break;
-	case 0xF1: SET_r(); break;
-	case 0xF2: SET_r(); break;
-	case 0xF3: SET_r(); break;
-	case 0xF4: SET_r(); break;
-	case 0xF5: SET_r(); break;
-	case 0xF6: SET_HLa(); break;
-	case 0xF7: SET_r(); break;
-	case 0xF8: SET_r(); break;
-	case 0xF9: SET_r(); break;
-	case 0xFA: SET_r(); break;
-	case 0xFB: SET_r(); break;
-	case 0xFC: SET_r(); break;
-	case 0xFD: SET_r(); break;
-	case 0xFE: SET_HLa(); break;
-	case 0xFF: SET_r(); break;
-	default: UNK_OP_CB(); break;
+		case 0x00: case 0x01: case 0x02: case 0x03:
+		case 0x04: case 0x05: case 0x07:
+			RLC_r();
+			break;
+		
+		case 0x06:
+			RLC_HLa();
+			break;
+		
+		case 0x08: case 0x09: case 0x0A: case 0x0B:
+		case 0x0C: case 0x0D: case 0x0F:
+			RRC_r();
+			break;
+		
+		case 0x0E:
+			RRC_HLa();
+			break;
+
+		case 0x10: case 0x11: case 0x12: case 0x13:
+		case 0x14: case 0x15: case 0x17:
+			RL_r();
+			break;
+		
+		case 0x16:
+			RL_HLa();
+			break;
+
+		case 0x18: case 0x19: case 0x1A: case 0x1B:
+		case 0x1C: case 0x1D: case 0x1F:
+			RR_r();
+			break;
+		
+		case 0x1E:
+			RR_HLa();
+			break;
+
+		case 0x20: case 0x21: case 0x22: case 0x23:
+		case 0x24: case 0x25: case 0x27:
+			SLA_r();
+			break;
+
+		case 0x26:
+			SLA_HLa();
+			break;
+
+		case 0x28: case 0x29: case 0x2A: case 0x2B:
+		case 0x2C: case 0x2D: case 0x2F:
+			SRA_r();
+			break;
+		
+		case 0x2E:
+			SRA_HLa();
+			break;
+
+		case 0x30: case 0x31: case 0x32: case 0x33:
+		case 0x34: case 0x35: case 0x37: SWAP_r(); break;
+		
+		case 0x36: SWAP_HLa(); break;
+
+		case 0x38: case 0x39: case 0x3A: case 0x3B:
+		case 0x3C: case 0x3D: case 0x3F:
+			SRL_r();
+			break;
+
+		case 0x3E:
+			SRL_HLa();
+			break;
+
+		case 0x40: case 0x41: case 0x42: case 0x43:
+		case 0x44: case 0x45: case 0x47: case 0x48:
+		case 0x49: case 0x4A: case 0x4B: case 0x4C:
+		case 0x4D: case 0x4F: case 0x50: case 0x51:
+		case 0x52: case 0x53: case 0x54: case 0x55:
+		case 0x57: case 0x58: case 0x59: case 0x5A:
+		case 0x5B: case 0x5C: case 0x5D: case 0x5F:
+		case 0x60: case 0x61: case 0x62: case 0x63:
+		case 0x64: case 0x65: case 0x67: case 0x68:
+		case 0x69: case 0x6A: case 0x6B: case 0x6C:
+		case 0x6D: case 0x6F: case 0x70: case 0x71:
+		case 0x72: case 0x73: case 0x74: case 0x75:
+		case 0x77: case 0x78: case 0x79: case 0x7A:
+		case 0x7B: case 0x7C: case 0x7D: case 0x7F:
+			BIT_r();
+			break;
+
+		case 0x46: case 0x4E: case 0x56: case 0x5E:
+		case 0x66: case 0x6E: case 0x76: case 0x7E:
+			BIT_HLa();
+			break;
+
+		case 0x80: case 0x81: case 0x82: case 0x83:
+		case 0x84: case 0x85: case 0x87: case 0x88:
+		case 0x89: case 0x8A: case 0x8B: case 0x8C:
+		case 0x8D: case 0x8F: case 0x90: case 0x91:
+		case 0x92: case 0x93: case 0x94: case 0x95:
+		case 0x97: case 0x98: case 0x99: case 0x9A:
+		case 0x9B: case 0x9C: case 0x9D: case 0x9F:
+		case 0xA0: case 0xA1: case 0xA2: case 0xA3:
+		case 0xA4: case 0xA5: case 0xA7: case 0xA8:
+		case 0xA9: case 0xAA: case 0xAB: case 0xAC:
+		case 0xAD: case 0xAF: case 0xB0: case 0xB1:
+		case 0xB2: case 0xB3: case 0xB4: case 0xB5:
+		case 0xB7: case 0xB8: case 0xB9: case 0xBA:
+		case 0xBB: case 0xBC: case 0xBD: case 0xBF:
+			RES_r();
+			break;
+
+		case 0x86: case 0x8E: case 0x96: case 0x9E:
+		case 0xA6: case 0xAE: case 0xB6: case 0xBE: 
+			RES_HLa();
+			break;
+
+
+		case 0xC6: case 0xCE: case 0xD6: case 0xDE:
+		case 0xE6: case 0xEE: case 0xF6: case 0xFE:
+			SET_HLa();
+			break;
+		
+		case 0xC0: case 0xC1: case 0xC2: case 0xC3:
+		case 0xC4: case 0xC5: case 0xC7: case 0xC8:
+		case 0xC9: case 0xCA: case 0xCB: case 0xCC:
+		case 0xCD: case 0xCF: case 0xD0: case 0xD1:
+		case 0xD2: case 0xD3: case 0xD4: case 0xD5:
+		case 0xD7: case 0xD8: case 0xD9: case 0xDA:
+		case 0xDB: case 0xDC: case 0xDD: case 0xDF:
+		case 0xE0: case 0xE1: case 0xE2: case 0xE3:
+		case 0xE4: case 0xE5: case 0xE7: case 0xE8:
+		case 0xE9: case 0xEA: case 0xEB: case 0xEC:
+		case 0xED: case 0xEF: case 0xF0: case 0xF1:
+		case 0xF2: case 0xF3: case 0xF4: case 0xF5:
+		case 0xF7: case 0xF8: case 0xF9: case 0xFA:
+		case 0xFB: case 0xFC: case 0xFD: case 0xFF:
+			SET_r();
+			break;
+		
+		default:
+			UNK_OP_CB();
+			break;
 	}
 
 	gb->cpu.cycles += CYCLE_TABLE_CB[opcode];

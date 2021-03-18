@@ -1,57 +1,28 @@
-#include "core/gb.h"
+#include "mgb.hpp"
+#include "../core/gb.h"
+#include "io/romloader.hpp"
+#include "util/util.hpp"
 
-#include <cstdint>
 #include <cstring>
 #include <cassert>
-#include <array>
-#include <memory>
-#include <vector>
 #include <fstream>
 
-#include <SDL2/SDL.h>
+namespace mgb {
 
-namespace {
-using u8 = std::uint8_t;
-using s8 = std::int8_t;
-using u16 = std::uint16_t;
-using s16 = std::int16_t;
+struct KeyMapEntry {
+    int key;
+    enum GB_Button button;
+};
 
-struct App {
-public:
-    struct KeyMapEntry {
-		int key;
-		enum GB_Button button;
-	};
-
-	static constexpr KeyMapEntry key_map[]{
-		{SDLK_x, GB_BUTTON_A},
-		{SDLK_z, GB_BUTTON_B},
-		{SDLK_RETURN, GB_BUTTON_START},
-		{SDLK_SPACE, GB_BUTTON_SELECT},
-		{SDLK_DOWN, GB_BUTTON_DOWN},
-		{SDLK_UP, GB_BUTTON_UP},
-		{SDLK_LEFT, GB_BUTTON_LEFT},
-		{SDLK_RIGHT, GB_BUTTON_RIGHT},
-	};
-
-public:
-    App();
-    ~App();
-
-    auto LoadRom(const char* path) -> bool;
-    auto Loop() -> void;
-
-private:
-    auto Draw() -> void;
-    auto Events() -> void;
-
-private:
-    std::unique_ptr<GB_Data> gameboy;
-    std::vector<u8> rom_data;
-    SDL_Window* window;
-    SDL_Renderer* renderer;
-    SDL_Texture* texture;
-    bool running{true};
+static constexpr KeyMapEntry key_map[]{
+    {SDLK_x, GB_BUTTON_A},
+    {SDLK_z, GB_BUTTON_B},
+    {SDLK_RETURN, GB_BUTTON_START},
+    {SDLK_SPACE, GB_BUTTON_SELECT},
+    {SDLK_DOWN, GB_BUTTON_DOWN},
+    {SDLK_UP, GB_BUTTON_UP},
+    {SDLK_LEFT, GB_BUTTON_LEFT},
+    {SDLK_RIGHT, GB_BUTTON_RIGHT},
 };
 
 App::App() {
@@ -78,21 +49,23 @@ App::~App() {
 }
 
 auto App::LoadRom(const char* path) -> bool {
-    std::ifstream fs{path, std::ios_base::binary};
-    if (!fs.good()) {
+    io::RomLoader romloader{path};
+    if (!romloader.good()) {
         return false;
     }
 
-    fs.seekg(0, std::ios_base::end);
-    auto file_size = fs.tellg();
-    fs.seekg(0, std::ios_base::beg);
+    // get the size
+    const auto file_size = romloader.size();
 
+    // resize vector
     this->rom_data.resize(file_size);
-    fs.read(reinterpret_cast<char*>(this->rom_data.data()), this->rom_data.size());
 
-    GB_loadrom_data(this->gameboy.get(),
-        this->rom_data.data(), this->rom_data.size(), NULL
-    );
+    // read entire file...
+    romloader.read(this->rom_data.data(), this->rom_data.size());
+
+    if (-1 == GB_loadrom_data(this->gameboy.get(), this->rom_data.data(), this->rom_data.size(), NULL)) {
+        return false;
+    }
 
     return true;
 }
@@ -137,18 +110,4 @@ auto App::Events() -> void {
     }
 }
 
-} // namespace
-
-auto main(int argc, char** argv) -> int {
-    if (argc < 2) {
-        printf("missing rom path...\n");
-        return -1;
-    }
-
-    App app;
-    if (app.LoadRom(argv[1])) {
-        app.Loop();
-    }
-
-    return 0;
-}
+} // namespace mgb

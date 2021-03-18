@@ -8,14 +8,6 @@ GB_U8 GB_ioread(struct GB_Data* gb, GB_U16 addr) {
 	switch (addr & 0x7F) {
 		case 0x00:
 			return GB_joypad_get(gb);
-		// case 0x01: // serial
-		// 	return 0xFF;
-		// case 0x02: // serial
-		// 	return 0xFF;
-		// case 0x4D: // double speed
-		// 	return 0xFF;
-		// case 0x70: // SVBK
-		// 	return 0xFF;
 		default:
 			return IO[addr & 0x7F];
 	}
@@ -28,7 +20,7 @@ void GB_iowrite(struct GB_Data* gb, GB_U16 addr, GB_U8 value) {
 		case 0x02: // serial
 			break;
 		case 0x04:
-			IO_DIV = 0;
+			IO_DIV16 = 0;
 			break;
 		case 0x07:
 			IO_TAC = (value | 248);

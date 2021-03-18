@@ -101,8 +101,8 @@ int bps_patch(
 
     /* check that the src and patch is valid. */
     /* dst is checked at the end. */
-    const uint32_t src_crc2 = crc32(src, src_size);
-    const uint32_t patch_crc2 = crc32(patch, patch_size);
+    const uint32_t src_crc2 = GB_crc32(src, src_size);
+    const uint32_t patch_crc2 = GB_crc32(patch, patch_size);
 
     printf("[BPS] src_crc: %u\n", src_crc);
     printf("[BPS] dst_crc: %u\n", dst_crc);

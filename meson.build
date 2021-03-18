@@ -10,8 +10,7 @@ dependencies = [
 ]
 
 source = files([
-    'src/main.cpp',
-
+    # core
     'src/core/gb.c',
     'src/core/cpu.c',
     'src/core/ppu.c',
@@ -22,15 +21,90 @@ source = files([
     'src/core/timers.c',
     'src/core/tables/palette_table.c',
 
+    # core extras
     'src/core/extra/bmp.c',
     'src/core/extra/patch/bps.c',
     'src/core/extra/patch/common.c',
     'src/core/extra/patch/crc32.c',
     'src/core/extra/patch/ips.c',
     'src/core/extra/patch/ups.c',
+
+    # frontend mgb++
+    'src/frontend/main.cpp',
+    'src/frontend/mgb.cpp',
+    'src/frontend/util/rewind.cpp',
+    'src/frontend/util/mem.cpp',
+    'src/frontend/util/util.cpp',
+    'src/frontend/io/ifile_7z.cpp',
+    'src/frontend/io/ifile_cfile.cpp',
+    'src/frontend/io/ifile_gzip.cpp',
+    'src/frontend/io/ifile_mem.cpp',
+    'src/frontend/io/ifile_rar.cpp',
+    'src/frontend/io/ifile_zip.cpp',
+    'src/frontend/io/ifile_zstd.cpp',
+    'src/frontend/io/romloader.cpp',
+
+    # MINIZIP
+    'src/libs/minizip/unzip.c',
+    'src/libs/minizip/ioapi.c',
+
+    # ZLIB
+    'src/libs/zlib/adler32.c',
+    'src/libs/zlib/compress.c',
+    'src/libs/zlib/crc32.c',
+    'src/libs/zlib/deflate.c',
+    'src/libs/zlib/gzclose.c',
+    'src/libs/zlib/gzlib.c',
+    'src/libs/zlib/gzread.c',
+    'src/libs/zlib/gzwrite.c',
+    'src/libs/zlib/infback.c',
+    'src/libs/zlib/inffast.c',
+    'src/libs/zlib/inflate.c',
+    'src/libs/zlib/inftrees.c',
+    'src/libs/zlib/trees.c',
+    'src/libs/zlib/uncompr.c',
+    'src/libs/zlib/zutil.c',
+
+    # LZ4
+    'src/libs/lz4/lz4.c',
+
+    # ZSTD
+    'src/libs/zstd/common/debug.c',
+    'src/libs/zstd/common/entropy_common.c',
+    'src/libs/zstd/common/error_private.c',
+    'src/libs/zstd/common/fse_decompress.c',
+    'src/libs/zstd/common/pool.c',
+    'src/libs/zstd/common/threading.c',
+    'src/libs/zstd/common/xxhash.c',
+    'src/libs/zstd/common/zstd_common.c',
+    'src/libs/zstd/compress/fse_compress.c',
+    'src/libs/zstd/compress/hist.c',
+    'src/libs/zstd/compress/huf_compress.c',
+    'src/libs/zstd/compress/zstd_compress.c',
+    'src/libs/zstd/compress/zstd_compress_literals.c',
+    'src/libs/zstd/compress/zstd_compress_sequences.c',
+    'src/libs/zstd/compress/zstd_compress_superblock.c',
+    'src/libs/zstd/compress/zstd_double_fast.c',
+    'src/libs/zstd/compress/zstd_fast.c',
+    'src/libs/zstd/compress/zstd_lazy.c',
+    'src/libs/zstd/compress/zstd_ldm.c',
+    'src/libs/zstd/compress/zstd_opt.c',
+    'src/libs/zstd/compress/zstdmt_compress.c',
+    'src/libs/zstd/decompress/huf_decompress.c',
+    'src/libs/zstd/decompress/zstd_ddict.c',
+    'src/libs/zstd/decompress/zstd_decompress.c',
+    'src/libs/zstd/decompress/zstd_decompress_block.c',
+
+    # LZMA
+    'src/libs/lzma/Alloc.c',
+    'src/libs/lzma/LzFind.c',
+    'src/libs/lzma/LzmaDec.c',
+    'src/libs/lzma/LzmaEnc.c',
+    'src/libs/lzma/LzmaLib.c',
 ])
 
 includes = include_directories([
+    'src/libs/'
 ])
 
 cflags = [
@@ -40,7 +114,6 @@ cflags = [
     # '-DNDEBUG',
 
     # warns
-    # '-Wno-unused',
     '-Wall',
     '-Wextra',
     '-Wswitch-enum',
@@ -49,11 +122,22 @@ cflags = [
     '-Wshadow',
     '-Wfatal-errors',
     '-Wdouble-promotion',
-    '-Wframe-larger-than=100KB',
+    '-Wframe-larger-than=300KB',
 
-    # '-DLOG_3',
-    '-DGB_DEBUG',
-    # '-Wno-format',
+    # '-DGB_DEBUG',
+
+    # 7zip
+    '-D_7ZIP_ST',
+
+    # zstd
+    '-DZSTD_LIB_MINIFY=1',
+
+    # lz4
+    '-DLZ4_FAST_DEC_LOOP=1',
+
+    # minizip
+    '-DNOUNCRYPT',
+    '-DNOCRYPT',
 ]
 
 cppflags = [
@@ -66,15 +150,15 @@ cppflags = [
 ]
 
 linkflags = [
-    # this is needed for <execution> algorithms
-    # '-ltbb',
-
     # '-Wl,-subsystem,windows',
     # '-s',
 ]
 
+subdir('res')
+
 executable(
     'gb-emu',
+    res, # set the icon
     [ source ],
     dependencies : [ dependencies ] ,
     install: false,

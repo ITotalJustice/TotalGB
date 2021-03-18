@@ -38,7 +38,7 @@ static const uint32_t CRC32_TABLE[0x100] = {
 };
 
 /* SOURCE: http://home.thep.lu.se/~bjorn/crc/ */
-uint32_t crc32(const uint8_t* data, size_t size) {
+uint32_t GB_crc32(const uint8_t* data, size_t size) {
     assert(data && size);
 
     uint32_t crc = 0;

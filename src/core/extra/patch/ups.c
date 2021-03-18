@@ -84,9 +84,9 @@ int ups_patch(
     
     /* check that the src and patch is valid. */
     /* dst is checked at the end. */
-    const uint32_t src_crc2 = crc32(src, src_size);
+    const uint32_t src_crc2 = GB_crc32(src, src_size);
     /* we don't check it's own crc32 (obviously) */
-    const uint32_t patch_crc2 = crc32(patch, patch_size - 4);
+    const uint32_t patch_crc2 = GB_crc32(patch, patch_size - 4);
 
     #define CHECK_CRC(a, b) if (a != b) { return -1; }
 
@@ -133,7 +133,7 @@ int ups_patch(
         safe_write(dst, value, &dst_offset, dst_size);
     }
 
-    const uint32_t dst_crc2 = crc32(dst, dst_size);
+    const uint32_t dst_crc2 = GB_crc32(dst, dst_size);
     CHECK_CRC(dst_crc, dst_crc2);
 
     return 0;

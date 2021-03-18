@@ -3,9 +3,8 @@
 
 static const GB_U16 TAC_FREQ[4] = { 1024, 16, 64, 256 };
 
-// todo: IO_DIV is a 16 bit value
 void GB_timer_run(struct GB_Data* gb, GB_U16 cycles) {
-	IO_DIV += cycles;
+	IO_DIV16 += cycles;
 
 	if (IO_TAC & 0x04) {
 		gb->timer.next_cycles += cycles;
