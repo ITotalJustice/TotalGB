@@ -14,7 +14,7 @@ int ips_verify_header(const uint8_t* patch, size_t patch_size);
 int ips_patch(
     uint8_t* dst, size_t dst_size,
     const uint8_t* src, size_t src_size,
-    const uint8_t* restrict patch, size_t patch_size
+    const uint8_t* patch, size_t patch_size
 );
 
 #ifdef __cplusplus

@@ -33,4 +33,4 @@
 
 # my ignores
 .vscode/
-src/core/tests/cpu_instrs.cpp
+roms/

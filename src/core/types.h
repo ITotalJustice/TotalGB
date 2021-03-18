@@ -28,14 +28,6 @@ extern "C" {
 #error GB_ENDIAN IS NOT SET! UNABLE TO DEDUCE PLATFORM ENDIANESS
 #endif /* GB_ENDIAN */
 
-#ifdef GB_NO_STDINT
-typedef unsigned char GB_U8;
-typedef unsigned short GB_U16;
-typedef unsigned int GB_U32;
-typedef signed char GB_S8;
-typedef signed short GB_S16;
-typedef signed int GB_S32;
-#else
 #include <stdint.h>
 typedef uint8_t GB_U8;
 typedef uint16_t GB_U16;
@@ -43,7 +35,6 @@ typedef uint32_t GB_U32;
 typedef int8_t GB_S8;
 typedef int16_t GB_S16;
 typedef int32_t GB_S32;
-#endif /* GB_NO_STDINT */
 
 #define GB_TRUE 1
 #define GB_FALSE 0
@@ -342,24 +333,6 @@ struct GB_Joypad {
 	GB_U8 var;
 };
 
-struct GB_MbcData {
-	void (*write)(struct GB_Data* gb, GB_U16 addr, GB_U8 val);
-	const GB_U8* (*get_rom_bank)(struct GB_Data* gb, GB_U8 val);
-	const GB_U8* (*get_ram_bank)(struct GB_Data* gb, GB_U8 val);
-
-	GB_U8* rom;
-	GB_U8 ram[0x10000];
-	GB_U32 rom_size;
-	GB_U32 ram_size;
-	GB_U16 rom_bank;
-	GB_U16 ram_bank;
-	GB_U8 flags;
-	struct GB_Rtc rtc;
-	GB_BOOL bank_mode;
-	GB_BOOL ram_enabled;
-	GB_BOOL in_ram;
-};
-
 struct GB_Cpu {
 	GB_U16 cycles;
 	GB_U16 SP;
@@ -397,22 +370,27 @@ struct GB_Ppu {
 
 // todo: remove mbc struct into here.
 struct GB_Cart {
-	struct GB_MbcData mbc;
+	void (*write)(struct GB_Data* gb, GB_U16 addr, GB_U8 val);
+	const GB_U8* (*get_rom_bank)(struct GB_Data* gb, GB_U8 val);
+	const GB_U8* (*get_ram_bank)(struct GB_Data* gb, GB_U8 val);
+
+	GB_U8* rom;
+	GB_U8 ram[0x10000];
+	GB_U32 rom_size;
+	GB_U32 ram_size;
+	GB_U16 rom_bank;
+	GB_U16 ram_bank;
+	GB_U8 flags;
+	struct GB_Rtc rtc;
+	GB_BOOL bank_mode;
+	GB_BOOL ram_enabled;
+	GB_BOOL in_ram;
+	
 	enum GB_MbcType mbc_type;
 };
 
 struct GB_Timer {
 	GB_S16 next_cycles;
-};
-
-struct GB_Rollback {
-	void (*free_func)(void*);
-	struct GB_CoreState* states;
-	GB_U8 position; // wraps around
-	GB_U8 count;
-	GB_U8 states_since_init;
-	struct GB_Joypad joypad;
-	GB_BOOL enabled;
 };
 
 struct GB_Data {
@@ -432,10 +410,6 @@ struct GB_Data {
 	GB_hblank_callback_t hblank_cb;
 
 	void (*rom_free_func)(void*);
-	int vblank_int;
-
-	GB_U8 draw_called;
-	struct GB_Rollback rollback;
 };
 
 // i decided that the ram usage / statefile size is less important

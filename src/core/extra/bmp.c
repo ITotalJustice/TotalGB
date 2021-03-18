@@ -1,7 +1,8 @@
 #include "bmp.h"
-#include "internal.h"
+#include "../internal.h"
 
 #include <assert.h>
+#include <string.h>
 
 #ifndef GB_NO_STDIO
 #include <stdio.h>
@@ -46,13 +47,9 @@ static void GB_bmp_fill_info_header(struct GB_BmpInfoHeader* info_header) {
 #define GB_BGR555_TO_RGB555(pixel) (((pixel & 0x1F) << 10) | (pixel & 0x3E0) | ((pixel >> 10) & 0x1F))
 #endif /* GB_BGR555_TO_RGB555 */
 
-static GB_U16 GB_bgr565_to_rgb555(GB_U16 pixel) {
-    return GB_BGR555_TO_RGB555(pixel);
-}
-
 /* have to accept struct as param else compiler will warn that the member pointer */
 /* might be unaligned */
-static void GB_bmp_fill_pixel_data(const struct GB_Data* restrict gb, struct GB_Bmp* restrict bmp) {
+static void GB_bmp_fill_pixel_data(const struct GB_Data* gb, struct GB_Bmp* bmp) {
     /* pixels are reversed when stored in bmp, such that rgb will be stored as bgr */
     /* however, this reverse is undone by bmp parsers. */
     /* this means that our bgr555 will be stored as bgr565, but read back as rgb555. */
@@ -65,14 +62,14 @@ static void GB_bmp_fill_pixel_data(const struct GB_Data* restrict gb, struct GB_
     }
 }
 
-GB_BOOL GB_screenshot(const struct GB_Data* restrict gb, struct GB_Bmp* restrict bmp) {
+GB_BOOL GB_screenshot(const struct GB_Data* gb, struct GB_Bmp* bmp) {
     assert(gb && bmp);
     
     if (!gb || !bmp) {
         return GB_FALSE;
     }
 
-    GB_memset(bmp, 0, sizeof(struct GB_Bmp));
+    memset(bmp, 0, sizeof(struct GB_Bmp));
 
     /* setup the header */
     GB_bmp_fill_header(&bmp->header);

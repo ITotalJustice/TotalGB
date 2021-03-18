@@ -3,6 +3,7 @@
 #include "tables/palette_table.h"
 
 #include <stdio.h>
+#include <string.h>
 #include <assert.h>
 
 #define MODE_HBLANK 0
@@ -24,26 +25,6 @@
 #define WIN_MAP_SELECT() (WIN_DATA_SELECT() ? 0x9C00 : 0x9800)
 #define BG_MAP_SELECT() (BG_DATA_SELECT() ? 0x9C00 : 0x9800)
 #define TILE_OFFSET(tile_num,sub_tile_y) (TILE_MAP_SELECT() + (((TILE_DATA_SELECT() ? tile_num : (GB_S8)tile_num)) << 4) + (sub_tile_y << 1))
-
-/*
-#define GB_set_coincidence_flag(n) IO_STAT ^= (-(!!(n)) ^ IO_STAT) & 0x04
-#define GB_set_status_mode(mode) IO_STAT = (IO_STAT & 252) | mode
-#define GB_get_status_mode() (IO_STAT & 0x03)
-
-// branchless set (because i cannot predict if its likely / unlikely)
-#define GB_raise_if_enabled(mode) do { \
-    IO_IF |= ((!!(IO_STAT & mode)) << 1); \
-} while(0)
-
-#define GB_compare_LYC() do { \
-    if (UNLIKELY(IO_LY == IO_LYC)) { \
-        GB_set_coincidence_flag(1); \
-        GB_raise_if_enabled(STAT_INT_MODE_COINCIDENCE); \
-    } else { \
-        GB_set_coincidence_flag(0); \
-    } \
-} while (0)
-*/
 
 // branchless set (because i cannot predict if its likely / unlikely)
 #define GB_raise_if_enabled(mode) do { \
@@ -119,16 +100,11 @@ void GB_change_status_mode(struct GB_Data* gb, GB_U8 new_mode) {
 }
 
 void GB_ppu_run(struct GB_Data* gb, GB_U16 cycles) {
-    // if (UNLIKELY(!GB_is_lcd_enabled(gb))) {
-    //     // printf("yeee\n");
-    //     // IO_LY = 0;
-    //     // IO_STAT = 0;
-    //     // GB_raise_if_enabled(STAT_INT_MODE_1);
-    //     // // GB_change_status_mode(gb, MODE_VBLANK);
-    //     // GB_set_status_mode(gb, MODE_VBLANK);
-    //     // gb->ppu.next_cycles = 456;
-    //     return;
-    // }
+    if (UNLIKELY(!GB_is_lcd_enabled(gb))) {
+        GB_set_status_mode(gb, MODE_VBLANK);
+        gb->ppu.next_cycles = 456;
+        return;
+    }
 
     gb->ppu.next_cycles -= cycles;
     if (((gb->ppu.next_cycles) > 0)) {
@@ -169,8 +145,7 @@ void GB_ppu_run(struct GB_Data* gb, GB_U16 cycles) {
 void GB_DMA(struct GB_Data* gb) {
     assert(IO_DMA <= 0xF1);
 
-    __builtin_prefetch(gb->ppu.oam, 1);
-    GB_memcpy(gb->ppu.oam, gb->mmap[IO_DMA >> 4] + ((IO_DMA & 0xF) << 8), sizeof(gb->ppu.oam));
+    memcpy(gb->ppu.oam, gb->mmap[IO_DMA >> 4] + ((IO_DMA & 0xF) << 8), sizeof(gb->ppu.oam));
 	gb->cpu.cycles += 646;
 }
 
@@ -269,8 +244,6 @@ void GB_draw_obj(struct GB_Data* gb) {
     const GB_U16 bg_trans_col = gb->ppu.bg_colours[0][0];
     GB_U16* pixels = gb->ppu.pixles[scanline];
 
-    __builtin_prefetch(gb->ppu.sprites); // 7k fps gain on desktop.
-
     for (GB_U8 i = 0, sprite_total = 0; i < 40 && sprite_total < 10; ++i) {
         const struct GB_Sprite sprite = gb->ppu.sprites[i];
         const GB_S16 spy = (GB_S16)sprite.y - 16;
@@ -311,7 +284,6 @@ void GB_draw_scanline(struct GB_Data* gb) {
     GB_update_colours_gb(gb->ppu.obj_colours[0], gb->palette.OBJ0, IO_OBP0, &gb->ppu.dirty_obj[0]);
     GB_update_colours_gb(gb->ppu.obj_colours[1], gb->palette.OBJ1, IO_OBP1, &gb->ppu.dirty_obj[1]);
 
-    gb->draw_called++;
     if (LIKELY(GB_is_bg_enabled(gb))) {
         GB_draw_bg_gb(gb);
         // WX=0..166, WY=0..143

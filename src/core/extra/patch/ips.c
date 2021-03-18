@@ -30,8 +30,8 @@ int ips_verify_header(const uint8_t* patch, size_t patch_size) {
 
 /* basically a memcpy */
 static uint16_t safe_read2(
-    const uint8_t* restrict data,
-    size_t* restrict offset, size_t size
+    const uint8_t* data,
+    size_t* offset, size_t size
 ) {
     *offset += 2;
     if (*offset > size) {
@@ -41,8 +41,8 @@ static uint16_t safe_read2(
 }
 
 static uint32_t safe_read3(
-    const uint8_t* restrict data,
-    size_t* restrict offset, size_t size
+    const uint8_t* data,
+    size_t* offset, size_t size
 ) {
     *offset += 3;
     if (*offset > size) {
@@ -55,7 +55,7 @@ static uint32_t safe_read3(
 int ips_patch(
     uint8_t* dst, size_t dst_size,
     const uint8_t* src, size_t src_size,
-    const uint8_t* restrict patch, size_t patch_size
+    const uint8_t* patch, size_t patch_size
 ) {
     assert(dst && dst_size && src && src_size && patch && patch_size);
     assert(dst_size >= src_size);

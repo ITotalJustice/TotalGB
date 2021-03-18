@@ -4,7 +4,7 @@
 extern "C" {
 #endif
 
-#include "types.h"
+#include "../types.h"
 
 enum GB_BmpBitsPerPixel {
     /* grey */
@@ -56,7 +56,7 @@ struct GB_Bmp {
 
 /* The filled out bmp struct can be written directly to a file and saved with */
 /* extension .bmp to be opened by any image reader. */
-GB_BOOL GB_screenshot(const struct GB_Data* restrict gb, struct GB_Bmp* restrict bmp);
+GB_BOOL GB_screenshot(const struct GB_Data* gb, struct GB_Bmp* bmp);
 
 #ifndef GB_NO_STDIO
 GB_BOOL GB_screenshot_to_file(const struct GB_Data* gb, const char* path);

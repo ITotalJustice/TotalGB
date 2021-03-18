@@ -7,8 +7,6 @@
 
 #include <assert.h>
 
-#define GB_is_sound_enabled() (!!(IO_NR52 & 0x80))
-
 GB_U8 GB_ioread(struct GB_Data* gb, GB_U16 addr) {
 	switch (addr & 0x7F) {
 	case 0x00:
@@ -25,29 +23,6 @@ GB_U8 GB_ioread(struct GB_Data* gb, GB_U16 addr) {
 		return IO[addr & 0x7F];
 	}
 }
-
-#define GB_disable_sound_regs() do { \
-	IO_NR10 = 0xFF; \
-	IO_NR11 = 0xFF; \
-	IO_NR12 = 0xFF; \
-	IO_NR13 = 0xFF; \
-	IO_NR14 = 0xFF; \
-	IO_NR21 = 0xFF; \
-	IO_NR22 = 0xFF; \
-	IO_NR23 = 0xFF; \
-	IO_NR24 = 0xFF; \
-	IO_NR30 = 0xFF; \
-	IO_NR31 = 0xFF; \
-	IO_NR32 = 0xFF; \
-	IO_NR33 = 0xFF; \
-	IO_NR34 = 0xFF; \
-	IO_NR41 = 0xFF; \
-	IO_NR42 = 0xFF; \
-	IO_NR43 = 0xFF; \
-	IO_NR44 = 0xFF; \
-	IO_NR50 = 0xFF; \
-	IO_NR51 = 0xFF; \
-} while(0)
 
 void GB_iowrite(struct GB_Data* gb, GB_U16 addr, GB_U8 value) {
 	switch (addr & 0x7F) {
@@ -83,78 +58,71 @@ void GB_iowrite(struct GB_Data* gb, GB_U16 addr, GB_U8 value) {
 		IO_IF = (value | 224);
 		break;
 	case 0x10:
-		IO_NR10 = (0xFF * !(GB_is_sound_enabled())) | ((value | 0x80) * GB_is_sound_enabled());
+		IO_NR10 = value | 0x80;
 		break;
 	case 0x11:
-		IO_NR11 = (0xFF * !(GB_is_sound_enabled())) | (value * GB_is_sound_enabled());
+		IO_NR11 = value;
 		break;
 	case 0x12:
-		IO_NR12 = (0xFF * !(GB_is_sound_enabled())) | (value * GB_is_sound_enabled());
+		IO_NR12 = value;
 		break;
 	case 0x13:
-		IO_NR13 = (0xFF * !(GB_is_sound_enabled())) | (value * GB_is_sound_enabled());
+		IO_NR13 = value;
 		break;
 	case 0x14:
-		IO_NR14 = (0xFF * !(GB_is_sound_enabled())) | (value * GB_is_sound_enabled());
+		IO_NR14 = value;
 		break;
 	case 0x15: // unused
 		break;
 	case 0x16:
-		IO_NR21 = (0xFF * !(GB_is_sound_enabled())) | (value * GB_is_sound_enabled());
+		IO_NR21 = value;
 		break;
 	case 0x17:
-		IO_NR22 = (0xFF * !(GB_is_sound_enabled())) | (value * GB_is_sound_enabled());
+		IO_NR22 = value;
 		break;
 	case 0x18:
-		IO_NR23 = (0xFF * !(GB_is_sound_enabled())) | (value * GB_is_sound_enabled());
+		IO_NR23 = value;
 		break;
 	case 0x19:
-		IO_NR24 = (0xFF * !(GB_is_sound_enabled())) | (value * GB_is_sound_enabled());
+		IO_NR24 = value;
 		break;
 	case 0x1A:
-		IO_NR30 = (0xFF * !(GB_is_sound_enabled())) | ((value | 0x7F) * GB_is_sound_enabled());
+		IO_NR30 = value | 0x7F;
 		break;
 	case 0x1B:
-		IO_NR31 = (0xFF * !(GB_is_sound_enabled())) | (value * GB_is_sound_enabled());
+		IO_NR31 = value;
 		break;
 	case 0x1C:
-		IO_NR32 = (0xFF * !(GB_is_sound_enabled())) | ((value | 159) * GB_is_sound_enabled());
+		IO_NR32 = value | 159;
 		break;
 	case 0x1D:
-		IO_NR33 = (0xFF * !(GB_is_sound_enabled())) | (value * GB_is_sound_enabled());
+		IO_NR33 = value;
 		break;
 	case 0x1E:
-		IO_NR34 = (0xFF * !(GB_is_sound_enabled())) | (value * GB_is_sound_enabled());
+		IO_NR34 = value;
 		break;
 	case 0x1F: // unused
 		break;
 	case 0x20:
-		IO_NR41 = (0xFF * !(GB_is_sound_enabled())) | ((value | 0xC0) * GB_is_sound_enabled());
+		IO_NR41 = value | 0xC0;
 		break;
 	case 0x21:
-		IO_NR42 = (0xFF * !(GB_is_sound_enabled())) | (value * GB_is_sound_enabled());
+		IO_NR42 = value;
 		break;
 	case 0x22:
-		IO_NR43 = (0xFF * !(GB_is_sound_enabled())) | (value * GB_is_sound_enabled());
+		IO_NR43 = value;
 		break;
 	case 0x23:
-		IO_NR44 = (0xFF * !(GB_is_sound_enabled())) | ((value | 63) * GB_is_sound_enabled());
+		IO_NR44 = value | 0x3F;
 		break;
 	case 0x24:
-		IO_NR50 = (0xFF * !(GB_is_sound_enabled())) | (value * GB_is_sound_enabled());
+		IO_NR50 = value;
 		break;
 	case 0x25:
-		IO_NR51 = (0xFF * !(GB_is_sound_enabled())) | (value * GB_is_sound_enabled());
+		IO_NR51 = value;
 		break;
 	case 0x26:
-		IO_NR52 = ((IO_NR52 & 0xF) | (value & 0x80));
-		if (!GB_is_sound_enabled()) {
-			GB_disable_sound_regs();
-		}
-		// IO_NR52 = ((value & 0x7) | 0x70);
-		// if (!GB_is_sound_enabled()) {
-		// 	GB_disable_sound_regs();
-		// }
+		IO_NR52 = value & 0x80;
 		break;
 	case 0x27: // unused
 		break;
@@ -163,16 +131,6 @@ void GB_iowrite(struct GB_Data* gb, GB_U16 addr, GB_U8 value) {
 	case 0x29: // unused
 		break;
 	case 0x40:
-		if ((IO_LCDC & 0x80) && (!(value & 0x80))) {
-			IO_LY = 0;
-			IO_STAT &= 0xFC;
-			GB_set_status_mode(gb, 0);
-		} else if ((!(IO_LCDC & 0x80)) && (value & 0x80)) {
-			IO_LY = 0;
-			gb->ppu.line_counter = 0;
-			GB_compare_LYC(gb);
-			GB_set_status_mode(gb, 2);
-		}
 		IO_LCDC = value;
 		break;
 	case 0x41:
@@ -182,9 +140,6 @@ void GB_iowrite(struct GB_Data* gb, GB_U16 addr, GB_U8 value) {
 		break;
 	case 0x45:
 		IO_LYC = value;
-		if (IO_LCDC & 0x80) {
-			GB_compare_LYC(gb);
-		}
 		break;
 	case 0x46:
 		IO_DMA = value;
@@ -330,28 +285,19 @@ GB_U8 GB_read8(struct GB_Data* gb, const GB_U16 addr) {
 void GB_write8(struct GB_Data* gb, GB_U16 addr, GB_U8 value) {
 	if (LIKELY(addr < 0xFE00)) {
 		switch ((addr >> 12) & 0xF) {
-		case 0: case 1: case 2: case 3: case 4: case 5: case 6: case 7:
-			gb->cart.mbc.write(gb, addr, value);
+		case 0x0: case 0x1: case 0x2: case 0x3: case 0x4:
+		case 0x5: case 0x6: case 0x7: case 0xA: case 0xB:
+			gb->cart.write(gb, addr, value);
 			break;
 		case 0x8: case 0x9:
 			gb->ppu.vram[0][addr & 0x1FFF] = value;
 			break;
-		case 0xA: case 0xB:
-			gb->cart.mbc.write(gb, addr, value);
-			break;
-		case 0xC:
+		case 0xC: case 0xE:
 			gb->wram[0][addr & 0x0FFF] = value;
 			break;
-		case 0xD:
+		case 0xD: case 0xF:
 			gb->wram[1][addr & 0x0FFF] = value;
 			break;
-		case 0xE:
-			gb->wram[0][addr & 0x0FFF] = value;
-			break;
-		case 0xF:
-			gb->wram[1][addr & 0x0FFF] = value;
-			break;
-		default: __builtin_unreachable();
 		}
 	} else if (addr <= 0xFE9F) {
         gb->ppu.oam[addr & 0x9F] = value;
@@ -363,7 +309,9 @@ void GB_write8(struct GB_Data* gb, GB_U16 addr, GB_U8 value) {
 }
 
 GB_U16 GB_read16(struct GB_Data* gb, GB_U16 addr) {
-	return (GB_read8(gb, addr) | (GB_read8(gb, addr + 1) << 8));
+	const GB_U8 lo = GB_read8(gb, addr);
+	const GB_U8 hi = GB_read8(gb, addr + 1);
+	return (hi << 8) | lo;
 }
 
 void GB_write16(struct GB_Data* gb, GB_U16 addr, GB_U16 value) {
@@ -372,8 +320,8 @@ void GB_write16(struct GB_Data* gb, GB_U16 addr, GB_U16 value) {
 }
 
 void GB_update_rom_banks(struct GB_Data* gb) {
-	const GB_U8* rom_bank0 = gb->cart.mbc.get_rom_bank(gb, 0);
-	const GB_U8* rom_bankx = gb->cart.mbc.get_rom_bank(gb, 1);
+	const GB_U8* rom_bank0 = gb->cart.get_rom_bank(gb, 0);
+	const GB_U8* rom_bankx = gb->cart.get_rom_bank(gb, 1);
 	gb->mmap[0x0] = rom_bank0 + 0x0000;
 	gb->mmap[0x1] = rom_bank0 + 0x1000;
 	gb->mmap[0x2] = rom_bank0 + 0x2000;
@@ -386,7 +334,7 @@ void GB_update_rom_banks(struct GB_Data* gb) {
 }
 
 void GB_update_ram_banks(struct GB_Data* gb) {
-	const GB_U8* cart_ram = gb->cart.mbc.get_ram_bank(gb, 0);
+	const GB_U8* cart_ram = gb->cart.get_ram_bank(gb, 0);
 	gb->mmap[0xA] = cart_ram + 0x0000;
 	gb->mmap[0xB] = cart_ram + 0x1000;
 }

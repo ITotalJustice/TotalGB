@@ -26,7 +26,7 @@ int ups_verify_header(const uint8_t* patch, size_t patch_size) {
 
 int ups_get_sizes(
     const uint8_t* patch, size_t patch_size,
-    size_t* restrict dst_size, size_t* restrict src_size, size_t* restrict offset
+    size_t* dst_size, size_t* src_size, size_t* offset
 ) {
     /* the offset is after the header */
     size_t offset_local = PATCH_HEADER_SIZE;
@@ -49,9 +49,9 @@ int ups_get_sizes(
 
 /* applies the ups patch to the dst data */
 int ups_patch(
-    uint8_t* restrict dst, size_t dst_size,
-    const uint8_t* restrict src, size_t src_size,
-    const uint8_t* restrict patch, size_t patch_size
+    uint8_t* dst, size_t dst_size,
+    const uint8_t* src, size_t src_size,
+    const uint8_t* patch, size_t patch_size
 ) {
     assert(dst && dst_size && src && src_size && patch && patch_size);
 

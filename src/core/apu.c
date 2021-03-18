@@ -122,22 +122,10 @@ static inline float GB_wave_volumef(GB_U8 code) {
 
 #define CHANNEL_PERIOD(num) ((IO_NR##num##2 & NR##num##2##_PERIOD))
 
-#include <SDL2/SDL_audio.h>
-
-void GB_apu_init(struct GB_Data* gb) {
-}
-
-void GB_apu_exit(struct GB_Data* gb) {
-}
-
 // 4194304 / 256; // 256 Hz
 
 //       gb = 2048 - (131072 / Hz)
 //       Hz = 131072 / (2048 - gb)
-
-void GB_apu_test(struct GB_Data* gb) {
-    IO_WAVE_TABLE[0] = 0;
-}
 
 // static GB_U16 GB_apu_get_noise_freq(const struct GB_Data* gb) {
 

@@ -1,28 +1,4 @@
 #pragma once
-// GB doesn't rely on any stb headers apart from stddef and assert, however,
-// it does use the following by default:
-// stdint.h, stdlib.h, string.h.
-// these can be disabled, but you must provide your own function
-// replacements (ie memcpy, memset, memcmp).
-
-// OPTIONS:
-
-// GB_NO_DYNAMIC_MEMORY:
-// disable GB_alloc and GB_free and all dynamic alloc functions
-
-// GB_NO_STDLIB:
-// disable stdlib.h.
-// you must write GB_alloc and GB_free is GB_NO_DYNAMIC_MEMORY is not set.
-
-// GB_NO_STDINT:
-// disable stdint.h.
-// this will use char, short, int for U8, U16, U32 respectively.
-// you must ensure that char == 1 byte and short == 2 bytes!
-
-// GB_NO_STRING:
-// disable string.h
-// you must provide your own GB_memset, GB_memcpy and GB_memcmp functions.
-
 // GB_ENDIAN: (autodetect by default)
 // set the system endianess.
 // set this to either GB_LITTLE_ENDIAN or GB_BIG_ENDIAN
@@ -39,14 +15,6 @@ void GB_reset(struct GB_Data* gb);
 
 // pass the fully loaded rom data, along with *optional* free function.
 int GB_loadrom_data(struct GB_Data* gb, GB_U8* data, GB_U32 size, void(*free_func)(void*));
-// pass in a filled in IFile struct to load the data and a data buffer large
-// enough to load the rom into.
-int GB_loadrom_ifile_with_data(struct GB_Data* gb, struct GB_IFile* ifile, GB_U8* data, GB_U32 size, void(*free_func)(void*));
-// pass in a filled in IFile struct which will call GB_alloc for the
-// rom data to be loaded and GB_free to later free it.
-#ifndef GB_NO_DYNAMIC_MEMORY
-int GB_loadrom_ifile(struct GB_Data* gb, struct GB_IFile* ifile, GB_U32 max_size);
-#endif /* GB_NO_DYNAMIC_MEMORY */
 
 GB_BOOL GB_has_save(const struct GB_Data* gb);
 GB_BOOL GB_has_rtc(const struct GB_Data* gb);
@@ -75,12 +43,8 @@ int GB_loadstate2(struct GB_Data* gb, const struct GB_CoreState* state);
 void GB_run_test(struct GB_Data* gb);
 void GB_run_frame(struct GB_Data* gb);
 
-void GB_apu_init(struct GB_Data* gb);
-void GB_apu_exit(struct GB_Data* gb);
-
 /* returns a pointer to the loaded rom data as a GB_CartHeader */
 const struct GB_CartHeader* GB_get_rom_header(const struct GB_Data* gb);
-
 
 void GB_get_rom_info(const struct GB_Data* gb, struct GB_RomInfo* info);
 
@@ -108,12 +72,6 @@ GB_BOOL GB_set_palette_from_buttons(struct GB_Data* gb, GB_U8 buttons);
 
 /* set a custom palette, must be BGR555 format */
 GB_BOOL GB_set_palette_from_palette(struct GB_Data* gb, const struct GB_PaletteEntry* palette);
-
-// void GB_rollback_init_with_memory(struct GB_Data* gb, struct GB_CoreState* state, GB_U8 count, void (*free_func)(void*));
-// #ifndef GB_NO_DYNAMIC_MEMORY
-// void GB_rollback_init(struct GB_Data* gb, GB_U8 count);
-// #endif /* GB_NO_DYNAMIC_MEMORY */
-// void GB_rollback_exit(struct GB_Data* gb);
 
 // this can be used to set multiple buttons down or up
 // at once, or can set just 1.

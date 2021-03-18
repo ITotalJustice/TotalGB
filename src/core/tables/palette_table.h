@@ -4,6 +4,8 @@
 extern "C" {
 #endif
 
+#include <stdint.h>
+
 /* SOURCES: */
 /* Button:  https://tcrf.net/Notes:Game_Boy_Color_Bootstrap_ROM#Manual_Select_Palette_Configurations */
 /* Hash:    https://tcrf.net/Notes:Game_Boy_Color_Bootstrap_ROM#Assigned_Palette_Configurations */
@@ -37,14 +39,14 @@ enum GB_CustomPalette {
 };
 
 struct GB_PaletteEntry {
-    unsigned short BG[4];
-    unsigned short OBJ0[4];
-    unsigned short OBJ1[4];
+    uint16_t BG[4];
+    uint16_t OBJ0[4];
+    uint16_t OBJ1[4];
 };
 
 struct GB_PalettePreviewShades {
-    unsigned short shade1;
-    unsigned short shade2;
+    uint16_t shade1;
+    uint16_t shade2;
 };
 
 /* RETURNS: */
@@ -52,7 +54,7 @@ struct GB_PalettePreviewShades {
 /* -1   = error */
 
 int GB_palette_fill_from_table_entry(
-    unsigned char table, unsigned char entry, /* keys */
+    uint8_t table, uint8_t entry, /* keys */
     struct GB_PaletteEntry* palette
 );
 
@@ -60,14 +62,14 @@ int GB_palette_fill_from_table_entry(
 /* add each title entry % 100 */
 /* forth byte is the 4th byte in the title, used for hash collisions. */
 int GB_palette_fill_from_hash(
-    unsigned char hash, /* key */
-    unsigned char forth_byte, /* key */
+    uint8_t hash, /* key */
+    uint8_t forth_byte, /* key */
     struct GB_PaletteEntry* palette
 );
 
 /* fill palette using buttons as the key */
 int GB_palette_fill_from_buttons(
-    unsigned char buttons, /* key */
+    uint8_t buttons, /* key */
     struct GB_PaletteEntry* palette,
     struct GB_PalettePreviewShades* preview /* optional (can be NULL) */
 );

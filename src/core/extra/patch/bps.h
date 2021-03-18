@@ -14,15 +14,15 @@ int bps_verify_header(const uint8_t* patch, size_t patch_size);
 /* offset: [optional] */
 int bps_get_sizes(
     const uint8_t* patch, size_t patch_size,
-    size_t* restrict dst_size, size_t* restrict src_size, 
-    size_t* restrict meta_size, size_t* restrict offset
+    size_t* dst_size, size_t* src_size, 
+    size_t* meta_size, size_t* offset
 );
 
 /* dst_size: large enough to fit entire output */
 int bps_patch(
-    uint8_t* restrict dst, size_t dst_size,
-    const uint8_t* restrict src, size_t src_size,
-    const uint8_t* restrict patch, size_t patch_size
+    uint8_t* dst, size_t dst_size,
+    const uint8_t* src, size_t src_size,
+    const uint8_t* patch, size_t patch_size
 );
 
 #ifdef __cplusplus

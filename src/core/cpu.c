@@ -821,7 +821,6 @@ static void GB_interrupt_handler(struct GB_Data* gb) {
 	gb->cpu.ime = GB_FALSE;
 
 	if (live_interrupts & 0x01) { // vblank
-		++gb->vblank_int;
         RST(64);
 		IO_IF &= ~(0x01);
     } else if (live_interrupts & 0x02) { // stat

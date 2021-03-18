@@ -14,17 +14,17 @@
 #define C(c) (((c >> 19) & 0x1F)) | (((c >> 11) & 0x1F) << 5) | (((c >> 3) & 0x1F) << 10)
 
 struct GB_PaletteButtonEntry {
-    unsigned char table;
-    unsigned char entry;
-    unsigned char buttons;
+    uint8_t table;
+    uint8_t entry;
+    uint8_t buttons;
     struct GB_PalettePreviewShades preview;
 };
 
 struct GB_PaletteHashEntry {
-    unsigned char table;
-    unsigned char entry;
-    unsigned char hash;
-    unsigned char forth;
+    uint8_t table;
+    uint8_t entry;
+    uint8_t hash;
+    uint8_t forth;
 };
 
 static const struct GB_PaletteEntry PALETTE_CUSTOM_TABLE[] = {
@@ -1701,7 +1701,7 @@ static const struct GB_PaletteButtonEntry PALETTE_BUTTON_ENTRIES[] = {
 #undef C
 
 int GB_palette_fill_from_table_entry(
-    unsigned char table, unsigned char entry, /* keys */
+    uint8_t table, uint8_t entry, /* keys */
     struct GB_PaletteEntry* palette
 ) {
     assert(palette);
@@ -1722,8 +1722,8 @@ int GB_palette_fill_from_table_entry(
 }
 
 int GB_palette_fill_from_hash(
-    unsigned char hash, /* key */
-    unsigned char forth_byte, /* key */
+    uint8_t hash, /* key */
+    uint8_t forth_byte, /* key */
     struct GB_PaletteEntry* palette
 ) {
     assert(palette);
@@ -1755,7 +1755,7 @@ int GB_palette_fill_from_hash(
 }
 
 int GB_palette_fill_from_buttons(
-    unsigned char buttons, /* key */
+    uint8_t buttons, /* key */
     struct GB_PaletteEntry* palette,
     struct GB_PalettePreviewShades* preview /* optional (can be NULL) */
 ) {

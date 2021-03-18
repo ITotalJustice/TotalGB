@@ -6,6 +6,7 @@ project('gb-emu', ['c', 'cpp'],
 )
 
 dependencies = [
+    dependency('sdl2', version : '>=2.0.0'),
 ]
 
 source = files([
@@ -19,9 +20,9 @@ source = files([
     'src/core/joypad.c',
     'src/core/mbc.c',
     'src/core/timers.c',
-    'src/core/bmp.c',
     'src/core/tables/palette_table.c',
 
+    'src/core/extra/bmp.c',
     'src/core/extra/patch/bps.c',
     'src/core/extra/patch/common.c',
     'src/core/extra/patch/crc32.c',

@@ -15,7 +15,7 @@ void GB_write16(struct GB_Data* gb, GB_U16 addr, GB_U16 value);
 GB_U8* GB_read_raw_pointer(struct GB_Data* gb, GB_U16 addr);
 
 // these should also be static
-GB_BOOL GB_setup_mbc(struct GB_MbcData* mbc, const struct GB_CartHeader* header);
+GB_BOOL GB_setup_mbc(struct GB_Cart* mbc, const struct GB_CartHeader* header);
 void GB_setup_mmap(struct GB_Data* gb);
 void GB_update_rom_banks(struct GB_Data* gb);
 void GB_update_ram_banks(struct GB_Data* gb);
@@ -41,16 +41,6 @@ GB_BOOL GB_is_lcd_enabled(const struct GB_Data* gb);
 GB_BOOL GB_is_win_enabled(const struct GB_Data* gb);
 GB_BOOL GB_is_obj_enabled(const struct GB_Data* gb);
 GB_BOOL GB_is_bg_enabled(const struct GB_Data* gb);
-
-// platform independant alloc / free.
-#ifndef GB_NO_DYNAMIC_MEMORY
-void* GB_alloc(size_t size);
-void GB_free(void* ptr);
-#endif /* GB_NO_DYNAMIC_MEMORY */
-
-int GB_memcmp(const void* a, const void* b, size_t size);
-void* GB_memset(void* ptr, int value, size_t size);
-void* GB_memcpy(void* dst, const void* src, size_t size);
 
 #ifdef __cplusplus
 }

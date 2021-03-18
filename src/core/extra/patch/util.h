@@ -32,8 +32,8 @@ static inline size_t vln_read(const uint8_t* data, size_t* offset) {
 }
 
 static inline uint8_t safe_read(
-    const uint8_t* restrict data,
-    size_t* restrict offset, size_t size
+    const uint8_t* data,
+    size_t* offset, size_t size
 ) {
     if (*offset < size) {
         const uint8_t value = data[*offset];
@@ -45,8 +45,8 @@ static inline uint8_t safe_read(
 }
 
 static inline void safe_write(
-    uint8_t* restrict data, uint8_t value,
-    size_t* restrict offset, size_t size
+    uint8_t* data, uint8_t value,
+    size_t* offset, size_t size
 ) {
     if (*offset < size) {
         data[*offset] = value;
