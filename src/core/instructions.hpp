@@ -303,6 +303,19 @@ constexpr auto inst_ld(System& sys) noexcept -> void {
     set_reg<dst>(sys, result);
 }
 
+template <Reg16TypeA type>
+constexpr auto inst_add(System& sys) noexcept -> void {
+    const auto hl = sys.get_reg<Reg16::HL>();
+    const auto value = get_reg<type>(sys);
+    const auto result = sys.reg_a + value;
+    sys.set_flags(
+        Flag::C, hl + value > 0xFFFF, 
+        Flag::H, (hl & 0xFFF) + (value & 0xFFF) > 0xFFF, 
+        Flag::N, false
+    );
+    sys.set_reg<Reg16::HL>(result);
+}
+
 template <Reg8Type type>
 constexpr auto inst_add(System& sys, const bool carry) noexcept -> void {
     const auto value = get_reg<type>(sys) + carry;
@@ -531,18 +544,48 @@ constexpr auto inst_stop([[maybe_unused]] System& sys) noexcept -> void {
     // should never be called by a game...
 }
 
-constexpr auto inst_halt([[maybe_unused]] System& sys) noexcept -> void { 
+constexpr auto inst_halt(System& sys) noexcept -> void { 
     // todo: finish this...
     sys.halt = true;
 }
 
 constexpr auto inst_cb([[maybe_unused]] System& sys) noexcept -> void { }
 
-constexpr auto inst_di([[maybe_unused]] System& sys) noexcept -> void { }
+constexpr auto inst_di(System& sys) noexcept -> void {
+    sys.ime = false;
+}
 
-constexpr auto inst_ei([[maybe_unused]] System& sys) noexcept -> void { }
+constexpr auto inst_ei(System& sys) noexcept -> void {
+    sys.ime = true;
+}
 
-auto inst_unk([[maybe_unused]] System& sys) -> void { assert(0); }
+// i copied this from my old cpu impl
+// i assume this is right...
+constexpr auto inst_daa(System& sys) noexcept -> void {
+    if (sys.get_flag<Flag::N>()) {
+        if (sys.get_flag<Flag::C>()) {
+            sys.reg_a -= 0x60;
+            sys.set_flag<Flag::C>(true);
+        }
+        if (sys.get_flag<Flag::H>()) {
+            sys.reg_a -= 0x6;
+        }
+    } else {
+        if (sys.get_flag<Flag::N>() || sys.reg_a > 0x99) {
+            sys.reg_a += 0x60;
+            sys.set_flag<Flag::C>(true);
+        }
+        if (sys.get_flag<Flag::H>() || (sys.reg_a & 0x0F) > 0x09) {
+            sys.reg_a += 0x6;
+        }
+    }
+    sys.set_flags(
+        Flag::H, false,
+        Flag::Z, sys.reg_a == 0
+    );
+}
+
+inline auto inst_unk([[maybe_unused]] System& sys) -> void { assert(0); }
 
 #define SET_REG(func, idx) table[idx] = func<static_cast<Reg8Type>(idx & 7)>;
 #define SET_LD(func, idx) table[idx] = func<static_cast<Reg8Type>(idx & 7), static_cast<Reg8Type>(((idx >> 3) & 7))>;
@@ -572,6 +615,18 @@ consteval auto setup_top_row(auto& table) {
 
     else {
         if constexpr(Start < 0x40) { // top
+            if constexpr (Start == 0x00) { table[Start] = inst_nop; }
+            if constexpr (Start == 0x10) { table[Start] = inst_stop; }
+            if constexpr (Start == 0x07) { table[Start] = inst_RLCA; }
+            if constexpr (Start == 0x0F) { table[Start] = inst_RRCA; }
+            if constexpr (Start == 0x17) { table[Start] = inst_RLA; }
+            if constexpr (Start == 0x1F) { table[Start] = inst_RRA; }
+            if constexpr (Start == 0x08) { table[Start] = inst_jr; }
+            if constexpr (Start == 0x27) { table[Start] = inst_daa; }
+            if constexpr (Start == 0x2F) { table[Start] = inst_cpl; }
+            if constexpr (Start == 0x37) { table[Start] = inst_scf; }
+            if constexpr (Start == 0x3F) { table[Start] = inst_ccf; }
+
             if constexpr ((Start & 0xF) == 0x01) { SET_REG3(inst_ld, Start);    }
             if constexpr ((Start & 0xF) == 0x02) { SET_REG7(inst_ld, Start);    }
             if constexpr ((Start & 0xF) == 0x0A) { SET_REG8(inst_ld, Start);    }
@@ -590,7 +645,11 @@ consteval auto setup_top_row(auto& table) {
         }
         
         if constexpr(Start >= 0x40 && Start <= 0x7F) { // mid ld
-            SET_LD(inst_ld, Start);
+            if constexpr(Start == 0x76) {
+                table[Start] = inst_halt;
+            } else { 
+                SET_LD(inst_ld, Start);
+            }
         }
 
         if constexpr(Start >= 0x80 && Start <= 0xBF) { // mid alu
@@ -605,6 +664,26 @@ consteval auto setup_top_row(auto& table) {
         }
 
         if constexpr(Start >= 0xC0 && Start <= 0xFF) { // bottom
+            if constexpr (Start == 0xC3) { table[Start] = inst_jp; }
+            if constexpr (Start == 0xC9) { table[Start] = inst_ret; }
+            if constexpr (Start == 0xCB) { table[Start] = inst_cb; }
+            if constexpr (Start == 0xCD) { table[Start] = inst_call; }
+
+            if constexpr (Start == 0xD9) { table[Start] = inst_reti; }
+            if constexpr (Start == 0xE9) { table[Start] = inst_jp_hl; }
+            if constexpr (Start == 0xF3) { table[Start] = inst_di; }
+            if constexpr (Start == 0xFB) { table[Start] = inst_ei; }
+            if constexpr (Start == 0xF9) { table[Start] = inst_ld_sp_hl; }
+
+            if constexpr (Start == 0xC6) { table[Start] = inst_add_u8; }
+            if constexpr (Start == 0xD6) { table[Start] = inst_sub_u8; }
+            if constexpr (Start == 0xE6) { table[Start] = inst_and_u8; }
+            if constexpr (Start == 0xF6) { table[Start] = inst_or_u8; }
+            if constexpr (Start == 0xCE) { table[Start] = inst_adc_u8; }
+            if constexpr (Start == 0xDE) { table[Start] = inst_sbc_u8; }
+            if constexpr (Start == 0xEE) { table[Start] = inst_xor_u8; }
+            if constexpr (Start == 0xFE) { table[Start] = inst_cp_u8; }
+
             if constexpr(Start < 0xE0 && (Start & 0xF) == 0x00) { SET_REG6(inst_ret, Start); }
             if constexpr(Start < 0xE0 && (Start & 0xF) == 0x08) { SET_REG6(inst_ret, Start); }
             if constexpr(Start < 0xE0 && (Start & 0xF) == 0x02) { SET_REG6(inst_jp, Start); }

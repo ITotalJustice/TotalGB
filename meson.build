@@ -10,6 +10,8 @@ dependencies = [
 
 source = files([
     'src/main.cpp',
+
+    'src/core/tests/cpu_instrs.cpp',
 ])
 
 includes = include_directories([
