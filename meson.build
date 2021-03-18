@@ -11,7 +11,22 @@ dependencies = [
 source = files([
     'src/main.cpp',
 
-    'src/core/tests/cpu_instrs.cpp',
+    'src/core/gb.c',
+    'src/core/cpu.c',
+    'src/core/ppu.c',
+    'src/core/bus.c',
+    'src/core/apu.c',
+    'src/core/joypad.c',
+    'src/core/mbc.c',
+    'src/core/timers.c',
+    'src/core/bmp.c',
+    'src/core/tables/palette_table.c',
+
+    'src/core/extra/patch/bps.c',
+    'src/core/extra/patch/common.c',
+    'src/core/extra/patch/crc32.c',
+    'src/core/extra/patch/ips.c',
+    'src/core/extra/patch/ups.c',
 ])
 
 includes = include_directories([

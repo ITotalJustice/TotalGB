@@ -1,2 +1,5 @@
 # tempboy
- gb emulator in mordern c++. name is temporary, memes are forever
+
+WIP gb emulator
+
+PR's, issues and any help is very much welcomed!
