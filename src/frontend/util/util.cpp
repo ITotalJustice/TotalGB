@@ -18,7 +18,7 @@ auto util::getStatePathFromString(const std::string& path) -> std::string {
     return util::appendExt(path, ".state");
 }
 
-auto util::getRtcPathfromString(const std::string& path) -> std::string {
+auto util::getRtcPathFromString(const std::string& path) -> std::string {
     return util::appendExt(path, ".rtc");
 }
 

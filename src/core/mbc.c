@@ -6,6 +6,7 @@
 #include "mbc/mbc_5.h"
 
 #include <stdio.h>
+#include <string.h>
 #include <assert.h>
 
 // this is extern in mbc/common.h
@@ -38,6 +39,21 @@ static const struct GB_MbcSetupData MBC_SETUP_DATA[0x100] = {
 	[0x1D] = {GB_mbc5_write, GB_mbc5_get_rom_bank, GB_mbc5_get_ram_bank, 0, MBC_FLAGS_RAM},
 	[0x1E] = {GB_mbc5_write, GB_mbc5_get_rom_bank, GB_mbc5_get_ram_bank, 0, MBC_FLAGS_RAM | MBC_FLAGS_BATTERY | MBC_FLAGS_RTC},
 };
+
+int GB_get_rom_name(const struct GB_Data* gb, struct GB_CartName* name) {
+	assert(gb && name);
+
+	const struct GB_CartHeader* header = GB_get_rom_header(gb);
+	assert(header);
+
+	// copy over the title
+	memcpy(name->name, header->title, sizeof(header->title));
+
+	// set the last byte to be NULL just in case...
+	name->name[sizeof(name->name) - 1] = '\0';
+
+	return 0;
+}
 
 GB_BOOL GB_get_cart_ram_size(GB_U8 type, GB_U32* size) {
 	static const GB_U32 GB_CART_RAM_SIZES[6] = { 0, 0x800, 0x2000, 0x8000, 0x20000, 0x10000 };

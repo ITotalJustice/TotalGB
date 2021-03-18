@@ -52,7 +52,7 @@ bool RomLoader::read(std::uint8_t* data, std::uint32_t len) {
     return this->is_open() && this->file->read(data, len);
 }
 
-bool RomLoader::write(const std::uint8_t* data, std::uint32_t len) {
+bool RomLoader::write(const std::uint8_t*, std::uint32_t) {
     return false;
 }
 

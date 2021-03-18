@@ -457,13 +457,8 @@ struct GB_SaveData {
 	GB_BOOL has_rtc; // is filled internally
 };
 
-struct GB_IFile {
-	void* handle;
-	int (*iread)(void* handle, void* data, unsigned size);
-	int (*iwrite)(void* handle, const void* data, unsigned size);
-	int (*iseek)(void* handle, int pos, int where);
-	unsigned (*isize)(void* handle);
-	int (*iclose)(void* handle);
+struct GB_CartName {
+	char name[0x10]; // this is NULL terminated
 };
 
 #ifdef __cplusplus

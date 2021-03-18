@@ -48,6 +48,9 @@ const struct GB_CartHeader* GB_get_rom_header(const struct GB_Data* gb);
 
 void GB_get_rom_info(const struct GB_Data* gb, struct GB_RomInfo* info);
 
+/*  */
+int GB_get_rom_name(const struct GB_Data* gb, struct GB_CartName* name);
+
 /* set a callback which will be called when vsync happens. */
 /* set the cb param to NULL to remove the callback */
 void GB_set_vsync_callback(struct GB_Data* gb, GB_vsync_callback_t cb);

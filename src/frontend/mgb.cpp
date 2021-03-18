@@ -1,6 +1,7 @@
 #include "mgb.hpp"
 #include "../core/gb.h"
 #include "io/romloader.hpp"
+#include "io/ifile_cfile.hpp"
 #include "util/util.hpp"
 
 #include <cstring>
@@ -40,6 +41,11 @@ App::App() {
 }
 
 App::~App() {
+    // try and save the game before exiting...
+    if (this->rom_loaded == true) {
+        this->SaveGame(this->rom_path);
+    }
+
 	GB_quit(this->gameboy.get());
 
     SDL_DestroyTexture(this->texture);
@@ -48,7 +54,7 @@ App::~App() {
 	SDL_Quit();
 }
 
-auto App::LoadRom(const char* path) -> bool {
+auto App::LoadRom(const std::string& path) -> bool {
     io::RomLoader romloader{path};
     if (!romloader.good()) {
         return false;
@@ -67,7 +73,80 @@ auto App::LoadRom(const char* path) -> bool {
         return false;
     }
 
+    // save the path and set that the rom had loaded!
+    this->rom_path = path;
+    this->rom_loaded = true;
+
+    // try and set the rom name in window title
+    {
+        struct GB_CartName cart_name;
+        if (0 == GB_get_rom_name(this->gameboy.get(), &cart_name)) {
+            SDL_SetWindowTitle(this->window, cart_name.name);
+        }
+    }
+
+    // try and load a savefile (if any...)
+    this->LoadSave(this->rom_path);
+
     return true;
+}
+
+auto App::SaveGame(const std::string& path) -> void {
+    if (GB_has_save(this->gameboy.get()) || GB_has_rtc(this->gameboy.get())) {
+        struct GB_SaveData save_data;
+        GB_savegame(this->gameboy.get(), &save_data);
+        
+        // save sram
+        if (save_data.size > 0) {
+            const auto save_path = util::getSavePathFromString(path);
+            io::Cfile file{save_path, "wb"};
+            if (file.good()) {
+                file.write(save_data.data, save_data.size);
+            }
+        }
+
+        // save rtc
+        if (save_data.has_rtc == GB_TRUE) {
+            const auto save_path = util::getRtcPathFromString(path);
+            io::Cfile file{save_path, "wb"};
+            if (file.good()) {
+                file.write((u8*)&save_data.rtc, sizeof(save_data.rtc));
+            }
+        }
+    }
+}
+
+auto App::LoadSave(const std::string& path) -> void {
+    struct GB_SaveData save_data{};
+
+    // load sram
+    if (GB_has_save(this->gameboy.get())) {
+        printf("has save!\n");
+
+        const auto save_path = util::getSavePathFromString(path);
+        const auto save_size = GB_calculate_savedata_size(this->gameboy.get());
+        
+        io::Cfile file{save_path, "rb"};
+
+        if (file.good() && file.size() == save_size) {
+            printf("trying to read... %u\n", save_size);
+            file.read(save_data.data, save_size);
+            save_data.size = save_size;
+        }
+    }
+    
+    // load rtc
+    if (GB_has_rtc(this->gameboy.get())) {
+        const auto save_path = util::getRtcPathFromString(path);
+        io::Cfile file{save_path, "rb"};
+
+        if (file.good() && file.size() == sizeof(save_data.rtc)) {
+            file.read((u8*)&save_data.rtc, sizeof(save_data.rtc));
+            save_data.has_rtc = GB_TRUE;
+        }
+    }
+
+    GB_loadsave(this->gameboy.get(), &save_data);
 }
 
 auto App::Loop() -> void {

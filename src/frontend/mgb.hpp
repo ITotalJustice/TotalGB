@@ -2,6 +2,7 @@
 #include <array>
 #include <memory>
 #include <vector>
+#include <string>
 
 #include <SDL2/SDL.h>
 
@@ -21,10 +22,13 @@ public:
     App();
     ~App();
 
-    auto LoadRom(const char* path) -> bool;
+    auto LoadRom(const std::string& path) -> bool;
     auto Loop() -> void;
 
 private:
+    auto SaveGame(const std::string& path) -> void;
+    auto LoadSave(const std::string& path) -> void;
+
     auto Draw() -> void;
     auto Events() -> void;
 
@@ -34,6 +38,10 @@ private:
     SDL_Window* window;
     SDL_Renderer* renderer;
     SDL_Texture* texture;
+
+    std::string rom_path;
+
+    bool rom_loaded{false};
     bool running{true};
 };
 

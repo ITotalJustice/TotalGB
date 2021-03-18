@@ -20,7 +20,7 @@ constexpr auto cexprStrlen(const char *str) noexcept -> std::size_t {
 auto appendExt(const std::string& str, const std::string& ext) -> std::string;
 auto getSavePathFromString(const std::string& path) -> std::string;
 auto getStatePathFromString(const std::string& path) -> std::string;
-auto getRtcPathfromString(const std::string& path) -> std::string;
+auto getRtcPathFromString(const std::string& path) -> std::string;
 
 auto getExtPos(const std::string& str) -> std::size_t;
 auto getExt(const std::string& str) -> std::string;

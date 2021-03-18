@@ -28,6 +28,8 @@ int ups_get_sizes(
     const uint8_t* patch, size_t patch_size,
     size_t* dst_size, size_t* src_size, size_t* offset
 ) {
+    (void)patch_size; // unused
+
     /* the offset is after the header */
     size_t offset_local = PATCH_HEADER_SIZE;
 

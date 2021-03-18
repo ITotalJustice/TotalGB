@@ -5,7 +5,7 @@
 
 namespace mgb::io {
 
-Zip::Zip(const char* path, const char* mode) {
+Zip::Zip(const char* path, const char*) {
     this->file = unzOpen(path);
     if (!this->file) {
         return;
@@ -60,7 +60,7 @@ bool Zip::read(std::uint8_t* data, std::uint32_t len) {
     return this->file && unzReadCurrentFile(this->file, data, len) > 0;
 }
 
-bool Zip::write(const std::uint8_t* data, std::uint32_t len) {
+bool Zip::write(const std::uint8_t*, std::uint32_t) {
     return false;
 }
 

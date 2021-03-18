@@ -243,6 +243,7 @@ int GB_savegame(const struct GB_Data* gb, struct GB_SaveData* save) {
 	/* larger sizes would techinally be fine... */
 	save->size = GB_calculate_savedata_size(gb);
 	memcpy(save->data, gb->cart.ram, save->size);
+
 	if (GB_has_rtc(gb) == GB_TRUE) {
 		memcpy(&save->rtc, &gb->cart.rtc, sizeof(save->rtc));
 		save->has_rtc = GB_TRUE;
@@ -260,12 +261,15 @@ int GB_loadsave(struct GB_Data* gb, const struct GB_SaveData* save) {
 	}
 
 	/* larger sizes would techinally be fine... */
-	GB_U32 wanted_size = GB_calculate_savedata_size(gb);
+	const GB_U32 wanted_size = GB_calculate_savedata_size(gb);
 	if (save->size != wanted_size) {
+		printf("[GB-ERROR] wrong wanted savesize. got: %u wanted %u\n", save->size, wanted_size);
 		return -1;
 	}
 
+	// copy of the savedata!
 	memcpy(gb->cart.ram, save->data, save->size);
+
 	if (GB_has_rtc(gb) && save->has_rtc) {
 		memcpy(&gb->cart.rtc, &save->rtc, sizeof(save->rtc));
 	}
@@ -306,6 +310,8 @@ int GB_savestate2(const struct GB_Data* gb, struct GB_CoreState* state, GB_BOOL 
 	if (!gb || !state) {
 		return -1;
 	}
+
+	UNUSED(swap_endian);
 
 	memcpy(state->io, gb->io, sizeof(state->io));
 	memcpy(state->hram, gb->hram, sizeof(state->hram));
