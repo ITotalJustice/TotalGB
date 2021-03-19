@@ -217,6 +217,14 @@ enum GB_Button {
     GB_BUTTON_DOWN = 1 << 7
 };
 
+enum GB_Interrupts {
+    GB_INTERRUPT_VBLANK = 0x01,
+    GB_INTERRUPT_HBLANK = 0x02,
+    GB_INTERRUPT_TIMER = 0x04,
+    GB_INTERRUPT_SERIAL = 0x08,
+    GB_INTERRUPT_JOYPAD = 0x10,
+};
+
 enum GB_ErrorCode {
 	GB_ERROR_CODE_UNKNOWN_INSTRUCTION,
 

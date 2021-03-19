@@ -397,6 +397,14 @@ void GB_get_rom_info(const struct GB_Data* gb, struct GB_RomInfo* info) {
 	info->ram_size = gb->cart.ram_size;
 }
 
+void GB_enable_interrupt(struct GB_Data* gb, const enum GB_Interrupts interrupt) {
+	IO_IF |= interrupt;
+}
+
+void GB_disable_interrupt(struct GB_Data* gb, const enum GB_Interrupts interrupt) {
+	IO_IF &= ~(interrupt);
+}
+
 void GB_set_vblank_callback(struct GB_Data* gb, GB_vblank_callback_t cb, void* user_data) {
 	gb->vblank_cb = cb;
 	gb->vblank_cb_user_data = user_data;

@@ -26,7 +26,7 @@ void GB_timer_run(struct GB_Data* gb, GB_U16 cycles) {
 
 			if (IO_TIMA == 0xFF) {
 				IO_TIMA = IO_TMA;
-				IO_IF |= 4;
+				GB_enable_interrupt(gb, GB_INTERRUPT_TIMER);
 			} else {
 				++IO_TIMA;
 			}

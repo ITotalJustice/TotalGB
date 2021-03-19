@@ -816,22 +816,32 @@ static void GB_interrupt_handler(struct GB_Data* gb) {
 	}
 	gb->cpu.ime = GB_FALSE;
 
-	if (live_interrupts & 0x01) { // vblank
-        RST(64);
-		IO_IF &= ~(0x01);
-    } else if (live_interrupts & 0x02) { // stat
-        RST(72);
-		IO_IF &= ~(0x02);
-    } else if (live_interrupts & 0x04) { // timer
-        RST(80);
-		IO_IF &= ~(0x04);
-    } else if (live_interrupts & 0x08) { // serial
-        RST(88);
-		IO_IF &= ~(0x08);
-    } else if (live_interrupts & 0x10) { // joypad
-        RST(96);
-		IO_IF &= ~(0x10);
+#if defined __has_builtin && __has_builtin(__builtin_ctz)
+
+	const GB_U8 ctz = __builtin_ctz(live_interrupts);
+	const GB_U8 reset_vector = 64 | (ctz << 3);
+	RST(reset_vector);
+	GB_disable_interrupt(gb, 1 << ctz);
+
+#else
+	if (live_interrupts & GB_INTERRUPT_VBLANK) {
+		RST(64);
+		GB_disable_interrupt(gb, GB_INTERRUPT_VBLANK);
+    } else if (live_interrupts & GB_INTERRUPT_HBLANK) {
+		RST(72);
+		GB_disable_interrupt(gb, GB_INTERRUPT_HBLANK);
+    } else if (live_interrupts & GB_INTERRUPT_TIMER) {
+		RST(80);
+		GB_disable_interrupt(gb, GB_INTERRUPT_TIMER);
+    } else if (live_interrupts & GB_INTERRUPT_SERIAL) {
+		RST(88);
+		GB_disable_interrupt(gb, GB_INTERRUPT_SERIAL);
+    } else if (live_interrupts & GB_INTERRUPT_JOYPAD) {
+		RST(96);
+		GB_disable_interrupt(gb, GB_INTERRUPT_JOYPAD);
     }
+
+#endif /* __has_builtin && __has_builtin(__builtin_ctz) */
 
 	gb->cpu.cycles += 20;
 }

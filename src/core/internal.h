@@ -31,6 +31,9 @@ GB_U8 GB_get_status_mode(const struct GB_Data* gb);
 void GB_compare_LYC(struct GB_Data* gb);
 GB_U8 GB_joypad_get(const struct GB_Data* gb);
 
+void GB_enable_interrupt(struct GB_Data* gb, const enum GB_Interrupts interrupt);
+void GB_disable_interrupt(struct GB_Data* gb, const enum GB_Interrupts interrupt);
+
 // used internally
 GB_U16 GB_cpu_run(struct GB_Data* gb, GB_U16 cycles);
 void GB_timer_run(struct GB_Data* gb, GB_U16 cycles);

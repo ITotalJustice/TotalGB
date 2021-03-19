@@ -83,7 +83,7 @@ void GB_change_status_mode(struct GB_Data* gb, GB_U8 new_mode) {
             break;
         case MODE_VBLANK: // vblank
             GB_raise_if_enabled(STAT_INT_MODE_1);
-            IO_IF |= 0x01;
+            GB_enable_interrupt(gb, GB_INTERRUPT_VBLANK);
             gb->ppu.next_cycles += 456;
             if (gb->vblank_cb != NULL) {
                 gb->vblank_cb(gb, gb->vblank_cb_user_data);

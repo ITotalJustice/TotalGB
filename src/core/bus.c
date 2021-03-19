@@ -38,7 +38,7 @@ void GB_iowrite(struct GB_Data* gb, GB_U16 addr, GB_U8 value) {
 			check_sb = 0;
 			if (value == 0x81) {
 				printf("SC = 0x81, start transfer!\n");
-				IO_IF |= 0x08;
+				GB_enable_interrupt(gb, GB_INTERRUPT_SERIAL);
 				IO_SC = 0x01;
 				IO_SB = 0x02;
 				check_sb = 1;
