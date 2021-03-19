@@ -32,6 +32,7 @@ source = files([
     # frontend mgb++
     'src/frontend/main.cpp',
     'src/frontend/mgb.cpp',
+    'src/frontend/events.cpp',
     'src/frontend/util/rewind.cpp',
     'src/frontend/util/mem.cpp',
     'src/frontend/util/util.cpp',
@@ -101,6 +102,9 @@ source = files([
     'src/libs/lzma/LzmaDec.c',
     'src/libs/lzma/LzmaEnc.c',
     'src/libs/lzma/LzmaLib.c',
+
+    # nativefiledialog
+    'src/libs/nativefiledialog/nfd_win.cpp',
 ])
 
 includes = include_directories([

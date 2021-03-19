@@ -3,6 +3,9 @@
 #include "io/romloader.hpp"
 #include "io/ifile_cfile.hpp"
 #include "util/util.hpp"
+#include "util/log.hpp"
+
+#include "nativefiledialog/nfd.hpp"
 
 #include <cstring>
 #include <cassert>
@@ -10,24 +13,9 @@
 
 namespace mgb {
 
-struct KeyMapEntry {
-    int key;
-    enum GB_Button button;
-};
-
-static constexpr KeyMapEntry key_map[]{
-    {SDLK_x, GB_BUTTON_A},
-    {SDLK_z, GB_BUTTON_B},
-    {SDLK_RETURN, GB_BUTTON_START},
-    {SDLK_SPACE, GB_BUTTON_SELECT},
-    {SDLK_DOWN, GB_BUTTON_DOWN},
-    {SDLK_UP, GB_BUTTON_UP},
-    {SDLK_LEFT, GB_BUTTON_LEFT},
-    {SDLK_RIGHT, GB_BUTTON_RIGHT},
-};
-
 App::App() {
-    SDL_Init(SDL_INIT_VIDEO | SDL_INIT_EVENTS);
+    SDL_Init(SDL_INIT_VIDEO | SDL_INIT_EVENTS | SDL_INIT_JOYSTICK | SDL_INIT_HAPTIC | SDL_INIT_GAMECONTROLLER);
+    SDL_GameControllerAddMappingsFromFile("res/mappings/gamecontrollerdb.txt");
 
     // window
 	this->window = SDL_CreateWindow("gb-emu", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 160 * 2, 144 * 2, SDL_WINDOW_SHOWN);
@@ -47,6 +35,16 @@ App::~App() {
     }
 
 	GB_quit(this->gameboy.get());
+
+    // cleanup joysticks and controllers
+    for (auto &p : this->joysticks) {
+        SDL_JoystickClose(p.ptr);
+        p.ptr = nullptr;
+    }
+    for (auto &p : this->controllers) {
+        SDL_GameControllerClose(p.ptr);
+        p.ptr = nullptr;
+    }
 
     SDL_DestroyTexture(this->texture);
 	SDL_DestroyRenderer(this->renderer);
@@ -149,6 +147,61 @@ auto App::LoadSave(const std::string& path) -> void {
     GB_loadsave(this->gameboy.get(), &save_data);
 }
 
+auto App::FilePicker() -> void {
+    // initialize NFD
+    NFD::Guard nfdGuard;
+
+    // auto-freeing memory
+    NFD::UniquePath outPath;
+
+    // prepare filters for the dialog
+    const nfdfilteritem_t filterItem[2] = { { "Roms", "gb,gbc" },{ "Zip", "zip,gzip" } };
+
+    // show the dialog
+    const auto result = NFD::OpenDialog(outPath, filterItem, sizeof(filterItem) / sizeof(filterItem[0]));
+
+    switch (result) {
+        case NFD_ERROR:
+            printf("[ERROR] failed to open file...\n");
+            break;
+
+        case NFD_CANCEL:
+            printf("[INFO] cancled open file request...\n");
+            break;
+
+        case NFD_OKAY:
+            this->LoadRom(outPath.get());
+            break;
+    }
+}
+
+auto App::HasController(int which) const -> bool {
+    for (auto &p : this->controllers) {
+        if (p.id == which) {
+            return true;
+        }
+    }
+    return false;
+}
+
+auto App::AddController(int index) -> bool {
+    auto controller = SDL_GameControllerOpen(index);
+    if (!controller) {
+        return log::errReturn(false, "Failed to open controller from index %d\n", index);
+    }
+
+    ControllerCtx ctx;
+    ctx.ptr = controller;
+    ctx.id = SDL_JoystickInstanceID(SDL_GameControllerGetJoystick(controller));
+    this->controllers.push_back(std::move(ctx));
+
+    return true;
+}
+
+auto App::ResizeScreen() -> void {
+
+}
+
 auto App::Loop() -> void {
     while (this->running) {
         this->Events();
@@ -166,27 +219,6 @@ auto App::Draw() -> void {
     SDL_UnlockTexture(texture);
     SDL_RenderCopy(renderer, texture, NULL, NULL);
     SDL_RenderPresent(renderer);
-}
-
-auto App::Events() -> void {
-    SDL_Event e;
-    while (SDL_PollEvent(&e)) {
-        switch (e.type) {
-            case SDL_QUIT:
-                this->running = false;
-                break;
-            
-            case SDL_KEYDOWN: case SDL_KEYUP: {
-                const GB_BOOL kdown = e.type == SDL_KEYDOWN;
-                for (size_t i = 0; i < GB_ARR_SIZE(key_map); ++i) {
-                    if (key_map[i].key == e.key.keysym.sym) {
-                        GB_set_buttons(gameboy.get(), key_map[i].button, kdown);
-                        break;
-                    }
-                }
-            } break;
-        }
-    }
 }
 
 } // namespace mgb
