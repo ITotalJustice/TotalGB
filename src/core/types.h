@@ -81,8 +81,8 @@ struct GB_Joypad;
 #define IO_SB IO[0x01]
 #define IO_SC IO[0x02]
 // TIMERS
-#define IO_DIV16 *(GB_U16*)(IO + 0x03)
-#define IO_DIV IO[0x04]
+#define IO_DIV_LOWER IO[0x03]
+#define IO_DIV_UPPER IO[0x04]
 #define IO_TIMA IO[0x05]
 #define IO_TMA IO[0x06]
 #define IO_TAC IO[0x07]

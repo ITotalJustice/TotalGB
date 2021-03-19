@@ -51,7 +51,7 @@ void GB_iowrite(struct GB_Data* gb, GB_U16 addr, GB_U8 value) {
 			break;
 
 		case 0x04:
-			IO_DIV16 = 0;
+			IO_DIV_UPPER = IO_DIV_LOWER = 0;
 			break;
 
 		case 0x07:

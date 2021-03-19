@@ -294,8 +294,15 @@ auto App::ResizeScreen() -> void {
 
 auto App::Loop() -> void {
     while (this->running) {
+        // handle sdl2 events
         this->Events();
-        GB_run_frame(gameboy.get());
+
+        // run game for a frame (if loaded)
+        if (this->rom_loaded) {
+            GB_run_frame(gameboy.get());
+        }
+
+        // render the screen
         this->Draw();
     }
 }
