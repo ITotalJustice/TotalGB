@@ -19,8 +19,14 @@ GB_BOOL GB_init(struct GB_Data* gb) {
 
 	gb->cart.mbc_type = MBC_TYPE_NONE;
 	GB_Palette_fill_from_custom(GB_CUSTOM_PALETTE_CREAM, &gb->palette);
-	gb->vsync_cb = NULL;
-	gb->hblank_cb = NULL;
+
+	// set all the callbacks and data to NULL
+	GB_set_vblank_callback(gb, NULL, NULL);
+	GB_set_hblank_callback(gb, NULL, NULL);
+	GB_set_dma_callback(gb, NULL, NULL);
+	GB_set_halt_callback(gb, NULL, NULL);
+	GB_set_stop_callback(gb, NULL, NULL);
+	GB_set_error_callback(gb, NULL, NULL);
 
 	return GB_TRUE;
 }
@@ -391,16 +397,34 @@ void GB_get_rom_info(const struct GB_Data* gb, struct GB_RomInfo* info) {
 	info->ram_size = gb->cart.ram_size;
 }
 
-/* set a callback which will be called when vsync happens. */
-/* set the cb param to NULL to remove the callback */
-void GB_set_vsync_callback(struct GB_Data* gb, GB_vsync_callback_t cb) {
-	gb->vsync_cb = cb;
+void GB_set_vblank_callback(struct GB_Data* gb, GB_vblank_callback_t cb, void* user_data) {
+	gb->vblank_cb = cb;
+	gb->vblank_cb_user_data = user_data;
 }
 
-/* set a callback which will be called when hblank happens. */
-/* set the cb param to NULL to remove the callback */
-void GB_set_hblank_callback(struct GB_Data* gb, GB_hblank_callback_t cb) {
+void GB_set_hblank_callback(struct GB_Data* gb, GB_hblank_callback_t cb, void* user_data) {
 	gb->hblank_cb = cb;
+	gb->hblank_cb_user_data = user_data;
+}
+
+void GB_set_dma_callback(struct GB_Data* gb, GB_dma_callback_t cb, void* user_data) {
+	gb->dma_cb = cb;
+	gb->dma_cb_user_data = user_data;
+}
+
+void GB_set_halt_callback(struct GB_Data* gb, GB_halt_callback_t cb, void* user_data) {
+	gb->halt_cb = cb;
+	gb->halt_cb_user_data = user_data;
+}
+
+void GB_set_stop_callback(struct GB_Data* gb, GB_stop_callback_t cb, void* user_data) {
+	gb->stop_cb = cb;
+	gb->stop_cb_user_data = user_data;
+}
+
+void GB_set_error_callback(struct GB_Data* gb, GB_error_callback_t cb, void* user_data) {
+	gb->error_cb = cb;
+	gb->error_cb_user_data = user_data;
 }
 
 void GB_run_frame(struct GB_Data* gb) {

@@ -13,6 +13,83 @@
 
 namespace mgb {
 
+// vblank callback is to let the frontend know that it should render the screen.
+// This removes any screen tearing and changes to the pixels whilst in vblank.
+auto VblankCallback(GB_Data*, void* user) -> void {
+    assert(user);
+    auto* app = static_cast<App*>(user);
+    app->OnVblankCallback();
+}
+
+auto HblankCallback(GB_Data*, void* user) -> void {
+    assert(user);
+    auto* app = static_cast<App*>(user);
+    app->OnHblankCallback();
+}
+
+auto DmaCallback(GB_Data*, void* user) -> void {
+    assert(user);
+    auto* app = static_cast<App*>(user);
+    app->OnDmaCallback();
+}
+
+auto HaltCallback(GB_Data*, void* user) -> void {
+    assert(user);
+    auto* app = static_cast<App*>(user);
+    app->OnHaltCallback();
+}
+
+auto StopCallback(GB_Data*, void* user) -> void {
+    assert(user);
+    auto* app = static_cast<App*>(user);
+    app->OnStopCallback();
+}
+
+// error callback is to be used to handle errors that may happen during emulation.
+// these will be updated with warnings also,
+// such as trying to write to a rom or OOB read / write from the game.
+auto ErrorCallback(GB_Data*, void* user, struct GB_ErrorData* data) -> void {
+    assert(user);
+    auto* app = static_cast<App*>(user);
+    app->OnErrorCallback(data);
+}
+
+auto App::OnVblankCallback() -> void {
+    void* pixles; int pitch;
+
+    SDL_LockTexture(texture, NULL, &pixles, &pitch);
+    std::memcpy(pixles, gameboy->ppu.pixles, sizeof(gameboy->ppu.pixles));
+    SDL_UnlockTexture(texture);
+}
+
+auto App::OnHblankCallback() -> void {
+
+}
+
+auto App::OnDmaCallback() -> void {
+
+}
+
+auto App::OnHaltCallback() -> void {
+
+}
+
+auto App::OnStopCallback() -> void {
+    printf("[ERROR] cpu stop instruction called!\n");
+}
+
+auto App::OnErrorCallback(struct GB_ErrorData* data) -> void {
+    switch (data->code) {
+        case GB_ErrorCode::GB_ERROR_CODE_UNKNOWN_INSTRUCTION:
+            printf("[ERROR] UNK instruction OP 0x%02X CB: %s\n", data->unk_instruction.opcode, data->unk_instruction.cb_prefix ? "TRUE" : "FALSE");
+            break;
+
+        case GB_ErrorCode::GB_ERROR_CODE_UNK:
+            printf("[ERROR] Unknown gb error...\n");
+            break;
+    }
+}
+
 App::App() {
     SDL_Init(SDL_INIT_VIDEO | SDL_INIT_EVENTS | SDL_INIT_JOYSTICK | SDL_INIT_HAPTIC | SDL_INIT_GAMECONTROLLER);
     SDL_GameControllerAddMappingsFromFile("res/mappings/gamecontrollerdb.txt");
@@ -26,6 +103,13 @@ App::App() {
 
     this->gameboy = std::make_unique<GB_Data>();
     GB_init(this->gameboy.get());
+
+    GB_set_vblank_callback(this->gameboy.get(), VblankCallback, this);
+    GB_set_hblank_callback(this->gameboy.get(), HblankCallback, this);
+    GB_set_dma_callback(this->gameboy.get(), DmaCallback, this);
+    GB_set_halt_callback(this->gameboy.get(), HaltCallback, this);
+    GB_set_stop_callback(this->gameboy.get(), StopCallback, this);
+    GB_set_error_callback(this->gameboy.get(), ErrorCallback, this);
 }
 
 App::~App() {
@@ -53,6 +137,12 @@ App::~App() {
 }
 
 auto App::LoadRom(const std::string& path) -> bool {
+    // if we have a rom alread loaded, try and save the game
+    // first before exiting...
+    if (this->rom_loaded == true) {
+        this->SaveGame(this->rom_path);
+    }
+
     io::RomLoader romloader{path};
     if (!romloader.good()) {
         return false;
@@ -212,11 +302,7 @@ auto App::Loop() -> void {
 
 auto App::Draw() -> void {
     SDL_RenderClear(renderer);
-    void* pixles; int pitch;
-
-    SDL_LockTexture(texture, NULL, &pixles, &pitch);
-    memcpy(pixles, gameboy->ppu.pixles, sizeof(gameboy->ppu.pixles));
-    SDL_UnlockTexture(texture);
+    
     SDL_RenderCopy(renderer, texture, NULL, NULL);
     SDL_RenderPresent(renderer);
 }

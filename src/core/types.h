@@ -217,9 +217,30 @@ enum GB_Button {
     GB_BUTTON_DOWN = 1 << 7
 };
 
-typedef void(*GB_vsync_callback_t)();
-typedef void(*GB_hblank_callback_t)();
-typedef void(*GB_dma_callback_t)();
+enum GB_ErrorCode {
+	GB_ERROR_CODE_UNKNOWN_INSTRUCTION,
+
+	GB_ERROR_CODE_UNK
+};
+
+struct GB_UnkownInstructionData {
+	GB_U8 opcode;
+	GB_BOOL cb_prefix;
+};
+
+struct GB_ErrorData {
+	enum GB_ErrorCode code;
+	union {
+		struct GB_UnkownInstructionData unk_instruction;
+	};
+};
+
+typedef void(*GB_vblank_callback_t)(struct GB_Data* gb, void* user);
+typedef void(*GB_hblank_callback_t)(struct GB_Data* gb, void* user);
+typedef void(*GB_dma_callback_t)(struct GB_Data* gb, void* user);
+typedef void(*GB_halt_callback_t)(struct GB_Data* gb, void* user);
+typedef void(*GB_stop_callback_t)(struct GB_Data* gb, void* user);
+typedef void(*GB_error_callback_t)(struct GB_Data* gb, void* user, struct GB_ErrorData* e);
 
 // structs
 
@@ -407,8 +428,24 @@ struct GB_Data {
 
 	struct GB_PaletteEntry palette; /* default */
 
-	GB_vsync_callback_t vsync_cb;
+	// callbacks + user_data
+	GB_vblank_callback_t vblank_cb;
+	void* vblank_cb_user_data;
+
 	GB_hblank_callback_t hblank_cb;
+	void* hblank_cb_user_data;
+
+	GB_dma_callback_t dma_cb;
+	void* dma_cb_user_data;
+
+	GB_halt_callback_t halt_cb;
+	void* halt_cb_user_data;
+
+	GB_stop_callback_t stop_cb;
+	void* stop_cb_user_data;
+
+	GB_error_callback_t error_cb;
+	void* error_cb_user_data;
 
 	void (*rom_free_func)(void*);
 };

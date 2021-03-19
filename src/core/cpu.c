@@ -4,13 +4,16 @@
 
 #include <assert.h>
 
-#if GB_SPEED
-#define UNK_OP() __builtin_unreachable()
-#define UNK_OP_CB() __builtin_unreachable()
-#else
-#define UNK_OP() __builtin_trap()
-#define UNK_OP_CB() __builtin_trap()
-#endif
+static void UNK_OP(struct GB_Data* gb, GB_U8 opcode, GB_BOOL cb_prefix) {
+	if (gb->error_cb != NULL) {
+		struct GB_ErrorData data = {0};
+		data.code = GB_ERROR_CODE_UNKNOWN_INSTRUCTION;
+		data.unk_instruction.cb_prefix = cb_prefix;
+		data.unk_instruction.opcode = opcode;
+
+		gb->error_cb(gb, gb->error_cb_user_data, &data);	
+	}
+}
 
 // todo: prefix with GB
 // SINGLE REGS
@@ -782,7 +785,19 @@ static GB_U16 GB_POP(struct GB_Data* gb) {
 #define CPL() do { REG_A = ~REG_A; SET_FLAGS_HN(GB_TRUE, GB_TRUE); } while(0)
 #define SCF() do { SET_FLAGS_CHN(GB_TRUE, GB_FALSE, GB_FALSE); } while (0)
 #define CCF() do { SET_FLAGS_CHN(FLAG_C ^ 1, GB_FALSE, GB_FALSE); } while(0)
-#define HALT() do { gb->cpu.halt = GB_TRUE; } while(0)
+
+#define HALT() do { \
+	gb->cpu.halt = GB_TRUE; \
+	if (gb->halt_cb != NULL) { \
+		gb->halt_cb(gb, gb->halt_cb_user_data); \
+	} \
+} while(0)
+
+#define STOP() do { \
+	if (gb->stop_cb != NULL) { \
+		gb->stop_cb(gb, gb->stop_cb_user_data); \
+	} \
+} while (0)
 
 static void GB_interrupt_handler(struct GB_Data* gb) {
 	if (!gb->cpu.ime && !gb->cpu.halt) {
@@ -841,6 +856,7 @@ static void GB_execute(struct GB_Data* gb) {
 		case 0x0B: DEC_BC(); break;
 		case 0x0E: LD_r_u8(); break;
 		case 0x0F: RRCA(); break;
+		case 0x10: STOP(); break;
 		case 0x11: LD_DE_u16(); break;
 		case 0x12: LD_DEa_A(); break;
 		case 0x13: INC_DE(); break;
@@ -978,7 +994,10 @@ static void GB_execute(struct GB_Data* gb) {
 		case 0xFB: EI(); break;
 		case 0xFE: CP_u8(); break;
 		case 0xFF: RST(0x38); break;
-		default: UNK_OP(); break;
+
+		default:
+			UNK_OP(gb, opcode, GB_FALSE);
+			break;
 	}
 
 	gb->cpu.cycles += CYCLE_TABLE_CB[opcode];
@@ -1124,7 +1143,7 @@ static void GB_execute_cb(struct GB_Data* gb) {
 			break;
 		
 		default:
-			UNK_OP_CB();
+			UNK_OP(gb, opcode, GB_TRUE);
 			break;
 	}
 

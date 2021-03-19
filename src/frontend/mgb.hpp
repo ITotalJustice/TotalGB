@@ -8,6 +8,7 @@
 
 extern "C" {
 struct GB_Data;
+struct GB_ErrorData;
 }
 
 namespace mgb {
@@ -34,6 +35,13 @@ public:
 
     auto LoadRom(const std::string& path) -> bool;
     auto Loop() -> void;
+
+    auto OnVblankCallback() -> void;
+    auto OnHblankCallback() -> void;
+    auto OnDmaCallback() -> void;
+    auto OnHaltCallback() -> void;
+    auto OnStopCallback() -> void;
+    auto OnErrorCallback(struct GB_ErrorData* data) -> void;
 
 private:
     auto SaveGame(const std::string& path) -> void;
