@@ -122,6 +122,14 @@ static inline float GB_wave_volumef(GB_U8 code) {
 
 #define CHANNEL_PERIOD(num) ((IO_NR##num##2 & NR##num##2##_PERIOD))
 
+// clocked at 512hz
+#define FRAME_SEQUENCER_CLOCK 512
+
+/*static*/ const GB_BOOL SQUARE_DUTY_CYCLE_0[] = { 0, 0, 0, 0, 0, 0, 0, 1 };
+/*static*/ const GB_BOOL SQUARE_DUTY_CYCLE_1[] = { 1, 0, 0, 0, 0, 0, 0, 1 };
+/*static*/ const GB_BOOL SQUARE_DUTY_CYCLE_2[] = { 0, 0, 0, 0, 0, 1, 1, 1 };
+/*static*/ const GB_BOOL SQUARE_DUTY_CYCLE_3[] = { 0, 1, 1, 1, 1, 1, 1, 0 };
+
 // 4194304 / 256; // 256 Hz
 
 //       gb = 2048 - (131072 / Hz)
