@@ -340,7 +340,7 @@ int GB_savestate2(const struct GB_Data* gb, struct GB_CoreState* state, GB_BOOL 
 		return -1;
 	}
 
-	UNUSED(swap_endian);
+	GB_UNUSED(swap_endian);
 
 	memcpy(state->io, gb->io, sizeof(state->io));
 	memcpy(state->hram, gb->hram, sizeof(state->hram));

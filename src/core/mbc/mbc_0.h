@@ -7,7 +7,7 @@ extern "C" {
 #include "common.h"
 
 static void GB_mbc0_write(struct GB_Data* gb, GB_U16 addr, GB_U8 value) {
-	UNUSED(gb); UNUSED(addr); UNUSED(value);
+	GB_UNUSED(gb); GB_UNUSED(addr); GB_UNUSED(value);
 }
 
 static const GB_U8* GB_mbc0_get_rom_bank(struct GB_Data* gb, GB_U8 bank) {
@@ -18,7 +18,7 @@ static const GB_U8* GB_mbc0_get_rom_bank(struct GB_Data* gb, GB_U8 bank) {
 }
 
 static const GB_U8* GB_mbc0_get_ram_bank(struct GB_Data* gb, GB_U8 bank) {
-	UNUSED(gb); UNUSED(bank);
+	GB_UNUSED(gb); GB_UNUSED(bank);
 	return MBC_NO_RAM;
 }
 

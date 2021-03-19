@@ -1161,7 +1161,7 @@ static void GB_execute_cb(struct GB_Data* gb) {
 }
 
 GB_U16 GB_cpu_run(struct GB_Data* gb, GB_U16 cycles) {
-	UNUSED(cycles);
+	GB_UNUSED(cycles);
 
 	// reset cycles counter
 	gb->cpu.cycles = 0;

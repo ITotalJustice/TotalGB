@@ -49,7 +49,8 @@ static const GB_U8* GB_mbc3_get_rom_bank(struct GB_Data* gb, GB_U8 bank) {
 
 // todo: rtc support
 static const GB_U8* GB_mbc3_get_ram_bank(struct GB_Data* gb, GB_U8 bank) {
-	UNUSED(bank);
+	GB_UNUSED(bank);
+    
 	if (!(gb->cart.flags & MBC_FLAGS_RAM) || !gb->cart.ram_enabled || !gb->cart.in_ram) {
 		return MBC_NO_RAM;
 	}

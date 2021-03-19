@@ -69,7 +69,7 @@ struct GB_Joypad;
 #endif
 
 // todo: prefix with GB
-#define UNUSED(var) ((void)(var))
+#define GB_UNUSED(var) ((void)(var))
 
 #define GB_ARR_SIZE(array) (sizeof(array) / sizeof(array[0]))
 
