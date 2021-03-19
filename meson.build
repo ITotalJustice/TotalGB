@@ -19,6 +19,7 @@ source = files([
     'src/core/joypad.c',
     'src/core/mbc.c',
     'src/core/timers.c',
+    'src/core/serial.c',
     'src/core/tables/palette_table.c',
 
     # core extras

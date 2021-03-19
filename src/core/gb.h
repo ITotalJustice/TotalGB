@@ -75,6 +75,15 @@ void GB_set_stop_callback(struct GB_Data* gb, GB_stop_callback_t cb, void* user_
 /* set the cb param to NULL to remove the callback */
 void GB_set_error_callback(struct GB_Data* gb, GB_error_callback_t cb, void* user_data);
 
+/* set a callback which will be called when link transfer happens. */
+/* set the cb param to NULL to remove the callback */
+void GB_connect_link_cable(struct GB_Data* gb, GB_serial_transfer_t cb, void* user_data);
+
+// this sets the link cable callback to an interal function.
+// the user_data for the callback will be the passed in gb struct.
+// WARNING: this will overwrite the exisitng link_cable_cb and user_data! 
+void GB_connect_link_cable_builtin(struct GB_Data* gb);
+
 GB_BOOL GB_get_rom_palette_hash_from_header(const struct GB_CartHeader* header, GB_U8* hash, GB_U8* forth);
 
 GB_BOOL GB_get_rom_palette_hash(const struct GB_Data* gb, GB_U8* hash, GB_U8* forth);

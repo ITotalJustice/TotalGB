@@ -250,6 +250,17 @@ typedef void(*GB_halt_callback_t)(struct GB_Data* gb, void* user);
 typedef void(*GB_stop_callback_t)(struct GB_Data* gb, void* user);
 typedef void(*GB_error_callback_t)(struct GB_Data* gb, void* user, struct GB_ErrorData* e);
 
+// serial data transfer callback is used when IO_SC is set to 0x81
+// at which point, this callback is called, sending the data in
+// IO_SB, this will be data_in.
+// if the recieving GB is accepting data, then it should set data_out
+// equal to it's IO_SB, then, clear bit-7 of it's IO_SC, finally,
+// push a serial_interrupt.
+
+// this callback should return GB_TRUE if the data was accepted AND
+// data_out is filled, else, return GB_FALSE
+typedef GB_BOOL(*GB_serial_transfer_t)(struct GB_Data* gb, void* user, GB_U8 data_in, GB_U8* data_out);
+
 // structs
 
 enum GB_LoadSystemType {
@@ -435,6 +446,9 @@ struct GB_Data {
 	struct GB_Joypad joypad;
 
 	struct GB_PaletteEntry palette; /* default */
+
+	GB_serial_transfer_t link_cable;
+	void* link_cable_user_data;
 
 	// callbacks + user_data
 	GB_vblank_callback_t vblank_cb;

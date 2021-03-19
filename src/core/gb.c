@@ -27,6 +27,7 @@ GB_BOOL GB_init(struct GB_Data* gb) {
 	GB_set_halt_callback(gb, NULL, NULL);
 	GB_set_stop_callback(gb, NULL, NULL);
 	GB_set_error_callback(gb, NULL, NULL);
+	GB_connect_link_cable(gb, NULL, NULL);
 
 	return GB_TRUE;
 }
@@ -433,6 +434,11 @@ void GB_set_stop_callback(struct GB_Data* gb, GB_stop_callback_t cb, void* user_
 void GB_set_error_callback(struct GB_Data* gb, GB_error_callback_t cb, void* user_data) {
 	gb->error_cb = cb;
 	gb->error_cb_user_data = user_data;
+}
+
+void GB_connect_link_cable(struct GB_Data* gb, GB_serial_transfer_t cb, void* user_data) {
+	gb->link_cable = cb;
+	gb->link_cable_user_data = user_data;
 }
 
 void GB_run_frame(struct GB_Data* gb) {

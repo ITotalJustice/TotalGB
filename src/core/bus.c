@@ -4,21 +4,13 @@
 #include <stdio.h>
 #include <assert.h>
 
-int check_sb = 0;
-
 GB_U8 GB_ioread(struct GB_Data* gb, GB_U16 addr) {
 	switch (addr & 0x7F) {
 		case 0x00:
 			return GB_joypad_get(gb);
 
 		case 0x01:
-			if (check_sb == 1) {
-				printf("checking MASTER sb 0x%02X\n", IO_SB);
-			}
-			if (check_sb == 2) {
-				printf("checking SLAVE sb 0x%02X\n", IO_SB);
-			}
-			return IO_SB;
+			return GB_serial_sb_read(gb);
 
 		default:
 			return IO[addr & 0x7F];
@@ -29,25 +21,10 @@ void GB_iowrite(struct GB_Data* gb, GB_U16 addr, GB_U8 value) {
 	switch (addr & 0x7F) {
 		case 0x01: // SB (Serial transfer data)
 			IO_SB = value;
-			if (check_sb == 2) {
-				printf("checking SLAVE sb 0x%02X\n", IO_SB);
-			}
 			break;
 
 		case 0x02: // SC (Serial Transfer Control)
-			check_sb = 0;
-			if (value == 0x81) {
-				printf("SC = 0x81, start transfer!\n");
-				GB_enable_interrupt(gb, GB_INTERRUPT_SERIAL);
-				IO_SC = 0x01;
-				IO_SB = 0x02;
-				check_sb = 1;
-			} else if (value == 0x80) {
-				// printf("SC = 0x80, external transfer!\n");
-				check_sb = 2;
-			} else if (value == 0x01) {
-				printf("SC = 0x01, transfer complete\n");
-			}
+			GB_serial_sc_write(gb, value);
 			break;
 
 		case 0x04:
