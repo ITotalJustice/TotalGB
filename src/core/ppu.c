@@ -6,30 +6,63 @@
 #include <string.h>
 #include <assert.h>
 
-#define MODE_HBLANK 0
-#define MODE_VBLANK 1
-#define MODE_SPRITE 2
-#define MODE_TRANSFER 3
+enum GB_Modes {
+    MODE_HBLANK = 0,
+    MODE_VBLANK = 1,
+    MODE_SPRITE = 2,
+    MODE_TRANSFER = 3
+};
 
-#define STAT_INT_MODE_0 0x08
-#define STAT_INT_MODE_1 0x10
-#define STAT_INT_MODE_2 0x20
-#define STAT_INT_MODE_COINCIDENCE 0x40
+enum GB_StatIntModes {
+    STAT_INT_MODE_0 = 0x08,
+    STAT_INT_MODE_1 = 0x10,
+    STAT_INT_MODE_2 = 0x20,
+    STAT_INT_MODE_COINCIDENCE = 0x40
+};
 
-#define COL_FROM_PAL(p,c) ((p >> (c << 1)) & 3)
-#define VRAM_READ(bank, addr) (gb->ppu.vram[(bank)][(addr) & 0x1FFF])
-#define TILE_DATA_SELECT() (!!(IO_LCDC & 0x10))
-#define WIN_DATA_SELECT() (!!(IO_LCDC & 0x40))
-#define BG_DATA_SELECT() (!!(IO_LCDC & 0x08))
-#define TILE_MAP_SELECT() (TILE_DATA_SELECT() ? 0x8000 : 0x9000)
-#define WIN_MAP_SELECT() (WIN_DATA_SELECT() ? 0x9C00 : 0x9800)
-#define BG_MAP_SELECT() (BG_DATA_SELECT() ? 0x9C00 : 0x9800)
-#define TILE_OFFSET(tile_num,sub_tile_y) (TILE_MAP_SELECT() + (((TILE_DATA_SELECT() ? tile_num : (GB_S8)tile_num)) << 4) + (sub_tile_y << 1))
+static inline GB_U16 GB_calculate_col_from_palette(GB_U8 palette, GB_U8 colour) {
+    return ((palette >> (colour << 1)) & 3);
+}
 
-// branchless set (because i cannot predict if its likely / unlikely)
-#define GB_raise_if_enabled(mode) do { \
-    IO_IF |= ((!!(IO_STAT & mode)) << 1); \
-} while(0)
+static inline GB_U8 GB_vram_read(const struct GB_Data* gb, const GB_U16 addr, const GB_U8 bank) {
+    assert(gb);
+    assert(bank < 2);
+    return gb->ppu.vram[bank][addr & 0x1FFF];
+}
+
+// data selects
+static inline GB_BOOL GB_get_bg_data_select(const struct GB_Data* gb) {
+    return (!!(IO_LCDC & 0x08));
+}
+
+static inline GB_BOOL GB_get_title_data_select(const struct GB_Data* gb) {
+    return (!!(IO_LCDC & 0x10));
+}
+
+static inline GB_BOOL GB_get_win_data_select(const struct GB_Data* gb) {
+    return (!!(IO_LCDC & 0x40));
+}
+
+// map selects
+static inline GB_U16 GB_get_bg_map_select(const struct GB_Data* gb) {
+    return GB_get_bg_data_select(gb) ? 0x9C00 : 0x9800;
+}
+
+static inline GB_U16 GB_get_title_map_select(const struct GB_Data* gb) {
+    return GB_get_title_data_select(gb) ? 0x8000 : 0x9000;
+}
+
+static inline GB_U16 GB_get_win_map_select(const struct GB_Data* gb) {
+    return GB_get_win_data_select(gb) ? 0x9C00 : 0x9800;
+}
+
+static inline GB_U16 GB_get_tile_offset(const struct GB_Data* gb, GB_U8 tile_num, GB_U8 sub_tile_y) {
+    return (GB_get_title_map_select(gb) + (((GB_get_title_data_select(gb) ? tile_num : (GB_S8)tile_num)) << 4) + (sub_tile_y << 1));
+}
+
+static inline void GB_raise_if_enabled(struct GB_Data* gb, GB_U8 mode) {
+    IO_IF |= ((!!(IO_STAT & mode)) << 1);
+}
 
 void GB_set_coincidence_flag(struct GB_Data* gb, GB_BOOL n) {
     IO_STAT = n ? IO_STAT | 0x04 : IO_STAT & ~0x04;
@@ -63,7 +96,7 @@ GB_BOOL GB_is_bg_enabled(const struct GB_Data* gb) {
 void GB_compare_LYC(struct GB_Data* gb) {
     if (UNLIKELY(IO_LY == IO_LYC)) {
         GB_set_coincidence_flag(gb, 1);
-        GB_raise_if_enabled(STAT_INT_MODE_COINCIDENCE);
+        GB_raise_if_enabled(gb, STAT_INT_MODE_COINCIDENCE);
     } else {
         GB_set_coincidence_flag(gb, 0);
     }
@@ -74,25 +107,28 @@ void GB_change_status_mode(struct GB_Data* gb, GB_U8 new_mode) {
     
     switch (new_mode) {
         case MODE_HBLANK: // hblank
-            GB_raise_if_enabled(STAT_INT_MODE_0);
+            GB_raise_if_enabled(gb, STAT_INT_MODE_0);
             gb->ppu.next_cycles += 146;
             GB_draw_scanline(gb);
             if (gb->hblank_cb != NULL) {
                 gb->hblank_cb(gb, gb->hblank_cb_user_data);
             }
             break;
+
         case MODE_VBLANK: // vblank
-            GB_raise_if_enabled(STAT_INT_MODE_1);
+            GB_raise_if_enabled(gb, STAT_INT_MODE_1);
             GB_enable_interrupt(gb, GB_INTERRUPT_VBLANK);
             gb->ppu.next_cycles += 456;
             if (gb->vblank_cb != NULL) {
                 gb->vblank_cb(gb, gb->vblank_cb_user_data);
             }
             break;
+
         case MODE_SPRITE: // sprite
-            GB_raise_if_enabled(STAT_INT_MODE_2);
+            GB_raise_if_enabled(gb, STAT_INT_MODE_2);
             gb->ppu.next_cycles += 80;
             break;
+
         case MODE_TRANSFER: // transfer
             gb->ppu.next_cycles += 230;
             break;
@@ -121,6 +157,7 @@ void GB_ppu_run(struct GB_Data* gb, GB_U16 cycles) {
                 GB_change_status_mode(gb, MODE_SPRITE);
             }
             break;
+        
         case MODE_VBLANK: // vblank
             ++IO_LY;
             GB_compare_LYC(gb);
@@ -133,9 +170,11 @@ void GB_ppu_run(struct GB_Data* gb, GB_U16 cycles) {
                 GB_change_status_mode(gb, MODE_SPRITE);
             }
             break;
+        
         case MODE_SPRITE: // sprite
             GB_change_status_mode(gb, MODE_TRANSFER);
             break;
+        
         case MODE_TRANSFER: // transfer
             GB_change_status_mode(gb, MODE_HBLANK);
             break;
@@ -155,7 +194,7 @@ void GB_update_colours_gb(GB_U16 colours[4], const GB_U16 pal_colours[4], const 
     if (*dirty) {
         *dirty = GB_FALSE;
         for (GB_U8 i = 0; i < 4; ++i) {
-            colours[i] = pal_colours[COL_FROM_PAL(palette, i)];
+            colours[i] = pal_colours[GB_calculate_col_from_palette(palette, i)];
         }
     }
 }
@@ -180,16 +219,16 @@ void GB_draw_bg_gb(struct GB_Data* gb) {
     const GB_U8 tile_y = pixel_y >> 3;
     const GB_U8 sub_tile_y = (pixel_y & 7);
     const GB_U8* bit = PIXEL_BIT_SHRINK;
-    const GB_U8 *vram_map = &gb->ppu.vram[0][(BG_MAP_SELECT() + (tile_y << 5)) & 0x1FFF];
+    const GB_U8 *vram_map = &gb->ppu.vram[0][(GB_get_bg_map_select(gb) + (tile_y << 5)) & 0x1FFF];
     GB_U16* pixels = gb->ppu.pixles[scanline];
 
     for (GB_U8 tile_x = 0; tile_x <= 20; ++tile_x) {
         const GB_U8 map_x = ((base_tile_x + tile_x) & 31);
         const GB_U8 tile_num = vram_map[map_x];
-        const GB_U16 offset = TILE_OFFSET(tile_num, sub_tile_y);
+        const GB_U16 offset = GB_get_tile_offset(gb, tile_num, sub_tile_y);
 
-        const GB_U8 byte_a = VRAM_READ(0, offset + 0);
-        const GB_U8 byte_b = VRAM_READ(0, offset + 1);
+        const GB_U8 byte_a = GB_vram_read(gb, offset + 0, 0);
+        const GB_U8 byte_b = GB_vram_read(gb, offset + 1, 0);
 
         for (GB_U8 x = 0; x < 8; ++x) {
             const GB_U8 pixel_x = ((tile_x << 3) + x - sub_tile_x) & 0xFF;
@@ -211,16 +250,16 @@ void GB_draw_win_gb(struct GB_Data* gb) {
     const GB_U8 tile_y = pixel_y >> 3;
     const GB_U8 sub_tile_y = (pixel_y & 7);
     const GB_U8* bit = PIXEL_BIT_SHRINK;
-    const GB_U8 *vram_map = &gb->ppu.vram[0][(WIN_MAP_SELECT() + (tile_y << 5)) & 0x1FFF];
+    const GB_U8 *vram_map = &gb->ppu.vram[0][(GB_get_win_map_select(gb) + (tile_y << 5)) & 0x1FFF];
     GB_U16* pixels = gb->ppu.pixles[scanline];
     GB_BOOL inc_it = GB_FALSE;
 
     for (GB_U8 tile_x = 0; tile_x <= base_tile_x; ++tile_x) {
         const GB_U8 tile_num = vram_map[tile_x];
-        const GB_U16 offset = TILE_OFFSET(tile_num, sub_tile_y);
+        const GB_U16 offset = GB_get_tile_offset(gb, tile_num, sub_tile_y);
 
-        const GB_U8 byte_a = VRAM_READ(0, offset + 0);
-        const GB_U8 byte_b = VRAM_READ(0, offset + 1);
+        const GB_U8 byte_a = GB_vram_read(gb, offset + 0, 0);
+        const GB_U8 byte_b = GB_vram_read(gb, offset + 1, 0);
 
         for (GB_U8 x = 0; x < 8; ++x) {
             const GB_U8 pixel_x = ((tile_x << 3) + x + sub_tile_x) & 0xFF;
@@ -236,11 +275,13 @@ void GB_draw_win_gb(struct GB_Data* gb) {
     gb->ppu.line_counter += inc_it;
 }
 
-#define GB_sprite_size() ((IO_LCDC & 0x04) ? 16 : 8)
+static inline GB_BOOL GB_get_sprite_size(const struct GB_Data* gb) {
+    return ((IO_LCDC & 0x04) ? 16 : 8);
+}
 
 void GB_draw_obj(struct GB_Data* gb) {
     const GB_U8 scanline = IO_LY;
-    const GB_U8 sprite_size = GB_sprite_size();
+    const GB_U8 sprite_size = GB_get_sprite_size(gb);
     const GB_U16 bg_trans_col = gb->ppu.bg_colours[0][0];
     GB_U16* pixels = gb->ppu.pixles[scanline];
 
@@ -258,8 +299,8 @@ void GB_draw_obj(struct GB_Data* gb) {
             const GB_U8 sprite_line = sprite.flag.yflip ? sprite_size - 1 - (scanline - spy) : scanline - spy;
             const GB_U16 offset = 0x8000 | (((sprite_line) << 1) + (sprite.num << 4));
 
-            const GB_U8 byte_a = VRAM_READ(0, offset + 0);
-            const GB_U8 byte_b = VRAM_READ(0, offset + 1);
+            const GB_U8 byte_a = GB_vram_read(gb, offset + 0, 0);
+            const GB_U8 byte_b = GB_vram_read(gb, offset + 1, 0);
 
             const GB_U8* bit = sprite.flag.xflip ? PIXEL_BIT_GROW : PIXEL_BIT_SHRINK;
 
