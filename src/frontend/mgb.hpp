@@ -4,7 +4,11 @@
 #include <vector>
 #include <string>
 
+#ifdef WIN32
+#include <SDL.h>
+#else
 #include <SDL2/SDL.h>
+#endif // WIN32
 
 extern "C" {
 struct GB_Data;
@@ -82,7 +86,7 @@ private:
     auto OnDropEvent(SDL_DropEvent& e) -> void; // need to free text.
     auto OnAudioEvent(const SDL_AudioDeviceEvent& e) -> void;
     auto OnWindowEvent(const SDL_WindowEvent& e) -> void;
-    auto OnDisplayEvent(const SDL_DisplayEvent& e) -> void;
+    //auto OnDisplayEvent(const SDL_DisplayEvent& e) -> void;
     auto OnKeyEvent(const SDL_KeyboardEvent& e) -> void;
     auto OnJoypadAxisEvent(const SDL_JoyAxisEvent& e) -> void;
     auto OnJoypadButtonEvent(const SDL_JoyButtonEvent& e) -> void;

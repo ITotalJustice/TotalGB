@@ -4,7 +4,7 @@
 
 #include <assert.h>
 
-static void UNK_OP(struct GB_Data* gb, GB_U8 opcode, GB_BOOL cb_prefix) {
+static inline void UNK_OP(struct GB_Data* gb, GB_U8 opcode, GB_BOOL cb_prefix) {
 	if (gb->error_cb != NULL) {
 		struct GB_ErrorData data = {0};
 		data.code = GB_ERROR_CODE_UNKNOWN_INSTRUCTION;
@@ -52,10 +52,23 @@ static void UNK_OP(struct GB_Data* gb, GB_U8 opcode, GB_BOOL cb_prefix) {
 
 #define REG(v) gb->cpu.registers[(v) & 0x7]
 
+#if 1
+
+#define SET_FLAG_C(n) REG_F = n ? REG_F | 0x10 : REG_F & ~(0x10)
+#define SET_FLAG_H(n) REG_F = n ? REG_F | 0x20 : REG_F & ~(0x20)
+#define SET_FLAG_N(n) REG_F = n ? REG_F | 0x40 : REG_F & ~(0x40)
+#define SET_FLAG_Z(n) REG_F = n ? REG_F | 0x80 : REG_F & ~(0x80)
+
+#else
+// this (acording to msvc) is UB
+// SOURCE: https://docs.microsoft.com/en-us/cpp/error-messages/compiler-warnings/c5105
+
 #define SET_FLAG_C(n) REG_F ^= (-(!!(n)) ^ REG_F) & 0x10
 #define SET_FLAG_H(n) REG_F ^= (-(!!(n)) ^ REG_F) & 0x20
 #define SET_FLAG_N(n) REG_F ^= (-(!!(n)) ^ REG_F) & 0x40
 #define SET_FLAG_Z(n) REG_F ^= (-(!!(n)) ^ REG_F) & 0x80
+
+#endif
 
 void GB_cpu_set_flag(struct GB_Data* gb, enum GB_CpuFlags flag, GB_BOOL value) {
 	switch (flag) {
@@ -73,7 +86,8 @@ GB_BOOL GB_cpu_get_flag(const struct GB_Data* gb, enum GB_CpuFlags flag) {
 		case GB_CPU_FLAG_N: return FLAG_N;
 		case GB_CPU_FLAG_Z: return FLAG_Z;
 	}
-	__builtin_unreachable();
+	
+	GB_UNREACHABLE(GB_FALSE);
 }
 
 void GB_cpu_set_register(struct GB_Data* gb, enum GB_CpuRegisters reg, GB_U8 value) {
@@ -100,7 +114,8 @@ GB_U8 GB_cpu_get_register(const struct GB_Data* gb, enum GB_CpuRegisters reg) {
 		case GB_CPU_REGISTER_A: return REG_A;
 		case GB_CPU_REGISTER_F: return REG_F;
 	}
-	__builtin_unreachable();
+
+	GB_UNREACHABLE(0xFF);
 }
 
 void GB_cpu_set_register_pair(struct GB_Data* gb, enum GB_CpuRegisterPairs pair, GB_U16 value) {
@@ -123,7 +138,8 @@ GB_U16 GB_cpu_get_register_pair(const struct GB_Data* gb, enum GB_CpuRegisterPai
 		case GB_CPU_REGISTER_PAIR_SP: return REG_SP;
 		case GB_CPU_REGISTER_PAIR_PC: return REG_PC;
 	}
-	__builtin_unreachable();
+
+	GB_UNREACHABLE(0xFF);
 }
 
 #define SET_FLAGS_HN(h,n) \
@@ -159,12 +175,12 @@ SET_FLAG_Z(z);
 static void GB_execute(struct GB_Data* gb);
 static void GB_execute_cb(struct GB_Data* gb);
 
-static void GB_PUSH(struct GB_Data* gb, GB_U16 value) {
+static inline void GB_PUSH(struct GB_Data* gb, GB_U16 value) {
 	write8(--REG_SP, (value >> 8) & 0xFF);
 	write8(--REG_SP, value & 0xFF);
 }
 
-static GB_U16 GB_POP(struct GB_Data* gb) {
+static inline GB_U16 GB_POP(struct GB_Data* gb) {
 	const GB_U16 result = read16(REG_SP);
 	REG_SP += 2;
 	return result;
@@ -816,7 +832,7 @@ static void GB_interrupt_handler(struct GB_Data* gb) {
 	}
 	gb->cpu.ime = GB_FALSE;
 
-#if defined __has_builtin && __has_builtin(__builtin_ctz)
+#if defined(__has_builtin) && __has_builtin(__builtin_ctz)
 
 	const GB_U8 ctz = __builtin_ctz(live_interrupts);
 	const GB_U8 reset_vector = 64 | (ctz << 3);

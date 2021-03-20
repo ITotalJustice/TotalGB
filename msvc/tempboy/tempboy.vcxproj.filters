@@ -1,0 +1,603 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Source Files">
+      <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
+      <Extensions>cpp;c;cc;cxx;c++;cppm;ixx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
+    </Filter>
+    <Filter Include="Header Files">
+      <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
+      <Extensions>h;hh;hpp;hxx;h++;hm;inl;inc;ipp;xsd</Extensions>
+    </Filter>
+    <Filter Include="Resource Files">
+      <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
+      <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
+    </Filter>
+    <Filter Include="Source Files\core">
+      <UniqueIdentifier>{68fb7823-6f08-4c4d-be5d-51b242af56d4}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\core">
+      <UniqueIdentifier>{746fb626-5138-4085-b4ca-cc48098b0466}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\core\tables">
+      <UniqueIdentifier>{cecd5fdc-21d0-4d71-9260-d1df2ae5ab50}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\core\tables">
+      <UniqueIdentifier>{53537b53-6c2c-4bec-b71d-fb31f3c6084b}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\core\mbc">
+      <UniqueIdentifier>{016c6df5-9596-43ea-b4b8-4b2b6f8dd974}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\frontend">
+      <UniqueIdentifier>{6f7145a8-20ea-44c8-8656-92a83d324c53}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\frontend">
+      <UniqueIdentifier>{2e9c71c1-448e-423f-b379-ca3b949c1801}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\libs">
+      <UniqueIdentifier>{f53ca1eb-9599-4aa5-a7fe-db1c2646c476}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\libs">
+      <UniqueIdentifier>{7f5d1173-692f-46b4-9e47-23873d28ddea}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\frontend\io">
+      <UniqueIdentifier>{be7312d3-cf4c-4707-859a-7299e9258888}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\frontend\util">
+      <UniqueIdentifier>{50922938-1987-4564-975b-9a134f9148c5}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\frontend\io">
+      <UniqueIdentifier>{80ed51e8-34b9-4f7f-9d8f-1c721435d839}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\frontend\util">
+      <UniqueIdentifier>{a57045f3-dde2-46ac-a3cf-68c5caa5ca1c}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\libs\nativefiledialog">
+      <UniqueIdentifier>{28867320-d7b0-4c9b-a733-a00d1fa667aa}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\libs\zlib">
+      <UniqueIdentifier>{8ae59f68-fdca-413e-8276-f0364b4a7172}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\libs\minizip">
+      <UniqueIdentifier>{9d91ba0e-78e5-4786-9402-b75f2f2ffddc}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\libs\lz4">
+      <UniqueIdentifier>{698d798c-ec88-4c67-bee8-81c842399c96}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\libs\zstd">
+      <UniqueIdentifier>{2e2efd3e-b62d-4099-82a8-84e567c1fc5d}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\libs\lzma">
+      <UniqueIdentifier>{15d1e8a3-961d-4b20-b94e-52496a0fc0cb}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\libs\nativefiledialog">
+      <UniqueIdentifier>{3bc87389-9d5e-4414-99d4-f41d6ea73abd}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\libs\minizip">
+      <UniqueIdentifier>{17f6e90e-140a-4b2c-bc88-73c2d9b23a10}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\libs\zlib">
+      <UniqueIdentifier>{d363ee51-bfa2-43e7-a98c-97ae216f2606}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\libs\lz4">
+      <UniqueIdentifier>{08eb198a-c7fb-4eb0-84f4-0ec5ed26abae}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\libs\lzma">
+      <UniqueIdentifier>{87d84f29-fe0d-4c50-b43d-9694b0a09adc}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\libs\zstd">
+      <UniqueIdentifier>{cfa1d357-3a67-48ea-9726-43f98eef603d}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\libs\zstd\dictBuilder">
+      <UniqueIdentifier>{8b70bed5-1e39-4141-88bc-c80a6b4c7d99}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\libs\zstd\decompress">
+      <UniqueIdentifier>{b0a64c6c-4372-411a-a3f4-3d863ceebafd}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\libs\zstd\compress">
+      <UniqueIdentifier>{96c4f3a2-e164-4c24-bc91-302af921f843}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\libs\zstd\common">
+      <UniqueIdentifier>{521603ee-5c3c-4eba-8b94-e1171c6a707d}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\libs\zstd\dictBuilder">
+      <UniqueIdentifier>{68cd26e3-511e-419e-96f7-6752944161bb}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\libs\zstd\common">
+      <UniqueIdentifier>{3f84c2e2-3c2b-4d8e-955b-e19b03e9278d}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\libs\zstd\decompress">
+      <UniqueIdentifier>{3e7c8ad5-7069-4bed-aa27-dc16ddac82e2}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\libs\zstd\compress">
+      <UniqueIdentifier>{335007fa-0a51-4e97-b272-619c7cd3f813}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="..\..\src\core\apu.c">
+      <Filter>Source Files\core</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\core\bus.c">
+      <Filter>Source Files\core</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\core\cpu.c">
+      <Filter>Source Files\core</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\core\gb.c">
+      <Filter>Source Files\core</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\core\joypad.c">
+      <Filter>Source Files\core</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\core\mbc.c">
+      <Filter>Source Files\core</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\core\ppu.c">
+      <Filter>Source Files\core</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\core\serial.c">
+      <Filter>Source Files\core</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\core\timers.c">
+      <Filter>Source Files\core</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\core\tables\palette_table.c">
+      <Filter>Source Files\core\tables</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\frontend\events.cpp">
+      <Filter>Source Files\frontend</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\frontend\main.cpp">
+      <Filter>Source Files\frontend</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\frontend\mgb.cpp">
+      <Filter>Source Files\frontend</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\frontend\io\ifile_7z.cpp">
+      <Filter>Source Files\frontend\io</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\frontend\io\ifile_cfile.cpp">
+      <Filter>Source Files\frontend\io</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\frontend\io\ifile_gzip.cpp">
+      <Filter>Source Files\frontend\io</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\frontend\io\ifile_mem.cpp">
+      <Filter>Source Files\frontend\io</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\frontend\io\ifile_rar.cpp">
+      <Filter>Source Files\frontend\io</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\frontend\io\ifile_zip.cpp">
+      <Filter>Source Files\frontend\io</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\frontend\io\ifile_zstd.cpp">
+      <Filter>Source Files\frontend\io</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\frontend\io\romloader.cpp">
+      <Filter>Source Files\frontend\io</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\frontend\util\mem.cpp">
+      <Filter>Source Files\frontend\util</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\frontend\util\rewind.cpp">
+      <Filter>Source Files\frontend\util</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\frontend\util\util.cpp">
+      <Filter>Source Files\frontend\util</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\libs\zlib\adler32.c">
+      <Filter>Source Files\libs\zlib</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\libs\zlib\compress.c">
+      <Filter>Source Files\libs\zlib</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\libs\zlib\crc32.c">
+      <Filter>Source Files\libs\zlib</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\libs\zlib\deflate.c">
+      <Filter>Source Files\libs\zlib</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\libs\zlib\gzclose.c">
+      <Filter>Source Files\libs\zlib</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\libs\zlib\gzlib.c">
+      <Filter>Source Files\libs\zlib</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\libs\zlib\gzread.c">
+      <Filter>Source Files\libs\zlib</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\libs\zlib\gzwrite.c">
+      <Filter>Source Files\libs\zlib</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\libs\zlib\infback.c">
+      <Filter>Source Files\libs\zlib</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\libs\zlib\inffast.c">
+      <Filter>Source Files\libs\zlib</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\libs\zlib\inflate.c">
+      <Filter>Source Files\libs\zlib</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\libs\zlib\inftrees.c">
+      <Filter>Source Files\libs\zlib</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\libs\zlib\trees.c">
+      <Filter>Source Files\libs\zlib</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\libs\zlib\uncompr.c">
+      <Filter>Source Files\libs\zlib</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\libs\zlib\zutil.c">
+      <Filter>Source Files\libs\zlib</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\libs\zstd\common\zstd_common.c">
+      <Filter>Source Files\libs\zstd\common</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\libs\zstd\common\xxhash.c">
+      <Filter>Source Files\libs\zstd\common</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\libs\zstd\common\threading.c">
+      <Filter>Source Files\libs\zstd\common</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\libs\zstd\common\pool.c">
+      <Filter>Source Files\libs\zstd\common</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\libs\zstd\common\fse_decompress.c">
+      <Filter>Source Files\libs\zstd\common</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\libs\zstd\common\error_private.c">
+      <Filter>Source Files\libs\zstd\common</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\libs\zstd\common\entropy_common.c">
+      <Filter>Source Files\libs\zstd\common</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\libs\zstd\common\debug.c">
+      <Filter>Source Files\libs\zstd\common</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\libs\zstd\compress\fse_compress.c">
+      <Filter>Source Files\libs\zstd\compress</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\libs\zstd\compress\hist.c">
+      <Filter>Source Files\libs\zstd\compress</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\libs\zstd\compress\huf_compress.c">
+      <Filter>Source Files\libs\zstd\compress</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\libs\zstd\compress\zstd_compress.c">
+      <Filter>Source Files\libs\zstd\compress</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\libs\zstd\compress\zstd_compress_literals.c">
+      <Filter>Source Files\libs\zstd\compress</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\libs\zstd\compress\zstd_compress_sequences.c">
+      <Filter>Source Files\libs\zstd\compress</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\libs\zstd\compress\zstd_compress_superblock.c">
+      <Filter>Source Files\libs\zstd\compress</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\libs\zstd\compress\zstd_double_fast.c">
+      <Filter>Source Files\libs\zstd\compress</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\libs\zstd\compress\zstd_fast.c">
+      <Filter>Source Files\libs\zstd\compress</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\libs\zstd\compress\zstd_lazy.c">
+      <Filter>Source Files\libs\zstd\compress</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\libs\zstd\compress\zstd_ldm.c">
+      <Filter>Source Files\libs\zstd\compress</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\libs\zstd\compress\zstd_opt.c">
+      <Filter>Source Files\libs\zstd\compress</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\libs\zstd\compress\zstdmt_compress.c">
+      <Filter>Source Files\libs\zstd\compress</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\libs\zstd\decompress\huf_decompress.c">
+      <Filter>Source Files\libs\zstd\decompress</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\libs\zstd\decompress\zstd_ddict.c">
+      <Filter>Source Files\libs\zstd\decompress</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\libs\zstd\decompress\zstd_decompress.c">
+      <Filter>Source Files\libs\zstd\decompress</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\libs\zstd\decompress\zstd_decompress_block.c">
+      <Filter>Source Files\libs\zstd\decompress</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\libs\zstd\dictBuilder\cover.c">
+      <Filter>Source Files\libs\zstd\dictBuilder</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\libs\zstd\dictBuilder\divsufsort.c">
+      <Filter>Source Files\libs\zstd\dictBuilder</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\libs\zstd\dictBuilder\fastcover.c">
+      <Filter>Source Files\libs\zstd\dictBuilder</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\libs\zstd\dictBuilder\zdict.c">
+      <Filter>Source Files\libs\zstd\dictBuilder</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\libs\lzma\Alloc.c">
+      <Filter>Source Files\libs\lzma</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\libs\lzma\LzFind.c">
+      <Filter>Source Files\libs\lzma</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\libs\lzma\LzmaDec.c">
+      <Filter>Source Files\libs\lzma</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\libs\lzma\LzmaEnc.c">
+      <Filter>Source Files\libs\lzma</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\libs\lzma\LzmaLib.c">
+      <Filter>Source Files\libs\lzma</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\libs\lz4\lz4.c">
+      <Filter>Source Files\libs\lz4</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\libs\minizip\ioapi.c">
+      <Filter>Source Files\libs\minizip</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\libs\minizip\unzip.c">
+      <Filter>Source Files\libs\minizip</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\libs\nativefiledialog\nfd_win.cpp">
+      <Filter>Source Files\libs\nativefiledialog</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\..\src\core\gb.h">
+      <Filter>Header Files\core</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\core\internal.h">
+      <Filter>Header Files\core</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\core\types.h">
+      <Filter>Header Files\core</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\core\mbc\common.h">
+      <Filter>Header Files\core\mbc</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\core\mbc\mbc_0.h">
+      <Filter>Header Files\core\mbc</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\core\mbc\mbc_1.h">
+      <Filter>Header Files\core\mbc</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\core\mbc\mbc_3.h">
+      <Filter>Header Files\core\mbc</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\core\mbc\mbc_5.h">
+      <Filter>Header Files\core\mbc</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\core\tables\cycle_table.h">
+      <Filter>Header Files\core\tables</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\core\tables\cycle_table_debug.h">
+      <Filter>Header Files\core\tables</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\core\tables\palette_table.h">
+      <Filter>Header Files\core\tables</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\frontend\io\ifile_7z.hpp">
+      <Filter>Header Files\frontend\io</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\frontend\io\ifile_base.hpp">
+      <Filter>Header Files\frontend\io</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\frontend\io\ifile_cfile.hpp">
+      <Filter>Header Files\frontend\io</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\frontend\io\ifile_gzip.hpp">
+      <Filter>Header Files\frontend\io</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\frontend\io\ifile_mem.hpp">
+      <Filter>Header Files\frontend\io</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\frontend\io\ifile_rar.hpp">
+      <Filter>Header Files\frontend\io</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\frontend\io\ifile_zip.hpp">
+      <Filter>Header Files\frontend\io</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\frontend\io\ifile_zstd.hpp">
+      <Filter>Header Files\frontend\io</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\frontend\io\romloader.hpp">
+      <Filter>Header Files\frontend\io</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\frontend\util\log.hpp">
+      <Filter>Header Files\frontend\util</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\frontend\util\mem.hpp">
+      <Filter>Header Files\frontend\util</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\frontend\util\rewind.hpp">
+      <Filter>Header Files\frontend\util</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\frontend\util\util.hpp">
+      <Filter>Header Files\frontend\util</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\frontend\mgb.hpp">
+      <Filter>Header Files\frontend</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\libs\zlib\crc32.h">
+      <Filter>Header Files\libs\zlib</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\libs\zlib\deflate.h">
+      <Filter>Header Files\libs\zlib</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\libs\zlib\gzguts.h">
+      <Filter>Header Files\libs\zlib</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\libs\zlib\inffast.h">
+      <Filter>Header Files\libs\zlib</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\libs\zlib\inffixed.h">
+      <Filter>Header Files\libs\zlib</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\libs\zlib\inflate.h">
+      <Filter>Header Files\libs\zlib</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\libs\zlib\inftrees.h">
+      <Filter>Header Files\libs\zlib</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\libs\zlib\trees.h">
+      <Filter>Header Files\libs\zlib</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\libs\zlib\zconf.h">
+      <Filter>Header Files\libs\zlib</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\libs\zlib\zlib.h">
+      <Filter>Header Files\libs\zlib</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\libs\zlib\zutil.h">
+      <Filter>Header Files\libs\zlib</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\libs\zstd\common\zstd_internal.h">
+      <Filter>Header Files\libs\zstd\common</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\libs\zstd\common\zstd_errors.h">
+      <Filter>Header Files\libs\zstd\common</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\libs\zstd\common\zstd_deps.h">
+      <Filter>Header Files\libs\zstd\common</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\libs\zstd\common\xxhash.h">
+      <Filter>Header Files\libs\zstd\common</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\libs\zstd\common\threading.h">
+      <Filter>Header Files\libs\zstd\common</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\libs\zstd\common\pool.h">
+      <Filter>Header Files\libs\zstd\common</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\libs\zstd\common\mem.h">
+      <Filter>Header Files\libs\zstd\common</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\libs\zstd\common\huf.h">
+      <Filter>Header Files\libs\zstd\common</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\libs\zstd\common\fse.h">
+      <Filter>Header Files\libs\zstd\common</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\libs\zstd\common\error_private.h">
+      <Filter>Header Files\libs\zstd\common</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\libs\zstd\common\debug.h">
+      <Filter>Header Files\libs\zstd\common</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\libs\zstd\common\cpu.h">
+      <Filter>Header Files\libs\zstd\common</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\libs\zstd\common\compiler.h">
+      <Filter>Header Files\libs\zstd\common</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\libs\zstd\common\bitstream.h">
+      <Filter>Header Files\libs\zstd\common</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\libs\zstd\compress\hist.h">
+      <Filter>Header Files\libs\zstd\compress</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\libs\zstd\compress\zstd_compress_internal.h">
+      <Filter>Header Files\libs\zstd\compress</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\libs\zstd\compress\zstd_compress_literals.h">
+      <Filter>Header Files\libs\zstd\compress</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\libs\zstd\compress\zstd_compress_sequences.h">
+      <Filter>Header Files\libs\zstd\compress</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\libs\zstd\compress\zstd_compress_superblock.h">
+      <Filter>Header Files\libs\zstd\compress</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\libs\zstd\compress\zstd_cwksp.h">
+      <Filter>Header Files\libs\zstd\compress</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\libs\zstd\compress\zstd_double_fast.h">
+      <Filter>Header Files\libs\zstd\compress</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\libs\zstd\compress\zstd_fast.h">
+      <Filter>Header Files\libs\zstd\compress</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\libs\zstd\compress\zstd_lazy.h">
+      <Filter>Header Files\libs\zstd\compress</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\libs\zstd\compress\zstd_ldm.h">
+      <Filter>Header Files\libs\zstd\compress</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\libs\zstd\compress\zstd_opt.h">
+      <Filter>Header Files\libs\zstd\compress</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\libs\zstd\compress\zstdmt_compress.h">
+      <Filter>Header Files\libs\zstd\compress</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\libs\zstd\decompress\zstd_ddict.h">
+      <Filter>Header Files\libs\zstd\decompress</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\libs\zstd\decompress\zstd_decompress_block.h">
+      <Filter>Header Files\libs\zstd\decompress</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\libs\zstd\decompress\zstd_decompress_internal.h">
+      <Filter>Header Files\libs\zstd\decompress</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\libs\zstd\dictBuilder\cover.h">
+      <Filter>Header Files\libs\zstd\dictBuilder</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\libs\zstd\dictBuilder\divsufsort.h">
+      <Filter>Header Files\libs\zstd\dictBuilder</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\libs\zstd\dictBuilder\zdict.h">
+      <Filter>Header Files\libs\zstd\dictBuilder</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\libs\zstd\zstd.h">
+      <Filter>Header Files\libs\zstd</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\libs\lzma\7zTypes.h">
+      <Filter>Header Files\libs\lzma</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\libs\lzma\Alloc.h">
+      <Filter>Header Files\libs\lzma</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\libs\lzma\Compiler.h">
+      <Filter>Header Files\libs\lzma</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\libs\lzma\LzFind.h">
+      <Filter>Header Files\libs\lzma</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\libs\lzma\LzHash.h">
+      <Filter>Header Files\libs\lzma</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\libs\lzma\LzmaDec.h">
+      <Filter>Header Files\libs\lzma</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\libs\lzma\LzmaEnc.h">
+      <Filter>Header Files\libs\lzma</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\libs\lzma\LzmaLib.h">
+      <Filter>Header Files\libs\lzma</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\libs\lzma\Precomp.h">
+      <Filter>Header Files\libs\lzma</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\libs\lz4\lz4.h">
+      <Filter>Header Files\libs\lz4</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\libs\minizip\ioapi.h">
+      <Filter>Header Files\libs\minizip</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\libs\minizip\unzip.h">
+      <Filter>Header Files\libs\minizip</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\libs\nativefiledialog\nfd.h">
+      <Filter>Header Files\libs\nativefiledialog</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\libs\nativefiledialog\nfd.hpp">
+      <Filter>Header Files\libs\nativefiledialog</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="packages.config" />
+  </ItemGroup>
+</Project>

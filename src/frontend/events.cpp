@@ -35,9 +35,9 @@ auto App::Events() -> void {
                 this->OnDropEvent(e.drop);
                 break;
 
-            case SDL_DISPLAYEVENT:
+            /*case SDL_DISPLAYEVENT:
                 this->OnDisplayEvent(e.display);
-                break;
+                break;*/
 
             case SDL_WINDOWEVENT:
                 this->OnWindowEvent(e.window);
@@ -135,15 +135,15 @@ auto App::OnWindowEvent(const SDL_WindowEvent& e) -> void {
     }
 }
 
-auto App::OnDisplayEvent(const SDL_DisplayEvent& e) -> void {
-    switch (e.event) {
-        case SDL_DISPLAYEVENT_NONE:
-            break;
-
-        case SDL_DISPLAYEVENT_ORIENTATION:
-            break;
-    }
-}
+//auto App::OnDisplayEvent(const SDL_DisplayEvent& e) -> void {
+//    switch (e.event) {
+//        case SDL_DISPLAYEVENT_NONE:
+//            break;
+//
+//        case SDL_DISPLAYEVENT_ORIENTATION:
+//            break;
+//    }
+//}
 
 auto App::OnKeyEvent(const SDL_KeyboardEvent& e) -> void {
     const GB_BOOL kdown = e.type == SDL_KEYDOWN;

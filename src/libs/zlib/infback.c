@@ -247,8 +247,10 @@ struct inflate_state FAR *state;
    inflateBack() can also return Z_STREAM_ERROR if the input parameters
    are not correct, i.e. strm is Z_NULL or the state was not initialized.
  */
+#if defined(__GNUG__) || defined(__MINGW32__)
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wswitch-enum"
+#endif
 
 int ZEXPORT inflateBack(strm, in, in_desc, out, out_desc)
 z_streamp strm;
@@ -632,7 +634,9 @@ void FAR *out_desc;
     return ret;
 }
 
+#if defined(__GNUG__) || defined(__MINGW32__)
 #pragma GCC diagnostic pop
+#endif
 
 int ZEXPORT inflateBackEnd(strm)
 z_streamp strm;

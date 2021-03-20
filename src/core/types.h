@@ -59,16 +59,19 @@ struct GB_Joypad;
 #define GB_MIN(x, y) (((x) < (y)) ? (x) : (y))
 #define GB_MAX(x, y) (((x) > (y)) ? (x) : (y))
 
-// todo: prefix with GB
-// TODO: detect if using gcc compiler with macros
-#define GCC_OPTIMISATIONS
-#ifdef GCC_OPTIMISATIONS
+#if defined(__has_builtin) && __has_builtin(__builtin_expect)
 #define LIKELY(c) (__builtin_expect(c,1))
 #define UNLIKELY(c) (__builtin_expect(c,0))
 #else
 #define LIKELY(c) ((c))
 #define UNLIKELY(c) ((c))
 #endif
+
+#if defined(__has_builtin) && __has_builtin(__builtin_unreachable)
+#define GB_UNREACHABLE(ret) __builtin_unreachable()
+#else
+#define GB_UNREACHABLE(ret) return ret
+#endif // __has_builtin && __has_builtin(__builtin_unreachable)
 
 // todo: prefix with GB
 #define GB_UNUSED(var) ((void)(var))

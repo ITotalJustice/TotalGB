@@ -36,3 +36,15 @@
 roms/
 unused/
 tests/
+
+# VS stuff
+msvc/.*
+msvc/packages
+msvc/Debug
+msvc/Release
+msvc/x64
+msvc/tempboy/Release
+msvc/tempboy/Debug
+msvc/tempboy/x64
+*.tlog
+*.log
