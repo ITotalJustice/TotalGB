@@ -8,6 +8,8 @@ PR's, issues and any help is very much welcome!
 
 ## Credits
 
+- <https://gbdev.github.io/pandocs/>
+
 - <https://github.com/gabomdq/SDL_GameControllerDB>
 
 - <https://github.com/btzy/nativefiledialog-extended>

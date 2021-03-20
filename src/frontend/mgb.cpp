@@ -348,10 +348,12 @@ auto App::Loop() -> void {
                 break;
 
             case EmuRunState::DUAL:
-                GB_run_frames(
-                    this->emu_instances[0].gameboy.get(),
-                    this->emu_instances[1].gameboy.get()
-                );
+                GB_run_frame(this->emu_instances[0].gameboy.get());
+                GB_run_frame(this->emu_instances[1].gameboy.get());
+                // GB_run_frames(
+                //     this->emu_instances[0].gameboy.get(),
+                //     this->emu_instances[1].gameboy.get()
+                // );
                 break;
         }
 

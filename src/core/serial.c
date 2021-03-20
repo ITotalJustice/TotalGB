@@ -4,6 +4,7 @@
 #include <assert.h>
 #include <stdio.h>
 
+// SOURCE: https://gbdev.io/pandocs/#serial-data-transfer
 
 static GB_BOOL GB_has_link_cable(const struct GB_Data* gb) {
     return gb->link_cable != NULL;
