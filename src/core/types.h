@@ -54,6 +54,8 @@ struct GB_Joypad;
 
 #define GB_BOOTROM_SIZE 0x100
 
+#define GB_FRAME_CPU_CYCLES 70224
+
 #define GB_MIN(x, y) (((x) < (y)) ? (x) : (y))
 #define GB_MAX(x, y) (((x) > (y)) ? (x) : (y))
 
@@ -250,6 +252,21 @@ typedef void(*GB_halt_callback_t)(struct GB_Data* gb, void* user);
 typedef void(*GB_stop_callback_t)(struct GB_Data* gb, void* user);
 typedef void(*GB_error_callback_t)(struct GB_Data* gb, void* user, struct GB_ErrorData* e);
 
+
+enum GB_LinkTransferType {
+    // tells the other gameboy that it is NOT
+    // the master clock, instead it is the slave
+    GB_LINK_TRANSFER_TYPE_SLAVE_SET,
+    // normal data transfer, sent from the master to the slave.
+    GB_LINK_TRANSFER_TYPE_DATA,
+};
+
+struct GB_LinkCableData {
+    enum GB_LinkTransferType type;
+    GB_U8 in_data;
+    GB_U8 out_data;
+};
+
 // serial data transfer callback is used when IO_SC is set to 0x81
 // at which point, this callback is called, sending the data in
 // IO_SB, this will be data_in.
@@ -259,7 +276,7 @@ typedef void(*GB_error_callback_t)(struct GB_Data* gb, void* user, struct GB_Err
 
 // this callback should return GB_TRUE if the data was accepted AND
 // data_out is filled, else, return GB_FALSE
-typedef GB_BOOL(*GB_serial_transfer_t)(struct GB_Data* gb, void* user, GB_U8 data_in, GB_U8* data_out);
+typedef GB_BOOL(*GB_serial_transfer_t)(struct GB_Data* gb, void* user, struct GB_LinkCableData* data);
 
 // structs
 
@@ -449,6 +466,7 @@ struct GB_Data {
 
 	GB_serial_transfer_t link_cable;
 	void* link_cable_user_data;
+	GB_BOOL is_master;
 
 	// callbacks + user_data
 	GB_vblank_callback_t vblank_cb;

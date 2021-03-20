@@ -40,7 +40,10 @@ int GB_loadstate2(struct GB_Data* gb, const struct GB_CoreState* state);
 // int GB_set_colour_mode(struct GB_Data* gb, enum GB_ColourMode mode);
 // enum GB_ColourMode GB_get_colour_mode(const struct GB_Data* gb);
 
-void GB_run_test(struct GB_Data* gb);
+/* returns the number of cycles ran */
+GB_U16 GB_run_step(struct GB_Data* gb);
+
+/* run until the end of a frame */
 void GB_run_frame(struct GB_Data* gb);
 
 /* returns a pointer to the loaded rom data as a GB_CartHeader */
@@ -82,7 +85,7 @@ void GB_connect_link_cable(struct GB_Data* gb, GB_serial_transfer_t cb, void* us
 // this sets the link cable callback to an interal function.
 // the user_data for the callback will be the passed in gb struct.
 // WARNING: this will overwrite the exisitng link_cable_cb and user_data! 
-void GB_connect_link_cable_builtin(struct GB_Data* gb);
+void GB_connect_link_cable_builtin(struct GB_Data* gb, struct GB_Data* gb2);
 
 GB_BOOL GB_get_rom_palette_hash_from_header(const struct GB_CartHeader* header, GB_U8* hash, GB_U8* forth);
 

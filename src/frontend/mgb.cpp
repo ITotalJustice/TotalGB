@@ -17,32 +17,32 @@ namespace mgb {
 // This removes any screen tearing and changes to the pixels whilst in vblank.
 auto VblankCallback(GB_Data*, void* user) -> void {
     assert(user);
-    auto* app = static_cast<App*>(user);
-    app->OnVblankCallback();
+    auto* instance = static_cast<Instance*>(user);
+    instance->OnVblankCallback();
 }
 
 auto HblankCallback(GB_Data*, void* user) -> void {
     assert(user);
-    auto* app = static_cast<App*>(user);
-    app->OnHblankCallback();
+    auto* instance = static_cast<Instance*>(user);
+    instance->OnHblankCallback();
 }
 
 auto DmaCallback(GB_Data*, void* user) -> void {
     assert(user);
-    auto* app = static_cast<App*>(user);
-    app->OnDmaCallback();
+    auto* instance = static_cast<Instance*>(user);
+    instance->OnDmaCallback();
 }
 
 auto HaltCallback(GB_Data*, void* user) -> void {
     assert(user);
-    auto* app = static_cast<App*>(user);
-    app->OnHaltCallback();
+    auto* instance = static_cast<Instance*>(user);
+    instance->OnHaltCallback();
 }
 
 auto StopCallback(GB_Data*, void* user) -> void {
     assert(user);
-    auto* app = static_cast<App*>(user);
-    app->OnStopCallback();
+    auto* instance = static_cast<Instance*>(user);
+    instance->OnStopCallback();
 }
 
 // error callback is to be used to handle errors that may happen during emulation.
@@ -50,11 +50,11 @@ auto StopCallback(GB_Data*, void* user) -> void {
 // such as trying to write to a rom or OOB read / write from the game.
 auto ErrorCallback(GB_Data*, void* user, struct GB_ErrorData* data) -> void {
     assert(user);
-    auto* app = static_cast<App*>(user);
+    auto* app = static_cast<Instance*>(user);
     app->OnErrorCallback(data);
 }
 
-auto App::OnVblankCallback() -> void {
+auto Instance::OnVblankCallback() -> void {
     void* pixles; int pitch;
 
     SDL_LockTexture(texture, NULL, &pixles, &pitch);
@@ -62,23 +62,23 @@ auto App::OnVblankCallback() -> void {
     SDL_UnlockTexture(texture);
 }
 
-auto App::OnHblankCallback() -> void {
+auto Instance::OnHblankCallback() -> void {
 
 }
 
-auto App::OnDmaCallback() -> void {
+auto Instance::OnDmaCallback() -> void {
 
 }
 
-auto App::OnHaltCallback() -> void {
+auto Instance::OnHaltCallback() -> void {
 
 }
 
-auto App::OnStopCallback() -> void {
+auto Instance::OnStopCallback() -> void {
     printf("[ERROR] cpu stop instruction called!\n");
 }
 
-auto App::OnErrorCallback(struct GB_ErrorData* data) -> void {
+auto Instance::OnErrorCallback(struct GB_ErrorData* data) -> void {
     switch (data->code) {
         case GB_ErrorCode::GB_ERROR_CODE_UNKNOWN_INSTRUCTION:
             printf("[ERROR] UNK instruction OP 0x%02X CB: %s\n", data->unk_instruction.opcode, data->unk_instruction.cb_prefix ? "TRUE" : "FALSE");
@@ -90,53 +90,7 @@ auto App::OnErrorCallback(struct GB_ErrorData* data) -> void {
     }
 }
 
-App::App() {
-    SDL_Init(SDL_INIT_VIDEO | SDL_INIT_EVENTS | SDL_INIT_JOYSTICK | SDL_INIT_HAPTIC | SDL_INIT_GAMECONTROLLER);
-    SDL_GameControllerAddMappingsFromFile("res/mappings/gamecontrollerdb.txt");
-
-    // window
-	this->window = SDL_CreateWindow("gb-emu", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 160 * 2, 144 * 2, SDL_WINDOW_SHOWN);
-    this->renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC);
-	this->texture = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_BGR555, SDL_TEXTUREACCESS_STREAMING, 160, 144);
-	SDL_SetWindowMinimumSize(window, 160, 144);
-    SDL_ShowCursor(SDL_DISABLE);
-
-    this->gameboy = std::make_unique<GB_Data>();
-    GB_init(this->gameboy.get());
-
-    GB_set_vblank_callback(this->gameboy.get(), VblankCallback, this);
-    GB_set_hblank_callback(this->gameboy.get(), HblankCallback, this);
-    GB_set_dma_callback(this->gameboy.get(), DmaCallback, this);
-    GB_set_halt_callback(this->gameboy.get(), HaltCallback, this);
-    GB_set_stop_callback(this->gameboy.get(), StopCallback, this);
-    GB_set_error_callback(this->gameboy.get(), ErrorCallback, this);
-}
-
-App::~App() {
-    // try and save the game before exiting...
-    if (this->rom_loaded == true) {
-        this->SaveGame(this->rom_path);
-    }
-
-	GB_quit(this->gameboy.get());
-
-    // cleanup joysticks and controllers
-    for (auto &p : this->joysticks) {
-        SDL_JoystickClose(p.ptr);
-        p.ptr = nullptr;
-    }
-    for (auto &p : this->controllers) {
-        SDL_GameControllerClose(p.ptr);
-        p.ptr = nullptr;
-    }
-
-    SDL_DestroyTexture(this->texture);
-	SDL_DestroyRenderer(this->renderer);
-	SDL_DestroyWindow(this->window);
-	SDL_Quit();
-}
-
-auto App::LoadRom(const std::string& path) -> bool {
+auto Instance::LoadRom(const std::string& path) -> bool {
     // if we have a rom alread loaded, try and save the game
     // first before exiting...
     if (this->rom_loaded == true) {
@@ -150,6 +104,7 @@ auto App::LoadRom(const std::string& path) -> bool {
 
     // get the size
     const auto file_size = romloader.size();
+
 
     // resize vector
     this->rom_data.resize(file_size);
@@ -179,7 +134,7 @@ auto App::LoadRom(const std::string& path) -> bool {
     return true;
 }
 
-auto App::SaveGame(const std::string& path) -> void {
+auto Instance::SaveGame(const std::string& path) -> void {
     if (GB_has_save(this->gameboy.get()) || GB_has_rtc(this->gameboy.get())) {
         struct GB_SaveData save_data;
         GB_savegame(this->gameboy.get(), &save_data);
@@ -204,7 +159,7 @@ auto App::SaveGame(const std::string& path) -> void {
     }
 }
 
-auto App::LoadSave(const std::string& path) -> void {
+auto Instance::LoadSave(const std::string& path) -> void {
     struct GB_SaveData save_data{};
 
     // load sram
@@ -235,6 +190,79 @@ auto App::LoadSave(const std::string& path) -> void {
     }
 
     GB_loadsave(this->gameboy.get(), &save_data);
+}
+
+App::App() {
+    SDL_Init(SDL_INIT_VIDEO | SDL_INIT_EVENTS | SDL_INIT_JOYSTICK | SDL_INIT_HAPTIC | SDL_INIT_GAMECONTROLLER);
+    SDL_GameControllerAddMappingsFromFile("res/mappings/gamecontrollerdb.txt");
+
+    // SDL_ShowCursor(SDL_DISABLE);
+
+    for (std::size_t i = 0; i < this->emu_instances.size(); ++i) {
+        this->emu_instances[i].window = SDL_CreateWindow("gb-emu", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 160 * 2, 144 * 2, SDL_WINDOW_SHOWN);
+        this->emu_instances[i].renderer = SDL_CreateRenderer(this->emu_instances[i].window, -1, SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC);
+	    this->emu_instances[i].texture = SDL_CreateTexture(this->emu_instances[i].renderer, SDL_PIXELFORMAT_BGR555, SDL_TEXTUREACCESS_STREAMING, 160, 144);
+        SDL_SetWindowMinimumSize(this->emu_instances[i].window, 160, 144);
+
+        this->emu_instances[i].gameboy = std::make_unique<GB_Data>();
+        GB_init(this->emu_instances[i].gameboy.get());
+
+        GB_set_vblank_callback(this->emu_instances[i].gameboy.get(), VblankCallback, &this->emu_instances[i]);
+        GB_set_hblank_callback(this->emu_instances[i].gameboy.get(), HblankCallback, &this->emu_instances[i]);
+        GB_set_dma_callback(this->emu_instances[i].gameboy.get(), DmaCallback, &this->emu_instances[i]);
+        GB_set_halt_callback(this->emu_instances[i].gameboy.get(), HaltCallback, &this->emu_instances[i]);
+        GB_set_stop_callback(this->emu_instances[i].gameboy.get(), StopCallback, &this->emu_instances[i]);
+        GB_set_error_callback(this->emu_instances[i].gameboy.get(), ErrorCallback, &this->emu_instances[i]);
+    }
+}
+
+App::~App() {
+    for (auto& p : this->emu_instances) {
+        if (p.rom_loaded) {
+            p.SaveGame(p.rom_path);
+        }
+
+        GB_quit(p.gameboy.get());
+
+        // destroy first instance
+        SDL_DestroyTexture(p.texture);
+        SDL_DestroyRenderer(p.renderer);
+        SDL_DestroyWindow(p.window);
+    }
+
+    // cleanup joysticks and controllers
+    for (auto &p : this->joysticks) {
+        SDL_JoystickClose(p.ptr);
+        p.ptr = nullptr;
+    }
+
+    for (auto &p : this->controllers) {
+        SDL_GameControllerClose(p.ptr);
+        p.ptr = nullptr;
+    }
+
+	SDL_Quit();
+}
+
+auto App::LoadRom(const std::string& path, bool dual) -> bool {
+    // load the game in slot 1
+    if (dual == false) {
+        if (this->emu_instances[0].LoadRom(path)) {
+            this->run_state = EmuRunState::SINGLE;
+            return true;
+        }
+    } else { // else slot 2
+        if (this->emu_instances[1].LoadRom(path)) {
+            this->run_state = EmuRunState::DUAL;
+            // connect both games via link cable
+            GB_connect_link_cable_builtin(this->emu_instances[0].gameboy.get(), this->emu_instances[1].gameboy.get());
+            GB_connect_link_cable_builtin(this->emu_instances[1].gameboy.get(), this->emu_instances[0].gameboy.get());
+            return true;
+        }
+    }
+
+    this->run_state = EmuRunState::NONE;
+    return false;
 }
 
 auto App::FilePicker() -> void {
@@ -292,14 +320,39 @@ auto App::ResizeScreen() -> void {
 
 }
 
+void GB_run_frames(struct GB_Data* gb1, struct GB_Data* gb2) {
+	GB_U32 cycles_elapsed1 = 0;
+    GB_U32 cycles_elapsed2 = 0;
+
+    while (cycles_elapsed1 < GB_FRAME_CPU_CYCLES || cycles_elapsed2 < GB_FRAME_CPU_CYCLES) {
+        if (cycles_elapsed1 < GB_FRAME_CPU_CYCLES) {
+            cycles_elapsed1 += GB_run_step(gb1);
+        }
+        if (cycles_elapsed2 < GB_FRAME_CPU_CYCLES) {
+            cycles_elapsed2 += GB_run_step(gb2);
+        }
+    }
+}
+
 auto App::Loop() -> void {
     while (this->running) {
         // handle sdl2 events
         this->Events();
 
-        // run game for a frame (if loaded)
-        if (this->rom_loaded) {
-            GB_run_frame(gameboy.get());
+        switch (this->run_state) {
+            case EmuRunState::NONE:
+                break;
+
+            case EmuRunState::SINGLE:
+                GB_run_frame(this->emu_instances[0].gameboy.get());
+                break;
+
+            case EmuRunState::DUAL:
+                GB_run_frames(
+                    this->emu_instances[0].gameboy.get(),
+                    this->emu_instances[1].gameboy.get()
+                );
+                break;
         }
 
         // render the screen
@@ -308,10 +361,11 @@ auto App::Loop() -> void {
 }
 
 auto App::Draw() -> void {
-    SDL_RenderClear(renderer);
-    
-    SDL_RenderCopy(renderer, texture, NULL, NULL);
-    SDL_RenderPresent(renderer);
+    for (auto& p : this->emu_instances) {
+        SDL_RenderClear(p.renderer);
+        SDL_RenderCopy(p.renderer, p.texture, NULL, NULL);
+        SDL_RenderPresent(p.renderer);
+    }
 }
 
 } // namespace mgb

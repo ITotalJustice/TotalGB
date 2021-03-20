@@ -822,7 +822,7 @@ static void GB_interrupt_handler(struct GB_Data* gb) {
 	const GB_U8 reset_vector = 64 | (ctz << 3);
 	RST(reset_vector);
 	GB_disable_interrupt(gb, 1 << ctz);
-
+	// int a = 0x58;
 #else
 	if (live_interrupts & GB_INTERRUPT_VBLANK) {
 		RST(64);

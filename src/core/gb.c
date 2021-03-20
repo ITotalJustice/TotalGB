@@ -29,6 +29,8 @@ GB_BOOL GB_init(struct GB_Data* gb) {
 	GB_set_error_callback(gb, NULL, NULL);
 	GB_connect_link_cable(gb, NULL, NULL);
 
+	gb->is_master = GB_FALSE;
+
 	return GB_TRUE;
 }
 
@@ -441,19 +443,20 @@ void GB_connect_link_cable(struct GB_Data* gb, GB_serial_transfer_t cb, void* us
 	gb->link_cable_user_data = user_data;
 }
 
+GB_U16 GB_run_step(struct GB_Data* gb) {
+	GB_U16 cycles = GB_cpu_run(gb, 0 /*unused*/);
+	GB_timer_run(gb, cycles);
+	GB_ppu_run(gb, cycles);
+	return cycles;
+}
+
 void GB_run_frame(struct GB_Data* gb) {
 	assert(gb);
 
-	static const GB_U32 cycle_end = 70224;
 	GB_U32 cycles_elapsed = 0;
-	GB_U16 cycles = 0;
 
 	do {
-		cycles = GB_cpu_run(gb, 0 /*unused*/);
-		// ++cycles;
-		GB_timer_run(gb, cycles);
-		GB_ppu_run(gb, cycles);
-		cycles_elapsed += cycles;
+		cycles_elapsed += GB_run_step(gb);
 
-	} while (cycles_elapsed < cycle_end);
+	} while (cycles_elapsed < GB_FRAME_CPU_CYCLES);
 }

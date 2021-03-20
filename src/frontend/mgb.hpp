@@ -18,6 +18,12 @@ using s8 = std::int8_t;
 using u16 = std::uint16_t;
 using s16 = std::int16_t;
 
+enum class EmuRunState {
+    NONE,
+    SINGLE,
+    DUAL
+};
+
 struct JoystickCtx {
     SDL_Joystick *ptr;
     SDL_JoystickID id;
@@ -28,13 +34,21 @@ struct ControllerCtx {
     SDL_JoystickID id;
 };
 
-struct App {
-public:
-    App();
-    ~App();
+// this is a quick hacky gb instance struct
+struct Instance {
+    std::unique_ptr<GB_Data> gameboy;
+    std::vector<u8> rom_data;
+    std::string rom_path;
+
+    SDL_Texture* texture{nullptr};
+    SDL_Window* window{nullptr};
+    SDL_Renderer* renderer{nullptr};
+
+    bool rom_loaded{false};
 
     auto LoadRom(const std::string& path) -> bool;
-    auto Loop() -> void;
+    auto SaveGame(const std::string& path) -> void;
+    auto LoadSave(const std::string& path) -> void;
 
     auto OnVblankCallback() -> void;
     auto OnHblankCallback() -> void;
@@ -42,11 +56,17 @@ public:
     auto OnHaltCallback() -> void;
     auto OnStopCallback() -> void;
     auto OnErrorCallback(struct GB_ErrorData* data) -> void;
+};
+
+struct App {
+public:
+    App();
+    ~App();
+
+    auto LoadRom(const std::string& path, bool dual = false) -> bool;
+    auto Loop() -> void;
 
 private:
-    auto SaveGame(const std::string& path) -> void;
-    auto LoadSave(const std::string& path) -> void;
-
     auto FilePicker() -> void;
 
     auto Draw() -> void;
@@ -75,19 +95,14 @@ private:
     auto OnUserEvent(SDL_UserEvent& e) -> void; // might need to free.
 
 private:
-    std::unique_ptr<GB_Data> gameboy;
-    std::vector<u8> rom_data;
-    SDL_Window* window;
-    SDL_Renderer* renderer;
-    SDL_Texture* texture;
-
-    std::string rom_path;
+    std::array<Instance, 2> emu_instances;
 
     std::vector<ControllerCtx> controllers{};
     std::vector<JoystickCtx> joysticks{};
     std::vector<SDL_Haptic*> rumble_controllers{nullptr};
 
-    bool rom_loaded{false};
+    EmuRunState run_state{EmuRunState::NONE};
+
     bool running{true};
 };
 

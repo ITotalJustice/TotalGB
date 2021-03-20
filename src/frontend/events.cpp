@@ -88,6 +88,7 @@ auto App::Events() -> void {
 
 auto App::OnQuitEvent(const SDL_QuitEvent& e) -> void {
     log::log("quit request at %u\n", e.timestamp);
+    printf("quit request at %u\n", e.timestamp);
     this->running = false;
 }
 
@@ -150,7 +151,7 @@ auto App::OnKeyEvent(const SDL_KeyboardEvent& e) -> void {
     // first check if any of the mapped keys were pressed...
     for (size_t i = 0; i < GB_ARR_SIZE(key_map); ++i) {
         if (key_map[i].key == e.keysym.sym) {
-            GB_set_buttons(gameboy.get(), key_map[i].button, kdown);
+            GB_set_buttons(this->emu_instances[0].gameboy.get(), key_map[i].button, kdown);
             return;
         }
     }
@@ -199,16 +200,16 @@ auto App::OnControllerButtonEvent(const SDL_ControllerButtonEvent& e) -> void {
     const bool down = e.type == SDL_CONTROLLERBUTTONDOWN;
 
     switch (e.button) {
-        case SDL_CONTROLLER_BUTTON_A: GB_set_buttons(this->gameboy.get(), GB_BUTTON_B, down); break;
-        case SDL_CONTROLLER_BUTTON_Y: GB_set_buttons(this->gameboy.get(), GB_BUTTON_B, down); break;
-        case SDL_CONTROLLER_BUTTON_B: GB_set_buttons(this->gameboy.get(), GB_BUTTON_A, down); break;
-        case SDL_CONTROLLER_BUTTON_X: GB_set_buttons(this->gameboy.get(), GB_BUTTON_A, down); break;
-        case SDL_CONTROLLER_BUTTON_BACK: GB_set_buttons(this->gameboy.get(), GB_BUTTON_SELECT, down); break;
-        case SDL_CONTROLLER_BUTTON_START: GB_set_buttons(this->gameboy.get(), GB_BUTTON_START, down); break;
-        case SDL_CONTROLLER_BUTTON_DPAD_UP: GB_set_buttons(this->gameboy.get(), GB_BUTTON_UP, down); break;
-        case SDL_CONTROLLER_BUTTON_DPAD_DOWN: GB_set_buttons(this->gameboy.get(), GB_BUTTON_DOWN, down); break;
-        case SDL_CONTROLLER_BUTTON_DPAD_LEFT: GB_set_buttons(this->gameboy.get(), GB_BUTTON_LEFT, down); break;
-        case SDL_CONTROLLER_BUTTON_DPAD_RIGHT: GB_set_buttons(this->gameboy.get(), GB_BUTTON_RIGHT, down); break;
+        case SDL_CONTROLLER_BUTTON_A: GB_set_buttons(this->emu_instances[1].gameboy.get(), GB_BUTTON_B, down); break;
+        case SDL_CONTROLLER_BUTTON_Y: GB_set_buttons(this->emu_instances[1].gameboy.get(), GB_BUTTON_B, down); break;
+        case SDL_CONTROLLER_BUTTON_B: GB_set_buttons(this->emu_instances[1].gameboy.get(), GB_BUTTON_A, down); break;
+        case SDL_CONTROLLER_BUTTON_X: GB_set_buttons(this->emu_instances[1].gameboy.get(), GB_BUTTON_A, down); break;
+        case SDL_CONTROLLER_BUTTON_BACK: GB_set_buttons(this->emu_instances[1].gameboy.get(), GB_BUTTON_SELECT, down); break;
+        case SDL_CONTROLLER_BUTTON_START: GB_set_buttons(this->emu_instances[1].gameboy.get(), GB_BUTTON_START, down); break;
+        case SDL_CONTROLLER_BUTTON_DPAD_UP: GB_set_buttons(this->emu_instances[1].gameboy.get(), GB_BUTTON_UP, down); break;
+        case SDL_CONTROLLER_BUTTON_DPAD_DOWN: GB_set_buttons(this->emu_instances[1].gameboy.get(), GB_BUTTON_DOWN, down); break;
+        case SDL_CONTROLLER_BUTTON_DPAD_LEFT: GB_set_buttons(this->emu_instances[1].gameboy.get(), GB_BUTTON_LEFT, down); break;
+        case SDL_CONTROLLER_BUTTON_DPAD_RIGHT: GB_set_buttons(this->emu_instances[1].gameboy.get(), GB_BUTTON_RIGHT, down); break;
         case SDL_CONTROLLER_BUTTON_LEFTSTICK: break;
         case SDL_CONTROLLER_BUTTON_RIGHTSTICK: break;
         case SDL_CONTROLLER_BUTTON_GUIDE: break; // home
