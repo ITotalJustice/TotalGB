@@ -29,7 +29,7 @@ const char inflate_copyright[] =
    table index bits.  It will differ if the request is greater than the
    longest code or if it is less than the shortest code.
  */
-#if defined(__GNUG__) || defined(__MINGW32__)
+#if defined(__GNUG__) || defined(__GNUC__)
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wswitch-enum"
 #endif
@@ -308,6 +308,6 @@ unsigned short FAR *work;
     return 0;
 }
 
-#if defined(__GNUG__) || defined(__MINGW32__)
+#if defined(__GNUG__) || defined(__GNUC__)
 #pragma GCC diagnostic pop
 #endif
