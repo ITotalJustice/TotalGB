@@ -40,7 +40,6 @@ struct ControllerCtx {
 
 // this is a quick hacky gb instance struct
 struct Instance {
-    std::unique_ptr<GB_Data> gameboy;
     std::vector<u8> rom_data;
     std::string rom_path;
 
@@ -48,11 +47,16 @@ struct Instance {
     SDL_Window* window{nullptr};
     SDL_Renderer* renderer{nullptr};
 
-    bool rom_loaded{false};
+    auto HasRom() const -> bool;
+    auto HasWindow() const -> bool;
 
     auto LoadRom(const std::string& path) -> bool;
+    auto CloseRom(bool close_window = false) -> bool;
+
     auto SaveGame(const std::string& path) -> void;
     auto LoadSave(const std::string& path) -> void;
+
+    auto GetGB() -> GB_Data*;
 
     auto OnVblankCallback() -> void;
     auto OnHblankCallback() -> void;
@@ -60,6 +64,13 @@ struct Instance {
     auto OnHaltCallback() -> void;
     auto OnStopCallback() -> void;
     auto OnErrorCallback(struct GB_ErrorData* data) -> void;
+
+private:
+    auto CreateWindow() -> void;
+    auto DestroyWindow() -> void;
+    
+private:
+    std::unique_ptr<GB_Data> gameboy;
 };
 
 struct App {
@@ -86,7 +97,9 @@ private:
     auto OnDropEvent(SDL_DropEvent& e) -> void; // need to free text.
     auto OnAudioEvent(const SDL_AudioDeviceEvent& e) -> void;
     auto OnWindowEvent(const SDL_WindowEvent& e) -> void;
-    //auto OnDisplayEvent(const SDL_DisplayEvent& e) -> void;
+#if SDL_VERSION_ATLEAST(2, 0, 9)
+    auto OnDisplayEvent(const SDL_DisplayEvent& e) -> void;
+#endif // SDL_VERSION_ATLEAST(2, 0, 9)
     auto OnKeyEvent(const SDL_KeyboardEvent& e) -> void;
     auto OnJoypadAxisEvent(const SDL_JoyAxisEvent& e) -> void;
     auto OnJoypadButtonEvent(const SDL_JoyButtonEvent& e) -> void;
