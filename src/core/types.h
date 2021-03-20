@@ -227,6 +227,20 @@ enum GB_Interrupts {
     GB_INTERRUPT_JOYPAD = 0x10,
 };
 
+enum GB_StatusModes {
+    STATUS_MODE_HBLANK = 0,
+    STATUS_MODE_VBLANK = 1,
+    STATUS_MODE_SPRITE = 2,
+    STATUS_MODE_TRANSFER = 3
+};
+
+enum GB_StatIntModes {
+    STAT_INT_MODE_0 = 0x08,
+    STAT_INT_MODE_1 = 0x10,
+    STAT_INT_MODE_2 = 0x20,
+    STAT_INT_MODE_COINCIDENCE = 0x40
+};
+
 enum GB_ErrorCode {
 	GB_ERROR_CODE_UNKNOWN_INSTRUCTION,
 

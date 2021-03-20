@@ -28,9 +28,11 @@ void GB_update_wram_banks(struct GB_Data* gb);
 void GB_DMA(struct GB_Data* gb);
 void GB_draw_scanline(struct GB_Data* gb);
 void GB_update_all_colours_gb(struct GB_Data* gb);
-void GB_set_coincidence_flag(struct GB_Data* gb, GB_BOOL n);
-void GB_set_status_mode(struct GB_Data* gb, GB_U8 mode);
-GB_U8 GB_get_status_mode(const struct GB_Data* gb);
+void GB_set_coincidence_flag(struct GB_Data* gb, const GB_BOOL n);
+
+void GB_set_status_mode(struct GB_Data* gb, const enum GB_StatusModes mode);
+enum GB_StatusModes GB_get_status_mode(const struct GB_Data* gb);
+
 void GB_compare_LYC(struct GB_Data* gb);
 GB_U8 GB_joypad_get(const struct GB_Data* gb);
 

@@ -6,21 +6,7 @@
 #include <string.h>
 #include <assert.h>
 
-enum GB_Modes {
-    MODE_HBLANK = 0,
-    MODE_VBLANK = 1,
-    MODE_SPRITE = 2,
-    MODE_TRANSFER = 3
-};
-
-enum GB_StatIntModes {
-    STAT_INT_MODE_0 = 0x08,
-    STAT_INT_MODE_1 = 0x10,
-    STAT_INT_MODE_2 = 0x20,
-    STAT_INT_MODE_COINCIDENCE = 0x40
-};
-
-static inline GB_U16 GB_calculate_col_from_palette(GB_U8 palette, GB_U8 colour) {
+static inline GB_U16 GB_calculate_col_from_palette(const GB_U8 palette, const GB_U8 colour) {
     return ((palette >> (colour << 1)) & 3);
 }
 
@@ -56,24 +42,24 @@ static inline GB_U16 GB_get_win_map_select(const struct GB_Data* gb) {
     return GB_get_win_data_select(gb) ? 0x9C00 : 0x9800;
 }
 
-static inline GB_U16 GB_get_tile_offset(const struct GB_Data* gb, GB_U8 tile_num, GB_U8 sub_tile_y) {
+static inline GB_U16 GB_get_tile_offset(const struct GB_Data* gb, const GB_U8 tile_num, const GB_U8 sub_tile_y) {
     return (GB_get_title_map_select(gb) + (((GB_get_title_data_select(gb) ? tile_num : (GB_S8)tile_num)) << 4) + (sub_tile_y << 1));
 }
 
-static inline void GB_raise_if_enabled(struct GB_Data* gb, GB_U8 mode) {
+static inline void GB_raise_if_enabled(struct GB_Data* gb, const GB_U8 mode) {
     IO_IF |= ((!!(IO_STAT & mode)) << 1);
 }
 
-void GB_set_coincidence_flag(struct GB_Data* gb, GB_BOOL n) {
+void GB_set_coincidence_flag(struct GB_Data* gb, const GB_BOOL n) {
     IO_STAT = n ? IO_STAT | 0x04 : IO_STAT & ~0x04;
     // IO_STAT ^= (-(!!(n)) ^ IO_STAT) & 0x04;
 }
 
-void GB_set_status_mode(struct GB_Data* gb, GB_U8 mode) {
+void GB_set_status_mode(struct GB_Data* gb, const enum GB_StatusModes mode) {
     IO_STAT = (IO_STAT & 252) | mode;
 }
 
-GB_U8 GB_get_status_mode(const struct GB_Data* gb) {
+enum GB_StatusModes GB_get_status_mode(const struct GB_Data* gb) {
     return (IO_STAT & 0x03);
 }
 
@@ -102,11 +88,11 @@ void GB_compare_LYC(struct GB_Data* gb) {
     }
 }
 
-void GB_change_status_mode(struct GB_Data* gb, GB_U8 new_mode) {
+void GB_change_status_mode(struct GB_Data* gb, const GB_U8 new_mode) {
     GB_set_status_mode(gb, new_mode);
     
     switch (new_mode) {
-        case MODE_HBLANK: // hblank
+        case STATUS_MODE_HBLANK: // hblank
             GB_raise_if_enabled(gb, STAT_INT_MODE_0);
             gb->ppu.next_cycles += 146;
             GB_draw_scanline(gb);
@@ -115,7 +101,7 @@ void GB_change_status_mode(struct GB_Data* gb, GB_U8 new_mode) {
             }
             break;
 
-        case MODE_VBLANK: // vblank
+        case STATUS_MODE_VBLANK: // vblank
             GB_raise_if_enabled(gb, STAT_INT_MODE_1);
             GB_enable_interrupt(gb, GB_INTERRUPT_VBLANK);
             gb->ppu.next_cycles += 456;
@@ -124,12 +110,12 @@ void GB_change_status_mode(struct GB_Data* gb, GB_U8 new_mode) {
             }
             break;
 
-        case MODE_SPRITE: // sprite
+        case STATUS_MODE_SPRITE: // sprite
             GB_raise_if_enabled(gb, STAT_INT_MODE_2);
             gb->ppu.next_cycles += 80;
             break;
 
-        case MODE_TRANSFER: // transfer
+        case STATUS_MODE_TRANSFER: // transfer
             gb->ppu.next_cycles += 230;
             break;
     }
@@ -137,7 +123,7 @@ void GB_change_status_mode(struct GB_Data* gb, GB_U8 new_mode) {
 
 void GB_ppu_run(struct GB_Data* gb, GB_U16 cycles) {
     if (UNLIKELY(!GB_is_lcd_enabled(gb))) {
-        GB_set_status_mode(gb, MODE_VBLANK);
+        GB_set_status_mode(gb, STATUS_MODE_VBLANK);
         gb->ppu.next_cycles = 456;
         return;
     }
@@ -148,17 +134,17 @@ void GB_ppu_run(struct GB_Data* gb, GB_U16 cycles) {
     }
 
     switch (GB_get_status_mode(gb)) {
-        case MODE_HBLANK: // hblank
+        case STATUS_MODE_HBLANK: // hblank
             ++IO_LY;
             GB_compare_LYC(gb);
             if (UNLIKELY(IO_LY == 144)) {
-                GB_change_status_mode(gb, MODE_VBLANK);
+                GB_change_status_mode(gb, STATUS_MODE_VBLANK);
             } else {
-                GB_change_status_mode(gb, MODE_SPRITE);
+                GB_change_status_mode(gb, STATUS_MODE_SPRITE);
             }
             break;
         
-        case MODE_VBLANK: // vblank
+        case STATUS_MODE_VBLANK: // vblank
             ++IO_LY;
             GB_compare_LYC(gb);
             gb->ppu.next_cycles += 456;
@@ -167,16 +153,16 @@ void GB_ppu_run(struct GB_Data* gb, GB_U16 cycles) {
                 IO_LY = 0;
                 gb->ppu.line_counter = 0;
                 GB_compare_LYC(gb); // important, this is needed for zelda intro.
-                GB_change_status_mode(gb, MODE_SPRITE);
+                GB_change_status_mode(gb, STATUS_MODE_SPRITE);
             }
             break;
         
-        case MODE_SPRITE: // sprite
-            GB_change_status_mode(gb, MODE_TRANSFER);
+        case STATUS_MODE_SPRITE: // sprite
+            GB_change_status_mode(gb, STATUS_MODE_TRANSFER);
             break;
         
-        case MODE_TRANSFER: // transfer
-            GB_change_status_mode(gb, MODE_HBLANK);
+        case STATUS_MODE_TRANSFER: // transfer
+            GB_change_status_mode(gb, STATUS_MODE_HBLANK);
             break;
     }
 }
