@@ -112,7 +112,7 @@ auto Instance::LoadRom(const std::string& path) -> bool {
     // read entire file...
     romloader.read(this->rom_data.data(), this->rom_data.size());
 
-    if (-1 == GB_loadrom_data(this->gameboy.get(), this->rom_data.data(), this->rom_data.size(), NULL)) {
+    if (-1 == GB_loadrom_data(this->gameboy.get(), this->rom_data.data(), this->rom_data.size())) {
         return false;
     }
 

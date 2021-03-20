@@ -36,18 +36,6 @@ GB_BOOL GB_init(struct GB_Data* gb) {
 
 void GB_quit(struct GB_Data* gb) {
 	assert(gb);
-
-	#define FREE_ELSE_WARN(name, func) \
-	if (gb->cart.name != NULL) { \
-		if (func != NULL) { \
-			func(gb->cart.name); \
-			gb->cart.name = NULL; \
-		} else { \
-			printf("[GB-WARN] Leaking %s\n", #name); \
-		} \
-	}
-
-	FREE_ELSE_WARN(rom, gb->rom_free_func);
 }
 
 void GB_reset(struct GB_Data* gb) {
@@ -210,9 +198,7 @@ GB_BOOL GB_set_palette_from_palette(struct GB_Data* gb, const struct GB_PaletteE
 	return GB_TRUE;
 }
 
-// these 3 funcs can be simplified by making a mem IFile struct
-// an passing it to loadrom_ifile();
-int GB_loadrom_data(struct GB_Data* gb, GB_U8* data, GB_U32 size, void(*free_func)(void*)) {
+int GB_loadrom_data(struct GB_Data* gb, GB_U8* data, GB_U32 size) {
 	if (!gb || !data || !size || size < GB_BOOTROM_SIZE + sizeof(struct GB_CartHeader)) {
 		return -1;
 	}
@@ -243,8 +229,6 @@ int GB_loadrom_data(struct GB_Data* gb, GB_U8* data, GB_U32 size, void(*free_fun
 			GB_set_palette_from_palette(gb, &palette);
 		}
 	}
-
-	gb->rom_free_func = free_func;
 
 	return 0;
 }

@@ -486,8 +486,6 @@ struct GB_Data {
 
 	GB_error_callback_t error_cb;
 	void* error_cb_user_data;
-
-	void (*rom_free_func)(void*);
 };
 
 // i decided that the ram usage / statefile size is less important

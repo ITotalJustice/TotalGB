@@ -13,8 +13,10 @@ GB_BOOL GB_init(struct GB_Data* gb);
 void GB_quit(struct GB_Data* gb);
 void GB_reset(struct GB_Data* gb);
 
-// pass the fully loaded rom data, along with *optional* free function.
-int GB_loadrom_data(struct GB_Data* gb, GB_U8* data, GB_U32 size, void(*free_func)(void*));
+// pass the fully loaded rom data.
+// this memory is NOT owned.
+// freeing the memory should still be handled by the caller!
+int GB_loadrom_data(struct GB_Data* gb, GB_U8* data, GB_U32 size);
 
 GB_BOOL GB_has_save(const struct GB_Data* gb);
 GB_BOOL GB_has_rtc(const struct GB_Data* gb);
