@@ -6,10 +6,80 @@
 #include "util/log.hpp"
 
 #include "nativefiledialog/nfd.hpp"
+#ifdef USE_DISCORD
+#include <discord_rpc/discord_rpc.h>
+#endif // USE_DISCORD
 
 #include <cstring>
 #include <cassert>
 #include <fstream>
+
+#ifdef USE_DISCORD
+static const char* APPLICATION_ID = "822897241202884618";
+
+static void UpdatePresence() {
+    DiscordRichPresence discordPresence;
+    memset(&discordPresence, 0, sizeof(discordPresence));
+    discordPresence.state = "Debug";
+    discordPresence.details = "Coding away...";
+    discordPresence.startTimestamp = 1507665886;
+    discordPresence.endTimestamp = 1507665886;
+    discordPresence.largeImageKey = "test";
+    discordPresence.largeImageText = "TotalGB";
+    discordPresence.smallImageKey = "test";
+    discordPresence.smallImageText = "Rogue - Level 100";
+    discordPresence.partyId = "ae488379-351d-4a4f-ad32-2b9b01c91657";
+    discordPresence.partySize = 0;
+    discordPresence.partyMax = 5;
+    discordPresence.joinSecret = "MTI4NzM0OjFpMmhuZToxMjMxMjM= ";
+    Discord_UpdatePresence(&discordPresence);
+}
+
+static void handleDiscordReady(const DiscordUser* connectedUser) {
+    printf("\nDiscord: connected to user %s#%s - %s\n",
+           connectedUser->username,
+           connectedUser->discriminator,
+           connectedUser->userId);
+}
+
+static void handleDiscordDisconnected(int errcode, const char* message) {
+    printf("\nDiscord: disconnected (%d: %s)\n", errcode, message);
+}
+
+static void handleDiscordError(int errcode, const char* message) {
+    printf("\nDiscord: error (%d: %s)\n", errcode, message);
+}
+
+static void handleDiscordJoin(const char* secret) {
+    printf("\nDiscord: join (%s)\n", secret);
+}
+
+static void handleDiscordSpectate(const char* secret) {
+    printf("\nDiscord: spectate (%s)\n", secret);
+}
+
+static void handleDiscordJoinRequest(const DiscordUser* request) {
+    int response = -1;
+    // response = DISCORD_REPLY_NO;
+    response = DISCORD_REPLY_YES;
+
+    if (response != -1) {
+        Discord_Respond(request->userId, response);
+    }
+}
+
+static void discordInit() {
+    DiscordEventHandlers handlers;
+    memset(&handlers, 0, sizeof(handlers));
+    handlers.ready = handleDiscordReady;
+    handlers.disconnected = handleDiscordDisconnected;
+    handlers.errored = handleDiscordError;
+    handlers.joinGame = handleDiscordJoin;
+    handlers.spectateGame = handleDiscordSpectate;
+    handlers.joinRequest = handleDiscordJoinRequest;
+    Discord_Initialize(APPLICATION_ID, &handlers, 1, NULL);
+}
+#endif // USE_DISCORD
 
 namespace mgb {
 
@@ -193,6 +263,10 @@ auto Instance::LoadSave(const std::string& path) -> void {
 }
 
 App::App() {
+#ifdef USE_DISCORD
+    discordInit();
+#endif
+
     SDL_Init(SDL_INIT_VIDEO | SDL_INIT_EVENTS | SDL_INIT_JOYSTICK | SDL_INIT_HAPTIC | SDL_INIT_GAMECONTROLLER);
     SDL_GameControllerAddMappingsFromFile("res/mappings/gamecontrollerdb.txt");
 
@@ -242,6 +316,10 @@ App::~App() {
     }
 
 	SDL_Quit();
+
+#ifdef USE_DISCORD
+    Discord_Shutdown();
+#endif
 }
 
 auto App::LoadRom(const std::string& path, bool dual) -> bool {
@@ -359,6 +437,14 @@ auto App::Loop() -> void {
 
         // render the screen
         this->Draw();
+
+    #ifdef USE_DISCORD
+        UpdatePresence();
+    #ifdef DISCORD_DISABLE_IO_THREAD
+        Discord_UpdateConnection();
+    #endif // DISCORD_DISABLE_IO_THREAD
+        Discord_RunCallbacks();
+    #endif // USE_DISCORD
     }
 }
 

@@ -106,6 +106,14 @@ source = files([
 
     # nativefiledialog
     'src/libs/nativefiledialog/nfd_win.cpp',
+
+    # discord-rpc
+    'src/libs/discord_rpc/connection_win.cpp',
+    'src/libs/discord_rpc/discord_register_win.cpp',
+    'src/libs/discord_rpc/discord_rpc.cpp',
+    'src/libs/discord_rpc/dllmain.cpp',
+    'src/libs/discord_rpc/rpc_connection.cpp',
+    'src/libs/discord_rpc/serialization.cpp',
 ])
 
 includes = include_directories([
@@ -121,7 +129,7 @@ cflags = [
     # warns
     '-Wall',
     '-Wextra',
-    '-Wswitch-enum',
+    # '-Wswitch-enum',
     '-Wduplicated-branches',
     '-Wduplicated-cond',
     '-Wshadow',
@@ -143,13 +151,17 @@ cflags = [
     # minizip
     '-DNOUNCRYPT',
     '-DNOCRYPT',
+
+    # discord-rpc
+    '-DUSE_DISCORD=1',
+    '-DDISCORD_WINDOWS',
 ]
 
 cppflags = [
     '-std=gnu++20',
     # gcc-11
     # '-std=gnu++2b',
-    '-Wuseless-cast',
+    # '-Wuseless-cast',
     '-fdevirtualize-at-ltrans',
     '-Wsuggest-final-types',
 ]
