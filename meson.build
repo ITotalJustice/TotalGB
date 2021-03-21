@@ -1,4 +1,4 @@
-project('gb-emu', ['c', 'cpp'],
+project('gb-emu', ['c', 'cpp', 'objc'], # objc for osx
     version: '0.0.1',
     default_options: [
         'buildtype=debug',
@@ -107,12 +107,7 @@ source = files([
     'src/libs/lzma/LzmaEnc.c',
     'src/libs/lzma/LzmaLib.c',
 
-    # nativefiledialog
-    'src/libs/nativefiledialog/nfd_win.cpp',
-
     # discord-rpc
-    'src/libs/discord_rpc/connection_win.cpp',
-    'src/libs/discord_rpc/discord_register_win.cpp',
     'src/libs/discord_rpc/discord_rpc.cpp',
     'src/libs/discord_rpc/dllmain.cpp',
     'src/libs/discord_rpc/rpc_connection.cpp',
@@ -122,6 +117,29 @@ source = files([
 includes = include_directories([
     'src/libs/'
 ])
+
+# https://github.com/mesonbuild/meson/blob/master/docs/markdown/Reference-manual.md#build_machine-object
+# https://github.com/mesonbuild/meson/blob/master/docs/markdown/Reference-tables.md#operating-system-names
+
+# this is probably not the sane way to do it, but eh it works :)
+if host_machine.system() == 'windows' or host_machine.system() == 'cygwin'
+    # discord-rpc
+    source += 'src/libs/discord_rpc/connection_win.cpp'
+    source += 'src/libs/discord_rpc/discord_register_win.cpp'
+    # nativefiledialog
+    source += 'src/libs/nativefiledialog/nfd_win.cpp'
+elif host_machine.system() == 'linux'
+    # discord-rpc
+    source += 'src/libs/discord_rpc/connection_linux.cpp'
+    source += 'src/libs/discord_rpc/discord_register_linux.cpp'
+    # # nativefiledialog
+    source += 'src/libs/nativefiledialog/nfd_gtk.cpp'
+elif host_machine.system() == 'darwin'
+    # discord-rpc
+    source += 'src/libs/discord_rpc/discord_register_osx.m'
+    # # nativefiledialog
+    source += 'src/libs/nativefiledialog/nfd_cocoa.m'
+endif
 
 cflags = [
     # optimise
@@ -162,8 +180,6 @@ cflags = [
 
 cppflags = [
     '-std=gnu++20',
-    # gcc-11
-    # '-std=gnu++2b',
     # '-Wuseless-cast',
     '-fdevirtualize-at-ltrans',
     '-Wsuggest-final-types',
