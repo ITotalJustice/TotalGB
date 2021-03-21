@@ -343,8 +343,8 @@ int GB_loadrom_data(struct GB_Data* gb, GB_U8* data, GB_U32 size) {
 		}
 
 
-		printf("[ERROR] GBC mode is not yet supported!\n");
-		return -1;
+		// printf("[ERROR] GBC mode is not yet supported!\n");
+		// return -1;
 
 		// once supported is added, use this code...
 		if (gb->config.system_type_config == GB_SYSTEM_TYPE_CONFIG_DMG) {
@@ -399,6 +399,10 @@ int GB_loadrom_data(struct GB_Data* gb, GB_U8* data, GB_U32 size) {
 	// set the palette!
 	if (GB_is_system_gbc(gb) == GB_FALSE) {
 		GB_setup_palette(gb, header);
+	} else {
+		// TODO: remove this!
+		// this is for testing...
+		GB_Palette_fill_from_custom(GB_CUSTOM_PALETTE_CREAM, &gb->palette);
 	}
 
 	return 0;

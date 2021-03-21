@@ -4,6 +4,54 @@
 #include <stdio.h>
 #include <assert.h>
 
+static inline void GB_iowrite_gbc(struct GB_Data* gb, GB_U16 addr, GB_U8 value) {
+	assert(GB_is_system_gbc(gb) == GB_TRUE);
+
+	switch (addr & 0x7F) {
+		case 0x4D: // (KEY1)
+			IO_KEY1 = value;
+			break;
+
+		case 0x4F: // (VBK)
+			IO_VBK = value & 1; // i think
+			break;
+
+		case 0x50: // unused (bootrom?)
+			break;
+
+		case 0x51: // (HDMA1)
+			IO_HDMA1 = value;
+			break;
+
+		case 0x52: // (HDMA2)
+			IO_HDMA2 = value;
+			break;
+
+		case 0x53: // (HMDA3)
+			IO_HDMA3 = value;
+			break;
+
+		case 0x54: // (HDMA4)
+			IO_HDMA4 = value;
+			break;
+
+		case 0x55: // (HDMA5)
+			break;
+
+		case 0x68: // BCPS
+			IO_BCPS = value;
+			break;
+
+		case 0x69: // OCPS
+			IO_OCPS = value;
+			break;
+
+		case 0x70: // (SVBK) (doesnt work yet as i set to 0)
+			IO_SVBK = value & 0x07;
+			break;
+	}
+}
+
 GB_U8 GB_ioread(struct GB_Data* gb, GB_U16 addr) {
 	switch (addr & 0x7F) {
 		case 0x00:
@@ -12,6 +60,13 @@ GB_U8 GB_ioread(struct GB_Data* gb, GB_U16 addr) {
 		case 0x01:
 			return GB_serial_sb_read(gb);
 
+		case 0x4D:
+			if (GB_is_system_gbc(gb) == GB_TRUE) {
+				return IO_KEY1 > 0 ? 0x80 : 0x00;
+			} else {
+				return 0xFF;
+			}
+
 		default:
 			return IO[addr & 0x7F];
 	}
@@ -19,6 +74,10 @@ GB_U8 GB_ioread(struct GB_Data* gb, GB_U16 addr) {
 
 void GB_iowrite(struct GB_Data* gb, GB_U16 addr, GB_U8 value) {
 	switch (addr & 0x7F) {
+		case 0x00: // joypad
+			IO_JYP = value;
+			break;
+
 		case 0x01: // SB (Serial transfer data)
 			IO_SB = value;
 			break;
@@ -29,6 +88,14 @@ void GB_iowrite(struct GB_Data* gb, GB_U16 addr, GB_U8 value) {
 
 		case 0x04:
 			IO_DIV_UPPER = IO_DIV_LOWER = 0;
+			break;
+
+		case 0x05:
+			IO_TIMA = value;
+			break;
+
+		case 0x06:
+			IO_TMA = value;
 			break;
 
 		case 0x07:
@@ -49,121 +116,149 @@ void GB_iowrite(struct GB_Data* gb, GB_U16 addr, GB_U8 value) {
 		case 0x75: case 0x76: case 0x77: case 0x78:
 		case 0x79: case 0x7A: case 0x7B: case 0x7C:
 		case 0x7D: case 0x7E: case 0x08: case 0x15:
+		case 0x7F:
 			break; // unused
 		
 		case 0x0F:
 			IO_IF = (value | 224);
 			break;
+
 		case 0x10:
 			IO_NR10 = value | 0x80;
 			break;
+
 		case 0x11:
 			IO_NR11 = value;
 			break;
+
 		case 0x12:
 			IO_NR12 = value;
 			break;
+
 		case 0x13:
 			IO_NR13 = value;
 			break;
+
 		case 0x14:
 			IO_NR14 = value;
 			break;
+
 		case 0x16:
 			IO_NR21 = value;
 			break;
+
 		case 0x17:
 			IO_NR22 = value;
 			break;
+
 		case 0x18:
 			IO_NR23 = value;
 			break;
+
 		case 0x19:
 			IO_NR24 = value;
 			break;
+
 		case 0x1A:
 			IO_NR30 = value | 0x7F;
 			break;
+
 		case 0x1B:
 			IO_NR31 = value;
 			break;
+
 		case 0x1C:
 			IO_NR32 = value | 159;
 			break;
+
 		case 0x1D:
 			IO_NR33 = value;
 			break;
+
 		case 0x1E:
 			IO_NR34 = value;
 			break;
+
 		case 0x20:
 			IO_NR41 = value | 0xC0;
 			break;
+
 		case 0x21:
 			IO_NR42 = value;
 			break;
+
 		case 0x22:
 			IO_NR43 = value;
 			break;
+
 		case 0x23:
 			IO_NR44 = value | 0x3F;
 			break;
+
 		case 0x24:
 			IO_NR50 = value;
 			break;
+
 		case 0x25:
 			IO_NR51 = value;
 			break;
+
 		case 0x26:
 			IO_NR52 = value & 0x80;
 			break;
+
 		case 0x40:
 			IO_LCDC = value;
 			break;
+
 		case 0x41:
 			IO_STAT = (IO_STAT & 0x7) | (value & (120)) | 0x80;
 			break;
+
+		case 0x42:
+			IO_SCY = value;
+			break;
+
+		case 0x43:
+			IO_SCX = value;
+			break;
+
 		case 0x45:
 			IO_LYC = value;
 			break;
+
 		case 0x46:
 			IO_DMA = value;
 			GB_DMA(gb);
 			break;
+
 		case 0x47:
 			gb->ppu.dirty_bg[0] |= (IO_BGP != value);
 			IO_BGP = value;
 			break;
+
 		case 0x48:
 			gb->ppu.dirty_obj[0] |= (IO_OBP0 != value);
 			IO_OBP0 = value;
 			break;
+
 		case 0x49:
 			gb->ppu.dirty_obj[1] |= (IO_OBP1 != value);
 			IO_OBP1 = value;
 			break;
-		case 0x4D: // unused (KEY1)
+
+		case 0x4A:
+			IO_WY = value;
 			break;
-		case 0x4F: // unused (VBK)
+
+		case 0x4B:
+			IO_WX = value;
 			break;
-		case 0x50: // unused (bootrom?)
-			break;
-		case 0x51: // unused (HDMA1)
-			break;
-		case 0x52: // unused (HDMA2)
-			break;
-		case 0x53: // unused (HMDA3)
-			break;
-		case 0x54: // unused (HDMA4)
-			break;
-		case 0x55: // unused (HDMA5)
-			break;
-		case 0x70: // unused (SVBK) (doesnt work yet as i set to 0)
-			break;
-		// case 0x7F: // unused
-		// 	break;
+
 		default:
-			IO[addr & 0x7F] = value;
+			if (GB_is_system_gbc(gb) == GB_TRUE) {
+				GB_iowrite_gbc(gb, addr, value);
+			}
 			break;
 	}
 }
