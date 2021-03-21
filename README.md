@@ -1,6 +1,6 @@
-# tempboy
+# TotalGB
 
-WIP gb emulator
+WIP gb emulator (name is temporary!)
 
 PR's, issues and any help is very much welcome!
 
