@@ -2,6 +2,7 @@
 #include "internal.h"
 #include "mbc/mbc_0.h"
 #include "mbc/mbc_1.h"
+#include "mbc/mbc_2.h"
 #include "mbc/mbc_3.h"
 #include "mbc/mbc_5.h"
 
@@ -36,6 +37,9 @@ static const struct GB_MbcSetupData MBC_SETUP_DATA[0x100] = {
 	[0x01] = {GB_mbc1_write, GB_mbc1_get_rom_bank, GB_mbc1_get_ram_bank, 1, MBC_FLAGS_NONE},
 	[0x02] = {GB_mbc1_write, GB_mbc1_get_rom_bank, GB_mbc1_get_ram_bank, 1, MBC_FLAGS_RAM},
 	[0x03] = {GB_mbc1_write, GB_mbc1_get_rom_bank, GB_mbc1_get_ram_bank, 1, MBC_FLAGS_RAM | MBC_FLAGS_BATTERY},
+	// MBC2
+	[0x05] = {GB_mbc2_write, GB_mbc2_get_rom_bank, GB_mbc2_get_ram_bank, 0, MBC_FLAGS_RAM},
+	[0x06] = {GB_mbc2_write, GB_mbc2_get_rom_bank, GB_mbc2_get_ram_bank, 0, MBC_FLAGS_RAM | MBC_FLAGS_BATTERY},
 	// MBC3
 	[0x10] = {GB_mbc3_write, GB_mbc3_get_rom_bank, GB_mbc3_get_ram_bank, 0, MBC_FLAGS_RAM | MBC_FLAGS_BATTERY | MBC_FLAGS_RTC},
 	[0x11] = {GB_mbc3_write, GB_mbc3_get_rom_bank, GB_mbc3_get_ram_bank, 0, MBC_FLAGS_NONE},
@@ -118,7 +122,12 @@ GB_BOOL GB_setup_mbc(struct GB_Cart* mbc, const struct GB_CartHeader* header) {
 
 	// todo: setup more flags.
 	if (mbc->flags & MBC_FLAGS_RAM) {
-		if (!GB_get_cart_ram_size(header->ram_size, &mbc->ram_size)) {
+		// check if mbc2, if so, manually set the ram size!
+		if (header->cart_type == 0x5 || header->cart_type == 0x6) {
+			mbc->ram_size = 0x200;
+		}
+		// otherwise get the ram size via a LUT
+		else if (!GB_get_cart_ram_size(header->ram_size, &mbc->ram_size)) {
 			printf("rom has ram but the size entry in header is invalid! %u\n", header->ram_size);
 			return GB_FALSE;
 		}
