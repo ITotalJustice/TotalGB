@@ -550,7 +550,7 @@ struct GB_SaveData {
 };
 
 struct GB_CartName {
-	char name[0x10]; // this is NULL terminated
+	char name[0x11]; // this is NULL terminated
 };
 
 #ifdef __cplusplus

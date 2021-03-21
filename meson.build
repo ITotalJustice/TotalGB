@@ -6,7 +6,10 @@ project('gb-emu', ['c', 'cpp'],
 )
 
 dependencies = [
-    dependency('sdl2', version : '>=2.0.0'),
+    # this probably works fine with older sdl2 versions
+    # but this is untested.
+    # 2.0.5 is the oldest version that i tested...
+    dependency('sdl2', version : '>=2.0.5'),
 ]
 
 source = files([

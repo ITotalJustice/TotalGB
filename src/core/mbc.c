@@ -10,6 +10,13 @@
 #include <assert.h>
 
 // this is extern in mbc/common.h
+// this is used when either the game has no ram or ram is disabled
+// and the game tries to read from the ram access area.
+// because of how my memory reads are setup, array pointers are
+// saved and index for a read.
+// checking for NULL would be too slow of each read.
+// because of this, this empty array is used as a saved pointer.
+// writes are manually checked for now, so this can stay const!
 const GB_U8 MBC_NO_RAM[0x2000];
 
 struct GB_MbcSetupData {
@@ -20,6 +27,8 @@ struct GB_MbcSetupData {
 	GB_U8 flags;
 };
 
+// this data is indexed using the [cart_type] member from the
+// cart header struct.
 static const struct GB_MbcSetupData MBC_SETUP_DATA[0x100] = {
 	// MBC0
 	[0x00] = {GB_mbc0_write, GB_mbc0_get_rom_bank, GB_mbc0_get_ram_bank, 0, MBC_FLAGS_NONE},
@@ -46,18 +55,35 @@ int GB_get_rom_name(const struct GB_Data* gb, struct GB_CartName* name) {
 	const struct GB_CartHeader* header = GB_get_rom_header(gb);
 	assert(header);
 
-	// copy over the title
-	memcpy(name->name, header->title, sizeof(header->title));
+	// in later games, including all gbc games, the title area was
+	// actually reduced in size from 16 bytes down to 15, then 11.
+	// as all titles are UPPER_CASE ASCII, it is easy to range check each
+	// char and see if its valid, once the end is found, mark the next char NULL.
+	// NOTE: it seems that spaces are also valid!
 
-	// set the last byte to be NULL just in case...
-	name->name[sizeof(name->name) - 1] = '\0';
+	// set entrie name to NULL
+	memset(name, 0, sizeof(struct GB_CartName));
+
+	// manually copy the name using range check as explained above...
+	for (size_t i = 0; i < sizeof(header->title); ++i) {
+		const char c = header->title[i];
+		// not upper-case ascii
+		if ((c < 'A' || c > 'Z') && c != ' ') {
+			break;
+		}
+		name->name[i] = c;
+	}
 
 	return 0;
 }
 
 GB_BOOL GB_get_cart_ram_size(GB_U8 type, GB_U32* size) {
+	// i think that more ram sizes are valid, however
+	// i have yet to see a ram size bigger than this...
 	static const GB_U32 GB_CART_RAM_SIZES[6] = { 0, 0x800, 0x2000, 0x8000, 0x20000, 0x10000 };
 	
+	assert(type < GB_ARR_SIZE(GB_CART_RAM_SIZES) && "OOB type access!");
+
 	if (type >= GB_ARR_SIZE(GB_CART_RAM_SIZES)) {
 		return GB_FALSE;
 	}
@@ -71,6 +97,8 @@ GB_BOOL GB_setup_mbc(struct GB_Cart* mbc, const struct GB_CartHeader* header) {
 		return GB_FALSE;
 	}
 
+	// this won't fail because the type is 8-bit and theres 0x100 entries.
+	// though the data inside can be NULL, but this is checked next...
 	const struct GB_MbcSetupData* data = &MBC_SETUP_DATA[header->cart_type];
 	
 	// this is a check to see if we have data.
@@ -81,6 +109,7 @@ GB_BOOL GB_setup_mbc(struct GB_Cart* mbc, const struct GB_CartHeader* header) {
 		return GB_FALSE;
 	}
 
+	// set the function ptr's and flags!
 	mbc->write = data->write;
 	mbc->get_rom_bank = data->get_rom_bank;
 	mbc->get_ram_bank = data->get_ram_bank;
