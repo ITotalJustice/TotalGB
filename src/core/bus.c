@@ -14,6 +14,7 @@ static inline void GB_iowrite_gbc(struct GB_Data* gb, GB_U16 addr, GB_U8 value) 
 
 		case 0x4F: // (VBK)
 			IO_VBK = value & 1; // i think
+			GB_update_vram_banks(gb);
 			break;
 
 		case 0x50: // unused (bootrom?)
@@ -46,8 +47,9 @@ static inline void GB_iowrite_gbc(struct GB_Data* gb, GB_U16 addr, GB_U8 value) 
 			IO_OCPS = value;
 			break;
 
-		case 0x70: // (SVBK) (doesnt work yet as i set to 0)
-			IO_SVBK = value & 0x07;
+		case 0x70: // (SVBK) always set between 1-7
+			IO_SVBK = value & 0x07 + (value == 0x00);
+			GB_update_wram_banks(gb);
 			break;
 	}
 }

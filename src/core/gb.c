@@ -119,7 +119,6 @@ void GB_reset(struct GB_Data* gb) {
 	IO_NR50 = 0x77;
 	IO_NR51 = 0xF3;
 	IO_NR52 = 0xF1;
-	IO_SVBK = 0x01;
 	IO_LCDC = 0x91;
 	IO_STAT = 0x00;
 	IO_SCY = 0x00;
@@ -127,11 +126,21 @@ void GB_reset(struct GB_Data* gb) {
 	IO_LY = 0x00;
 	IO_LYC = 0x00;
 	IO_BGP = 0xFC;
-	IO_OBP0 = 0xFF;
-	IO_OBP1 = 0xFF;
 	IO_WY = 0x00;
 	IO_WX = 0x00;
 	IO_IE = 0x00;
+
+	if (GB_is_system_gbc(gb) == GB_TRUE) {
+		IO_SVBK = 0x01;
+		IO_VBK = 0x00;
+		IO_OBP0 = 0x00;
+		IO_OBP1 = 0x00;
+	} else {
+		IO_SVBK = 0x01;
+		IO_VBK = 0xFF;
+		IO_OBP0 = 0xFF;
+		IO_OBP1 = 0xFF;
+	}
 }
 
 static const char* cart_type_str(const GB_U8 type) {
