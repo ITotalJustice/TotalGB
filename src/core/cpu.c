@@ -978,7 +978,8 @@ static void GB_execute(struct GB_Data* gb) {
 		case 0xC8: RET_Z(); break;
 		case 0xC9: RET(); break;
 		case 0xCA: JP_Z(); break;
-		case 0xCB: GB_execute_cb(gb); break;
+		// return here as to not increase the cycles from this opcode!
+		case 0xCB: GB_execute_cb(gb); return;
 		case 0xCC: CALL_Z(); break;
 		case 0xCD: CALL(); break;
 		case 0xCE: ADC_u8(); break;
