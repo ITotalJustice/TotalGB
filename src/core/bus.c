@@ -244,22 +244,31 @@ void GB_update_ram_banks(struct GB_Data* gb) {
 }
 
 void GB_update_vram_banks(struct GB_Data* gb) {
-	gb->mmap[0x8] = gb->ppu.vram[IO_VBK] + 0x0000;
-	gb->mmap[0x9] = gb->ppu.vram[IO_VBK] + 0x1000;
+	if (GB_get_system_type(gb) == GB_SYSTEM_TYPE_GBC) {
+		gb->mmap[0x8] = gb->ppu.vram[IO_VBK] + 0x0000;
+		gb->mmap[0x9] = gb->ppu.vram[IO_VBK] + 0x1000;
+	} else {
+		gb->mmap[0x8] = gb->ppu.vram[0] + 0x0000;
+		gb->mmap[0x9] = gb->ppu.vram[0] + 0x1000;
+	}
 }
 
 void GB_update_wram_banks(struct GB_Data* gb) {
-	gb->mmap[0xD] = gb->wram[IO_SVBK];
-	gb->mmap[0xF] = gb->wram[IO_SVBK];
+	gb->mmap[0xC] = gb->wram[0];
+	gb->mmap[0xE] = gb->wram[0];
+
+	if (GB_get_system_type(gb) == GB_SYSTEM_TYPE_GBC) {
+		gb->mmap[0xD] = gb->wram[IO_SVBK];
+		gb->mmap[0xF] = gb->wram[IO_SVBK];
+	} else {
+		gb->mmap[0xD] = gb->wram[1];
+		gb->mmap[0xF] = gb->wram[1];
+	}
 }
 
 void GB_setup_mmap(struct GB_Data* gb) {
 	GB_update_rom_banks(gb);
 	GB_update_ram_banks(gb);
-	gb->mmap[0x8] = gb->ppu.vram[0] + 0x0000;
-	gb->mmap[0x9] = gb->ppu.vram[0] + 0x1000;
-	gb->mmap[0xC] = gb->wram[0];
-	gb->mmap[0xD] = gb->wram[1];
-	gb->mmap[0xE] = gb->wram[0];
-	gb->mmap[0xF] = gb->wram[1];
+	GB_update_vram_banks(gb);
+	GB_update_wram_banks(gb);
 }

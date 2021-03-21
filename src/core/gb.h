@@ -48,6 +48,8 @@ GB_U16 GB_run_step(struct GB_Data* gb);
 /* run until the end of a frame */
 void GB_run_frame(struct GB_Data* gb);
 
+enum GB_SystemType GB_get_system_type(const struct GB_Data* gb);
+
 // fills out the header struct using the loaded rom data
 GB_BOOL GB_get_rom_header(const struct GB_Data* gb, struct GB_CartHeader* header);
 

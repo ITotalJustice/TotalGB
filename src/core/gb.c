@@ -246,6 +246,10 @@ GB_BOOL GB_set_palette_from_palette(struct GB_Data* gb, const struct GB_PaletteE
 	return GB_TRUE;
 }
 
+enum GB_SystemType GB_get_system_type(const struct GB_Data* gb) {
+	return gb->system_type;
+}
+
 static const char* GB_get_system_type_string(const enum GB_SystemType type) {
 	switch (type) {
 		case GB_SYSTEM_TYPE_DMG: return "GB_SYSTEM_TYPE_DMG";
@@ -263,7 +267,7 @@ static void GB_set_system_type(struct GB_Data* gb, const enum GB_SystemType type
 
 static void GB_setup_palette(struct GB_Data* gb, const struct GB_CartHeader* header) {
 	// this should only ever be called in NONE GBC system.
-	assert(gb->system_type != GB_SYSTEM_TYPE_GBC);
+	assert(GB_get_system_type(gb) != GB_SYSTEM_TYPE_GBC);
 
 	if (gb->config.palette_config == GB_PALETTE_CONFIG_NONE) {
 		GB_Palette_fill_from_custom(GB_CUSTOM_PALETTE_CREAM, &gb->palette);
@@ -385,7 +389,7 @@ int GB_loadrom_data(struct GB_Data* gb, GB_U8* data, GB_U32 size) {
 	GB_setup_mmap(gb);
 
 	// set the palette!
-	if (gb->system_type != GB_SYSTEM_TYPE_GBC) {
+	if (GB_get_system_type(gb) != GB_SYSTEM_TYPE_GBC) {
 		GB_setup_palette(gb, header);
 	}
 

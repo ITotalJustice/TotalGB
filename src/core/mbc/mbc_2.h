@@ -6,7 +6,7 @@ extern "C" {
 
 #include "common.h"
 
-// NOTE: this is MBC1 pasted here, it seems to work with
+// NOTE: this is mostly MBC1 pasted here, it seems to work with
 // "Final Fantasy Adventures".
 // however it will likely break using anything else...
 static void GB_mbc2_write(struct GB_Data* gb, GB_U16 addr, GB_U8 value) {
@@ -24,7 +24,7 @@ static void GB_mbc2_write(struct GB_Data* gb, GB_U16 addr, GB_U8 value) {
             GB_update_rom_banks(gb);
             break;
 
-    // RAM BANK X
+    // RAM WRITE
         case 0xA: case 0xB: {
             if (!(gb->cart.flags & MBC_FLAGS_RAM) || !gb->cart.ram_enabled) {
                 return;
