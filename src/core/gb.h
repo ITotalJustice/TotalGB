@@ -48,8 +48,13 @@ GB_U16 GB_run_step(struct GB_Data* gb);
 /* run until the end of a frame */
 void GB_run_frame(struct GB_Data* gb);
 
+// fills out the header struct using the loaded rom data
+GB_BOOL GB_get_rom_header(const struct GB_Data* gb, struct GB_CartHeader* header);
+
 /* returns a pointer to the loaded rom data as a GB_CartHeader */
-const struct GB_CartHeader* GB_get_rom_header(const struct GB_Data* gb);
+// this can be used to modify the contents of the header,
+// useful for if you plan to save the rom after to a new file.
+struct GB_CartHeader* GB_get_rom_header_ptr(const struct GB_Data* gb);
 
 void GB_get_rom_info(const struct GB_Data* gb, struct GB_RomInfo* info);
 

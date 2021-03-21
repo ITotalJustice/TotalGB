@@ -145,14 +145,31 @@ static void cart_header_print(const struct GB_CartHeader* header) {
     putchar('\n');
 }
 
-static const struct GB_CartHeader* GB_get_rom_header_from_data(const GB_U8* data) {
+GB_BOOL GB_get_rom_header_from_data(const GB_U8* data, struct GB_CartHeader* header) {
+	assert(data && header);
+	memcpy(header, data + GB_BOOTROM_SIZE, sizeof(struct GB_CartHeader));
+	return GB_TRUE;
+}
+
+GB_BOOL GB_get_rom_header(const struct GB_Data* gb, struct GB_CartHeader* header) {
+	assert(gb && gb->cart.rom && header);
+
+	if (!gb || !gb->cart.rom || (gb->cart.ram_size < (sizeof(struct GB_CartHeader) + GB_BOOTROM_SIZE))) {
+		printf("[ERROR] invalid rom passed to get_rom_header!\n");
+		return GB_FALSE;
+	}
+
+	return GB_get_rom_header_from_data(gb->cart.rom, header);
+}
+
+static struct GB_CartHeader* GB_get_rom_header_ptr_from_data(const GB_U8* data) {
 	assert(data);
 	return (struct GB_CartHeader*)&data[GB_BOOTROM_SIZE];
 }
 
-const struct GB_CartHeader* GB_get_rom_header(const struct GB_Data* gb) {
+struct GB_CartHeader* GB_get_rom_header_ptr(const struct GB_Data* gb) {
 	assert(gb && gb->cart.rom);
-	return GB_get_rom_header_from_data(gb->cart.rom);
+	return GB_get_rom_header_ptr_from_data(gb->cart.rom);
 }
 
 GB_BOOL GB_get_rom_palette_hash_from_header(const struct GB_CartHeader* header, GB_U8* hash, GB_U8* forth) {
@@ -181,7 +198,7 @@ GB_BOOL GB_get_rom_palette_hash(const struct GB_Data* gb, GB_U8* hash, GB_U8* fo
 	}
 
 	return GB_get_rom_palette_hash_from_header(
-		GB_get_rom_header(gb),
+		GB_get_rom_header_ptr(gb),
 		hash, forth
 	);
 }
@@ -218,7 +235,7 @@ int GB_loadrom_data(struct GB_Data* gb, GB_U8* data, GB_U32 size) {
 		return -1;
 	}
 
-	const struct GB_CartHeader* header = GB_get_rom_header_from_data(data);
+	const struct GB_CartHeader* header = GB_get_rom_header_ptr_from_data(data);
 	cart_header_print(header);
 
 	const GB_U32 rom_size = ROM_SIZE_MULT << header->rom_size;
@@ -301,7 +318,6 @@ int GB_savegame(const struct GB_Data* gb, struct GB_SaveData* save) {
 		return -1;
 	}
 
-	/* larger sizes would techinally be fine... */
 	save->size = GB_calculate_savedata_size(gb);
 	memcpy(save->data, gb->cart.ram, save->size);
 
@@ -321,7 +337,15 @@ int GB_loadsave(struct GB_Data* gb, const struct GB_SaveData* save) {
 		return -1;
 	}
 
-	/* larger sizes would techinally be fine... */
+	// having the user pass in a larger ram size can be caused by a few
+	// reasons.
+	// 1 - the save comes from vba, which packs the RTC data at the end
+	// 2 - the save is invalid.
+	// for now, it will just error if the exact size isn't a match
+	// but support for handling vba saves will be added soon.
+	// NOTE: when adding support for vba saves, i should
+	// then restore the rtc from that save IF the user has not passed in
+	// their own rtc save data.
 	const GB_U32 wanted_size = GB_calculate_savedata_size(gb);
 	if (save->size != wanted_size) {
 		printf("[GB-ERROR] wrong wanted savesize. got: %u wanted %u\n", save->size, wanted_size);
@@ -423,7 +447,7 @@ int GB_loadstate2(struct GB_Data* gb, const struct GB_CoreState* state) {
 void GB_get_rom_info(const struct GB_Data* gb, struct GB_RomInfo* info) {
 	assert(gb && info && gb->cart.rom);
 
-	// const struct GB_CartHeader* header = GB_get_rom_header(gb);
+	// const struct GB_CartHeader* header = GB_get_rom_header_ptr(gb);
 	info->mbc_flags = gb->cart.flags;
 	info->rom_size = gb->cart.rom_size;
 	info->ram_size = gb->cart.ram_size;

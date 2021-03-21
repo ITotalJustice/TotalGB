@@ -52,7 +52,7 @@ static const struct GB_MbcSetupData MBC_SETUP_DATA[0x100] = {
 int GB_get_rom_name(const struct GB_Data* gb, struct GB_CartName* name) {
 	assert(gb && name);
 
-	const struct GB_CartHeader* header = GB_get_rom_header(gb);
+	const struct GB_CartHeader* header = GB_get_rom_header_ptr(gb);
 	assert(header);
 
 	// in later games, including all gbc games, the title area was
