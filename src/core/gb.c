@@ -8,28 +8,12 @@
 
 #define ROM_SIZE_MULT 0x8000
 
-#if !defined GB_NO_STDLIB
-#include <stdlib.h>
-#endif
-
 GB_BOOL GB_init(struct GB_Data* gb) {
 	if (!gb) {
 		return GB_FALSE;
 	}
 
-	gb->cart.mbc_type = MBC_TYPE_NONE;
-	GB_Palette_fill_from_custom(GB_CUSTOM_PALETTE_CREAM, &gb->palette);
-
-	// set all the callbacks and data to NULL
-	GB_set_vblank_callback(gb, NULL, NULL);
-	GB_set_hblank_callback(gb, NULL, NULL);
-	GB_set_dma_callback(gb, NULL, NULL);
-	GB_set_halt_callback(gb, NULL, NULL);
-	GB_set_stop_callback(gb, NULL, NULL);
-	GB_set_error_callback(gb, NULL, NULL);
-	GB_connect_link_cable(gb, NULL, NULL);
-
-	gb->is_master = GB_FALSE;
+	memset(gb, 0, sizeof(struct GB_Data));
 
 	return GB_TRUE;
 }
@@ -230,6 +214,39 @@ static void GB_set_system_type(struct GB_Data* gb, const enum GB_SystemType type
 	gb->system_type = type;
 }
 
+static void GB_setup_palette(struct GB_Data* gb, const struct GB_CartHeader* header) {
+	// this should only ever be called in NONE GBC system.
+	assert(gb->system_type != GB_SYSTEM_TYPE_GBC);
+
+	if (gb->config.palette_config == GB_PALETTE_CONFIG_NONE) {
+		GB_Palette_fill_from_custom(GB_CUSTOM_PALETTE_CREAM, &gb->palette);
+	}
+	else if (gb->config.palette_config == GB_PALETTE_CONFIG_USE_CUSTOM) {
+		GB_set_palette_from_palette(gb, &gb->config.custom_palette);
+	}
+	else if ((gb->config.palette_config & GB_PALETTE_CONFIG_USE_BUILTIN) == GB_PALETTE_CONFIG_USE_BUILTIN) {
+		// attempt to fill set the palatte from the builtins...
+		GB_U8 hash, forth;
+		// this will never fail...
+		GB_get_rom_palette_hash_from_header(header, &hash, &forth);
+		struct GB_PaletteEntry palette;
+		
+		if (GB_palette_fill_from_hash(hash, forth, &palette) != 0) {
+			// try and fallback to custom palette if the user has set it
+			if ((gb->config.palette_config & GB_PALETTE_CONFIG_USE_CUSTOM) == GB_PALETTE_CONFIG_USE_CUSTOM) {
+				GB_set_palette_from_palette(gb, &gb->config.custom_palette);
+			}
+			// otherwise use default palette...
+			else {
+				GB_Palette_fill_from_custom(GB_CUSTOM_PALETTE_CREAM, &gb->palette);
+			}
+		}
+		else {
+			GB_set_palette_from_palette(gb, &palette);
+		}
+	}
+}
+
 int GB_loadrom_data(struct GB_Data* gb, GB_U8* data, GB_U32 size) {
 	if (!gb || !data || !size || size < GB_BOOTROM_SIZE + sizeof(struct GB_CartHeader)) {
 		return -1;
@@ -254,20 +271,51 @@ int GB_loadrom_data(struct GB_Data* gb, GB_U8* data, GB_U32 size) {
 
 	const char gbc_flag = header->title[sizeof(header->title) - 1];
 	if ((gbc_flag & GBC_ONLY) == GBC_ONLY) {
+		// check if the user wants to force gbc mode
+		if (gb->config.system_type_config == GB_SYSTEM_TYPE_CONFIG_DMG) {
+			printf("[ERROR] only GBC system supported but config forces DMG system!\n");
+			return -1;
+		}
+
+
 		printf("[ERROR] GBC mode is not yet supported!\n");
 		return -1;
 
 		// once supported is added, use this code...
-		GB_set_system_type(gb, GB_SYSTEM_TYPE_GBC);
+		if (gb->config.system_type_config == GB_SYSTEM_TYPE_CONFIG_DMG) {
+			printf("[INFO] GBC only game but set to SGB system via config...\n");
+			GB_set_system_type(gb, GB_SYSTEM_TYPE_SGB);
+		} else {
+			GB_set_system_type(gb, GB_SYSTEM_TYPE_GBC);
+		}
 	}
 	else if ((gbc_flag & GBC_AND_DMG) == GBC_AND_DMG) {
-		// this can be either set to GBC or DMG mode
-		// for now however, set to just DMG mode as 
-		printf("[INFO] rom supports GBC mode, however falling back to DMG mode...\n");
-		GB_set_system_type(gb, GB_SYSTEM_TYPE_DMG);
+		// this can be either set to GBC or DMG mode, check if the
+		// user has set a preffrence
+		if (gb->config.system_type_config == GB_SYSTEM_TYPE_CONFIG_GBC) {
+			GB_set_system_type(gb, GB_SYSTEM_TYPE_GBC);
+		} else if (gb->config.system_type_config == GB_SYSTEM_TYPE_CONFIG_SGB) {
+			printf("[INFO] rom supports GBC mode, however falling back to SGB mode...\n");
+			GB_set_system_type(gb, GB_SYSTEM_TYPE_SGB);
+		} else {
+			printf("[INFO] rom supports GBC mode, however falling back to DMG mode...\n");
+			GB_set_system_type(gb, GB_SYSTEM_TYPE_DMG);
+		}
 	}
 	else {
-		GB_set_system_type(gb, GB_SYSTEM_TYPE_DMG);
+		// check if the user wants to force GBC mode
+		if (gb->config.system_type_config == GB_SYSTEM_TYPE_CONFIG_GBC) {
+			printf("[ERROR] only DMG system supported but config forces GBC system!\n");
+			return -1;
+		}
+
+		// if the user wants SGB system, we can set it here as all gb
+		// games work on the SGB.
+		if (gb->config.system_type_config == GB_SYSTEM_TYPE_CONFIG_SGB) {
+			GB_set_system_type(gb, GB_SYSTEM_TYPE_SGB);
+		} else {
+			GB_set_system_type(gb, GB_SYSTEM_TYPE_DMG);
+		}
 	}
 
 	// try and setup the mbc, this also implicitly sets up
@@ -283,13 +331,9 @@ int GB_loadrom_data(struct GB_Data* gb, GB_U8* data, GB_U32 size) {
 	GB_reset(gb);
 	GB_setup_mmap(gb);
 
-	GB_U8 hash, forth;
-	if (GB_get_rom_palette_hash_from_header(header, &hash, &forth)) {
-		struct GB_PaletteEntry palette;
-		
-		if (0 == GB_palette_fill_from_hash(hash, forth, &palette)) {
-			GB_set_palette_from_palette(gb, &palette);
-		}
+	// set the palette!
+	if (gb->system_type != GB_SYSTEM_TYPE_GBC) {
+		GB_setup_palette(gb, header);
 	}
 
 	return 0;

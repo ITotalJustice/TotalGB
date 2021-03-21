@@ -143,9 +143,10 @@ struct GB_Joypad;
 #define IO_IE gb->hram[0x7F]
 
 enum GB_MbcType {
+	MBC_TYPE_NONE = 0,
+
 	MBC_TYPE_0,
 	MBC_TYPE_1,
-	MBC_TYPE_NONE = 0xFF,
 };
 
 // for changing the internal colour buffer.
@@ -257,6 +258,34 @@ enum GB_SystemType {
 	GB_SYSTEM_TYPE_GBC
 };
 
+// this setting only applies when the game is loaded as DMG or SGB game.
+// GBC games set their own colour palette and cannot be customised!
+enum GB_PaletteConfig {
+	// uses the default palette
+	GB_PALETTE_CONFIG_NONE = 0,
+	// these can be OR'd together to set an additional option.
+	// if both are OR'd, first, the game will try to use a builtin palette.
+	// if a builtin palette cannot be found, then it will fallback to the
+	// custom palette instead.
+	GB_PALETTE_CONFIG_USE_CUSTOM = 1 << 0,
+	GB_PALETTE_CONFIG_USE_BUILTIN = 1 << 1,
+};
+
+enum GB_SystemTypeConfig {
+	GB_SYSTEM_TYPE_CONFIG_NONE = 0,
+	// DMG and SGB will result is a romload error
+	// if the rom ONLY supports GBC system type
+	GB_SYSTEM_TYPE_CONFIG_DMG,
+	GB_SYSTEM_TYPE_CONFIG_SGB,
+	GB_SYSTEM_TYPE_CONFIG_GBC
+};
+
+struct GB_Config {
+	enum GB_PaletteConfig palette_config;
+	struct GB_PaletteEntry custom_palette;
+	enum GB_SystemTypeConfig system_type_config;
+};
+
 enum GB_ErrorCode {
 	GB_ERROR_CODE_UNKNOWN_INSTRUCTION,
 
@@ -309,23 +338,6 @@ struct GB_LinkCableData {
 typedef GB_BOOL(*GB_serial_transfer_t)(struct GB_Data* gb, void* user, struct GB_LinkCableData* data);
 
 // structs
-
-enum GB_LoadSystemType {
-	GB_LOAD_SYSTEM_TYPE_DMG,
-	GB_LOAD_SYSTEM_TYPE_COLOUR_PLUS,
-	GB_LOAD_SYSTEM_TYPE_COLOUR,
-	GB_LOAD_SYSTEM_TYPE_ANY,
-};
-
-enum GB_PaletteOption {
-	GB_PALETTE_OPTION_HASH,
-	GB_PALETTE_OPTION_NO_OVERRIDE,
-};
-
-struct GB_Config {
-	enum GB_LoadSystemType load_system_type; /* GB_LOAD_SYSTEM_TYPE_ANY */
-	enum GB_PaletteOption palette_option;
-};
 
 struct GB_CartHeader {
 	GB_U8 entry_point[0x4];
@@ -495,9 +507,8 @@ struct GB_Data {
 	struct GB_PaletteEntry palette; /* default */
 
 	enum GB_SystemType system_type; // set by the rom itself
-	// currently unused...
-	enum GB_SystemType overide_system_type;
-	GB_BOOL use_override_system_type;
+
+	struct GB_Config config;
 
 	GB_serial_transfer_t link_cable;
 	void* link_cable_user_data;
