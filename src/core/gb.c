@@ -399,8 +399,12 @@ int GB_loadsave(struct GB_Data* gb, const struct GB_SaveData* save) {
 	// copy of the savedata!
 	memcpy(gb->cart.ram, save->data, save->size);
 
-	if (GB_has_rtc(gb) && save->has_rtc) {
-		memcpy(&gb->cart.rtc, &save->rtc, sizeof(save->rtc));
+	if (GB_has_rtc(gb)) {
+		if (save->has_rtc) {
+			memcpy(&gb->cart.rtc, &save->rtc, sizeof(save->rtc));
+		} else {
+			printf("[WARN] game supports RTC but no RTC was loaded when loading save!\n");
+		}
 	}
 
 	return 0;
