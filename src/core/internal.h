@@ -6,6 +6,14 @@ extern "C" {
 
 #include "types.h"
 
+// these internally discard the const when passing the gb
+// struct to the error callback.
+// this function is still marked const because it is often called
+// in const functions.
+void GB_throw_info(const struct GB_Data* gb, const char* message);
+void GB_throw_warn(const struct GB_Data* gb, const char* message);
+void GB_throw_error(const struct GB_Data* gb, enum GB_ErrorDataType type, const char* message);
+
 GB_U8 GB_ioread(struct GB_Data* gb, GB_U16 addr);
 void GB_iowrite(struct GB_Data* gb, GB_U16 addr, GB_U8 value);
 GB_U8 GB_read8(struct GB_Data* gb, const GB_U16 addr);

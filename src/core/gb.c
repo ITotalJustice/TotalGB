@@ -8,8 +8,52 @@
 
 #define ROM_SIZE_MULT 0x8000
 
+void GB_throw_info(const struct GB_Data* gb, const char* message) {
+	#if 0
+	printf("[INFO] %s\n", message);
+	#endif
+
+	if (gb->error_cb != NULL) {
+		struct GB_ErrorData data = {0};
+		data.type = GB_ERROR_TYPE_INFO;
+		// todo: handle possible string overflow...
+		strcpy(data.info.message, message);
+		gb->error_cb((struct GB_Data*)gb, gb->error_cb_user_data, &data);
+	}
+}
+
+void GB_throw_warn(const struct GB_Data* gb, const char* message) {
+	#if 0
+	printf("[WARN] %s\n", message);
+	#endif
+
+	if (gb->error_cb != NULL) {
+		struct GB_ErrorData data = {0};
+		data.type = GB_ERROR_TYPE_WARN;
+		// todo: handle possible string overflow...
+		strcpy(data.warn.message, message);
+		gb->error_cb((struct GB_Data*)gb, gb->error_cb_user_data, &data);
+	}
+}
+
+void GB_throw_error(const struct GB_Data* gb, enum GB_ErrorDataType type, const char* message) {
+	#if 0
+	printf("[ERROR] %s\n", message);
+	#endif
+
+	if (gb->error_cb != NULL) {
+		struct GB_ErrorData data = {0};
+		data.type = GB_ERROR_TYPE_ERROR;
+		data.error.type = type;
+		// todo: handle possible string overflow...
+		strcpy(data.error.message, message);
+		gb->error_cb((struct GB_Data*)gb, gb->error_cb_user_data, &data);
+	}
+}
+
 GB_BOOL GB_init(struct GB_Data* gb) {
 	if (!gb) {
+		GB_throw_error(gb, GB_ERROR_DATA_TYPE_NULL_PARAM, __func__);
 		return GB_FALSE;
 	}
 
@@ -139,7 +183,7 @@ GB_BOOL GB_get_rom_header(const struct GB_Data* gb, struct GB_CartHeader* header
 	assert(gb && gb->cart.rom && header);
 
 	if (!gb || !gb->cart.rom || (gb->cart.ram_size < (sizeof(struct GB_CartHeader) + GB_BOOTROM_SIZE))) {
-		printf("[ERROR] invalid rom passed to get_rom_header!\n");
+		GB_throw_error(gb, GB_ERROR_DATA_TYPE_ROM, "[ERROR] invalid rom passed to get_rom_header!");
 		return GB_FALSE;
 	}
 
@@ -160,6 +204,7 @@ GB_BOOL GB_get_rom_palette_hash_from_header(const struct GB_CartHeader* header, 
 	assert(header && hash && forth);
 
 	if (!header || !hash || !forth) {
+		// GB_throw_error(gb, GB_ERROR_DATA_TYPE_NULL_PARAM, __func__);
 		return GB_FALSE;
 	}
 
@@ -178,6 +223,7 @@ GB_BOOL GB_get_rom_palette_hash(const struct GB_Data* gb, GB_U8* hash, GB_U8* fo
 	assert(gb && hash);
 
 	if (!gb || !hash) {
+		GB_throw_error(gb, GB_ERROR_DATA_TYPE_NULL_PARAM, __func__);
 		return GB_FALSE;
 	}
 
@@ -191,6 +237,7 @@ GB_BOOL GB_set_palette_from_palette(struct GB_Data* gb, const struct GB_PaletteE
 	assert(gb && palette);
 
 	if (!gb || !palette) {
+		GB_throw_error(gb, GB_ERROR_DATA_TYPE_NULL_PARAM, __func__);
 		return GB_FALSE;
 	}
 
@@ -248,7 +295,13 @@ static void GB_setup_palette(struct GB_Data* gb, const struct GB_CartHeader* hea
 }
 
 int GB_loadrom_data(struct GB_Data* gb, GB_U8* data, GB_U32 size) {
-	if (!gb || !data || !size || size < GB_BOOTROM_SIZE + sizeof(struct GB_CartHeader)) {
+	if (!gb || !data || !size) {
+		GB_throw_error(gb, GB_ERROR_DATA_TYPE_NULL_PARAM, __func__);
+		return -1;
+	}
+
+	if (size < GB_BOOTROM_SIZE + sizeof(struct GB_CartHeader)) {
+		GB_throw_error(gb, GB_ERROR_DATA_TYPE_ROM, "rom size is too small!");
 		return -1;
 	}
 
@@ -283,7 +336,7 @@ int GB_loadrom_data(struct GB_Data* gb, GB_U8* data, GB_U32 size) {
 
 		// once supported is added, use this code...
 		if (gb->config.system_type_config == GB_SYSTEM_TYPE_CONFIG_DMG) {
-			printf("[INFO] GBC only game but set to SGB system via config...\n");
+			GB_throw_info(gb, "GBC only game but set to SGB system via config...");
 			GB_set_system_type(gb, GB_SYSTEM_TYPE_SGB);
 		} else {
 			GB_set_system_type(gb, GB_SYSTEM_TYPE_GBC);
@@ -295,10 +348,10 @@ int GB_loadrom_data(struct GB_Data* gb, GB_U8* data, GB_U32 size) {
 		if (gb->config.system_type_config == GB_SYSTEM_TYPE_CONFIG_GBC) {
 			GB_set_system_type(gb, GB_SYSTEM_TYPE_GBC);
 		} else if (gb->config.system_type_config == GB_SYSTEM_TYPE_CONFIG_SGB) {
-			printf("[INFO] rom supports GBC mode, however falling back to SGB mode...\n");
+			GB_throw_info(gb, "rom supports GBC mode, however falling back to SGB mode...");
 			GB_set_system_type(gb, GB_SYSTEM_TYPE_SGB);
 		} else {
-			printf("[INFO] rom supports GBC mode, however falling back to DMG mode...\n");
+			GB_throw_info(gb, "rom supports GBC mode, however falling back to DMG mode...");
 			GB_set_system_type(gb, GB_SYSTEM_TYPE_DMG);
 		}
 	}
@@ -418,6 +471,7 @@ static const struct GB_StateHeader STATE_HEADER = {
 
 int GB_savestate(const struct GB_Data* gb, struct GB_State* state) {
 	if (!gb || !state) {
+		GB_throw_error(gb, GB_ERROR_DATA_TYPE_NULL_PARAM, __func__);
 		return -1;
 	}
 
@@ -427,6 +481,7 @@ int GB_savestate(const struct GB_Data* gb, struct GB_State* state) {
 
 int GB_loadstate(struct GB_Data* gb, const struct GB_State* state) {
 	if (!gb || !state) {
+		GB_throw_error(gb, GB_ERROR_DATA_TYPE_NULL_PARAM, __func__);
 		return -1;
 	}
 
@@ -441,6 +496,7 @@ int GB_loadstate(struct GB_Data* gb, const struct GB_State* state) {
 
 int GB_savestate2(const struct GB_Data* gb, struct GB_CoreState* state, GB_BOOL swap_endian) {
 	if (!gb || !state) {
+		GB_throw_error(gb, GB_ERROR_DATA_TYPE_NULL_PARAM, __func__);
 		return -1;
 	}
 
@@ -467,6 +523,7 @@ int GB_savestate2(const struct GB_Data* gb, struct GB_CoreState* state, GB_BOOL 
 
 int GB_loadstate2(struct GB_Data* gb, const struct GB_CoreState* state) {
 	if (!gb || !state) {
+		GB_throw_error(gb, GB_ERROR_DATA_TYPE_NULL_PARAM, __func__);
 		return -1;
 	}
 

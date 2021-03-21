@@ -286,21 +286,47 @@ struct GB_Config {
 	enum GB_SystemTypeConfig system_type_config;
 };
 
-enum GB_ErrorCode {
-	GB_ERROR_CODE_UNKNOWN_INSTRUCTION,
-
-	GB_ERROR_CODE_UNK
+enum GB_ErrorType {
+	GB_ERROR_TYPE_UNKNOWN_INSTRUCTION,
+	GB_ERROR_TYPE_INFO,
+	GB_ERROR_TYPE_WARN,
+	GB_ERROR_TYPE_ERROR,
+	GB_ERROR_TYPE_UNK
 };
 
-struct GB_UnkownInstructionData {
+struct GB_UnkownInstructionTypeData {
 	GB_U8 opcode;
 	GB_BOOL cb_prefix;
 };
 
+enum GB_ErrorDataType {
+	GB_ERROR_DATA_TYPE_UNK,
+	GB_ERROR_DATA_TYPE_NULL_PARAM,
+	GB_ERROR_DATA_TYPE_ROM,
+	GB_ERROR_DATA_TYPE_SRAM,
+	GB_ERROR_DATA_TYPE_SAVE,
+};
+
+struct GB_InfoTypeData {
+	char message[0x200]; // NULL terminated string
+};
+
+struct GB_WarnTypeData {
+	char message[0x200]; // NULL terminated string
+};
+
+struct GB_ErrorTypeData {
+	enum GB_ErrorDataType type;
+	char message[0x200]; // NULL terminated string
+};
+
 struct GB_ErrorData {
-	enum GB_ErrorCode code;
+	enum GB_ErrorType type;
 	union {
-		struct GB_UnkownInstructionData unk_instruction;
+		struct GB_UnkownInstructionTypeData unk_instruction;
+		struct GB_InfoTypeData info;
+		struct GB_WarnTypeData warn;
+		struct GB_ErrorTypeData error;
 	};
 };
 

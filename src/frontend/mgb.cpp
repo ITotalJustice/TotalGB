@@ -149,12 +149,24 @@ auto Instance::OnStopCallback() -> void {
 }
 
 auto Instance::OnErrorCallback(struct GB_ErrorData* data) -> void {
-    switch (data->code) {
-        case GB_ErrorCode::GB_ERROR_CODE_UNKNOWN_INSTRUCTION:
+    switch (data->type) {
+        case GB_ErrorType::GB_ERROR_TYPE_UNKNOWN_INSTRUCTION:
             printf("[ERROR] UNK instruction OP 0x%02X CB: %s\n", data->unk_instruction.opcode, data->unk_instruction.cb_prefix ? "TRUE" : "FALSE");
             break;
 
-        case GB_ErrorCode::GB_ERROR_CODE_UNK:
+        case GB_ErrorType::GB_ERROR_TYPE_INFO:
+            printf("[INFO] %s\n", data->info.message);
+            break;
+
+        case GB_ErrorType::GB_ERROR_TYPE_WARN:
+            printf("[WARN] %s\n", data->warn.message);
+            break;
+
+        case GB_ErrorType::GB_ERROR_TYPE_ERROR:
+            printf("[ERROR] %s\n", data->error.message);
+            break;
+
+        case GB_ErrorType::GB_ERROR_TYPE_UNK:
             printf("[ERROR] Unknown gb error...\n");
             break;
     }

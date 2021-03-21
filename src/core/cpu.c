@@ -7,7 +7,7 @@
 static inline void UNK_OP(struct GB_Data* gb, GB_U8 opcode, GB_BOOL cb_prefix) {
 	if (gb->error_cb != NULL) {
 		struct GB_ErrorData data = {0};
-		data.code = GB_ERROR_CODE_UNKNOWN_INSTRUCTION;
+		data.type = GB_ERROR_TYPE_UNKNOWN_INSTRUCTION;
 		data.unk_instruction.cb_prefix = cb_prefix;
 		data.unk_instruction.opcode = opcode;
 
