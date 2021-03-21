@@ -87,7 +87,11 @@ void GB_reset(struct GB_Data* gb) {
 	gb->cpu.halt = 0;
 	gb->cpu.ime = 0;
 	// CPU
-	GB_cpu_set_register_pair(gb, GB_CPU_REGISTER_PAIR_AF, 0x01B0);
+	if (GB_is_system_gbc(gb) == GB_TRUE) {
+		GB_cpu_set_register_pair(gb, GB_CPU_REGISTER_PAIR_AF, 0x11B0);
+	} else {
+		GB_cpu_set_register_pair(gb, GB_CPU_REGISTER_PAIR_AF, 0x01B0);
+	}
 	GB_cpu_set_register_pair(gb, GB_CPU_REGISTER_PAIR_BC, 0x0013);
 	GB_cpu_set_register_pair(gb, GB_CPU_REGISTER_PAIR_DE, 0x00D8);
 	GB_cpu_set_register_pair(gb, GB_CPU_REGISTER_PAIR_HL, 0x014D);
@@ -250,6 +254,10 @@ enum GB_SystemType GB_get_system_type(const struct GB_Data* gb) {
 	return gb->system_type;
 }
 
+GB_BOOL GB_is_system_gbc(const struct GB_Data* gb) {
+	return GB_get_system_type(gb) == GB_SYSTEM_TYPE_GBC;
+}
+
 static const char* GB_get_system_type_string(const enum GB_SystemType type) {
 	switch (type) {
 		case GB_SYSTEM_TYPE_DMG: return "GB_SYSTEM_TYPE_DMG";
@@ -267,7 +275,7 @@ static void GB_set_system_type(struct GB_Data* gb, const enum GB_SystemType type
 
 static void GB_setup_palette(struct GB_Data* gb, const struct GB_CartHeader* header) {
 	// this should only ever be called in NONE GBC system.
-	assert(GB_get_system_type(gb) != GB_SYSTEM_TYPE_GBC);
+	assert(GB_is_system_gbc(gb) == GB_FALSE);
 
 	if (gb->config.palette_config == GB_PALETTE_CONFIG_NONE) {
 		GB_Palette_fill_from_custom(GB_CUSTOM_PALETTE_CREAM, &gb->palette);
@@ -389,7 +397,7 @@ int GB_loadrom_data(struct GB_Data* gb, GB_U8* data, GB_U32 size) {
 	GB_setup_mmap(gb);
 
 	// set the palette!
-	if (GB_get_system_type(gb) != GB_SYSTEM_TYPE_GBC) {
+	if (GB_is_system_gbc(gb) == GB_FALSE) {
 		GB_setup_palette(gb, header);
 	}
 
