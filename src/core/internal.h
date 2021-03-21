@@ -24,6 +24,9 @@ void GB_write16(struct GB_Data* gb, GB_U16 addr, GB_U16 value);
 GB_U8 GB_serial_sb_read(const struct GB_Data* gb);
 void GB_serial_sc_write(struct GB_Data* gb, const GB_U8 data);
 
+void GB_bcpd_write(struct GB_Data* gb, GB_U8 value);
+void GB_ocpd_write(struct GB_Data* gb, GB_U8 value);
+
 // these should also be static
 GB_BOOL GB_setup_mbc(struct GB_Cart* mbc, const struct GB_CartHeader* header);
 void GB_setup_mmap(struct GB_Data* gb);

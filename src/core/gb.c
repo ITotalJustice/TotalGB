@@ -126,6 +126,9 @@ void GB_reset(struct GB_Data* gb) {
 	IO_LY = 0x00;
 	IO_LYC = 0x00;
 	IO_BGP = 0xFC;
+	// todo: check init values
+	IO_OBP0 = 0xFF;
+	IO_OBP1 = 0xFF;
 	IO_WY = 0x00;
 	IO_WX = 0x00;
 	IO_IE = 0x00;
@@ -133,13 +136,18 @@ void GB_reset(struct GB_Data* gb) {
 	if (GB_is_system_gbc(gb) == GB_TRUE) {
 		IO_SVBK = 0x01;
 		IO_VBK = 0x00;
-		IO_OBP0 = 0x00;
-		IO_OBP1 = 0x00;
+		IO_BCPS = 0x00;
+		IO_BCPD = 0x00;
+		IO_OCPS = 0x00;
+		IO_OCPD = 0x00;
+		IO_KEY1 = 0x00;
 	} else {
 		IO_SVBK = 0x01;
 		IO_VBK = 0xFF;
-		IO_OBP0 = 0xFF;
-		IO_OBP1 = 0xFF;
+		IO_BCPS = 0xFF;
+		IO_BCPD = 0xFF;
+		IO_OCPS = 0xFF;
+		IO_OCPD = 0xFF;
 	}
 }
 
@@ -629,7 +637,7 @@ void GB_connect_link_cable(struct GB_Data* gb, GB_serial_transfer_t cb, void* us
 GB_U16 GB_run_step(struct GB_Data* gb) {
 	GB_U16 cycles = GB_cpu_run(gb, 0 /*unused*/);
 	GB_timer_run(gb, cycles);
-	GB_ppu_run(gb, cycles);
+	GB_ppu_run(gb, cycles >> (gb->cpu.double_speed > 0));
 	return cycles;
 }
 

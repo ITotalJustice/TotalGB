@@ -10,10 +10,11 @@ static inline void GB_iowrite_gbc(struct GB_Data* gb, GB_U16 addr, GB_U8 value) 
 	switch (addr & 0x7F) {
 		case 0x4D: // (KEY1)
 			IO_KEY1 = value;
+			gb->cpu.double_speed = value > 0;
 			break;
 
 		case 0x4F: // (VBK)
-			IO_VBK = value & 1; // i think
+			IO_VBK = value & 1;
 			GB_update_vram_banks(gb);
 			break;
 
@@ -37,18 +38,29 @@ static inline void GB_iowrite_gbc(struct GB_Data* gb, GB_U16 addr, GB_U8 value) 
 			break;
 
 		case 0x55: // (HDMA5)
+			IO_HDMA5 = value;
 			break;
 
 		case 0x68: // BCPS
 			IO_BCPS = value;
 			break;
 
-		case 0x69: // OCPS
+		case 0x69: // BCPD
+			GB_bcpd_write(gb, value);
+			IO_BCPD = value;
+			break;
+
+		case 0x6A: // OCPS
 			IO_OCPS = value;
 			break;
 
+		case 0x6B: // OCPD
+			GB_ocpd_write(gb, value);
+			IO_OCPD = value;
+			break;
+
 		case 0x70: // (SVBK) always set between 1-7
-			IO_SVBK = value & 0x07 + (value == 0x00);
+			IO_SVBK = (value & 0x07) + ((value & 0x07) == 0x00);
 			GB_update_wram_banks(gb);
 			break;
 	}
@@ -103,23 +115,6 @@ void GB_iowrite(struct GB_Data* gb, GB_U16 addr, GB_U8 value) {
 		case 0x07:
 			IO_TAC = (value | 248);
 			break;
-		
-		case 0x03: case 0x09: case 0x0A: case 0x0B:
-		case 0x0C: case 0x0D: case 0x0E: case 0x1F:
-		case 0x27: case 0x28: case 0x29: case 0x44:
-		case 0x4C: case 0x4E: case 0x56: case 0x57:
-		case 0x58: case 0x59: case 0x5A: case 0x5B:
-		case 0x5C: case 0x5D: case 0x5E: case 0x5F:
-		case 0x60: case 0x61: case 0x62: case 0x63:
-		case 0x64: case 0x65: case 0x66: case 0x67:
-		case 0x68: case 0x69: case 0x6A: case 0x6B:
-		case 0x6C: case 0x6D: case 0x6E: case 0x6F:
-		case 0x71: case 0x72: case 0x73: case 0x74:
-		case 0x75: case 0x76: case 0x77: case 0x78:
-		case 0x79: case 0x7A: case 0x7B: case 0x7C:
-		case 0x7D: case 0x7E: case 0x08: case 0x15:
-		case 0x7F:
-			break; // unused
 		
 		case 0x0F:
 			IO_IF = (value | 224);
@@ -289,7 +284,7 @@ void GB_write8(struct GB_Data* gb, GB_U16 addr, GB_U8 value) {
 				break;
 			
 			case 0x8: case 0x9:
-				gb->ppu.vram[0][addr & 0x1FFF] = value;
+				gb->ppu.vram[IO_VBK][addr & 0x1FFF] = value;
 				break;
 			
 			case 0xC: case 0xE:
@@ -297,7 +292,7 @@ void GB_write8(struct GB_Data* gb, GB_U16 addr, GB_U8 value) {
 				break;
 			
 			case 0xD: case 0xF:
-				gb->wram[1][addr & 0x0FFF] = value;
+				gb->wram[IO_SVBK][addr & 0x0FFF] = value;
 				break;
 		}
 	} else if (addr <= 0xFE9F) {

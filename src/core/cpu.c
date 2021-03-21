@@ -843,9 +843,9 @@ static void GB_interrupt_handler(struct GB_Data* gb) {
 	if (live_interrupts & GB_INTERRUPT_VBLANK) {
 		RST(64);
 		GB_disable_interrupt(gb, GB_INTERRUPT_VBLANK);
-    } else if (live_interrupts & GB_INTERRUPT_HBLANK) {
+    } else if (live_interrupts & GB_INTERRUPT_LCD_STAT) {
 		RST(72);
-		GB_disable_interrupt(gb, GB_INTERRUPT_HBLANK);
+		GB_disable_interrupt(gb, GB_INTERRUPT_LCD_STAT);
     } else if (live_interrupts & GB_INTERRUPT_TIMER) {
 		RST(80);
 		GB_disable_interrupt(gb, GB_INTERRUPT_TIMER);
@@ -1026,7 +1026,7 @@ static void GB_execute(struct GB_Data* gb) {
 			break;
 	}
 
-	gb->cpu.cycles += CYCLE_TABLE_CB[opcode];
+	gb->cpu.cycles += CYCLE_TABLE[opcode];
 }
 
 static void GB_execute_cb(struct GB_Data* gb) {

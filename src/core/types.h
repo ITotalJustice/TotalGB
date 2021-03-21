@@ -134,7 +134,9 @@ struct GB_Joypad;
 #define IO_HDMA4 IO[0x54]
 #define IO_HDMA5 IO[0x55]
 #define IO_BCPS IO[0x68]
-#define IO_OCPS IO[0x69]
+#define IO_BCPD IO[0x69]
+#define IO_OCPS IO[0x6A]
+#define IO_OCPD IO[0x6B]
 // MISC
 #define IO_SVBK IO[0x70]
 #define IO_KEY1 IO[0x4D]
@@ -225,7 +227,7 @@ enum GB_Button {
 
 enum GB_Interrupts {
     GB_INTERRUPT_VBLANK = 0x01,
-    GB_INTERRUPT_HBLANK = 0x02,
+    GB_INTERRUPT_LCD_STAT = 0x02,
     GB_INTERRUPT_TIMER = 0x04,
     GB_INTERRUPT_SERIAL = 0x08,
     GB_INTERRUPT_JOYPAD = 0x10,
@@ -407,7 +409,7 @@ struct GB_BgAttributes {
 #if GB_ENDIAN == GB_LITTLE_ENDIAN
 	GB_U8 pal:3;
 	GB_U8 bank:1;
-	GB_U8 _pad[1];
+	GB_U8 _pad:1;
 	GB_U8 xflip:1;
 	GB_U8 yflip:1;
 	GB_U8 priority:1;
@@ -466,6 +468,7 @@ struct GB_Cpu {
 	GB_U8 registers[8];
 	GB_BOOL ime;
 	GB_BOOL halt;
+	GB_BOOL double_speed;
 };
 
 struct GB_Ppu {
