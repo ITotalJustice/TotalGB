@@ -82,7 +82,6 @@ void GB_reset(struct GB_Data* gb) {
 	gb->joypad.var = 0xFF;
 	gb->ppu.next_cycles = 0;
 	gb->timer.next_cycles = 0;
-	gb->ppu.line_counter = 0;
 	gb->cpu.cycles = 0;
 	gb->cpu.halt = 0;
 	gb->cpu.ime = 0;
@@ -637,7 +636,9 @@ void GB_connect_link_cable(struct GB_Data* gb, GB_serial_transfer_t cb, void* us
 GB_U16 GB_run_step(struct GB_Data* gb) {
 	GB_U16 cycles = GB_cpu_run(gb, 0 /*unused*/);
 	GB_timer_run(gb, cycles);
-	GB_ppu_run(gb, cycles >> (gb->cpu.double_speed > 0));
+	// GB_ppu_run(gb, cycles);
+	GB_ppu_run(gb, cycles >> (gb->cpu.double_speed));
+	assert(gb->cpu.double_speed == 1 || gb->cpu.double_speed == 0);
 	return cycles;
 }
 

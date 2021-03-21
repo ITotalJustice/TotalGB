@@ -138,6 +138,116 @@ void GB_ocpd_write(struct GB_Data* gb, GB_U8 value) {
     GB_ocps_increment(gb);
 }
 
+static inline GB_BOOL GB_is_hdma_active(const struct GB_Data* gb) {
+    return gb->ppu.hdma_length > 0;
+}
+
+static inline GB_U8 hdma_read(const struct GB_Data* gb, const GB_U16 addr) { // A000-DFF0
+    assert((addr <= 0xDFF0) || (addr >= 0xA000 && addr <= 0xDFF0));
+
+    return gb->mmap[(addr >> 12)][addr & 0x0FFF];
+}
+
+static inline void hdma_write(struct GB_Data* gb, const GB_U16 addr, const GB_U8 value) { // A000-DFF0
+    gb->ppu.vram[IO_VBK][(addr) & 0x1FFF] = value;
+}
+
+static inline void GB_perform_hdma(struct GB_Data* gb) {
+    assert(GB_is_hdma_active(gb) == GB_TRUE);
+
+    // perform 16-block transfer
+    for (GB_U16 i = 0; i < 0x10; ++i) {
+        hdma_write(gb,
+            gb->ppu.hdma_dst_addr + i, // dst
+            hdma_read(gb, gb->ppu.hdma_src_addr + i) // value
+        );
+    }
+
+    gb->cpu.cycles += 8;
+    gb->ppu.hdma_length -= 0x10;
+    gb->ppu.hdma_src_addr += 0x10;
+    gb->ppu.hdma_dst_addr += 0x10;
+    --IO_HDMA5;
+
+    // finished!
+    if (gb->ppu.hdma_length == 0) {
+        gb->ppu.hdma_length = 0;
+
+        IO_HDMA1 = 0xFF;
+        IO_HDMA2 = 0xFF;
+        IO_HDMA3 = 0xFF;
+        IO_HDMA4 = 0xFF;
+        IO_HDMA5 = 0x80;
+    }
+}
+
+GB_U8 GB_hdma5_read(const struct GB_Data* gb) {
+    return IO_HDMA5;
+}
+
+void GB_hdma5_write(struct GB_Data* gb, GB_U8 value) {
+    // the lower 4-bits of both address are ignored
+    const GB_U16 dma_src = (IO_HDMA1 << 8) | (IO_HDMA2 & 0xF0);
+    const GB_U16 dma_dst = (IO_HDMA3 << 8) | (IO_HDMA4 & 0xF0);
+
+    // lower 6-bits are the length + 1 * 0x10
+    const GB_U16 dma_len = ((value & 0x7F) + 1) << 4;
+
+    // by checking bit-7 of value, it returns the type of dma to perform.
+    const GB_U8 mode = value & 0x80;
+
+    enum GB_HDMA5Mode {
+        GDMA = 0x00,
+        HDMA = 0x80
+    };
+
+    if (mode == GDMA) {
+        // setting bit-7 = 0 whilst a HDMA is currently active
+        // actually disables that transfer
+        if (GB_is_hdma_active(gb) == GB_TRUE) {
+            GB_throw_info(gb, "cancleing HDMA");
+
+            gb->ppu.hdma_length = 0;
+            IO_HDMA5 = ((gb->ppu.hdma_length >> 4) - 1) | 0x80;
+
+            // do not perform GDMA after, this only cancels the active
+            // transfer and sets HDMA5.
+            return;
+        }
+
+        // use this for testing, it gets noises however...
+        // GB_throw_info(gb, "performing GDMA");
+
+        // GDMA are performed immediately
+        for (GB_U16 i = 0; i < dma_len; ++i) {
+            hdma_write(gb,
+                dma_dst + i, // dst
+                hdma_read(gb, dma_src + i) // value
+            );
+        }
+
+        gb->cpu.cycles += (value & 0x7F) + 1;
+
+        // it's unclear if all HDMA regs are set to 0xFF post transfer,
+        // HDMA5 is, but not sure about the rest.
+        IO_HDMA1 = 0xFF;
+        IO_HDMA2 = 0xFF;
+        IO_HDMA3 = 0xFF;
+        IO_HDMA4 = 0xFF;
+        IO_HDMA5 = 0x80;
+    }
+    else {
+        // GB_throw_info(gb, "performing HDMA");
+
+        gb->ppu.hdma_src_addr = dma_src;
+        gb->ppu.hdma_dst_addr = dma_dst;
+        gb->ppu.hdma_length = dma_len;
+
+        // set that the transfer is active.
+        IO_HDMA5 = value & 0x7F;
+    }
+}
+
 void GB_compare_LYC(struct GB_Data* gb) {
     if (UNLIKELY(IO_LY == IO_LYC)) {
         GB_set_coincidence_flag(gb, GB_TRUE);
@@ -196,6 +306,11 @@ void GB_ppu_run(struct GB_Data* gb, GB_U16 cycles) {
         case STATUS_MODE_HBLANK: // hblank
             ++IO_LY;
             GB_compare_LYC(gb);
+
+            if (GB_is_hdma_active(gb) == GB_TRUE) {
+                GB_perform_hdma(gb);
+            }
+
             if (UNLIKELY(IO_LY == 144)) {
                 GB_change_status_mode(gb, STATUS_MODE_VBLANK);
             } else {

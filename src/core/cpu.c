@@ -810,6 +810,14 @@ static inline GB_U16 GB_POP(struct GB_Data* gb) {
 } while(0)
 
 #define STOP() do { \
+	if (GB_is_system_gbc(gb)) { \
+		if ((IO_KEY1 & 1) == 1) { \
+			gb->cpu.double_speed = !gb->cpu.double_speed; \
+			IO_KEY1 = 0; \
+		} \
+	} \
+	\
+	gb->cpu.cycles += 2050; \
 	if (gb->stop_cb != NULL) { \
 		gb->stop_cb(gb, gb->stop_cb_user_data); \
 	} \

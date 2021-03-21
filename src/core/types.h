@@ -490,7 +490,12 @@ struct GB_Ppu {
 		struct GB_Colour obj_colours_bgr555[8][4];
     	GB_U16 obj_colours[8][4];
 	};
-	GB_U8 line_counter;
+	
+	// these are set when a hdma occurs (not a DMA or GDMA)
+	GB_U16 hdma_src_addr;
+	GB_U16 hdma_dst_addr;
+	GB_U16 hdma_length;
+
 	GB_U8 bg_palette[0x40]; // background palette memory.
 	GB_U8 obj_palette[0x40]; // sprite palette memory.
 	GB_BOOL dirty_bg[8]; // only update the colours if the palette changes values.

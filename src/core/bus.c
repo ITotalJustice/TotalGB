@@ -9,8 +9,7 @@ static inline void GB_iowrite_gbc(struct GB_Data* gb, GB_U16 addr, GB_U8 value) 
 
 	switch (addr & 0x7F) {
 		case 0x4D: // (KEY1)
-			IO_KEY1 = value;
-			gb->cpu.double_speed = value > 0;
+			IO_KEY1 = value & 1;
 			break;
 
 		case 0x4F: // (VBK)
@@ -38,7 +37,7 @@ static inline void GB_iowrite_gbc(struct GB_Data* gb, GB_U16 addr, GB_U8 value) 
 			break;
 
 		case 0x55: // (HDMA5)
-			IO_HDMA5 = value;
+			GB_hdma5_write(gb, value);
 			break;
 
 		case 0x68: // BCPS
@@ -76,7 +75,14 @@ GB_U8 GB_ioread(struct GB_Data* gb, GB_U16 addr) {
 
 		case 0x4D:
 			if (GB_is_system_gbc(gb) == GB_TRUE) {
-				return IO_KEY1 > 0 ? 0x80 : 0x00;
+				return gb->cpu.double_speed > 0 ? 0x80 : 0x00;
+			} else {
+				return 0xFF;
+			}
+
+		case 0x55: // HDMA5
+			if (GB_is_system_gbc(gb) == GB_TRUE) {
+				return GB_hdma5_read(gb);
 			} else {
 				return 0xFF;
 			}
