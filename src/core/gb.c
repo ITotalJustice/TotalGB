@@ -198,6 +198,21 @@ GB_BOOL GB_set_palette_from_palette(struct GB_Data* gb, const struct GB_PaletteE
 	return GB_TRUE;
 }
 
+static const char* GB_get_system_type_string(const enum GB_SystemType type) {
+	switch (type) {
+		case GB_SYSTEM_TYPE_DMG: return "GB_SYSTEM_TYPE_DMG";
+		case GB_SYSTEM_TYPE_SGB: return "GB_SYSTEM_TYPE_SBC";
+		case GB_SYSTEM_TYPE_GBC: return "GB_SYSTEM_TYPE_GBC";
+	}
+
+	return "NULL";
+}
+
+static void GB_set_system_type(struct GB_Data* gb, const enum GB_SystemType type) {
+	printf("[INFO] setting system type to %s\n", GB_get_system_type_string(type));
+	gb->system_type = type;
+}
+
 int GB_loadrom_data(struct GB_Data* gb, GB_U8* data, GB_U32 size) {
 	if (!gb || !data || !size || size < GB_BOOTROM_SIZE + sizeof(struct GB_CartHeader)) {
 		return -1;
@@ -211,12 +226,42 @@ int GB_loadrom_data(struct GB_Data* gb, GB_U8* data, GB_U32 size) {
 		return -1;
 	}
 
-	gb->cart.rom_size = rom_size;
-	gb->cart.rom = data;
+	enum GB_GBCFlag {
+		GBC_ONLY = 0xC0,
+		GBC_AND_DMG = 0x80,
+		// not much is known about these types
+		// these are not checked atm, but soon will be...
+		PGB_1 = 0x84,
+		PGB_2 = 0x88,
+	};
 
+	const char gbc_flag = header->title[sizeof(header->title) - 1];
+	if ((gbc_flag & GBC_ONLY) == GBC_ONLY) {
+		printf("[ERROR] GBC mode is not yet supported!\n");
+		return -1;
+
+		// once supported is added, use this code...
+		GB_set_system_type(gb, GB_SYSTEM_TYPE_GBC);
+	}
+	else if ((gbc_flag & GBC_AND_DMG) == GBC_AND_DMG) {
+		// this can be either set to GBC or DMG mode
+		// for now however, set to just DMG mode as 
+		printf("[INFO] rom supports GBC mode, however falling back to DMG mode...\n");
+		GB_set_system_type(gb, GB_SYSTEM_TYPE_DMG);
+	}
+	else {
+		GB_set_system_type(gb, GB_SYSTEM_TYPE_DMG);
+	}
+
+	// try and setup the mbc, this also implicitly sets up
+	// gbc mode
 	if (!GB_setup_mbc(&gb->cart, header)) {
 		return -1;
 	}
+
+	// todo: should add more checks before we get to this point!
+	gb->cart.rom_size = rom_size;
+	gb->cart.rom = data;
 
 	GB_reset(gb);
 	GB_setup_mmap(gb);
@@ -235,12 +280,12 @@ int GB_loadrom_data(struct GB_Data* gb, GB_U8* data, GB_U32 size) {
 
 GB_BOOL GB_has_save(const struct GB_Data* gb) {
 	assert(gb);
-	return (gb->cart.flags & (MBC_FLAGS_RAM | MBC_FLAGS_BATTERY)) > 0;
+	return (gb->cart.flags & (MBC_FLAGS_RAM | MBC_FLAGS_BATTERY)) == (MBC_FLAGS_RAM | MBC_FLAGS_BATTERY);
 }
 
 GB_BOOL GB_has_rtc(const struct GB_Data* gb) {
 	assert(gb);
-	return (gb->cart.flags & MBC_FLAGS_RTC) > 0;
+	return (gb->cart.flags & MBC_FLAGS_RTC) == MBC_FLAGS_RTC;
 }
 
 GB_U32 GB_calculate_savedata_size(const struct GB_Data* gb) {

@@ -244,6 +244,19 @@ enum GB_StatIntModes {
     STAT_INT_MODE_COINCIDENCE = 0x40
 };
 
+// the system type is set based on the game that is loaded
+// for example, if a gbc ONLY game is loaded, the system type is
+// set to GBC.
+// TODO: support manually overriding the system type for supported roms
+// for example, forcing DMG type for games that support both DMG and GBC.
+// for this, it's probably best to return a custom error if the loaded rom
+// is valid, but ONLY suppports GBC type, but DMG was forced...
+enum GB_SystemType {
+	GB_SYSTEM_TYPE_DMG,
+	GB_SYSTEM_TYPE_SGB,
+	GB_SYSTEM_TYPE_GBC
+};
+
 enum GB_ErrorCode {
 	GB_ERROR_CODE_UNKNOWN_INSTRUCTION,
 
@@ -480,6 +493,11 @@ struct GB_Data {
 	struct GB_Joypad joypad;
 
 	struct GB_PaletteEntry palette; /* default */
+
+	enum GB_SystemType system_type; // set by the rom itself
+	// currently unused...
+	enum GB_SystemType overide_system_type;
+	GB_BOOL use_override_system_type;
 
 	GB_serial_transfer_t link_cable;
 	void* link_cable_user_data;
