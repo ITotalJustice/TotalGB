@@ -58,9 +58,30 @@ static inline void GB_iowrite_gbc(struct GB_Data* gb, GB_U16 addr, GB_U8 value) 
 			IO_OCPD = value;
 			break;
 
+		case 0x6C: // OPRI
+			IO_OPRI = value & 1;
+			printf("[INFO] IO_OPRI %u\n", value & 1);
+			break;
+
 		case 0x70: // (SVBK) always set between 1-7
 			IO_SVBK = (value & 0x07) + ((value & 0x07) == 0x00);
 			GB_update_wram_banks(gb);
+			break;
+
+		case 0x72:
+			IO_72 = value;
+			break;
+
+		case 0x73:
+			IO_73 = value;
+			break;
+
+		case 0x74:
+			IO_74 = value;
+			break;
+
+		case 0x75: // only bits 4-6 are useable
+			IO_75 = value & 0x70;
 			break;
 	}
 }
@@ -281,7 +302,37 @@ GB_U8 GB_read8(struct GB_Data* gb, const GB_U16 addr) {
 	return 0xFF;
 }
 
+// static int isset = 0;
 void GB_write8(struct GB_Data* gb, GB_U16 addr, GB_U8 value) {
+	// if (isset > 0) {
+	// 	if(gb->ppu.oam[0xFE20 - 0xFE00] != 0x10) {
+	// 		printf("oof its %02X\n", gb->ppu.oam[0xFE20 - 0xFE00]);
+	// 	}
+	// 	assert(gb->ppu.oam[0xFE20 - 0xFE00] == 0x10);
+	// }
+
+	// if (addr == 0xFE20 && value == 0x10) {
+	// 	isset = 1;
+	// }
+
+	// int ye = 0;
+
+	// if (addr == 0xFE4C) {
+	// 	printf("y: %02X\n", value);
+	// 	ye++;
+	// }
+	// else if (addr == 0xFE4D) {
+	// 	printf("x: %02X\n", value);
+	// 	ye++;
+	// }
+	// else if (addr == 0xFE4E) {
+	// 	printf("num: %02X\n", value);
+	// 	ye++;
+	// }
+	// else {
+
+	// }
+	
 	if (LIKELY(addr < 0xFE00)) {
 		switch ((addr >> 12) & 0xF) {
 			case 0x0: case 0x1: case 0x2: case 0x3: case 0x4:
@@ -302,7 +353,11 @@ void GB_write8(struct GB_Data* gb, GB_U16 addr, GB_U8 value) {
 				break;
 		}
 	} else if (addr <= 0xFE9F) {
-        gb->ppu.oam[addr & 0x9F] = value;
+		// printf("writing %02X to addr %04X\n", value, addr);
+        gb->ppu.oam[addr - 0xFE00] = value;
+		// if (ye > 0)
+		// printf("got yet, written %02X Spirte Y: %02X\n",
+		// 	gb->ppu.oam[addr - 0xFE00], gb->ppu.oam[0xFE4C - 0xFE00]); //gb->ppu.sprites[(addr & 0x9F) >> 2].y);
     } else if (addr >= 0xFF00 && addr <= 0xFF7F) {
         GB_iowrite(gb, addr, value);
     } else if (addr >= 0xFF80) {

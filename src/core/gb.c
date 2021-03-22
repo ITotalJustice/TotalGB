@@ -139,14 +139,25 @@ void GB_reset(struct GB_Data* gb) {
 		IO_BCPD = 0x00;
 		IO_OCPS = 0x00;
 		IO_OCPD = 0x00;
+		IO_OPRI = 0x00;
 		IO_KEY1 = 0x00;
+		// undoc
+		IO_72 = 0x00;
+		IO_73 = 0x00;
+		IO_74 = 0x00;
+		IO_75 = 0x00;
 	} else {
 		IO_SVBK = 0x01;
-		IO_VBK = 0xFF;
+		// this might not work for all DMG games as there may be some that
+		// check if this value returns 0xFF, however, this is set to 0
+		// to avoid having an extra `if` when writing to vram, allowing
+		// me to use the IO reg directly (the if being is_system_gbc)
+		IO_VBK = 0x00; //IO_VBK = 0xFF;
 		IO_BCPS = 0xFF;
 		IO_BCPD = 0xFF;
 		IO_OCPS = 0xFF;
 		IO_OCPD = 0xFF;
+		IO_KEY1 = 0x00;
 	}
 }
 
@@ -264,6 +275,10 @@ GB_BOOL GB_set_palette_from_palette(struct GB_Data* gb, const struct GB_PaletteE
 	gb->palette = *palette;
 
 	return GB_TRUE;
+}
+
+void GB_set_render_palette_layer_config(struct GB_Data* gb, enum GB_RenderLayerConfig layer) {
+	gb->config.render_layer_config = layer;
 }
 
 enum GB_SystemType GB_get_system_type(const struct GB_Data* gb) {
@@ -634,10 +649,10 @@ void GB_connect_link_cable(struct GB_Data* gb, GB_serial_transfer_t cb, void* us
 }
 
 GB_U16 GB_run_step(struct GB_Data* gb) {
-	GB_U16 cycles = GB_cpu_run(gb, 0 /*unused*/);
+	GB_U16 cycles = GB_cpu_run(gb, 0 /*unused*/) >> gb->cpu.double_speed;
 	GB_timer_run(gb, cycles);
+	GB_ppu_run(gb, cycles);
 	// GB_ppu_run(gb, cycles);
-	GB_ppu_run(gb, cycles >> (gb->cpu.double_speed));
 	assert(gb->cpu.double_speed == 1 || gb->cpu.double_speed == 0);
 	return cycles;
 }

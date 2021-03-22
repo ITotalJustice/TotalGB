@@ -133,16 +133,23 @@ struct GB_Joypad;
 #define IO_HDMA3 IO[0x53]
 #define IO_HDMA4 IO[0x54]
 #define IO_HDMA5 IO[0x55]
+#define IO_RP IO[0x56] // (GBC) infrared
 #define IO_BCPS IO[0x68]
 #define IO_BCPD IO[0x69]
 #define IO_OCPS IO[0x6A]
 #define IO_OCPD IO[0x6B]
+#define IO_OPRI IO[0x6C] // (GBC) object priority
 // MISC
 #define IO_SVBK IO[0x70]
 #define IO_KEY1 IO[0x4D]
 #define IO_BOOTROM IO[0x50]
 #define IO_IF IO[0x0F]
 #define IO_IE gb->hram[0x7F]
+// undocumented registers (GBC)
+#define IO_72 IO[0x72]
+#define IO_73 IO[0x73]
+#define IO_74 IO[0x74]
+#define IO_75 IO[0x75] // only bit 4-6 are usable
 
 enum GB_MbcType {
 	MBC_TYPE_NONE = 0,
@@ -282,10 +289,20 @@ enum GB_SystemTypeConfig {
 	GB_SYSTEM_TYPE_CONFIG_GBC
 };
 
+enum GB_RenderLayerConfig {
+	GB_RENDER_LAYER_CONFIG_ALL = 0,
+	// only render part of the screen.
+	// bitwise OR these together to enable multiple
+	GB_RENDER_LAYER_CONFIG_BG = 1 << 0,
+	GB_RENDER_LAYER_CONFIG_WIN = 1 << 1,
+	GB_RENDER_LAYER_CONFIG_OBJ = 1 << 2,
+};
+
 struct GB_Config {
 	enum GB_PaletteConfig palette_config;
 	struct GB_PaletteEntry custom_palette;
 	enum GB_SystemTypeConfig system_type_config;
+	enum GB_RenderLayerConfig render_layer_config;
 };
 
 enum GB_ErrorType {
@@ -491,6 +508,8 @@ struct GB_Ppu {
     	GB_U16 obj_colours[8][4];
 	};
 	
+	GB_U16 window_line;
+
 	// these are set when a hdma occurs (not a DMA or GDMA)
 	GB_U16 hdma_src_addr;
 	GB_U16 hdma_dst_addr;

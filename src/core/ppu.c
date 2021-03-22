@@ -143,7 +143,7 @@ static inline GB_BOOL GB_is_hdma_active(const struct GB_Data* gb) {
 }
 
 static inline GB_U8 hdma_read(const struct GB_Data* gb, const GB_U16 addr) { // A000-DFF0
-    assert((addr <= 0xDFF0) || (addr >= 0xA000 && addr <= 0xDFF0));
+    // assert((addr <= 0xDFF0) || (addr >= 0xA000 && addr <= 0xDFF0));
 
     return gb->mmap[(addr >> 12)][addr & 0x0FFF];
 }
@@ -323,6 +323,7 @@ void GB_ppu_run(struct GB_Data* gb, GB_U16 cycles) {
             GB_compare_LYC(gb);
             gb->ppu.next_cycles += 456;
             if (UNLIKELY(IO_LY == 153)) {
+                gb->ppu.window_line = 0;
                 gb->ppu.next_cycles -= 456;
                 IO_LY = 0;
                 GB_compare_LYC(gb); // important, this is needed for zelda intro.
@@ -408,9 +409,11 @@ static inline void GB_draw_win_gb(struct GB_Data* gb) {
     const GB_U8 scanline = IO_LY;
     const GB_U8 base_tile_x = 20 - (IO_WX >> 3);
     const GB_S16 sub_tile_x = IO_WX - 7;
-    const GB_U8 pixel_y = (IO_LY - IO_WY);
+    const GB_U8 pixel_y = gb->ppu.window_line;//(gb->ppu.window_line - IO_WY);
     const GB_U8 tile_y = pixel_y >> 3;
     const GB_U8 sub_tile_y = (pixel_y & 7);
+
+    GB_BOOL did_draw = GB_FALSE;
 
     const GB_U8* bit = PIXEL_BIT_SHRINK;
     const GB_U8 *vram_map = &gb->ppu.vram[0][(GB_get_win_map_select(gb) + (tile_y << 5)) & 0x1FFF];
@@ -429,14 +432,35 @@ static inline void GB_draw_win_gb(struct GB_Data* gb) {
                 continue;
             }
 
+            did_draw |= 1;
+
             const GB_U8 pixel = ((!!(byte_b & bit[x])) << 1) | (!!(byte_a & bit[x]));
             pixels[pixel_x] = gb->ppu.bg_colours[0][pixel];
         }
     }
+
+    
+    gb->ppu.window_line += did_draw;
 }
 
 static inline GB_BOOL GB_get_sprite_size(const struct GB_Data* gb) {
     return ((IO_LCDC & 0x04) ? 16 : 8);
+}
+
+#include <stdlib.h>
+
+static int sprite_comp(const void* a, const void* b) {
+    const struct GB_Sprite* sprite_a = (const struct GB_Sprite*)a;
+    const struct GB_Sprite* sprite_b = (const struct GB_Sprite*)b;
+
+    // if (sprite_a->x > sprite_b->x) {
+    //     return -1;
+    // } else if (sprite_a->x == sprite_b->x) {
+    //     return -1;
+    // } else {
+    //     return 1;
+    // }
+    return sprite_b->x - sprite_a->x;
 }
 
 static inline void GB_draw_obj(struct GB_Data* gb) {
@@ -445,20 +469,44 @@ static inline void GB_draw_obj(struct GB_Data* gb) {
     const GB_U16 bg_trans_col = gb->ppu.bg_colours[0][0];
     GB_U16* pixels = gb->ppu.pixles[scanline];
 
+    struct GB_Sprite sprites[40];
+    memcpy(sprites, gb->ppu.sprites, sizeof(struct GB_Sprite) * 40);
+    qsort(sprites, 40, sizeof(struct GB_Sprite), sprite_comp);
+    // return;
     for (GB_U8 i = 0, sprite_total = 0; i < 40 && sprite_total < 10; ++i) {
-        const struct GB_Sprite sprite = gb->ppu.sprites[i];
+        const struct GB_Sprite sprite = sprites[i];
         const GB_S16 spy = (GB_S16)sprite.y - 16;
         const GB_S16 spx = (GB_S16)sprite.x - 8;
 
-        if (scanline >= spy && scanline < (spy + (sprite.flag.yflip ? -sprite_size: sprite_size))) {
+        // if (gb->ppu.sprites[i].x == 0x38 && gb->ppu.sprites[i].y == 0x68 && gb->ppu.sprites[i].num == 0x0C) {
+        //     printf("addr is %u\n", i);
+        //     draw = 1;
+        // } else {
+        //     draw = 0;
+        // }
+        // if (gb->ppu.oam[(0xFE4C - 0xFE00)] == 0x68 && gb->ppu.oam[(0xFE4D - 0xFE00)] == 0x38) {
+        //     printf("addr is %u\n", i);
+        // }
+
+        if (scanline >= spy && scanline < (spy + (sprite_size))) {
             ++sprite_total;
             if ((spx + 8) == 0 || spx >= GB_SCREEN_WIDTH) {
                 continue;
             }
 
-            const GB_U8 sprite_line = sprite.flag.yflip ? sprite_size - 1 - (scanline - spy) : scanline - spy;
-            const GB_U16 offset = 0x8000 | (((sprite_line) << 1) + (sprite.num << 4));
 
+            const GB_U8 sprite_line = sprite.flag.yflip ? sprite_size - 1 - (scanline - spy) : scanline - spy;
+            // when in 8x16 size, bit-0 is ignored of the tile_index
+            const GB_U8 tile_index = sprite_size == 16 ? sprite.num & 0xFE : sprite.num;
+            const GB_U16 offset = 0x8000 | (((sprite_line) << 1) + (tile_index << 4));
+
+            // if (gb->ppu.sprites[i].x == 0x50 && gb->ppu.sprites[i].y == 0x68 && gb->ppu.sprites[i].num == 0x0C) {
+            //     printf("addr is %u spx %d spy %d\n", i, spx, spy);
+            //     draw = 1;
+            // } else {
+            //     draw = 0;
+            // }
+            
             const GB_U8 byte_a = GB_vram_read(gb, offset + 0, 0);
             const GB_U8 byte_b = GB_vram_read(gb, offset + 1, 0);
 
@@ -473,6 +521,10 @@ static inline void GB_draw_obj(struct GB_Data* gb) {
                 if (pixel == 0) {
                     continue;
                 }
+
+                // if (draw) {
+                //     printf("drawing 0x%04X\n", gb->ppu.obj_colours[sprite.flag.pal_gb][pixel]);
+                // }
 
                 pixels[spx + x] = gb->ppu.obj_colours[sprite.flag.pal_gb][pixel];
             }
@@ -528,9 +580,11 @@ static inline void GB_draw_win_gb_gbc(struct GB_Data* gb) {
     const GB_U8 scanline = IO_LY;
     const GB_U8 base_tile_x = 20 - (IO_WX >> 3);
     const GB_S16 sub_tile_x = IO_WX - 7;
-    const GB_U8 pixel_y = (IO_LY - IO_WY);
+    const GB_U8 pixel_y = gb->ppu.window_line;// (IO_LY - IO_WY);
     const GB_U8 tile_y = pixel_y >> 3;
     const GB_U8 sub_tile_y = (pixel_y & 7);
+
+    GB_BOOL did_draw = GB_FALSE;
 
     const GB_U8 *vram_map = &gb->ppu.vram[0][(GB_get_win_map_select(gb) + (tile_y << 5)) & 0x1FFF];
     const struct GB_BgAttributes* attribute_map = &gb->ppu.bg_attributes[1][(GB_get_win_map_select(gb) + (tile_y << 5)) & 0x1FFF];
@@ -559,15 +613,20 @@ static inline void GB_draw_win_gb_gbc(struct GB_Data* gb) {
                 continue;
             }
 
+            did_draw |= 1;
+
             const GB_U8 pixel = ((!!(byte_b & bit[x])) << 1) | (!!(byte_a & bit[x]));
             pixels[pixel_x] = gb->ppu.bg_colours[attributes.pal][pixel];
         }
     }
+
+    gb->ppu.window_line += did_draw;
 }
 
 static inline void GB_draw_obj_gbc(struct GB_Data* gb) {
     const GB_U8 scanline = IO_LY;
     const GB_U8 sprite_size = GB_get_sprite_size(gb);
+    const GB_BOOL bg_prio = (IO_LCDC & 0x1) > 0;
     GB_U16* pixels = gb->ppu.pixles[scanline];
 
     for (GB_U8 i = 0, sprite_total = 0; i < 40 && sprite_total < 10; ++i) {
@@ -575,14 +634,16 @@ static inline void GB_draw_obj_gbc(struct GB_Data* gb) {
         const GB_S16 spy = (GB_S16)sprite.y - 16;
         const GB_S16 spx = (GB_S16)sprite.x - 8;
 
-        if (scanline >= spy && scanline < (spy + (sprite.flag.yflip ? -sprite_size: sprite_size))) {
+        if (scanline >= spy && scanline < (spy + (sprite_size))) {
             ++sprite_total;
             if ((spx + 8) == 0 || spx >= GB_SCREEN_WIDTH) {
                 continue;
             }
 
             const GB_U8 sprite_line = sprite.flag.yflip ? sprite_size - 1 - (scanline - spy) : scanline - spy;
-            const GB_U16 offset = 0x8000 | (((sprite_line) << 1) + (sprite.num << 4));
+            // when in 8x16 size, bit-0 is ignored of the tile_index
+            const GB_U8 tile_index = sprite_size == 16 ? sprite.num & 0xFE : sprite.num;
+            const GB_U16 offset = (((sprite_line) << 1) + (tile_index << 4));
 
             const GB_U8 byte_a = GB_vram_read(gb, offset + 0, sprite.flag.bank);
             const GB_U8 byte_b = GB_vram_read(gb, offset + 1, sprite.flag.bank);
@@ -590,7 +651,7 @@ static inline void GB_draw_obj_gbc(struct GB_Data* gb) {
             const GB_U8* bit = sprite.flag.xflip ? PIXEL_BIT_GROW : PIXEL_BIT_SHRINK;
 
             for (GB_U8 x = 0; x < 8; ++x) {
-                if ((spx + x) < 0 || (sprite.flag.priority)) {
+                if ((spx + x) < 0 || (sprite.flag.priority && bg_prio)) {
                     continue;
                 }
                 const GB_U8 pixel = ((!!(byte_b & bit[x])) << 1) | (!!(byte_a & bit[x]));
@@ -621,6 +682,10 @@ static inline void GB_update_colours_gbc(GB_BOOL dirty[8], GB_U16 map[8][4], con
     }
 }
 
+static inline GB_BOOL GB_is_render_layer_enabled(const struct GB_Data* gb, enum GB_RenderLayerConfig want) {
+    return (gb->config.render_layer_config == GB_RENDER_LAYER_CONFIG_ALL) || ((gb->config.render_layer_config & want) > 0);
+}
+
 void GB_draw_scanline(struct GB_Data* gb) {
     // for now, split DMG and GBC rendering into different functions
     // whilst this does bloat the codebase a little, it makes each function
@@ -632,15 +697,21 @@ void GB_draw_scanline(struct GB_Data* gb) {
         GB_update_colours_gbc(gb->ppu.dirty_obj, gb->ppu.obj_colours, gb->ppu.obj_palette);
 
         if (LIKELY(GB_is_bg_enabled(gb))) {
-            GB_draw_bg_gb_gbc(gb);
+            if (GB_is_render_layer_enabled(gb, GB_RENDER_LAYER_CONFIG_BG)) {
+                GB_draw_bg_gb_gbc(gb);
+            }
             // WX=0..166, WY=0..143
             if ((GB_is_win_enabled(gb)) && (IO_WX <= 166) && (IO_WY <= 143) && (IO_WY <= IO_LY)) {
-                GB_draw_win_gb_gbc(gb);
+                if (GB_is_render_layer_enabled(gb, GB_RENDER_LAYER_CONFIG_WIN)) {
+                    GB_draw_win_gb_gbc(gb);
+                }
             }
         }
 
         if (LIKELY(GB_is_obj_enabled(gb))) {
-            GB_draw_obj_gbc(gb);
+            if (GB_is_render_layer_enabled(gb, GB_RENDER_LAYER_CONFIG_OBJ)) {
+                GB_draw_obj_gbc(gb);
+            }
         }
     }
     
@@ -652,15 +723,22 @@ void GB_draw_scanline(struct GB_Data* gb) {
         GB_update_colours_gb(gb->ppu.obj_colours[1], gb->palette.OBJ1, IO_OBP1, &gb->ppu.dirty_obj[1]);
 
         if (LIKELY(GB_is_bg_enabled(gb))) {
-            GB_draw_bg_gb(gb);
+            if (GB_is_render_layer_enabled(gb, GB_RENDER_LAYER_CONFIG_BG)) {
+                GB_draw_bg_gb(gb);
+            }
+            
             // WX=0..166, WY=0..143
             if ((GB_is_win_enabled(gb)) && (IO_WX <= 166) && (IO_WY <= 143) && (IO_WY <= IO_LY)) {
-                GB_draw_win_gb(gb);
+                if (GB_is_render_layer_enabled(gb, GB_RENDER_LAYER_CONFIG_WIN)) {
+                    GB_draw_win_gb(gb);
+                }
             }
         }
 
         if (LIKELY(GB_is_obj_enabled(gb))) {
-            GB_draw_obj(gb);
+            if (GB_is_render_layer_enabled(gb, GB_RENDER_LAYER_CONFIG_OBJ)) {
+                GB_draw_obj(gb);
+            }
         }
     }
 }

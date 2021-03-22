@@ -174,8 +174,8 @@ cflags = [
     '-DNOCRYPT',
 
     # discord-rpc
-    '-DUSE_DISCORD=1',
-    '-DDISCORD_WINDOWS',
+    # '-DUSE_DISCORD=1',
+    # '-DDISCORD_WINDOWS',
 ]
 
 cppflags = [

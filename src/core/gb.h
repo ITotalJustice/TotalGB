@@ -48,6 +48,8 @@ GB_U16 GB_run_step(struct GB_Data* gb);
 /* run until the end of a frame */
 void GB_run_frame(struct GB_Data* gb);
 
+void GB_set_render_palette_layer_config(struct GB_Data* gb, enum GB_RenderLayerConfig layer);
+
 enum GB_SystemType GB_get_system_type(const struct GB_Data* gb);
 
 // calls GB_get_system_type(gb) and compares the result

@@ -195,6 +195,24 @@ auto App::OnKeyEvent(const SDL_KeyboardEvent& e) -> void {
         case SDLK_o:
             this->FilePicker();
             break;
+
+    // these are hotkeys to toggle layers of the gb core
+    // such as bg, win, obj...
+        case SDLK_0:
+            GB_set_render_palette_layer_config(this->emu_instances[0].GetGB(), GB_RENDER_LAYER_CONFIG_ALL);
+            break;
+
+        case SDLK_1:
+            GB_set_render_palette_layer_config(this->emu_instances[0].GetGB(), GB_RENDER_LAYER_CONFIG_BG);
+            break;
+
+        case SDLK_2:
+            GB_set_render_palette_layer_config(this->emu_instances[0].GetGB(), GB_RENDER_LAYER_CONFIG_WIN);
+            break;
+
+        case SDLK_3:
+            GB_set_render_palette_layer_config(this->emu_instances[0].GetGB(), GB_RENDER_LAYER_CONFIG_OBJ);
+            break;
     }
 }
 
