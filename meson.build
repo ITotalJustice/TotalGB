@@ -176,6 +176,9 @@ cflags = [
     # discord-rpc
     # '-DUSE_DISCORD=1',
     # '-DDISCORD_WINDOWS',
+
+    # speedhacks
+    '-DGB_RTC_SPEEDHACK=1'
 ]
 
 cppflags = [

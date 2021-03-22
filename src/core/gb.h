@@ -42,6 +42,14 @@ int GB_loadstate2(struct GB_Data* gb, const struct GB_CoreState* state);
 // int GB_set_colour_mode(struct GB_Data* gb, enum GB_ColourMode mode);
 // enum GB_ColourMode GB_get_colour_mode(const struct GB_Data* gb);
 
+// pass in a fully filled out rtc struct.
+// NOTE: the s, m, h will be clamped to the max values
+// so there won't be 255 seconds, it'll be clamped to 59.
+// returns false if the game does not support rtc.
+GB_BOOL GB_set_rtc(struct GB_Data* gb, const struct GB_Rtc rtc);
+
+GB_BOOL GB_has_mbc_flags(const struct GB_Data* gb, const GB_U8 flags);
+
 /* returns the number of cycles ran */
 GB_U16 GB_run_step(struct GB_Data* gb);
 

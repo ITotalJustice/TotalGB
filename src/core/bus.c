@@ -287,9 +287,44 @@ void GB_iowrite(struct GB_Data* gb, GB_U16 addr, GB_U8 value) {
 	}
 }
 
+static inline GB_U8 GB_mbc3_rtc_read(const struct GB_Data* gb) {
+    switch (gb->cart.rtc_mapped_reg) {
+        case GB_RTC_MAPPED_REG_S: return gb->cart.rtc.S;
+        case GB_RTC_MAPPED_REG_M: return gb->cart.rtc.M;
+        case GB_RTC_MAPPED_REG_H: return gb->cart.rtc.H;
+        case GB_RTC_MAPPED_REG_DL: return gb->cart.rtc.DL;
+        case GB_RTC_MAPPED_REG_DH: return gb->cart.rtc.DH;
+    }
+
+	assert(0);
+    GB_UNREACHABLE(0xFF);
+}
+
+static inline GB_BOOL GB_is_rtc_read(const struct GB_Data* gb) {
+	return gb->cart.in_ram == GB_FALSE && GB_has_mbc_flags(gb, MBC_FLAGS_RTC);
+}
+
 GB_U8 GB_read8(struct GB_Data* gb, const GB_U16 addr) {
 	if (LIKELY(addr < 0xFE00)) {
-		return gb->mmap[(addr >> 12)][addr & 0x0FFF];
+		#if GB_RTC_SPEEDHACK
+		#ifndef NDEBUG
+			if (UNLIKELY(addr >= 0xA000 && addr <= 0xBFFF && GB_is_rtc_read(gb))) {
+				if (UNLIKELY(addr != 0xA000)) {
+					printf("[FATAL] RTC unmapped read at 0x%04X\n", addr);
+					assert(addr == 0xA000);
+				}
+			}
+		#endif // NDEBUG
+			return gb->mmap[(addr >> 12)][addr & 0x0FFF];
+		#else // GB_RTC_SPEEDHACK
+
+		if (UNLIKELY(addr >= 0xA000 && addr <= 0xBFFF && GB_is_rtc_read(gb))) {
+			return GB_mbc3_rtc_read(gb);
+		} else {
+			return gb->mmap[(addr >> 12)][addr & 0x0FFF];
+		}
+		#endif // GB_RTC_SPEEDHACK
+
 	} else if (addr <= 0xFE9F) {
         return gb->ppu.oam[addr & 0x9F];
     } else if (addr >= 0xFF00 && addr <= 0xFF7F) {
@@ -304,35 +339,6 @@ GB_U8 GB_read8(struct GB_Data* gb, const GB_U16 addr) {
 
 // static int isset = 0;
 void GB_write8(struct GB_Data* gb, GB_U16 addr, GB_U8 value) {
-	// if (isset > 0) {
-	// 	if(gb->ppu.oam[0xFE20 - 0xFE00] != 0x10) {
-	// 		printf("oof its %02X\n", gb->ppu.oam[0xFE20 - 0xFE00]);
-	// 	}
-	// 	assert(gb->ppu.oam[0xFE20 - 0xFE00] == 0x10);
-	// }
-
-	// if (addr == 0xFE20 && value == 0x10) {
-	// 	isset = 1;
-	// }
-
-	// int ye = 0;
-
-	// if (addr == 0xFE4C) {
-	// 	printf("y: %02X\n", value);
-	// 	ye++;
-	// }
-	// else if (addr == 0xFE4D) {
-	// 	printf("x: %02X\n", value);
-	// 	ye++;
-	// }
-	// else if (addr == 0xFE4E) {
-	// 	printf("num: %02X\n", value);
-	// 	ye++;
-	// }
-	// else {
-
-	// }
-	
 	if (LIKELY(addr < 0xFE00)) {
 		switch ((addr >> 12) & 0xF) {
 			case 0x0: case 0x1: case 0x2: case 0x3: case 0x4:
@@ -353,11 +359,7 @@ void GB_write8(struct GB_Data* gb, GB_U16 addr, GB_U8 value) {
 				break;
 		}
 	} else if (addr <= 0xFE9F) {
-		// printf("writing %02X to addr %04X\n", value, addr);
         gb->ppu.oam[addr - 0xFE00] = value;
-		// if (ye > 0)
-		// printf("got yet, written %02X Spirte Y: %02X\n",
-		// 	gb->ppu.oam[addr - 0xFE00], gb->ppu.oam[0xFE4C - 0xFE00]); //gb->ppu.sprites[(addr & 0x9F) >> 2].y);
     } else if (addr >= 0xFF00 && addr <= 0xFF7F) {
         GB_iowrite(gb, addr, value);
     } else if (addr >= 0xFF80) {

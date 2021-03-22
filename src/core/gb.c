@@ -281,6 +281,26 @@ void GB_set_render_palette_layer_config(struct GB_Data* gb, enum GB_RenderLayerC
 	gb->config.render_layer_config = layer;
 }
 
+GB_BOOL GB_set_rtc(struct GB_Data* gb, const struct GB_Rtc rtc) {
+	assert(gb);
+
+	if (GB_has_mbc_flags(gb, MBC_FLAGS_RTC) == GB_FALSE) {
+		return GB_FALSE;
+	}
+
+	gb->cart.rtc.S = rtc.S > 59 ? 59 : rtc.S;
+	gb->cart.rtc.M = rtc.M > 59 ? 59 : rtc.M;
+	gb->cart.rtc.H = rtc.H > 23 ? 23 : rtc.H;
+	gb->cart.rtc.DL = rtc.DL;
+	gb->cart.rtc.DH = rtc.DH & 0xC1; // only bit 0,6,7
+
+	return GB_TRUE;
+}
+
+GB_BOOL GB_has_mbc_flags(const struct GB_Data* gb, const GB_U8 flags) {
+    return (gb->cart.flags & flags) == flags;
+}
+
 enum GB_SystemType GB_get_system_type(const struct GB_Data* gb) {
 	return gb->system_type;
 }
@@ -501,7 +521,9 @@ int GB_loadsave(struct GB_Data* gb, const struct GB_SaveData* save) {
 
 	if (GB_has_rtc(gb)) {
 		if (save->has_rtc) {
-			memcpy(&gb->cart.rtc, &save->rtc, sizeof(save->rtc));
+			// this will handle setting legal values of each entry
+			// such as 0-59 for seconds...
+			GB_set_rtc(gb, save->rtc);
 		} else {
 			printf("[WARN] game supports RTC but no RTC was loaded when loading save!\n");
 		}
@@ -666,4 +688,16 @@ void GB_run_frame(struct GB_Data* gb) {
 		cycles_elapsed += GB_run_step(gb);
 
 	} while (cycles_elapsed < GB_FRAME_CPU_CYCLES);
+
+	// check if we should update rtc
+	// using a switch so that compiler warns if i add
+	// new enum entries...
+	switch (gb->config.rtc_update_config) {
+		case GB_RTC_UPDATE_CONFIG_FRAME:
+			GB_rtc_tick_frame(gb);
+			break;
+
+		case GB_RTC_UPDATE_CONFIG_NONE:
+			break;
+	}
 }

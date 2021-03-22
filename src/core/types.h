@@ -189,8 +189,15 @@ enum GB_MbcFlags {
 	MBC_FLAGS_RAM = 1 << 0,
 	MBC_FLAGS_BATTERY = 1 << 1,
 	MBC_FLAGS_RTC = 1 << 2,
-	// not used yet
 	MBC_FLAGS_RUMBLE = 1 << 3,
+};
+
+enum GB_RtcMappedReg {
+    GB_RTC_MAPPED_REG_S,
+    GB_RTC_MAPPED_REG_M,
+    GB_RTC_MAPPED_REG_H,
+    GB_RTC_MAPPED_REG_DL,
+    GB_RTC_MAPPED_REG_DH,
 };
 
 enum GB_CpuFlags {
@@ -298,11 +305,21 @@ enum GB_RenderLayerConfig {
 	GB_RENDER_LAYER_CONFIG_OBJ = 1 << 2,
 };
 
+enum GB_RtcUpdateConfig {
+	// the RTC is ticked at the end of each frame, once it reaches
+	// 60, the counter is reset, then rtc.s is incremented.
+	GB_RTC_UPDATE_CONFIG_FRAME,
+	// the RTC will not be updated (ticked) on the core side.
+	// this is useful for if you want to set the RTC to system time
+	GB_RTC_UPDATE_CONFIG_NONE,
+};
+
 struct GB_Config {
 	enum GB_PaletteConfig palette_config;
 	struct GB_PaletteEntry custom_palette;
 	enum GB_SystemTypeConfig system_type_config;
 	enum GB_RenderLayerConfig render_layer_config;
+	enum GB_RtcUpdateConfig rtc_update_config;
 };
 
 enum GB_ErrorType {
@@ -521,7 +538,6 @@ struct GB_Ppu {
     GB_BOOL dirty_obj[8];
 };
 
-// todo: remove mbc struct into here.
 struct GB_Cart {
 	void (*write)(struct GB_Data* gb, GB_U16 addr, GB_U8 val);
 	const GB_U8* (*get_rom_bank)(struct GB_Data* gb, GB_U8 val);
@@ -534,7 +550,9 @@ struct GB_Cart {
 	GB_U16 rom_bank;
 	GB_U16 ram_bank;
 	GB_U8 flags;
+	enum GB_RtcMappedReg rtc_mapped_reg;
 	struct GB_Rtc rtc;
+	GB_U8 internal_rtc_counter;
 	GB_BOOL bank_mode;
 	GB_BOOL ram_enabled;
 	GB_BOOL in_ram;
