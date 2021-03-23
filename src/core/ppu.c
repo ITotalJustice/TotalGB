@@ -409,7 +409,7 @@ static inline void GB_draw_win_gb(struct GB_Data* gb) {
     const GB_U8 scanline = IO_LY;
     const GB_U8 base_tile_x = 20 - (IO_WX >> 3);
     const GB_S16 sub_tile_x = IO_WX - 7;
-    const GB_U8 pixel_y = gb->ppu.window_line;//(gb->ppu.window_line - IO_WY);
+    const GB_U8 pixel_y = gb->ppu.window_line;
     const GB_U8 tile_y = pixel_y >> 3;
     const GB_U8 sub_tile_y = (pixel_y & 7);
 
@@ -580,7 +580,7 @@ static inline void GB_draw_win_gb_gbc(struct GB_Data* gb) {
     const GB_U8 scanline = IO_LY;
     const GB_U8 base_tile_x = 20 - (IO_WX >> 3);
     const GB_S16 sub_tile_x = IO_WX - 7;
-    const GB_U8 pixel_y = gb->ppu.window_line;// (IO_LY - IO_WY);
+    const GB_U8 pixel_y = gb->ppu.window_line;
     const GB_U8 tile_y = pixel_y >> 3;
     const GB_U8 sub_tile_y = (pixel_y & 7);
 

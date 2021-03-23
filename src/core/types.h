@@ -536,15 +536,15 @@ struct GB_Ppu {
 		struct GB_Colour obj_colours_bgr555[8][4];
     	GB_U16 obj_colours[8][4];
 	};
-	
-	// this is the internal line counter which is used as the index
-	// for the window instead of IO_LY.
-	GB_U16 window_line;
 
 	// these are set when a hdma occurs (not a DMA or GDMA)
 	GB_U16 hdma_src_addr;
 	GB_U16 hdma_dst_addr;
 	GB_U16 hdma_length;
+
+	// this is the internal line counter which is used as the index
+	// for the window instead of IO_LY.
+	GB_U8 window_line;
 
 	GB_U8 bg_palette[0x40]; // background palette memory.
 	GB_U8 obj_palette[0x40]; // sprite palette memory.
