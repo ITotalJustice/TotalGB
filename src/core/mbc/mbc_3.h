@@ -32,14 +32,6 @@ void GB_rtc_tick_frame(struct GB_Data* gb) {
         return;
     }
 
-    // as this func is called one a frame at roughly 60fps
-    // we tick to 59 first then reset
-    ++gb->cart.internal_rtc_counter;
-    if (gb->cart.internal_rtc_counter < 0x3D) {
-        return;
-    }
-    gb->cart.internal_rtc_counter = 0;
-
     enum GB_RtcFlags {
         OVERFLOW = 0x01,
         HALT = 0x40
@@ -52,15 +44,15 @@ void GB_rtc_tick_frame(struct GB_Data* gb) {
     // this is a bit sphagetii, but basically tick the lowest entry
     // if overflow, reset and tick the next one, then repeat...
     ++gb->cart.rtc.S;
-    if (gb->cart.rtc.S > 0x3B) {
+    if (gb->cart.rtc.S > 59) {
         gb->cart.rtc.S = 0;
         
         ++gb->cart.rtc.M;
-        if (gb->cart.rtc.M > 0x3B) {
+        if (gb->cart.rtc.M > 59) {
             gb->cart.rtc.M = 0;
 
             ++gb->cart.rtc.H;
-            if (gb->cart.rtc.H > 0x17) {
+            if (gb->cart.rtc.H > 23) {
                 gb->cart.rtc.H = 0;
 
                 ++gb->cart.rtc.DL;

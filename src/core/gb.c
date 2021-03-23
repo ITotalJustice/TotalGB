@@ -281,6 +281,10 @@ void GB_set_render_palette_layer_config(struct GB_Data* gb, enum GB_RenderLayerC
 	gb->config.render_layer_config = layer;
 }
 
+void GB_set_rtc_update_config(struct GB_Data* gb, const enum GB_RtcUpdateConfig config) {
+    gb->config.rtc_update_config = config;
+}
+
 GB_BOOL GB_set_rtc(struct GB_Data* gb, const struct GB_Rtc rtc) {
 	assert(gb);
 
@@ -670,12 +674,36 @@ void GB_connect_link_cable(struct GB_Data* gb, GB_serial_transfer_t cb, void* us
 }
 
 GB_U16 GB_run_step(struct GB_Data* gb) {
-	GB_U16 cycles = GB_cpu_run(gb, 0 /*unused*/) >> gb->cpu.double_speed;
+	GB_U16 cycles = GB_cpu_run(gb, 0 /*unused*/);
 	GB_timer_run(gb, cycles);
-	GB_ppu_run(gb, cycles);
-	// GB_ppu_run(gb, cycles);
+	GB_ppu_run(gb, cycles >> gb->cpu.double_speed);
 	assert(gb->cpu.double_speed == 1 || gb->cpu.double_speed == 0);
-	return cycles;
+	
+	return cycles >> gb->cpu.double_speed;
+}
+
+#include <time.h>
+
+// returns false if the game does not use rtc or if time_t is NULL.
+static GB_BOOL GB_set_rtc_from_time_t(struct GB_Data* gb) {
+	time_t the_time = time(NULL);
+	const struct tm* tm = localtime(&the_time);
+	
+	assert(gb && tm);
+
+	if (!gb || !tm) {
+		GB_throw_error(gb, GB_ERROR_DATA_TYPE_NULL_PARAM, __func__);
+		return GB_FALSE;
+	}
+
+	struct GB_Rtc rtc = {0};
+	rtc.S = tm->tm_sec;
+	rtc.M = tm->tm_min;
+	rtc.H = tm->tm_hour;
+	rtc.DL = tm->tm_yday & 0xFF;
+	rtc.DH = tm->tm_yday > 0xFF;
+
+	return GB_set_rtc(gb, rtc);
 }
 
 void GB_run_frame(struct GB_Data* gb) {
@@ -688,15 +716,26 @@ void GB_run_frame(struct GB_Data* gb) {
 
 	} while (cycles_elapsed < GB_FRAME_CPU_CYCLES);
 
-	// check if we should update rtc
-	// using a switch so that compiler warns if i add
-	// new enum entries...
-	switch (gb->config.rtc_update_config) {
-		case GB_RTC_UPDATE_CONFIG_FRAME:
-			GB_rtc_tick_frame(gb);
-			break;
+	// check if we should update rtc using a switch so that
+	// compiler warns if i add new enum entries...
+	if (GB_has_rtc(gb) == GB_TRUE) {
+		++gb->cart.internal_rtc_counter;
 
-		case GB_RTC_UPDATE_CONFIG_NONE:
-			break;
+		if (gb->cart.internal_rtc_counter > 59) {
+			gb->cart.internal_rtc_counter = 0;
+
+			switch (gb->config.rtc_update_config) {
+				case GB_RTC_UPDATE_CONFIG_FRAME:
+					GB_rtc_tick_frame(gb);
+					break;
+
+				case GB_RTC_UPDATE_CONFIG_USE_LOCAL_TIME:
+					GB_set_rtc_from_time_t(gb);
+					break;
+
+				case GB_RTC_UPDATE_CONFIG_NONE:
+					break;
+			}
+		}
 	}
 }

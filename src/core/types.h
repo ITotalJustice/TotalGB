@@ -42,11 +42,9 @@ typedef GB_U8 GB_BOOL;
 
 // fwd declare structs (will split into sep .c/.h soon)
 struct GB_Data;
-struct GB_MbcData;
 struct GB_Rtc;
 struct GB_Sprite;
 struct GB_CartHeader;
-struct GB_IFile;
 struct GB_Joypad;
 
 #define GB_SCREEN_WIDTH 160
@@ -59,19 +57,30 @@ struct GB_Joypad;
 #define GB_MIN(x, y) (((x) < (y)) ? (x) : (y))
 #define GB_MAX(x, y) (((x) > (y)) ? (x) : (y))
 
-#if defined(__has_builtin) && __has_builtin(__builtin_expect)
+// msvc prepro has a hard time with (macro && macro), so they have to be
+// split into different if, else chains...
+#if defined(__has_builtin)
+#if __has_builtin(__builtin_expect)
 #define LIKELY(c) (__builtin_expect(c,1))
 #define UNLIKELY(c) (__builtin_expect(c,0))
 #else
 #define LIKELY(c) ((c))
 #define UNLIKELY(c) ((c))
-#endif
+#endif // __has_builtin(__builtin_expect)
+#else
+#define LIKELY(c) ((c))
+#define UNLIKELY(c) ((c))
+#endif // __has_builtin
 
-#if defined(__has_builtin) && __has_builtin(__builtin_unreachable)
+#if defined(__has_builtin)
+#if __has_builtin(__builtin_unreachable)
 #define GB_UNREACHABLE(ret) __builtin_unreachable()
 #else
 #define GB_UNREACHABLE(ret) return ret
-#endif // __has_builtin && __has_builtin(__builtin_unreachable)
+#endif // __has_builtin(__builtin_unreachable)
+#else
+#define GB_UNREACHABLE(ret) return ret
+#endif // __has_builtin
 
 // todo: prefix with GB
 #define GB_UNUSED(var) ((void)(var))
@@ -309,6 +318,9 @@ enum GB_RtcUpdateConfig {
 	// the RTC is ticked at the end of each frame, once it reaches
 	// 60, the counter is reset, then rtc.s is incremented.
 	GB_RTC_UPDATE_CONFIG_FRAME,
+	// calls time() then localtime()
+	// then parses the tm struct and sets the RTC.
+	GB_RTC_UPDATE_CONFIG_USE_LOCAL_TIME,
 	// the RTC will not be updated (ticked) on the core side.
 	// this is useful for if you want to set the RTC to system time
 	GB_RTC_UPDATE_CONFIG_NONE,

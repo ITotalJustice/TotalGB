@@ -179,14 +179,16 @@ auto Instance::LoadRom(const std::string& path) -> bool {
         this->SaveGame(this->rom_path);
     } else {
         this->gameboy = std::make_unique<GB_Data>();
-        GB_init(this->gameboy.get());
+        GB_init(this->GetGB());
 
-        GB_set_vblank_callback(this->gameboy.get(), VblankCallback, this);
-        GB_set_hblank_callback(this->gameboy.get(), HblankCallback, this);
-        GB_set_dma_callback(this->gameboy.get(), DmaCallback, this);
-        GB_set_halt_callback(this->gameboy.get(), HaltCallback, this);
-        GB_set_stop_callback(this->gameboy.get(), StopCallback, this);
-        GB_set_error_callback(this->gameboy.get(), ErrorCallback, this);
+        GB_set_rtc_update_config(this->GetGB(), GB_RTC_UPDATE_CONFIG_USE_LOCAL_TIME);
+
+        GB_set_vblank_callback(this->GetGB(), VblankCallback, this);
+        GB_set_hblank_callback(this->GetGB(), HblankCallback, this);
+        GB_set_dma_callback(this->GetGB(), DmaCallback, this);
+        GB_set_halt_callback(this->GetGB(), HaltCallback, this);
+        GB_set_stop_callback(this->GetGB(), StopCallback, this);
+        GB_set_error_callback(this->GetGB(), ErrorCallback, this);
     }
 
     io::RomLoader romloader{path};

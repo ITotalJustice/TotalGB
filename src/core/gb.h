@@ -48,6 +48,10 @@ int GB_loadstate2(struct GB_Data* gb, const struct GB_CoreState* state);
 // returns false if the game does not support rtc.
 GB_BOOL GB_set_rtc(struct GB_Data* gb, const struct GB_Rtc rtc);
 
+// this will work even if the game does NOT have RTC
+// this setting persits accross games!
+void GB_set_rtc_update_config(struct GB_Data* gb, const enum GB_RtcUpdateConfig config);
+
 GB_BOOL GB_has_mbc_flags(const struct GB_Data* gb, const GB_U8 flags);
 
 /* returns the number of cycles ran */
