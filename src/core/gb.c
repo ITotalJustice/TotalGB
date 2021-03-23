@@ -673,13 +673,18 @@ void GB_connect_link_cable(struct GB_Data* gb, GB_serial_transfer_t cb, void* us
 	gb->link_cable_user_data = user_data;
 }
 
-GB_U16 GB_run_step(struct GB_Data* gb) {
+// the actual run_step(), this gets inlined
+static inline GB_U16 GB_run_step_internal(struct GB_Data* gb) {
 	GB_U16 cycles = GB_cpu_run(gb, 0 /*unused*/);
 	GB_timer_run(gb, cycles);
 	GB_ppu_run(gb, cycles >> gb->cpu.double_speed);
 	assert(gb->cpu.double_speed == 1 || gb->cpu.double_speed == 0);
 	
 	return cycles >> gb->cpu.double_speed;
+}
+
+GB_U16 GB_run_step(struct GB_Data* gb) {
+	return GB_run_step_internal(gb);
 }
 
 #include <time.h>
@@ -712,7 +717,7 @@ void GB_run_frame(struct GB_Data* gb) {
 	GB_U32 cycles_elapsed = 0;
 
 	do {
-		cycles_elapsed += GB_run_step(gb);
+		cycles_elapsed += GB_run_step_internal(gb);
 
 	} while (cycles_elapsed < GB_FRAME_CPU_CYCLES);
 
