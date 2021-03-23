@@ -112,9 +112,6 @@
     <Filter Include="Header Files\libs\zstd\compress">
       <UniqueIdentifier>{335007fa-0a51-4e97-b272-619c7cd3f813}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Source Files\libs\discord_rpc">
-      <UniqueIdentifier>{3085f757-c68b-48fd-9572-c03dd5d6d26c}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Header Files\libs\rapidjson">
       <UniqueIdentifier>{4df18fb0-90fb-4de9-bdf1-0d5acff9b059}</UniqueIdentifier>
     </Filter>
@@ -126,9 +123,6 @@
     </Filter>
     <Filter Include="Header Files\libs\rapidjson\msinttypes">
       <UniqueIdentifier>{c487e1e1-dbb5-4118-a7a4-855421c6df70}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Header Files\libs\discord_rpc">
-      <UniqueIdentifier>{dc156535-5ad2-4b74-b8c8-88f946b9f7ba}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -362,24 +356,6 @@
     </ClCompile>
     <ClCompile Include="..\..\src\libs\nativefiledialog\nfd_win.cpp">
       <Filter>Source Files\libs\nativefiledialog</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\src\libs\discord_rpc\connection_win.cpp">
-      <Filter>Source Files\libs\discord_rpc</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\src\libs\discord_rpc\discord_register_win.cpp">
-      <Filter>Source Files\libs\discord_rpc</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\src\libs\discord_rpc\discord_rpc.cpp">
-      <Filter>Source Files\libs\discord_rpc</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\src\libs\discord_rpc\dllmain.cpp">
-      <Filter>Source Files\libs\discord_rpc</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\src\libs\discord_rpc\rpc_connection.cpp">
-      <Filter>Source Files\libs\discord_rpc</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\src\libs\discord_rpc\serialization.cpp">
-      <Filter>Source Files\libs\discord_rpc</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -742,27 +718,6 @@
     </ClInclude>
     <ClInclude Include="..\..\src\libs\rapidjson\internal\swap.h">
       <Filter>Header Files\libs\rapidjson\internal</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\src\libs\discord_rpc\backoff.h">
-      <Filter>Header Files\libs\discord_rpc</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\src\libs\discord_rpc\connection.h">
-      <Filter>Header Files\libs\discord_rpc</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\src\libs\discord_rpc\discord_register.h">
-      <Filter>Header Files\libs\discord_rpc</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\src\libs\discord_rpc\discord_rpc.h">
-      <Filter>Header Files\libs\discord_rpc</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\src\libs\discord_rpc\msg_queue.h">
-      <Filter>Header Files\libs\discord_rpc</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\src\libs\discord_rpc\rpc_connection.h">
-      <Filter>Header Files\libs\discord_rpc</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\src\libs\discord_rpc\serialization.h">
-      <Filter>Header Files\libs\discord_rpc</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

@@ -1,4 +1,4 @@
-project('gb-emu', ['c', 'cpp', 'objc'], # objc for osx
+project('gb-emu', ['c', 'cpp'],
     version: '0.0.1',
     default_options: [
         'buildtype=debug',
@@ -106,12 +106,6 @@ source = files([
     'src/libs/lzma/LzmaDec.c',
     'src/libs/lzma/LzmaEnc.c',
     'src/libs/lzma/LzmaLib.c',
-
-    # discord-rpc
-    'src/libs/discord_rpc/discord_rpc.cpp',
-    'src/libs/discord_rpc/dllmain.cpp',
-    'src/libs/discord_rpc/rpc_connection.cpp',
-    'src/libs/discord_rpc/serialization.cpp',
 ])
 
 includes = include_directories([
@@ -123,20 +117,12 @@ includes = include_directories([
 
 # this is probably not the sane way to do it, but eh it works :)
 if host_machine.system() == 'windows' or host_machine.system() == 'cygwin'
-    # discord-rpc
-    source += 'src/libs/discord_rpc/connection_win.cpp'
-    source += 'src/libs/discord_rpc/discord_register_win.cpp'
     # nativefiledialog
     source += 'src/libs/nativefiledialog/nfd_win.cpp'
 elif host_machine.system() == 'linux'
-    # discord-rpc
-    source += 'src/libs/discord_rpc/connection_linux.cpp'
-    source += 'src/libs/discord_rpc/discord_register_linux.cpp'
     # # nativefiledialog
     source += 'src/libs/nativefiledialog/nfd_gtk.cpp'
 elif host_machine.system() == 'darwin'
-    # discord-rpc
-    source += 'src/libs/discord_rpc/discord_register_osx.m'
     # # nativefiledialog
     source += 'src/libs/nativefiledialog/nfd_cocoa.m'
 endif
@@ -151,7 +137,7 @@ cflags = [
     '-Wall',
     '-Wextra',
     '-Wpedantic',
-    # '-Wswitch-enum',
+    '-Wswitch-enum',
     '-Wduplicated-branches',
     '-Wduplicated-cond',
     '-Wshadow',
@@ -174,17 +160,13 @@ cflags = [
     '-DNOUNCRYPT',
     '-DNOCRYPT',
 
-    # discord-rpc
-    # '-DUSE_DISCORD=1',
-    # '-DDISCORD_WINDOWS',
-
     # speedhacks
     '-DGB_RTC_SPEEDHACK=1'
 ]
 
 cppflags = [
     '-std=gnu++17',
-    # '-Wuseless-cast',
+    '-Wuseless-cast',
     '-fdevirtualize-at-ltrans',
     '-Wsuggest-final-types',
 ]

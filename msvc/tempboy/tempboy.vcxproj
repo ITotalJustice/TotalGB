@@ -195,12 +195,6 @@
     <ClCompile Include="..\..\src\frontend\util\mem.cpp" />
     <ClCompile Include="..\..\src\frontend\util\rewind.cpp" />
     <ClCompile Include="..\..\src\frontend\util\util.cpp" />
-    <ClCompile Include="..\..\src\libs\discord_rpc\connection_win.cpp" />
-    <ClCompile Include="..\..\src\libs\discord_rpc\discord_register_win.cpp" />
-    <ClCompile Include="..\..\src\libs\discord_rpc\discord_rpc.cpp" />
-    <ClCompile Include="..\..\src\libs\discord_rpc\dllmain.cpp" />
-    <ClCompile Include="..\..\src\libs\discord_rpc\rpc_connection.cpp" />
-    <ClCompile Include="..\..\src\libs\discord_rpc\serialization.cpp" />
     <ClCompile Include="..\..\src\libs\lz4\lz4.c" />
     <ClCompile Include="..\..\src\libs\lzma\Alloc.c" />
     <ClCompile Include="..\..\src\libs\lzma\LzFind.c" />
@@ -281,13 +275,6 @@
     <ClInclude Include="..\..\src\frontend\util\mem.hpp" />
     <ClInclude Include="..\..\src\frontend\util\rewind.hpp" />
     <ClInclude Include="..\..\src\frontend\util\util.hpp" />
-    <ClInclude Include="..\..\src\libs\discord_rpc\backoff.h" />
-    <ClInclude Include="..\..\src\libs\discord_rpc\connection.h" />
-    <ClInclude Include="..\..\src\libs\discord_rpc\discord_register.h" />
-    <ClInclude Include="..\..\src\libs\discord_rpc\discord_rpc.h" />
-    <ClInclude Include="..\..\src\libs\discord_rpc\msg_queue.h" />
-    <ClInclude Include="..\..\src\libs\discord_rpc\rpc_connection.h" />
-    <ClInclude Include="..\..\src\libs\discord_rpc\serialization.h" />
     <ClInclude Include="..\..\src\libs\lz4\lz4.h" />
     <ClInclude Include="..\..\src\libs\lzma\7zTypes.h" />
     <ClInclude Include="..\..\src\libs\lzma\Alloc.h" />
