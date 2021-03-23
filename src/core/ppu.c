@@ -307,9 +307,9 @@ void GB_ppu_run(struct GB_Data* gb, GB_U16 cycles) {
             ++IO_LY;
             GB_compare_LYC(gb);
 
-            if (GB_is_hdma_active(gb) == GB_TRUE) {
-                GB_perform_hdma(gb);
-            }
+        if (GB_is_hdma_active(gb) == GB_TRUE) {
+            GB_perform_hdma(gb);
+        }
 
             if (UNLIKELY(IO_LY == 144)) {
                 GB_change_status_mode(gb, STATUS_MODE_VBLANK);
@@ -726,7 +726,7 @@ void GB_draw_scanline(struct GB_Data* gb) {
             if (GB_is_render_layer_enabled(gb, GB_RENDER_LAYER_CONFIG_BG)) {
                 GB_draw_bg_gb(gb);
             }
-            
+
             // WX=0..166, WY=0..143
             if ((GB_is_win_enabled(gb)) && (IO_WX <= 166) && (IO_WY <= 143) && (IO_WY <= IO_LY)) {
                 if (GB_is_render_layer_enabled(gb, GB_RENDER_LAYER_CONFIG_WIN)) {

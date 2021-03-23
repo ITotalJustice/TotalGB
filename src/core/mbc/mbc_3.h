@@ -119,13 +119,13 @@ static void GB_mbc3_write(struct GB_Data* gb, GB_U16 addr, GB_U8 value) {
     switch ((addr >> 12) & 0xF) {
 	// RAM / RTC REGISTER ENABLE
         case 0x0: case 0x1:
-            gb->cart.ram_enabled = (!!(value & 0xA));
+            gb->cart.ram_enabled = (value & 0x0F) == 0x0A;
             GB_update_ram_banks(gb);
             break;
             
     // ROM BANK
         case 0x2: case 0x3:
-            gb->cart.rom_bank = value == 0 ? 1 : value;
+            gb->cart.rom_bank = ((value) | (value == 0)) % gb->cart.rom_bank_max;
             GB_update_rom_banks(gb);
             break;
 
@@ -133,6 +133,7 @@ static void GB_mbc3_write(struct GB_Data* gb, GB_U16 addr, GB_U8 value) {
         case 0x4: case 0x5:
             // set bank 0-3
             if (value <= 0x03) {
+                // NOTE: can this be out of range?
                 gb->cart.ram_bank = value & 0x3;
                 gb->cart.in_ram = GB_TRUE;
                 GB_update_ram_banks(gb);
@@ -153,7 +154,7 @@ static void GB_mbc3_write(struct GB_Data* gb, GB_U16 addr, GB_U8 value) {
             break;
 
         case 0xA: case 0xB:
-            if (gb->cart.ram_enabled) {
+            if (GB_has_mbc_flags(gb, MBC_FLAGS_RAM) && gb->cart.ram_enabled) {
                 if (gb->cart.in_ram) {
                     gb->cart.ram[(addr & 0x1FFF) + (0x2000 * gb->cart.ram_bank)] = value;
                 }

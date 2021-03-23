@@ -525,6 +525,8 @@ struct GB_Ppu {
     	GB_U16 obj_colours[8][4];
 	};
 	
+	// this is the internal line counter which is used as the index
+	// for the window instead of IO_LY.
 	GB_U16 window_line;
 
 	// these are set when a hdma occurs (not a DMA or GDMA)
@@ -547,9 +549,15 @@ struct GB_Cart {
 	GB_U8 ram[0x10000];
 	GB_U32 rom_size;
 	GB_U32 ram_size;
+	
+	GB_U16 rom_bank_max;
 	GB_U16 rom_bank;
-	GB_U16 ram_bank;
-	GB_U8 flags;
+	GB_U8 rom_bank_lo;
+	GB_U8 rom_bank_hi;
+
+	GB_U8 ram_bank_max;
+	GB_U8 ram_bank;
+
 	enum GB_RtcMappedReg rtc_mapped_reg;
 	struct GB_Rtc rtc;
 	GB_U8 internal_rtc_counter;
@@ -557,6 +565,7 @@ struct GB_Cart {
 	GB_BOOL ram_enabled;
 	GB_BOOL in_ram;
 
+	GB_U8 flags;
 	enum GB_MbcType mbc_type;
 };
 

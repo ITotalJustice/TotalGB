@@ -10,7 +10,7 @@ extern "C" {
 
 // this is defined in mbc.c
 // not sure if this is correct or not...
-extern const GB_U8 MBC_NO_RAM[0x2000];
+extern GB_U8 MBC_NO_RAM[0x2000];
 
 #ifdef __cplusplus
 }

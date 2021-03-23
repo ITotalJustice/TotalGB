@@ -371,8 +371,8 @@ int GB_loadrom_data(struct GB_Data* gb, GB_U8* data, GB_U32 size) {
 	const struct GB_CartHeader* header = GB_get_rom_header_ptr_from_data(data);
 	cart_header_print(header);
 
-	const GB_U32 rom_size = ROM_SIZE_MULT << header->rom_size;
-	if (rom_size > size) {
+	gb->cart.rom_size = ROM_SIZE_MULT << header->rom_size;
+	if (gb->cart.rom_size > size) {
 		return -1;
 	}
 
@@ -441,7 +441,6 @@ int GB_loadrom_data(struct GB_Data* gb, GB_U8* data, GB_U32 size) {
 	}
 
 	// todo: should add more checks before we get to this point!
-	gb->cart.rom_size = rom_size;
 	gb->cart.rom = data;
 
 	GB_reset(gb);

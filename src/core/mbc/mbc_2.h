@@ -11,17 +11,18 @@ extern "C" {
 // however it will likely break using anything else...
 static void GB_mbc2_write(struct GB_Data* gb, GB_U16 addr, GB_U8 value) {
 	switch ((addr >> 12) & 0xF) {
-	// RAM ENABLE
-        case 0x0: case 0x1:
-            gb->cart.ram_enabled = (!!(value & 0xA));
-            GB_update_ram_banks(gb);
-            break;
-            
-    // ROM BANK
-        case 0x2: case 0x3:
-            gb->cart.rom_bank = value & 0x1F;
-            if (!gb->cart.rom_bank) gb->cart.rom_bank = 1;
-            GB_update_rom_banks(gb);
+	// RAM ENABLE / ROM BANK
+        case 0x0: case 0x1: case 0x2: case 0x3:
+            // if the 8th bit is not set, the value
+            // controls the ram enable
+            if ((addr & 0x100) == 0) {
+                gb->cart.ram_enabled = (value & 0x0F) == 0x0A;
+                GB_update_ram_banks(gb);
+            } else {
+                const GB_U8 bank = (value & 0x0F) | ((value & 0x0F) == 0);
+                gb->cart.rom_bank = bank % gb->cart.rom_bank_max;
+                GB_update_rom_banks(gb);
+            }
             break;
 
     // RAM WRITE
@@ -32,7 +33,7 @@ static void GB_mbc2_write(struct GB_Data* gb, GB_U16 addr, GB_U8 value) {
             // because of mbc2 being only 512kb and due to my mmap
             // pointer system, we must manually mirror all writes to
             // all addresses in range 0x0000 - 0x1FFFF.
-            const GB_U8 masked_value = value & 0x1F;
+            const GB_U8 masked_value = (value & 0x0F) | 0xF0;
             const GB_U16 masked_addr = addr & 0x1FF;
 
             gb->cart.ram[0x0000 + masked_addr] = masked_value;

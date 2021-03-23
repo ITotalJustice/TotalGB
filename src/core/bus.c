@@ -94,6 +94,12 @@ GB_U8 GB_ioread(struct GB_Data* gb, GB_U16 addr) {
 		case 0x01:
 			return GB_serial_sb_read(gb);
 
+		case 0x02:
+			return 0xFF;
+
+		case 0x03:
+			return 0xFF;
+
 		case 0x4D:
 			if (GB_is_system_gbc(gb) == GB_TRUE) {
 				return gb->cpu.double_speed > 0 ? 0x80 : 0x00;
@@ -101,9 +107,24 @@ GB_U8 GB_ioread(struct GB_Data* gb, GB_U16 addr) {
 				return 0xFF;
 			}
 
-		case 0x55: // HDMA5
+		case 0x4F: // (GBC) VBK
+			if (GB_is_system_gbc(gb) == GB_TRUE) {
+				return IO_VBK;
+			} else {
+				return 0xFF;
+			}
+			
+
+		case 0x55: // (GBC) HDMA5
 			if (GB_is_system_gbc(gb) == GB_TRUE) {
 				return GB_hdma5_read(gb);
+			} else {
+				return 0xFF;
+			}
+
+		case 0x70: // (GBC) SVBK
+			if (GB_is_system_gbc(gb) == GB_TRUE) {
+				return IO_SVBK;
 			} else {
 				return 0xFF;
 			}
@@ -125,6 +146,9 @@ void GB_iowrite(struct GB_Data* gb, GB_U16 addr, GB_U8 value) {
 
 		case 0x02: // SC (Serial Transfer Control)
 			GB_serial_sc_write(gb, value);
+			break;
+
+		case 0x03: // IO_DIV lower, non writeable
 			break;
 
 		case 0x04:
@@ -228,7 +252,7 @@ void GB_iowrite(struct GB_Data* gb, GB_U16 addr, GB_U8 value) {
 			break;
 
 		case 0x26:
-			IO_NR52 = value & 0x80;
+			IO_NR52 = (IO_NR52 & 0x7F) | (value & 0x80);
 			break;
 
 		case 0x40:
@@ -326,7 +350,7 @@ GB_U8 GB_read8(struct GB_Data* gb, const GB_U16 addr) {
 		#endif // GB_RTC_SPEEDHACK
 
 	} else if (addr <= 0xFE9F) {
-        return gb->ppu.oam[addr & 0x9F];
+        return gb->ppu.oam[addr & 0xFF];
     } else if (addr >= 0xFF00 && addr <= 0xFF7F) {
         return GB_ioread(gb, addr);
     } else if (addr >= 0xFF80) {
@@ -359,7 +383,7 @@ void GB_write8(struct GB_Data* gb, GB_U16 addr, GB_U8 value) {
 				break;
 		}
 	} else if (addr <= 0xFE9F) {
-        gb->ppu.oam[addr - 0xFE00] = value;
+        gb->ppu.oam[addr & 0xFF] = value;
     } else if (addr >= 0xFF00 && addr <= 0xFF7F) {
         GB_iowrite(gb, addr, value);
     } else if (addr >= 0xFF80) {

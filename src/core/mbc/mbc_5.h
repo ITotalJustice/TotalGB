@@ -8,36 +8,41 @@ extern "C" {
 
 static void GB_mbc5_write(struct GB_Data* gb, GB_U16 addr, GB_U8 value) { 
     switch ((addr >> 12) & 0xF) {
-    // RAM / RTC REGISTER ENABLE
+    // RAM
         case 0x0: case 0x1:
-            gb->cart.ram_enabled = (!!(value & 0xA));
+            // gbctr states that only 0xA enables ram
+            // every other value disables it...
+            gb->cart.ram_enabled = value == 0x0A;
             GB_update_ram_banks(gb);
             break;
         
     // ROM BANK LOW
-        case 0x2:
-            gb->cart.rom_bank = (gb->cart.rom_bank & 0xFF00) | value;
+        case 0x2: {
+            // sets bits 0-7
+            const GB_U16 bank = (gb->cart.rom_bank & 0xFF00) | value;
+            gb->cart.rom_bank = bank % gb->cart.rom_bank_max;
             GB_update_rom_banks(gb);
-            break;
+        } break;
 
     // ROM BANK HIGH
-        case 0x3:
-            gb->cart.rom_bank = (gb->cart.rom_bank & 0x00FF) | (value << 8);
+        case 0x3: {
+            // sets the 8th bit
+            const GB_U16 bank = (gb->cart.rom_bank & 0x00FF) | ((value & 0x1) << 8);
+            gb->cart.rom_bank = bank % gb->cart.rom_bank_max;
             GB_update_rom_banks(gb);
-            break;
+        } break;
 
-    // RAM BANK / RTC REGISTER
+    // RAM BANK
         case 0x4: case 0x5:
-            gb->cart.ram_bank = value & 0xF;
-            GB_update_ram_banks(gb);
-            break;
-
-    // LATCH CLOCK DATA
-        case 0x6: case 0x7:
+            if (gb->cart.flags & MBC_FLAGS_RAM) {
+                const GB_U8 bank = value & 0x0F;
+                gb->cart.ram_bank = bank % gb->cart.ram_bank_max;
+                GB_update_ram_banks(gb);
+            }
             break;
             
         case 0xA: case 0xB:
-            if (gb->cart.ram_enabled) {
+            if (gb->cart.flags & MBC_FLAGS_RAM && gb->cart.ram_enabled) {
                 gb->cart.ram[(addr & 0x1FFF) + (0x2000 * gb->cart.ram_bank)] = value;
             }
             break;
@@ -59,7 +64,6 @@ static const GB_U8* GB_mbc5_get_ram_bank(struct GB_Data* gb, GB_U8 bank) {
 	if (!(gb->cart.flags & MBC_FLAGS_RAM) || !gb->cart.ram_enabled) {
 		return MBC_NO_RAM;
 	}
-
 	return gb->cart.ram + (0x2000 * gb->cart.ram_bank);
 }
 
