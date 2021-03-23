@@ -4,13 +4,12 @@
 
 #include <cstdint>
 #include <vector>
-#include <span>
 
 namespace mgb::io {
 
 class MemFile final : public IFile {
 public:
-    MemFile(std::span<const std::uint8_t> _data);
+    MemFile(std::vector<std::uint8_t>&& _data);
     
     auto is_open(void) const -> bool override;
     auto good(void) const -> bool override;

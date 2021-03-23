@@ -150,6 +150,7 @@ cflags = [
     # warns
     '-Wall',
     '-Wextra',
+    '-Wpedantic',
     # '-Wswitch-enum',
     '-Wduplicated-branches',
     '-Wduplicated-cond',
@@ -182,7 +183,7 @@ cflags = [
 ]
 
 cppflags = [
-    '-std=gnu++20',
+    '-std=gnu++17',
     # '-Wuseless-cast',
     '-fdevirtualize-at-ltrans',
     '-Wsuggest-final-types',

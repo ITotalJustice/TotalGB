@@ -1,13 +1,12 @@
 #include "ifile_mem.hpp"
 
 #include <cstring>
-#include <algorithm>
 
 namespace mgb::io {
 
-MemFile::MemFile(std::span<const std::uint8_t> _data) {
-    this->data.resize(_data.size());
-    std::copy(_data.begin(), _data.end(), this->data.begin());
+MemFile::MemFile(std::vector<std::uint8_t>&& _data)
+: data{std::move(_data)} {
+
 }
 
 bool MemFile::is_open(void) const {

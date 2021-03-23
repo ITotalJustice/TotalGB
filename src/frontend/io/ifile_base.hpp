@@ -6,7 +6,6 @@
 #pragma once
 
 #include <cstdint>
-#include <span>
 
 namespace mgb::io {
 
@@ -15,8 +14,6 @@ public:
     virtual ~IFile() = default;
     virtual auto read(std::uint8_t* data, std::uint32_t len) -> bool = 0;
     virtual auto write(const std::uint8_t* data, std::uint32_t len) -> bool = 0;
-    // virtual auto read(std::span<std::uint8_t> data) -> bool = 0;
-    // virtual auto write(std::span<const std::uint8_t> data) -> bool = 0;
     virtual auto seek(std::uint32_t len, std::uint32_t ed) -> bool = 0;
     virtual auto flush(void) -> bool = 0;
     virtual auto tell(void) -> std::uint32_t = 0;
