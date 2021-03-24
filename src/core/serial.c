@@ -37,8 +37,8 @@ static GB_BOOL GB_trade(struct GB_Data* gb, struct GB_LinkCableData* data) {
     return GB_TRUE;
 }
 
-static GB_BOOL GB_builtin_link_cable_cb(struct GB_Data* host_gb, void* user_data, struct GB_LinkCableData* data) {
-    assert(host_gb && data);
+static GB_BOOL GB_builtin_link_cable_cb(void* user_data, struct GB_LinkCableData* data) {
+    assert(data);
 
     // this is *this* instance of the gb struct, not the host!
     struct GB_Data* gb = (struct GB_Data*)user_data;
@@ -61,6 +61,11 @@ static GB_BOOL GB_builtin_link_cable_cb(struct GB_Data* host_gb, void* user_data
     // should be impossible to get here!
     assert(0);
     return GB_FALSE;
+}
+
+void GB_connect_link_cable(struct GB_Data* gb, GB_serial_transfer_t cb, void* user_data) {
+	gb->link_cable = cb;
+	gb->link_cable_user_data = user_data;
 }
 
 void GB_connect_link_cable_builtin(struct GB_Data* gb, struct GB_Data* gb2) {
@@ -127,7 +132,7 @@ void GB_serial_sc_write(struct GB_Data* gb, const GB_U8 data) {
     link_data.type = GB_LINK_TRANSFER_TYPE_DATA;
     link_data.in_data = IO_SB;
     
-    if (gb->link_cable(gb, gb->link_cable_user_data, &link_data)) {
+    if (gb->link_cable(gb->link_cable_user_data, &link_data)) {
         // if the transfer was successful, then we have to set IO_SB to
         // the data_out, clear bit-7 of IO_SC and then fire an
         // SERIAL_INTERRUPT.

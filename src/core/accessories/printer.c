@@ -205,8 +205,7 @@ static void send_printer_acknowledgement_1(struct GB_Printer* printer, struct GB
     execute_printer_command(printer, data);
 }
 
-static GB_BOOL printer_cb(struct GB_Data* host_gb, void* user_data, struct GB_LinkCableData* data) {
-    GB_UNUSED(host_gb);
+static GB_BOOL printer_cb(void* user_data, struct GB_LinkCableData* data) {
     struct GB_Printer* printer = (struct GB_Printer*)user_data;
 
     // most commands set the out_data to zero.

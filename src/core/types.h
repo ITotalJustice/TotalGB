@@ -409,7 +409,7 @@ struct GB_LinkCableData {
 
 // this callback should return GB_TRUE if the data was accepted AND
 // data_out is filled, else, return GB_FALSE
-typedef GB_BOOL(*GB_serial_transfer_t)(struct GB_Data* gb, void* user, struct GB_LinkCableData* data);
+typedef GB_BOOL(*GB_serial_transfer_t)(void* user, struct GB_LinkCableData* data);
 
 // structs
 

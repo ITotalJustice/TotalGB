@@ -668,11 +668,6 @@ void GB_set_error_callback(struct GB_Data* gb, GB_error_callback_t cb, void* use
 	gb->error_cb_user_data = user_data;
 }
 
-void GB_connect_link_cable(struct GB_Data* gb, GB_serial_transfer_t cb, void* user_data) {
-	gb->link_cable = cb;
-	gb->link_cable_user_data = user_data;
-}
-
 // the actual run_step(), this gets inlined
 static inline GB_U16 GB_run_step_internal(struct GB_Data* gb) {
 	GB_U16 cycles = GB_cpu_run(gb, 0 /*unused*/);
