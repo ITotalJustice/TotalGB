@@ -171,6 +171,7 @@
     </ResourceCompile>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="..\..\src\core\accessories\printer.c" />
     <ClCompile Include="..\..\src\core\apu.c" />
     <ClCompile Include="..\..\src\core\bus.c" />
     <ClCompile Include="..\..\src\core\cpu.c" />
@@ -250,6 +251,7 @@
     <ClCompile Include="..\..\src\libs\zstd\dictBuilder\zdict.c" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\..\src\core\accessories\printer.h" />
     <ClInclude Include="..\..\src\core\gb.h" />
     <ClInclude Include="..\..\src\core\internal.h" />
     <ClInclude Include="..\..\src\core\mbc\common.h" />
@@ -289,43 +291,6 @@
     <ClInclude Include="..\..\src\libs\minizip\unzip.h" />
     <ClInclude Include="..\..\src\libs\nativefiledialog\nfd.h" />
     <ClInclude Include="..\..\src\libs\nativefiledialog\nfd.hpp" />
-    <ClInclude Include="..\..\src\libs\rapidjson\allocators.h" />
-    <ClInclude Include="..\..\src\libs\rapidjson\cursorstreamwrapper.h" />
-    <ClInclude Include="..\..\src\libs\rapidjson\document.h" />
-    <ClInclude Include="..\..\src\libs\rapidjson\encodedstream.h" />
-    <ClInclude Include="..\..\src\libs\rapidjson\encodings.h" />
-    <ClInclude Include="..\..\src\libs\rapidjson\error\en.h" />
-    <ClInclude Include="..\..\src\libs\rapidjson\error\error.h" />
-    <ClInclude Include="..\..\src\libs\rapidjson\filereadstream.h" />
-    <ClInclude Include="..\..\src\libs\rapidjson\filewritestream.h" />
-    <ClInclude Include="..\..\src\libs\rapidjson\fwd.h" />
-    <ClInclude Include="..\..\src\libs\rapidjson\internal\biginteger.h" />
-    <ClInclude Include="..\..\src\libs\rapidjson\internal\clzll.h" />
-    <ClInclude Include="..\..\src\libs\rapidjson\internal\diyfp.h" />
-    <ClInclude Include="..\..\src\libs\rapidjson\internal\dtoa.h" />
-    <ClInclude Include="..\..\src\libs\rapidjson\internal\ieee754.h" />
-    <ClInclude Include="..\..\src\libs\rapidjson\internal\itoa.h" />
-    <ClInclude Include="..\..\src\libs\rapidjson\internal\meta.h" />
-    <ClInclude Include="..\..\src\libs\rapidjson\internal\pow10.h" />
-    <ClInclude Include="..\..\src\libs\rapidjson\internal\regex.h" />
-    <ClInclude Include="..\..\src\libs\rapidjson\internal\stack.h" />
-    <ClInclude Include="..\..\src\libs\rapidjson\internal\strfunc.h" />
-    <ClInclude Include="..\..\src\libs\rapidjson\internal\strtod.h" />
-    <ClInclude Include="..\..\src\libs\rapidjson\internal\swap.h" />
-    <ClInclude Include="..\..\src\libs\rapidjson\istreamwrapper.h" />
-    <ClInclude Include="..\..\src\libs\rapidjson\memorybuffer.h" />
-    <ClInclude Include="..\..\src\libs\rapidjson\memorystream.h" />
-    <ClInclude Include="..\..\src\libs\rapidjson\msinttypes\inttypes.h" />
-    <ClInclude Include="..\..\src\libs\rapidjson\msinttypes\stdint.h" />
-    <ClInclude Include="..\..\src\libs\rapidjson\ostreamwrapper.h" />
-    <ClInclude Include="..\..\src\libs\rapidjson\pointer.h" />
-    <ClInclude Include="..\..\src\libs\rapidjson\prettywriter.h" />
-    <ClInclude Include="..\..\src\libs\rapidjson\rapidjson.h" />
-    <ClInclude Include="..\..\src\libs\rapidjson\reader.h" />
-    <ClInclude Include="..\..\src\libs\rapidjson\schema.h" />
-    <ClInclude Include="..\..\src\libs\rapidjson\stream.h" />
-    <ClInclude Include="..\..\src\libs\rapidjson\stringbuffer.h" />
-    <ClInclude Include="..\..\src\libs\rapidjson\writer.h" />
     <ClInclude Include="..\..\src\libs\zlib\crc32.h" />
     <ClInclude Include="..\..\src\libs\zlib\deflate.h" />
     <ClInclude Include="..\..\src\libs\zlib\gzguts.h" />

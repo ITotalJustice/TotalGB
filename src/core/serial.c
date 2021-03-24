@@ -92,15 +92,11 @@ void GB_serial_sc_write(struct GB_Data* gb, const GB_U8 data) {
 
     // check if we have a serial cable connected and if we are host
     if (!GB_has_link_cable(gb)) {
-        // printf("no link cable in sc write! value: 0x%02X\n", data);
+        printf("no link cable in sc write! value: 0x%02X SB: 0x%02X\n", data, IO_SB);
         return;
     }
 
-    if ((GB_is_serial_host(gb) || gb->is_master) == GB_FALSE) {
-        // printf("not host or master! value: 0x%02X\n", data);
-        return;
-    }
-
+#if 0
     // check if we are not already host, if so, tell the other gb
     if (!gb->is_master && GB_is_serial_host(gb)) {
         struct GB_LinkCableData link_data = {0};
@@ -109,14 +105,22 @@ void GB_serial_sc_write(struct GB_Data* gb, const GB_U8 data) {
         if (gb->link_cable(gb, gb->link_cable_user_data, &link_data)) {
             gb->is_master = GB_TRUE;
         } else {
-            // printf("failed to set master!\n");
+            printf("failed to set master!\n");
         }
 
         return;
     }
 
+#else
+
+    // check if we are not already host, if so, tell the other gb
+    if (GB_is_serial_host(gb) == GB_FALSE) {
+        // printf("not host or master! value: 0x%02X SB: 0x%02X\n", data, IO_SB);
+        return;
+    }
+#endif
+
     // if we are here, we have a link cable connected!
-    // GB_throw_info(gb, "SC = 0x81, start transfer!\n");
 
     // perform the transfer...
     struct GB_LinkCableData link_data = {0};

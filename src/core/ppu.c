@@ -205,7 +205,7 @@ void GB_hdma5_write(struct GB_Data* gb, GB_U8 value) {
         // setting bit-7 = 0 whilst a HDMA is currently active
         // actually disables that transfer
         if (GB_is_hdma_active(gb) == GB_TRUE) {
-            GB_throw_info(gb, "cancleing HDMA");
+            // GB_throw_info(gb, "cancleing HDMA");
 
             gb->ppu.hdma_length = 0;
             IO_HDMA5 = ((gb->ppu.hdma_length >> 4) - 1) | 0x80;

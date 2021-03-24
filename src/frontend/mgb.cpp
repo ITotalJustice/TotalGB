@@ -1,5 +1,6 @@
 #include "mgb.hpp"
 #include "../core/gb.h"
+#include "../core/accessories/printer.h"
 #include "io/romloader.hpp"
 #include "io/ifile_cfile.hpp"
 #include "util/util.hpp"
@@ -109,9 +110,11 @@ auto Instance::LoadRom(const std::string& path) -> bool {
         this->SaveGame(this->rom_path);
     } else {
         this->gameboy = std::make_unique<GB_Data>();
+        this->printer = std::make_unique<GB_Printer>();
         GB_init(this->GetGB());
 
         GB_set_rtc_update_config(this->GetGB(), GB_RTC_UPDATE_CONFIG_USE_LOCAL_TIME);
+        GB_connect_printer(this->GetGB(), this->printer.get(), NULL, NULL);
 
         GB_set_vblank_callback(this->GetGB(), VblankCallback, this);
         GB_set_hblank_callback(this->GetGB(), HblankCallback, this);
@@ -398,6 +401,8 @@ auto App::Loop() -> void {
                 break;
 
             case EmuRunState::SINGLE:
+                GB_run_frame(this->emu_instances[0].GetGB());
+                GB_run_frame(this->emu_instances[0].GetGB());
                 GB_run_frame(this->emu_instances[0].GetGB());
                 break;
 

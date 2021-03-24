@@ -13,6 +13,7 @@
 extern "C" {
 struct GB_Data;
 struct GB_ErrorData;
+struct GB_Printer;
 }
 
 namespace mgb {
@@ -71,6 +72,7 @@ private:
     
 private:
     std::unique_ptr<GB_Data> gameboy;
+    std::unique_ptr<GB_Printer> printer;
 };
 
 struct App {

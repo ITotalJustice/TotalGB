@@ -23,6 +23,7 @@ source = files([
     'src/core/mbc.c',
     'src/core/timers.c',
     'src/core/serial.c',
+    'src/core/accessories/printer.c',
     'src/core/tables/palette_table.c',
 
     # core extras
