@@ -49,7 +49,7 @@ static void GB_bmp_fill_info_header(struct GB_BmpInfoHeader* info_header) {
 
 /* have to accept struct as param else compiler will warn that the member pointer */
 /* might be unaligned */
-static void GB_bmp_fill_pixel_data(const struct GB_Data* gb, struct GB_Bmp* bmp) {
+static void GB_bmp_fill_pixel_data(const struct GB_Core* gb, struct GB_Bmp* bmp) {
     /* pixels are reversed when stored in bmp, such that rgb will be stored as bgr */
     /* however, this reverse is undone by bmp parsers. */
     /* this means that our bgr555 will be stored as bgr565, but read back as rgb555. */
@@ -62,7 +62,7 @@ static void GB_bmp_fill_pixel_data(const struct GB_Data* gb, struct GB_Bmp* bmp)
     }
 }
 
-GB_BOOL GB_screenshot(const struct GB_Data* gb, struct GB_Bmp* bmp) {
+GB_BOOL GB_screenshot(const struct GB_Core* gb, struct GB_Bmp* bmp) {
     assert(gb && bmp);
     
     if (!gb || !bmp) {
@@ -84,7 +84,7 @@ GB_BOOL GB_screenshot(const struct GB_Data* gb, struct GB_Bmp* bmp) {
 }
 
 #ifndef GB_NO_STDIO
-GB_BOOL GB_screenshot_to_file(const struct GB_Data* gb, const char* path) {
+GB_BOOL GB_screenshot_to_file(const struct GB_Core* gb, const char* path) {
     assert(gb && path);
 
     if (!gb || !path) {

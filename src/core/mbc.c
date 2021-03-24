@@ -25,9 +25,9 @@ GB_U8 MBC_NO_RAM[0x2000];
 
 struct GB_MbcInterface {
 	// function callbacks
-	void (*write)(struct GB_Data *gb, GB_U16 addr, GB_U8 value);
-	const GB_U8* (*get_rom_bank)(struct GB_Data *gb, GB_U8 bank);
-	const GB_U8* (*get_ram_bank)(struct GB_Data *gb, GB_U8 bank);
+	void (*write)(struct GB_Core *gb, GB_U16 addr, GB_U8 value);
+	const GB_U8* (*get_rom_bank)(struct GB_Core *gb, GB_U8 bank);
+	const GB_U8* (*get_ram_bank)(struct GB_Core *gb, GB_U8 bank);
 	// all normal mbc's start we rombank == 1
 	// however, other mbcs (HUC1) seem to start at 0
 	GB_U8 starting_rom_bank;
@@ -61,7 +61,7 @@ static const struct GB_MbcInterface MBC_SETUP_DATA[0x100] = {
 	[0x1E] = {GB_mbc5_write, GB_mbc5_get_rom_bank, GB_mbc5_get_ram_bank, 1, MBC_FLAGS_RAM | MBC_FLAGS_BATTERY},
 };
 
-int GB_get_rom_name(const struct GB_Data* gb, struct GB_CartName* name) {
+int GB_get_rom_name(const struct GB_Core* gb, struct GB_CartName* name) {
 	assert(gb && name);
 
 	const struct GB_CartHeader* header = GB_get_rom_header_ptr(gb);

@@ -41,7 +41,7 @@ typedef int32_t GB_S32;
 typedef GB_U8 GB_BOOL;
 
 // fwd declare structs (will split into sep .c/.h soon)
-struct GB_Data;
+struct GB_Core;
 struct GB_Rtc;
 struct GB_Sprite;
 struct GB_CartHeader;
@@ -378,12 +378,12 @@ struct GB_ErrorData {
 	};
 };
 
-typedef void(*GB_vblank_callback_t)(struct GB_Data* gb, void* user);
-typedef void(*GB_hblank_callback_t)(struct GB_Data* gb, void* user);
-typedef void(*GB_dma_callback_t)(struct GB_Data* gb, void* user);
-typedef void(*GB_halt_callback_t)(struct GB_Data* gb, void* user);
-typedef void(*GB_stop_callback_t)(struct GB_Data* gb, void* user);
-typedef void(*GB_error_callback_t)(struct GB_Data* gb, void* user, struct GB_ErrorData* e);
+typedef void(*GB_vblank_callback_t)(struct GB_Core* gb, void* user);
+typedef void(*GB_hblank_callback_t)(struct GB_Core* gb, void* user);
+typedef void(*GB_dma_callback_t)(struct GB_Core* gb, void* user);
+typedef void(*GB_halt_callback_t)(struct GB_Core* gb, void* user);
+typedef void(*GB_stop_callback_t)(struct GB_Core* gb, void* user);
+typedef void(*GB_error_callback_t)(struct GB_Core* gb, void* user, struct GB_ErrorData* e);
 
 
 enum GB_LinkTransferType {
@@ -553,9 +553,9 @@ struct GB_Ppu {
 };
 
 struct GB_Cart {
-	void (*write)(struct GB_Data* gb, GB_U16 addr, GB_U8 val);
-	const GB_U8* (*get_rom_bank)(struct GB_Data* gb, GB_U8 val);
-	const GB_U8* (*get_ram_bank)(struct GB_Data* gb, GB_U8 val);
+	void (*write)(struct GB_Core* gb, GB_U16 addr, GB_U8 val);
+	const GB_U8* (*get_rom_bank)(struct GB_Core* gb, GB_U8 val);
+	const GB_U8* (*get_ram_bank)(struct GB_Core* gb, GB_U8 val);
 
 	GB_U8* rom;
 	GB_U8 ram[0x10000];
@@ -585,7 +585,7 @@ struct GB_Timer {
 	GB_S16 next_cycles;
 };
 
-struct GB_Data {
+struct GB_Core {
 	const GB_U8* mmap[0x10];
 	GB_U8 io[0x80]; // easier to have io as an array than individual bytes
 	GB_U8 hram[0x80]; // 0x7F + IE reg

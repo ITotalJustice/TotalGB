@@ -260,7 +260,7 @@ static GB_BOOL printer_cb(void* user_data, struct GB_LinkCableData* data) {
     return GB_TRUE;
 }
 
-void GB_connect_printer(struct GB_Data* gb, struct GB_Printer* printer, GB_print_callback_t cb, void* user_data) {
+void GB_connect_printer(struct GB_Core* gb, struct GB_Printer* printer, GB_print_callback_t cb, void* user_data) {
     // if NULL, this is a disconnect, so NULL the link_cb
     // and NULL the user_data
     if (!printer) {

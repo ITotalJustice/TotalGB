@@ -6,7 +6,7 @@ extern "C" {
 
 #include "common.h"
 
-static void GB_mbc5_write(struct GB_Data* gb, GB_U16 addr, GB_U8 value) { 
+static void GB_mbc5_write(struct GB_Core* gb, GB_U16 addr, GB_U8 value) { 
     switch ((addr >> 12) & 0xF) {
     // RAM
         case 0x0: case 0x1:
@@ -49,7 +49,7 @@ static void GB_mbc5_write(struct GB_Data* gb, GB_U16 addr, GB_U8 value) {
     }
 }
 
-static const GB_U8* GB_mbc5_get_rom_bank(struct GB_Data* gb, GB_U8 bank) {
+static const GB_U8* GB_mbc5_get_rom_bank(struct GB_Core* gb, GB_U8 bank) {
 	if (bank == 0) {
 		return gb->cart.rom;
 	}
@@ -58,7 +58,7 @@ static const GB_U8* GB_mbc5_get_rom_bank(struct GB_Data* gb, GB_U8 bank) {
 }
 
 // todo: rtc support
-static const GB_U8* GB_mbc5_get_ram_bank(struct GB_Data* gb, GB_U8 bank) {
+static const GB_U8* GB_mbc5_get_ram_bank(struct GB_Core* gb, GB_U8 bank) {
 	GB_UNUSED(bank);
     
 	if (!(gb->cart.flags & MBC_FLAGS_RAM) || !gb->cart.ram_enabled) {

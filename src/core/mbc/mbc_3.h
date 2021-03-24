@@ -26,7 +26,7 @@ extern "C" {
 // at 60, it will finally tick the actual RTC.
 // if the RTC is disabled, then the RTC is not ticked...
 
-void GB_rtc_tick_frame(struct GB_Data* gb) {
+void GB_rtc_tick_frame(struct GB_Core* gb) {
     // check if we even have rtc?
     if ((gb->cart.flags & MBC_FLAGS_RTC) == 0) {
         return;
@@ -73,7 +73,7 @@ void GB_rtc_tick_frame(struct GB_Data* gb) {
     }
 }
 
-// static const char* GB_mbc3_rtc_type(const struct GB_Data* gb) {
+// static const char* GB_mbc3_rtc_type(const struct GB_Core* gb) {
 //     switch (gb->cart.rtc_mapped_reg) {
 //         case GB_RTC_MAPPED_REG_S: return "GB_RTC_MAPPED_REG_S";
 //         case GB_RTC_MAPPED_REG_M: return "GB_RTC_MAPPED_REG_M";
@@ -85,7 +85,7 @@ void GB_rtc_tick_frame(struct GB_Data* gb) {
 //     GB_UNREACHABLE(0xFF);
 // }
 
-static inline void GB_mbc3_rtc_write(struct GB_Data* gb, GB_U8 value) {
+static inline void GB_mbc3_rtc_write(struct GB_Core* gb, GB_U8 value) {
     switch (gb->cart.rtc_mapped_reg) {
         case GB_RTC_MAPPED_REG_S: gb->cart.rtc.S = value; break;
         case GB_RTC_MAPPED_REG_M: gb->cart.rtc.M = value; break;
@@ -96,7 +96,7 @@ static inline void GB_mbc3_rtc_write(struct GB_Data* gb, GB_U8 value) {
 }
 
 #if GB_RTC_SPEEDHACK
-static inline void GB_speed_hack_map_rtc_reg(struct GB_Data* gb) {
+static inline void GB_speed_hack_map_rtc_reg(struct GB_Core* gb) {
     switch (gb->cart.rtc_mapped_reg) {
         case GB_RTC_MAPPED_REG_S: gb->mmap[0xA] = &gb->cart.rtc.S; break;
         case GB_RTC_MAPPED_REG_M: gb->mmap[0xA] = &gb->cart.rtc.M; break;
@@ -107,7 +107,7 @@ static inline void GB_speed_hack_map_rtc_reg(struct GB_Data* gb) {
 }
 #endif // GB_RTC_SPEEDHACK
 
-static void GB_mbc3_write(struct GB_Data* gb, GB_U16 addr, GB_U8 value) { 
+static void GB_mbc3_write(struct GB_Core* gb, GB_U16 addr, GB_U8 value) { 
     switch ((addr >> 12) & 0xF) {
 	// RAM / RTC REGISTER ENABLE
         case 0x0: case 0x1:
@@ -159,7 +159,7 @@ static void GB_mbc3_write(struct GB_Data* gb, GB_U16 addr, GB_U8 value) {
     }
 }
 
-static const GB_U8* GB_mbc3_get_rom_bank(struct GB_Data* gb, GB_U8 bank) {
+static const GB_U8* GB_mbc3_get_rom_bank(struct GB_Core* gb, GB_U8 bank) {
 	if (bank == 0) {
 		return gb->cart.rom;
 	}
@@ -168,7 +168,7 @@ static const GB_U8* GB_mbc3_get_rom_bank(struct GB_Data* gb, GB_U8 bank) {
 }
 
 // todo: rtc support
-static const GB_U8* GB_mbc3_get_ram_bank(struct GB_Data* gb, GB_U8 bank) {
+static const GB_U8* GB_mbc3_get_ram_bank(struct GB_Core* gb, GB_U8 bank) {
 	GB_UNUSED(bank);
     
 	if (!(gb->cart.flags & MBC_FLAGS_RAM) || !gb->cart.ram_enabled || !gb->cart.in_ram) {

@@ -11,7 +11,7 @@
 #endif // WIN32
 
 extern "C" {
-struct GB_Data;
+struct GB_Core;
 struct GB_ErrorData;
 struct GB_Printer;
 }
@@ -57,7 +57,7 @@ struct Instance {
     auto SaveGame(const std::string& path) -> void;
     auto LoadSave(const std::string& path) -> void;
 
-    auto GetGB() -> GB_Data*;
+    auto GetGB() -> GB_Core*;
 
     auto OnVblankCallback() -> void;
     auto OnHblankCallback() -> void;
@@ -71,7 +71,7 @@ private:
     auto DestroyWindow() -> void;
     
 private:
-    std::unique_ptr<GB_Data> gameboy;
+    std::unique_ptr<GB_Core> gameboy;
     std::unique_ptr<GB_Printer> printer;
 };
 

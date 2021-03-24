@@ -113,7 +113,7 @@ struct GB_Printer {
 
 // passing NULL will disconect the printer from the GB and also
 // set the link_cable callback to NULL.
-void GB_connect_printer(struct GB_Data* gb, struct GB_Printer* printer, GB_print_callback_t cb, void* user_data);
+void GB_connect_printer(struct GB_Core* gb, struct GB_Printer* printer, GB_print_callback_t cb, void* user_data);
 
 #ifdef __cplusplus
 }

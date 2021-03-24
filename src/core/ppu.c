@@ -10,95 +10,95 @@ static inline GB_U16 GB_calculate_col_from_palette(const GB_U8 palette, const GB
     return ((palette >> (colour << 1)) & 3);
 }
 
-static inline GB_U8 GB_vram_read(const struct GB_Data* gb, const GB_U16 addr, const GB_U8 bank) {
+static inline GB_U8 GB_vram_read(const struct GB_Core* gb, const GB_U16 addr, const GB_U8 bank) {
     assert(gb);
     assert(bank < 2);
     return gb->ppu.vram[bank][addr & 0x1FFF];
 }
 
 // data selects
-static inline GB_BOOL GB_get_bg_data_select(const struct GB_Data* gb) {
+static inline GB_BOOL GB_get_bg_data_select(const struct GB_Core* gb) {
     return (!!(IO_LCDC & 0x08));
 }
 
-static inline GB_BOOL GB_get_title_data_select(const struct GB_Data* gb) {
+static inline GB_BOOL GB_get_title_data_select(const struct GB_Core* gb) {
     return (!!(IO_LCDC & 0x10));
 }
 
-static inline GB_BOOL GB_get_win_data_select(const struct GB_Data* gb) {
+static inline GB_BOOL GB_get_win_data_select(const struct GB_Core* gb) {
     return (!!(IO_LCDC & 0x40));
 }
 
 // map selects
-static inline GB_U16 GB_get_bg_map_select(const struct GB_Data* gb) {
+static inline GB_U16 GB_get_bg_map_select(const struct GB_Core* gb) {
     return GB_get_bg_data_select(gb) ? 0x9C00 : 0x9800;
 }
 
-static inline GB_U16 GB_get_title_map_select(const struct GB_Data* gb) {
+static inline GB_U16 GB_get_title_map_select(const struct GB_Core* gb) {
     return GB_get_title_data_select(gb) ? 0x8000 : 0x9000;
 }
 
-static inline GB_U16 GB_get_win_map_select(const struct GB_Data* gb) {
+static inline GB_U16 GB_get_win_map_select(const struct GB_Core* gb) {
     return GB_get_win_data_select(gb) ? 0x9C00 : 0x9800;
 }
 
-static inline GB_U16 GB_get_tile_offset(const struct GB_Data* gb, const GB_U8 tile_num, const GB_U8 sub_tile_y) {
+static inline GB_U16 GB_get_tile_offset(const struct GB_Core* gb, const GB_U8 tile_num, const GB_U8 sub_tile_y) {
     return (GB_get_title_map_select(gb) + (((GB_get_title_data_select(gb) ? tile_num : (GB_S8)tile_num)) << 4) + (sub_tile_y << 1));
 }
 
-static inline void GB_raise_if_enabled(struct GB_Data* gb, const GB_U8 mode) {
+static inline void GB_raise_if_enabled(struct GB_Core* gb, const GB_U8 mode) {
     // IO_IF |= ((!!(IO_STAT & mode)) << 1);
     if (IO_STAT & mode) {
         GB_enable_interrupt(gb, GB_INTERRUPT_LCD_STAT);
     }
 }
 
-void GB_set_coincidence_flag(struct GB_Data* gb, const GB_BOOL n) {
+void GB_set_coincidence_flag(struct GB_Core* gb, const GB_BOOL n) {
     IO_STAT = n ? IO_STAT | 0x04 : IO_STAT & ~0x04;
     // IO_STAT ^= (-(!!(n)) ^ IO_STAT) & 0x04;
 }
 
-void GB_set_status_mode(struct GB_Data* gb, const enum GB_StatusModes mode) {
+void GB_set_status_mode(struct GB_Core* gb, const enum GB_StatusModes mode) {
     IO_STAT = (IO_STAT & 252) | mode;
 }
 
-enum GB_StatusModes GB_get_status_mode(const struct GB_Data* gb) {
+enum GB_StatusModes GB_get_status_mode(const struct GB_Core* gb) {
     return (IO_STAT & 0x03);
 }
 
-GB_BOOL GB_is_lcd_enabled(const struct GB_Data* gb) {
+GB_BOOL GB_is_lcd_enabled(const struct GB_Core* gb) {
     return (!!(IO_LCDC & 0x80)); 
 }
 
-GB_BOOL GB_is_win_enabled(const struct GB_Data* gb) {
+GB_BOOL GB_is_win_enabled(const struct GB_Core* gb) {
     return (!!(IO_LCDC & 0x20)); 
 }
 
-GB_BOOL GB_is_obj_enabled(const struct GB_Data* gb) {
+GB_BOOL GB_is_obj_enabled(const struct GB_Core* gb) {
     return (!!(IO_LCDC & 0x02)); 
 }
 
-GB_BOOL GB_is_bg_enabled(const struct GB_Data* gb) {
+GB_BOOL GB_is_bg_enabled(const struct GB_Core* gb) {
     return (!!(IO_LCDC & 0x01)); 
 }
 
-static inline GB_BOOL GB_is_bcps_auto_increment(const struct GB_Data* gb) {
+static inline GB_BOOL GB_is_bcps_auto_increment(const struct GB_Core* gb) {
     return (IO_BCPS & 0x80) > 0;
 }
 
-static inline GB_BOOL GB_is_ocps_auto_increment(const struct GB_Data* gb) {
+static inline GB_BOOL GB_is_ocps_auto_increment(const struct GB_Core* gb) {
     return (IO_OCPS & 0x80) > 0;
 }
 
-static inline GB_U8 GB_get_bcps_index(const struct GB_Data* gb) {
+static inline GB_U8 GB_get_bcps_index(const struct GB_Core* gb) {
     return IO_BCPS & 0x3F;
 }
 
-static inline GB_U8 GB_get_ocps_index(const struct GB_Data* gb) {
+static inline GB_U8 GB_get_ocps_index(const struct GB_Core* gb) {
     return IO_OCPS & 0x3F;
 }
 
-static inline void GB_bcps_increment(struct GB_Data* gb) {
+static inline void GB_bcps_increment(struct GB_Core* gb) {
     if (GB_is_bcps_auto_increment(gb) == GB_TRUE) {
         // only increment the lower 5 bits.
         // set back the increment bit after.
@@ -107,7 +107,7 @@ static inline void GB_bcps_increment(struct GB_Data* gb) {
     }
 }
 
-static inline void GB_ocps_increment(struct GB_Data* gb) {
+static inline void GB_ocps_increment(struct GB_Core* gb) {
     if (GB_is_ocps_auto_increment(gb) == GB_TRUE) {
         // only increment the lower 5 bits.
         // set back the increment bit after.
@@ -116,7 +116,7 @@ static inline void GB_ocps_increment(struct GB_Data* gb) {
     }
 }
 
-void GB_bcpd_write(struct GB_Data* gb, GB_U8 value) {
+void GB_bcpd_write(struct GB_Core* gb, GB_U8 value) {
     const GB_U8 index = GB_get_bcps_index(gb);
 
     // this is 0-7
@@ -127,7 +127,7 @@ void GB_bcpd_write(struct GB_Data* gb, GB_U8 value) {
     GB_bcps_increment(gb);
 }
 
-void GB_ocpd_write(struct GB_Data* gb, GB_U8 value) {
+void GB_ocpd_write(struct GB_Core* gb, GB_U8 value) {
     const GB_U8 index = GB_get_ocps_index(gb);
 
     // this is 0-7
@@ -138,21 +138,21 @@ void GB_ocpd_write(struct GB_Data* gb, GB_U8 value) {
     GB_ocps_increment(gb);
 }
 
-static inline GB_BOOL GB_is_hdma_active(const struct GB_Data* gb) {
+static inline GB_BOOL GB_is_hdma_active(const struct GB_Core* gb) {
     return gb->ppu.hdma_length > 0;
 }
 
-static inline GB_U8 hdma_read(const struct GB_Data* gb, const GB_U16 addr) { // A000-DFF0
+static inline GB_U8 hdma_read(const struct GB_Core* gb, const GB_U16 addr) { // A000-DFF0
     // assert((addr <= 0xDFF0) || (addr >= 0xA000 && addr <= 0xDFF0));
 
     return gb->mmap[(addr >> 12)][addr & 0x0FFF];
 }
 
-static inline void hdma_write(struct GB_Data* gb, const GB_U16 addr, const GB_U8 value) { // A000-DFF0
+static inline void hdma_write(struct GB_Core* gb, const GB_U16 addr, const GB_U8 value) { // A000-DFF0
     gb->ppu.vram[IO_VBK][(addr) & 0x1FFF] = value;
 }
 
-static inline void GB_perform_hdma(struct GB_Data* gb) {
+static inline void GB_perform_hdma(struct GB_Core* gb) {
     assert(GB_is_hdma_active(gb) == GB_TRUE);
 
     // perform 16-block transfer
@@ -181,11 +181,11 @@ static inline void GB_perform_hdma(struct GB_Data* gb) {
     }
 }
 
-GB_U8 GB_hdma5_read(const struct GB_Data* gb) {
+GB_U8 GB_hdma5_read(const struct GB_Core* gb) {
     return IO_HDMA5;
 }
 
-void GB_hdma5_write(struct GB_Data* gb, GB_U8 value) {
+void GB_hdma5_write(struct GB_Core* gb, GB_U8 value) {
     // the lower 4-bits of both address are ignored
     const GB_U16 dma_src = (IO_HDMA1 << 8) | (IO_HDMA2 & 0xF0);
     const GB_U16 dma_dst = (IO_HDMA3 << 8) | (IO_HDMA4 & 0xF0);
@@ -248,7 +248,7 @@ void GB_hdma5_write(struct GB_Data* gb, GB_U8 value) {
     }
 }
 
-void GB_compare_LYC(struct GB_Data* gb) {
+void GB_compare_LYC(struct GB_Core* gb) {
     if (UNLIKELY(IO_LY == IO_LYC)) {
         GB_set_coincidence_flag(gb, GB_TRUE);
         GB_raise_if_enabled(gb, STAT_INT_MODE_COINCIDENCE);
@@ -257,7 +257,7 @@ void GB_compare_LYC(struct GB_Data* gb) {
     }
 }
 
-void GB_change_status_mode(struct GB_Data* gb, const GB_U8 new_mode) {
+void GB_change_status_mode(struct GB_Core* gb, const GB_U8 new_mode) {
     GB_set_status_mode(gb, new_mode);
     
     switch (new_mode) {
@@ -290,7 +290,7 @@ void GB_change_status_mode(struct GB_Data* gb, const GB_U8 new_mode) {
     }
 }
 
-void GB_ppu_run(struct GB_Data* gb, GB_U16 cycles) {
+void GB_ppu_run(struct GB_Core* gb, GB_U16 cycles) {
     if (UNLIKELY(!GB_is_lcd_enabled(gb))) {
         GB_set_status_mode(gb, STATUS_MODE_VBLANK);
         gb->ppu.next_cycles = 456;
@@ -342,7 +342,7 @@ void GB_ppu_run(struct GB_Data* gb, GB_U16 cycles) {
     }
 }
 
-void GB_DMA(struct GB_Data* gb) {
+void GB_DMA(struct GB_Core* gb) {
     assert(IO_DMA <= 0xF1);
 
     memcpy(gb->ppu.oam, gb->mmap[IO_DMA >> 4] + ((IO_DMA & 0xF) << 8), sizeof(gb->ppu.oam));
@@ -360,7 +360,7 @@ void GB_update_colours_gb(GB_U16 colours[4], const GB_U16 pal_colours[4], const 
     }
 }
 
-void GB_update_all_colours_gb(struct GB_Data* gb) {
+void GB_update_all_colours_gb(struct GB_Core* gb) {
     assert(gb);
 
     // the colour palette will be auto updated next frame.
@@ -372,7 +372,7 @@ void GB_update_all_colours_gb(struct GB_Data* gb) {
 static const GB_U8 PIXEL_BIT_SHRINK[] = { 0x80, 0x40, 0x20, 0x10, 0x08, 0x04, 0x02, 0x01 };
 static const GB_U8 PIXEL_BIT_GROW[] = { 0x01, 0x02, 0x04, 0x08, 0x10, 0x20, 0x40, 0x80 };
 
-static inline void GB_draw_bg_gb(struct GB_Data* gb) {
+static inline void GB_draw_bg_gb(struct GB_Core* gb) {
     const GB_U8 scanline = IO_LY;
     const GB_U8 base_tile_x = IO_SCX >> 3;
     const GB_U8 sub_tile_x = (IO_SCX & 7);
@@ -405,7 +405,7 @@ static inline void GB_draw_bg_gb(struct GB_Data* gb) {
     }
 }
 
-static inline void GB_draw_win_gb(struct GB_Data* gb) {
+static inline void GB_draw_win_gb(struct GB_Core* gb) {
     const GB_U8 scanline = IO_LY;
     const GB_U8 base_tile_x = 20 - (IO_WX >> 3);
     const GB_S16 sub_tile_x = IO_WX - 7;
@@ -443,7 +443,7 @@ static inline void GB_draw_win_gb(struct GB_Data* gb) {
     gb->ppu.window_line += did_draw;
 }
 
-static inline GB_BOOL GB_get_sprite_size(const struct GB_Data* gb) {
+static inline GB_BOOL GB_get_sprite_size(const struct GB_Core* gb) {
     return ((IO_LCDC & 0x04) ? 16 : 8);
 }
 
@@ -463,7 +463,7 @@ static int sprite_comp(const void* a, const void* b) {
     return sprite_b->x - sprite_a->x;
 }
 
-static inline void GB_draw_obj(struct GB_Data* gb) {
+static inline void GB_draw_obj(struct GB_Core* gb) {
     const GB_U8 scanline = IO_LY;
     const GB_U8 sprite_size = GB_get_sprite_size(gb);
     const GB_U16 bg_trans_col = gb->ppu.bg_colours[0][0];
@@ -532,7 +532,7 @@ static inline void GB_draw_obj(struct GB_Data* gb) {
     }
 }
 
-static inline void GB_draw_bg_gb_gbc(struct GB_Data* gb) {
+static inline void GB_draw_bg_gb_gbc(struct GB_Core* gb) {
     const GB_U8 scanline = IO_LY;
     const GB_U8 base_tile_x = IO_SCX >> 3;
     const GB_U8 sub_tile_x = (IO_SCX & 7);
@@ -576,7 +576,7 @@ static inline void GB_draw_bg_gb_gbc(struct GB_Data* gb) {
     }
 }
 
-static inline void GB_draw_win_gb_gbc(struct GB_Data* gb) {
+static inline void GB_draw_win_gb_gbc(struct GB_Core* gb) {
     const GB_U8 scanline = IO_LY;
     const GB_U8 base_tile_x = 20 - (IO_WX >> 3);
     const GB_S16 sub_tile_x = IO_WX - 7;
@@ -623,7 +623,7 @@ static inline void GB_draw_win_gb_gbc(struct GB_Data* gb) {
     gb->ppu.window_line += did_draw;
 }
 
-static inline void GB_draw_obj_gbc(struct GB_Data* gb) {
+static inline void GB_draw_obj_gbc(struct GB_Core* gb) {
     const GB_U8 scanline = IO_LY;
     const GB_U8 sprite_size = GB_get_sprite_size(gb);
     const GB_BOOL bg_prio = (IO_LCDC & 0x1) > 0;
@@ -682,11 +682,11 @@ static inline void GB_update_colours_gbc(GB_BOOL dirty[8], GB_U16 map[8][4], con
     }
 }
 
-static inline GB_BOOL GB_is_render_layer_enabled(const struct GB_Data* gb, enum GB_RenderLayerConfig want) {
+static inline GB_BOOL GB_is_render_layer_enabled(const struct GB_Core* gb, enum GB_RenderLayerConfig want) {
     return (gb->config.render_layer_config == GB_RENDER_LAYER_CONFIG_ALL) || ((gb->config.render_layer_config & want) > 0);
 }
 
-void GB_draw_scanline(struct GB_Data* gb) {
+void GB_draw_scanline(struct GB_Core* gb) {
     // for now, split DMG and GBC rendering into different functions
     // whilst this does bloat the codebase a little, it makes each function
     // more readable, and less branching in a hot loop

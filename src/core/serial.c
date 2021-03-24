@@ -6,20 +6,20 @@
 
 // SOURCE: https://gbdev.io/pandocs/#serial-data-transfer
 
-static GB_BOOL GB_has_link_cable(const struct GB_Data* gb) {
+static GB_BOOL GB_has_link_cable(const struct GB_Core* gb) {
     return gb->link_cable != NULL;
 }
 
-static GB_BOOL GB_is_serial_client(const struct GB_Data* gb) {
+static GB_BOOL GB_is_serial_client(const struct GB_Core* gb) {
     return (IO_SC & 0x80) == 0x80;
 }
 
-static GB_BOOL GB_is_serial_host(const struct GB_Data* gb) {
+static GB_BOOL GB_is_serial_host(const struct GB_Core* gb) {
     return (IO_SC & 0x81) == 0x81;
 }
 
 // called when master sends data to slave
-static GB_BOOL GB_trade(struct GB_Data* gb, struct GB_LinkCableData* data) {
+static GB_BOOL GB_trade(struct GB_Core* gb, struct GB_LinkCableData* data) {
     // we are here so we have a link cable, check if we want data or not...
     // NOTE: according to the docs, this is optional!
     // however, in gen1 pokemon, this is the correct behaviour.
@@ -41,7 +41,7 @@ static GB_BOOL GB_builtin_link_cable_cb(void* user_data, struct GB_LinkCableData
     assert(data);
 
     // this is *this* instance of the gb struct, not the host!
-    struct GB_Data* gb = (struct GB_Data*)user_data;
+    struct GB_Core* gb = (struct GB_Core*)user_data;
 
     // check if we have a link cable connected first!
     if (!GB_has_link_cable(gb)) {
@@ -63,12 +63,12 @@ static GB_BOOL GB_builtin_link_cable_cb(void* user_data, struct GB_LinkCableData
     return GB_FALSE;
 }
 
-void GB_connect_link_cable(struct GB_Data* gb, GB_serial_transfer_t cb, void* user_data) {
+void GB_connect_link_cable(struct GB_Core* gb, GB_serial_transfer_t cb, void* user_data) {
 	gb->link_cable = cb;
 	gb->link_cable_user_data = user_data;
 }
 
-void GB_connect_link_cable_builtin(struct GB_Data* gb, struct GB_Data* gb2) {
+void GB_connect_link_cable_builtin(struct GB_Core* gb, struct GB_Core* gb2) {
     assert(gb);
 
     // if we already have a callback set, warn the user,
@@ -81,7 +81,7 @@ void GB_connect_link_cable_builtin(struct GB_Data* gb, struct GB_Data* gb2) {
     GB_connect_link_cable(gb, GB_builtin_link_cable_cb, gb2);
 }
 
-GB_U8 GB_serial_sb_read(const struct GB_Data* gb) {
+GB_U8 GB_serial_sb_read(const struct GB_Core* gb) {
     // check if we have a serial cable connected
     if (GB_has_link_cable(gb) == GB_FALSE) {
         printf("not link cable on sb read\n");
@@ -91,7 +91,7 @@ GB_U8 GB_serial_sb_read(const struct GB_Data* gb) {
     return IO_SB;
 }
 
-void GB_serial_sc_write(struct GB_Data* gb, const GB_U8 data) {
+void GB_serial_sc_write(struct GB_Core* gb, const GB_U8 data) {
     // we always set the byte regardless if connected or not...
     IO_SC = data;
 

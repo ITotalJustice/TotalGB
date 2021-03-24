@@ -4,7 +4,7 @@
 
 #include <assert.h>
 
-static inline void UNK_OP(struct GB_Data* gb, GB_U8 opcode, GB_BOOL cb_prefix) {
+static inline void UNK_OP(struct GB_Core* gb, GB_U8 opcode, GB_BOOL cb_prefix) {
 	if (gb->error_cb != NULL) {
 		struct GB_ErrorData data = {0};
 		data.type = GB_ERROR_TYPE_UNKNOWN_INSTRUCTION;
@@ -70,7 +70,7 @@ static inline void UNK_OP(struct GB_Data* gb, GB_U8 opcode, GB_BOOL cb_prefix) {
 
 #endif
 
-void GB_cpu_set_flag(struct GB_Data* gb, enum GB_CpuFlags flag, GB_BOOL value) {
+void GB_cpu_set_flag(struct GB_Core* gb, enum GB_CpuFlags flag, GB_BOOL value) {
 	switch (flag) {
 		case GB_CPU_FLAG_C: SET_FLAG_C(value); break;
 		case GB_CPU_FLAG_H: SET_FLAG_H(value); break;
@@ -79,7 +79,7 @@ void GB_cpu_set_flag(struct GB_Data* gb, enum GB_CpuFlags flag, GB_BOOL value) {
 	}
 }
 
-GB_BOOL GB_cpu_get_flag(const struct GB_Data* gb, enum GB_CpuFlags flag) {
+GB_BOOL GB_cpu_get_flag(const struct GB_Core* gb, enum GB_CpuFlags flag) {
 	switch (flag) {
 		case GB_CPU_FLAG_C: return FLAG_C;
 		case GB_CPU_FLAG_H: return FLAG_H;
@@ -90,7 +90,7 @@ GB_BOOL GB_cpu_get_flag(const struct GB_Data* gb, enum GB_CpuFlags flag) {
 	GB_UNREACHABLE(GB_FALSE);
 }
 
-void GB_cpu_set_register(struct GB_Data* gb, enum GB_CpuRegisters reg, GB_U8 value) {
+void GB_cpu_set_register(struct GB_Core* gb, enum GB_CpuRegisters reg, GB_U8 value) {
 	switch (reg) {
 		case GB_CPU_REGISTER_B: REG_B = value; break;
 		case GB_CPU_REGISTER_C: REG_C = value; break;
@@ -103,7 +103,7 @@ void GB_cpu_set_register(struct GB_Data* gb, enum GB_CpuRegisters reg, GB_U8 val
 	}
 }
 
-GB_U8 GB_cpu_get_register(const struct GB_Data* gb, enum GB_CpuRegisters reg) {
+GB_U8 GB_cpu_get_register(const struct GB_Core* gb, enum GB_CpuRegisters reg) {
 	switch (reg) {
 		case GB_CPU_REGISTER_B: return REG_B;
 		case GB_CPU_REGISTER_C: return REG_C;
@@ -118,7 +118,7 @@ GB_U8 GB_cpu_get_register(const struct GB_Data* gb, enum GB_CpuRegisters reg) {
 	GB_UNREACHABLE(0xFF);
 }
 
-void GB_cpu_set_register_pair(struct GB_Data* gb, enum GB_CpuRegisterPairs pair, GB_U16 value) {
+void GB_cpu_set_register_pair(struct GB_Core* gb, enum GB_CpuRegisterPairs pair, GB_U16 value) {
 	switch (pair) {
 		case GB_CPU_REGISTER_PAIR_BC: SET_REG_BC(value); break;
 		case GB_CPU_REGISTER_PAIR_DE: SET_REG_DE(value); break;
@@ -129,7 +129,7 @@ void GB_cpu_set_register_pair(struct GB_Data* gb, enum GB_CpuRegisterPairs pair,
 	}
 }
 
-GB_U16 GB_cpu_get_register_pair(const struct GB_Data* gb, enum GB_CpuRegisterPairs pair) {
+GB_U16 GB_cpu_get_register_pair(const struct GB_Core* gb, enum GB_CpuRegisterPairs pair) {
 	switch (pair) {
 		case GB_CPU_REGISTER_PAIR_BC: return REG_BC;
 		case GB_CPU_REGISTER_PAIR_DE: return REG_DE;
@@ -172,15 +172,15 @@ SET_FLAG_Z(z);
 #define write16(addr,value) GB_write16(gb, addr, value)
 
 // fwd
-static void GB_execute(struct GB_Data* gb);
-static void GB_execute_cb(struct GB_Data* gb);
+static void GB_execute(struct GB_Core* gb);
+static void GB_execute_cb(struct GB_Core* gb);
 
-static inline void GB_PUSH(struct GB_Data* gb, GB_U16 value) {
+static inline void GB_PUSH(struct GB_Core* gb, GB_U16 value) {
 	write8(--REG_SP, (value >> 8) & 0xFF);
 	write8(--REG_SP, value & 0xFF);
 }
 
-static inline GB_U16 GB_POP(struct GB_Data* gb) {
+static inline GB_U16 GB_POP(struct GB_Core* gb) {
 	const GB_U16 result = read16(REG_SP);
 	REG_SP += 2;
 	return result;
@@ -823,7 +823,7 @@ static inline GB_U16 GB_POP(struct GB_Data* gb) {
 	} \
 } while (0)
 
-static void GB_interrupt_handler(struct GB_Data* gb) {
+static void GB_interrupt_handler(struct GB_Core* gb) {
 	if (!gb->cpu.ime && !gb->cpu.halt) {
 		return;
 	}
@@ -869,7 +869,7 @@ static void GB_interrupt_handler(struct GB_Data* gb) {
 	gb->cpu.cycles += 20;
 }
 
-static void GB_execute(struct GB_Data* gb) {
+static void GB_execute(struct GB_Core* gb) {
 	const GB_U8 opcode = read8(REG_PC++);
 
 	switch (opcode) {
@@ -1037,7 +1037,7 @@ static void GB_execute(struct GB_Data* gb) {
 	gb->cpu.cycles += CYCLE_TABLE[opcode];
 }
 
-static void GB_execute_cb(struct GB_Data* gb) {
+static void GB_execute_cb(struct GB_Core* gb) {
 	const GB_U8 opcode = read8(REG_PC++);
 
 	switch (opcode) {
@@ -1184,7 +1184,7 @@ static void GB_execute_cb(struct GB_Data* gb) {
 	gb->cpu.cycles += CYCLE_TABLE_CB[opcode];
 }
 
-GB_U16 GB_cpu_run(struct GB_Data* gb, GB_U16 cycles) {
+GB_U16 GB_cpu_run(struct GB_Core* gb, GB_U16 cycles) {
 	GB_UNUSED(cycles);
 
 	// reset cycles counter

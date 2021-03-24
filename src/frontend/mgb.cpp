@@ -16,31 +16,31 @@ namespace mgb {
 
 // vblank callback is to let the frontend know that it should render the screen.
 // This removes any screen tearing and changes to the pixels whilst in vblank.
-auto VblankCallback(GB_Data*, void* user) -> void {
+auto VblankCallback(GB_Core*, void* user) -> void {
     assert(user);
     auto* instance = static_cast<Instance*>(user);
     instance->OnVblankCallback();
 }
 
-auto HblankCallback(GB_Data*, void* user) -> void {
+auto HblankCallback(GB_Core*, void* user) -> void {
     assert(user);
     auto* instance = static_cast<Instance*>(user);
     instance->OnHblankCallback();
 }
 
-auto DmaCallback(GB_Data*, void* user) -> void {
+auto DmaCallback(GB_Core*, void* user) -> void {
     assert(user);
     auto* instance = static_cast<Instance*>(user);
     instance->OnDmaCallback();
 }
 
-auto HaltCallback(GB_Data*, void* user) -> void {
+auto HaltCallback(GB_Core*, void* user) -> void {
     assert(user);
     auto* instance = static_cast<Instance*>(user);
     instance->OnHaltCallback();
 }
 
-auto StopCallback(GB_Data*, void* user) -> void {
+auto StopCallback(GB_Core*, void* user) -> void {
     assert(user);
     auto* instance = static_cast<Instance*>(user);
     instance->OnStopCallback();
@@ -49,7 +49,7 @@ auto StopCallback(GB_Data*, void* user) -> void {
 // error callback is to be used to handle errors that may happen during emulation.
 // these will be updated with warnings also,
 // such as trying to write to a rom or OOB read / write from the game.
-auto ErrorCallback(GB_Data*, void* user, struct GB_ErrorData* data) -> void {
+auto ErrorCallback(GB_Core*, void* user, struct GB_ErrorData* data) -> void {
     assert(user);
     auto* app = static_cast<Instance*>(user);
     app->OnErrorCallback(data);
@@ -109,7 +109,7 @@ auto Instance::LoadRom(const std::string& path) -> bool {
     if (this->HasRom()) {
         this->SaveGame(this->rom_path);
     } else {
-        this->gameboy = std::make_unique<GB_Data>();
+        this->gameboy = std::make_unique<GB_Core>();
         this->printer = std::make_unique<GB_Printer>();
         GB_init(this->GetGB());
 
@@ -260,7 +260,7 @@ auto Instance::HasRom() const -> bool {
     return this->gameboy != nullptr;
 }
 
-auto Instance::GetGB() -> GB_Data* {
+auto Instance::GetGB() -> GB_Core* {
     return this->gameboy.get();
 }
 
@@ -377,7 +377,7 @@ auto App::ResizeScreen() -> void {
 
 }
 
-void GB_run_frames(struct GB_Data* gb1, struct GB_Data* gb2) {
+void GB_run_frames(struct GB_Core* gb1, struct GB_Core* gb2) {
 	GB_U32 cycles_elapsed1 = 0;
     GB_U32 cycles_elapsed2 = 0;
 

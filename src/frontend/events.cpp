@@ -247,7 +247,7 @@ auto App::OnControllerButtonEvent(const SDL_ControllerButtonEvent& e) -> void {
     const bool down = e.type == SDL_CONTROLLERBUTTONDOWN;
 
     // the controller is used for the first window by default
-    struct GB_Data* gb = this->emu_instances[0].GetGB();
+    auto* gb = this->emu_instances[0].GetGB();
 
     // however, if 2 instances are open, the controller becomes the selected
     // input for p2!

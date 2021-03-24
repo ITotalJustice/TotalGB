@@ -8,7 +8,7 @@
 
 #define ROM_SIZE_MULT 0x8000
 
-void GB_throw_info(const struct GB_Data* gb, const char* message) {
+void GB_throw_info(const struct GB_Core* gb, const char* message) {
 	#if 0
 	printf("[INFO] %s\n", message);
 	#endif
@@ -18,11 +18,11 @@ void GB_throw_info(const struct GB_Data* gb, const char* message) {
 		data.type = GB_ERROR_TYPE_INFO;
 		// todo: handle possible string overflow...
 		strcpy(data.info.message, message);
-		gb->error_cb((struct GB_Data*)gb, gb->error_cb_user_data, &data);
+		gb->error_cb((struct GB_Core*)gb, gb->error_cb_user_data, &data);
 	}
 }
 
-void GB_throw_warn(const struct GB_Data* gb, const char* message) {
+void GB_throw_warn(const struct GB_Core* gb, const char* message) {
 	#if 0
 	printf("[WARN] %s\n", message);
 	#endif
@@ -32,11 +32,11 @@ void GB_throw_warn(const struct GB_Data* gb, const char* message) {
 		data.type = GB_ERROR_TYPE_WARN;
 		// todo: handle possible string overflow...
 		strcpy(data.warn.message, message);
-		gb->error_cb((struct GB_Data*)gb, gb->error_cb_user_data, &data);
+		gb->error_cb((struct GB_Core*)gb, gb->error_cb_user_data, &data);
 	}
 }
 
-void GB_throw_error(const struct GB_Data* gb, enum GB_ErrorDataType type, const char* message) {
+void GB_throw_error(const struct GB_Core* gb, enum GB_ErrorDataType type, const char* message) {
 	#if 0
 	printf("[ERROR] %s\n", message);
 	#endif
@@ -47,26 +47,26 @@ void GB_throw_error(const struct GB_Data* gb, enum GB_ErrorDataType type, const 
 		data.error.type = type;
 		// todo: handle possible string overflow...
 		strcpy(data.error.message, message);
-		gb->error_cb((struct GB_Data*)gb, gb->error_cb_user_data, &data);
+		gb->error_cb((struct GB_Core*)gb, gb->error_cb_user_data, &data);
 	}
 }
 
-GB_BOOL GB_init(struct GB_Data* gb) {
+GB_BOOL GB_init(struct GB_Core* gb) {
 	if (!gb) {
 		GB_throw_error(gb, GB_ERROR_DATA_TYPE_NULL_PARAM, __func__);
 		return GB_FALSE;
 	}
 
-	memset(gb, 0, sizeof(struct GB_Data));
+	memset(gb, 0, sizeof(struct GB_Core));
 
 	return GB_TRUE;
 }
 
-void GB_quit(struct GB_Data* gb) {
+void GB_quit(struct GB_Core* gb) {
 	assert(gb);
 }
 
-void GB_reset(struct GB_Data* gb) {
+void GB_reset(struct GB_Core* gb) {
 	memset(gb->wram, 0, sizeof(gb->wram));
 	memset(gb->hram, 0, sizeof(gb->hram));
 	memset(IO, 0xFF, sizeof(IO));
@@ -210,7 +210,7 @@ GB_BOOL GB_get_rom_header_from_data(const GB_U8* data, struct GB_CartHeader* hea
 	return GB_TRUE;
 }
 
-GB_BOOL GB_get_rom_header(const struct GB_Data* gb, struct GB_CartHeader* header) {
+GB_BOOL GB_get_rom_header(const struct GB_Core* gb, struct GB_CartHeader* header) {
 	assert(gb && gb->cart.rom && header);
 
 	if (!gb || !gb->cart.rom || (gb->cart.ram_size < (sizeof(struct GB_CartHeader) + GB_BOOTROM_SIZE))) {
@@ -226,7 +226,7 @@ static struct GB_CartHeader* GB_get_rom_header_ptr_from_data(const GB_U8* data) 
 	return (struct GB_CartHeader*)&data[GB_BOOTROM_SIZE];
 }
 
-struct GB_CartHeader* GB_get_rom_header_ptr(const struct GB_Data* gb) {
+struct GB_CartHeader* GB_get_rom_header_ptr(const struct GB_Core* gb) {
 	assert(gb && gb->cart.rom);
 	return GB_get_rom_header_ptr_from_data(gb->cart.rom);
 }
@@ -250,7 +250,7 @@ GB_BOOL GB_get_rom_palette_hash_from_header(const struct GB_CartHeader* header, 
 	return GB_TRUE;
 }
 
-GB_BOOL GB_get_rom_palette_hash(const struct GB_Data* gb, GB_U8* hash, GB_U8* forth) {
+GB_BOOL GB_get_rom_palette_hash(const struct GB_Core* gb, GB_U8* hash, GB_U8* forth) {
 	assert(gb && hash);
 
 	if (!gb || !hash) {
@@ -264,7 +264,7 @@ GB_BOOL GB_get_rom_palette_hash(const struct GB_Data* gb, GB_U8* hash, GB_U8* fo
 	);
 }
 
-GB_BOOL GB_set_palette_from_palette(struct GB_Data* gb, const struct GB_PaletteEntry* palette) {
+GB_BOOL GB_set_palette_from_palette(struct GB_Core* gb, const struct GB_PaletteEntry* palette) {
 	assert(gb && palette);
 
 	if (!gb || !palette) {
@@ -277,15 +277,15 @@ GB_BOOL GB_set_palette_from_palette(struct GB_Data* gb, const struct GB_PaletteE
 	return GB_TRUE;
 }
 
-void GB_set_render_palette_layer_config(struct GB_Data* gb, enum GB_RenderLayerConfig layer) {
+void GB_set_render_palette_layer_config(struct GB_Core* gb, enum GB_RenderLayerConfig layer) {
 	gb->config.render_layer_config = layer;
 }
 
-void GB_set_rtc_update_config(struct GB_Data* gb, const enum GB_RtcUpdateConfig config) {
+void GB_set_rtc_update_config(struct GB_Core* gb, const enum GB_RtcUpdateConfig config) {
     gb->config.rtc_update_config = config;
 }
 
-GB_BOOL GB_set_rtc(struct GB_Data* gb, const struct GB_Rtc rtc) {
+GB_BOOL GB_set_rtc(struct GB_Core* gb, const struct GB_Rtc rtc) {
 	assert(gb);
 
 	if (GB_has_mbc_flags(gb, MBC_FLAGS_RTC) == GB_FALSE) {
@@ -301,15 +301,15 @@ GB_BOOL GB_set_rtc(struct GB_Data* gb, const struct GB_Rtc rtc) {
 	return GB_TRUE;
 }
 
-GB_BOOL GB_has_mbc_flags(const struct GB_Data* gb, const GB_U8 flags) {
+GB_BOOL GB_has_mbc_flags(const struct GB_Core* gb, const GB_U8 flags) {
     return (gb->cart.flags & flags) == flags;
 }
 
-enum GB_SystemType GB_get_system_type(const struct GB_Data* gb) {
+enum GB_SystemType GB_get_system_type(const struct GB_Core* gb) {
 	return gb->system_type;
 }
 
-GB_BOOL GB_is_system_gbc(const struct GB_Data* gb) {
+GB_BOOL GB_is_system_gbc(const struct GB_Core* gb) {
 	return GB_get_system_type(gb) == GB_SYSTEM_TYPE_GBC;
 }
 
@@ -323,12 +323,12 @@ static const char* GB_get_system_type_string(const enum GB_SystemType type) {
 	return "NULL";
 }
 
-static void GB_set_system_type(struct GB_Data* gb, const enum GB_SystemType type) {
+static void GB_set_system_type(struct GB_Core* gb, const enum GB_SystemType type) {
 	printf("[INFO] setting system type to %s\n", GB_get_system_type_string(type));
 	gb->system_type = type;
 }
 
-static void GB_setup_palette(struct GB_Data* gb, const struct GB_CartHeader* header) {
+static void GB_setup_palette(struct GB_Core* gb, const struct GB_CartHeader* header) {
 	// this should only ever be called in NONE GBC system.
 	assert(GB_is_system_gbc(gb) == GB_FALSE);
 
@@ -361,7 +361,7 @@ static void GB_setup_palette(struct GB_Data* gb, const struct GB_CartHeader* hea
 	}
 }
 
-int GB_loadrom_data(struct GB_Data* gb, GB_U8* data, GB_U32 size) {
+int GB_loadrom_data(struct GB_Core* gb, GB_U8* data, GB_U32 size) {
 	if (!gb || !data || !size) {
 		GB_throw_error(gb, GB_ERROR_DATA_TYPE_NULL_PARAM, __func__);
 		return -1;
@@ -462,22 +462,22 @@ int GB_loadrom_data(struct GB_Data* gb, GB_U8* data, GB_U32 size) {
 	return 0;
 }
 
-GB_BOOL GB_has_save(const struct GB_Data* gb) {
+GB_BOOL GB_has_save(const struct GB_Core* gb) {
 	assert(gb);
 	return (gb->cart.flags & (MBC_FLAGS_RAM | MBC_FLAGS_BATTERY)) == (MBC_FLAGS_RAM | MBC_FLAGS_BATTERY);
 }
 
-GB_BOOL GB_has_rtc(const struct GB_Data* gb) {
+GB_BOOL GB_has_rtc(const struct GB_Core* gb) {
 	assert(gb);
 	return (gb->cart.flags & MBC_FLAGS_RTC) == MBC_FLAGS_RTC;
 }
 
-GB_U32 GB_calculate_savedata_size(const struct GB_Data* gb) {
+GB_U32 GB_calculate_savedata_size(const struct GB_Core* gb) {
 	assert(gb);
 	return gb->cart.ram_size;
 }
 
-int GB_savegame(const struct GB_Data* gb, struct GB_SaveData* save) {
+int GB_savegame(const struct GB_Core* gb, struct GB_SaveData* save) {
 	assert(gb && save);
 
 	if (!GB_has_save(gb)) {
@@ -496,7 +496,7 @@ int GB_savegame(const struct GB_Data* gb, struct GB_SaveData* save) {
 	return 0;
 }
 
-int GB_loadsave(struct GB_Data* gb, const struct GB_SaveData* save) {
+int GB_loadsave(struct GB_Core* gb, const struct GB_SaveData* save) {
 	assert(gb && save);
 
 	if (!GB_has_save(gb)) {
@@ -541,7 +541,7 @@ static const struct GB_StateHeader STATE_HEADER = {
 	/* padding */
 };
 
-int GB_savestate(const struct GB_Data* gb, struct GB_State* state) {
+int GB_savestate(const struct GB_Core* gb, struct GB_State* state) {
 	if (!gb || !state) {
 		GB_throw_error(gb, GB_ERROR_DATA_TYPE_NULL_PARAM, __func__);
 		return -1;
@@ -551,7 +551,7 @@ int GB_savestate(const struct GB_Data* gb, struct GB_State* state) {
 	return GB_savestate2(gb, &state->core, GB_TRUE);
 }
 
-int GB_loadstate(struct GB_Data* gb, const struct GB_State* state) {
+int GB_loadstate(struct GB_Core* gb, const struct GB_State* state) {
 	if (!gb || !state) {
 		GB_throw_error(gb, GB_ERROR_DATA_TYPE_NULL_PARAM, __func__);
 		return -1;
@@ -566,7 +566,7 @@ int GB_loadstate(struct GB_Data* gb, const struct GB_State* state) {
 	return GB_loadstate2(gb, &state->core);
 }
 
-int GB_savestate2(const struct GB_Data* gb, struct GB_CoreState* state, GB_BOOL swap_endian) {
+int GB_savestate2(const struct GB_Core* gb, struct GB_CoreState* state, GB_BOOL swap_endian) {
 	if (!gb || !state) {
 		GB_throw_error(gb, GB_ERROR_DATA_TYPE_NULL_PARAM, __func__);
 		return -1;
@@ -593,7 +593,7 @@ int GB_savestate2(const struct GB_Data* gb, struct GB_CoreState* state, GB_BOOL 
 	return 0;
 }
 
-int GB_loadstate2(struct GB_Data* gb, const struct GB_CoreState* state) {
+int GB_loadstate2(struct GB_Core* gb, const struct GB_CoreState* state) {
 	if (!gb || !state) {
 		GB_throw_error(gb, GB_ERROR_DATA_TYPE_NULL_PARAM, __func__);
 		return -1;
@@ -621,7 +621,7 @@ int GB_loadstate2(struct GB_Data* gb, const struct GB_CoreState* state) {
 	return 0;
 }
 
-void GB_get_rom_info(const struct GB_Data* gb, struct GB_RomInfo* info) {
+void GB_get_rom_info(const struct GB_Core* gb, struct GB_RomInfo* info) {
 	assert(gb && info && gb->cart.rom);
 
 	// const struct GB_CartHeader* header = GB_get_rom_header_ptr(gb);
@@ -630,46 +630,46 @@ void GB_get_rom_info(const struct GB_Data* gb, struct GB_RomInfo* info) {
 	info->ram_size = gb->cart.ram_size;
 }
 
-void GB_enable_interrupt(struct GB_Data* gb, const enum GB_Interrupts interrupt) {
+void GB_enable_interrupt(struct GB_Core* gb, const enum GB_Interrupts interrupt) {
 	IO_IF |= interrupt;
 }
 
-void GB_disable_interrupt(struct GB_Data* gb, const enum GB_Interrupts interrupt) {
+void GB_disable_interrupt(struct GB_Core* gb, const enum GB_Interrupts interrupt) {
 	IO_IF &= ~(interrupt);
 }
 
-void GB_set_vblank_callback(struct GB_Data* gb, GB_vblank_callback_t cb, void* user_data) {
+void GB_set_vblank_callback(struct GB_Core* gb, GB_vblank_callback_t cb, void* user_data) {
 	gb->vblank_cb = cb;
 	gb->vblank_cb_user_data = user_data;
 }
 
-void GB_set_hblank_callback(struct GB_Data* gb, GB_hblank_callback_t cb, void* user_data) {
+void GB_set_hblank_callback(struct GB_Core* gb, GB_hblank_callback_t cb, void* user_data) {
 	gb->hblank_cb = cb;
 	gb->hblank_cb_user_data = user_data;
 }
 
-void GB_set_dma_callback(struct GB_Data* gb, GB_dma_callback_t cb, void* user_data) {
+void GB_set_dma_callback(struct GB_Core* gb, GB_dma_callback_t cb, void* user_data) {
 	gb->dma_cb = cb;
 	gb->dma_cb_user_data = user_data;
 }
 
-void GB_set_halt_callback(struct GB_Data* gb, GB_halt_callback_t cb, void* user_data) {
+void GB_set_halt_callback(struct GB_Core* gb, GB_halt_callback_t cb, void* user_data) {
 	gb->halt_cb = cb;
 	gb->halt_cb_user_data = user_data;
 }
 
-void GB_set_stop_callback(struct GB_Data* gb, GB_stop_callback_t cb, void* user_data) {
+void GB_set_stop_callback(struct GB_Core* gb, GB_stop_callback_t cb, void* user_data) {
 	gb->stop_cb = cb;
 	gb->stop_cb_user_data = user_data;
 }
 
-void GB_set_error_callback(struct GB_Data* gb, GB_error_callback_t cb, void* user_data) {
+void GB_set_error_callback(struct GB_Core* gb, GB_error_callback_t cb, void* user_data) {
 	gb->error_cb = cb;
 	gb->error_cb_user_data = user_data;
 }
 
 // the actual run_step(), this gets inlined
-static inline GB_U16 GB_run_step_internal(struct GB_Data* gb) {
+static inline GB_U16 GB_run_step_internal(struct GB_Core* gb) {
 	GB_U16 cycles = GB_cpu_run(gb, 0 /*unused*/);
 	GB_timer_run(gb, cycles);
 	GB_ppu_run(gb, cycles >> gb->cpu.double_speed);
@@ -678,14 +678,14 @@ static inline GB_U16 GB_run_step_internal(struct GB_Data* gb) {
 	return cycles >> gb->cpu.double_speed;
 }
 
-GB_U16 GB_run_step(struct GB_Data* gb) {
+GB_U16 GB_run_step(struct GB_Core* gb) {
 	return GB_run_step_internal(gb);
 }
 
 #include <time.h>
 
 // returns false if the game does not use rtc or if time_t is NULL.
-static GB_BOOL GB_set_rtc_from_time_t(struct GB_Data* gb) {
+static GB_BOOL GB_set_rtc_from_time_t(struct GB_Core* gb) {
 	time_t the_time = time(NULL);
 	const struct tm* tm = localtime(&the_time);
 	
@@ -706,7 +706,7 @@ static GB_BOOL GB_set_rtc_from_time_t(struct GB_Data* gb) {
 	return GB_set_rtc(gb, rtc);
 }
 
-void GB_run_frame(struct GB_Data* gb) {
+void GB_run_frame(struct GB_Core* gb) {
 	assert(gb);
 
 	GB_U32 cycles_elapsed = 0;
