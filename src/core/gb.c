@@ -100,24 +100,7 @@ void GB_reset(struct GB_Core* gb) {
 	IO_TIMA = 0x00;
 	IO_TMA = 0x00;
 	IO_TAC = 0x00;
-	IO_NR10 = 0x80;
-	IO_NR11 = 0xBF;
-	IO_NR12 = 0xF3;
-	IO_NR14 = 0xBF;
-	IO_NR21 = 0x3F;
-	IO_NR22 = 0x00;
-	IO_NR24 = 0xBF;
-	IO_NR30 = 0x7F;
-	IO_NR31 = 0xFF;
-	IO_NR32 = 0x9F;
-	IO_NR34 = 0xBF;
-	IO_NR41 = 0xFF;
-	IO_NR42 = 0x00;
-	IO_NR43 = 0x00;
-	IO_NR44 = 0xBF;
-	IO_NR50 = 0x77;
-	IO_NR51 = 0xF3;
-	IO_NR52 = 0xF1;
+	// todo: apu reg values.
 	IO_LCDC = 0x91;
 	IO_STAT = 0x00;
 	IO_SCY = 0x00;
@@ -671,8 +654,11 @@ void GB_set_error_callback(struct GB_Core* gb, GB_error_callback_t cb, void* use
 // the actual run_step(), this gets inlined
 static inline GB_U16 GB_run_step_internal(struct GB_Core* gb) {
 	GB_U16 cycles = GB_cpu_run(gb, 0 /*unused*/);
+
 	GB_timer_run(gb, cycles);
 	GB_ppu_run(gb, cycles >> gb->cpu.double_speed);
+	GB_apu_run(gb, cycles >> gb->cpu.double_speed);
+
 	assert(gb->cpu.double_speed == 1 || gb->cpu.double_speed == 0);
 	
 	return cycles >> gb->cpu.double_speed;

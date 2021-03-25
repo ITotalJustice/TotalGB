@@ -1,6 +1,8 @@
 #include "gb.h"
 #include "internal.h"
 
+#include <SDL2/SDL_audio.h>
+
 //        Square 1
 // NR10 FF10 -PPP NSSS Sweep period, negate, shift
 // NR11 FF11 DDLL LLLL Duty, Length load (64-L)
@@ -45,7 +47,7 @@
 #define NR12_PERIOD 0x07
 #define NR13_FREQ_LSB 0xFF
 #define NR14_TRIGGER 0x80
-#define NR14_LNEGTH_ENABLE 0x40
+#define NR14_LENGTH_ENABLE 0x40
 #define NR14_FREQ_MSB 0x07
 
 /* square 2 */
@@ -56,7 +58,7 @@
 #define NR22_PERIOD 0x07
 #define NR23_FREQ_LSB 0xFF
 #define NR24_TRIGGER 0x80
-#define NR24_LNEGTH_ENABLE 0x40
+#define NR24_LENGTH_ENABLE 0x40
 #define NR24_FREQ_MSB 0x07
 
 /* wave */
@@ -65,7 +67,7 @@
 #define NR32_VOLUME_CODE 0x60
 #define NR33_FREQ_LSB 0xFF
 #define NR34_TRIGGER 0x80
-#define NR34_LNEGTH_ENABLE 0x40
+#define NR34_LENGTH_ENABLE 0x40
 #define NR34_FREQ_MSB 0x07
 
 /* noise */
@@ -77,7 +79,7 @@
 #define NR43_WIDTH_MODE 0x08
 #define NR43_DIVISOR_CODE 0x07
 #define NR44_TRIGGER 0x80
-#define NR44_LNEGTH_ENABLE 0x40
+#define NR44_LENGTH_ENABLE 0x40
 
 /* control / status */
 #define NR50_VIN_L_ENABLE 0x80
@@ -118,17 +120,23 @@ static inline float GB_wave_volumef(GB_U8 code) {
 
 #define SOUND_ENABLED() ((IO_NR52 & NR52_STATUS) > 0)
 
-#define CHANNEL_LENGTH_ENABLE(num) ((IO_NR##num##4 & NR##num##4##_LNEGTH_ENABLE) > 0)
+#define CHANNEL_LENGTH_ENABLE(num) ((IO_NR##num##4 & NR##num##4##_LENGTH_ENABLE) > 0)
 
 #define CHANNEL_PERIOD(num) ((IO_NR##num##2 & NR##num##2##_PERIOD))
 
 // clocked at 512hz
 #define FRAME_SEQUENCER_CLOCK 512
 
-/*static*/ const GB_BOOL SQUARE_DUTY_CYCLE_0[] = { 0, 0, 0, 0, 0, 0, 0, 1 };
-/*static*/ const GB_BOOL SQUARE_DUTY_CYCLE_1[] = { 1, 0, 0, 0, 0, 0, 0, 1 };
-/*static*/ const GB_BOOL SQUARE_DUTY_CYCLE_2[] = { 0, 0, 0, 0, 0, 1, 1, 1 };
-/*static*/ const GB_BOOL SQUARE_DUTY_CYCLE_3[] = { 0, 1, 1, 1, 1, 1, 1, 0 };
+/*static*/ const GB_BOOL SQUARE_DUTY_CYCLE_0[8] = { 0, 0, 0, 0, 0, 0, 0, 1 };
+/*static*/ const GB_BOOL SQUARE_DUTY_CYCLE_1[8] = { 1, 0, 0, 0, 0, 0, 0, 1 };
+/*static*/ const GB_BOOL SQUARE_DUTY_CYCLE_2[8] = { 0, 0, 0, 0, 0, 1, 1, 1 };
+/*static*/ const GB_BOOL SQUARE_DUTY_CYCLE_3[8] = { 0, 1, 1, 1, 1, 1, 1, 0 };
+/*static*/ const GB_BOOL* const SQUARE_DUTY_CYCLES[4] = {
+    SQUARE_DUTY_CYCLE_0,
+    SQUARE_DUTY_CYCLE_1,
+    SQUARE_DUTY_CYCLE_2,
+    SQUARE_DUTY_CYCLE_3
+};
 
 // 4194304 / 256; // 256 Hz
 
@@ -144,3 +152,79 @@ static inline float GB_wave_volumef(GB_U8 code) {
 // Channel 4 can produce bit-frequencies of 2hz-1048576hz.
 
 // Hz = 4194304 / ((2048 - (11-bit-freq)) << 5)
+
+// 4 * 1024^2 / 512
+#define FRAME_SEQUENCER_STEP_RATE 8192
+
+static void clock_square_1_vol(struct GB_Core* gb) {
+
+}
+
+static void clock_len(struct GB_Core* gb) {
+
+}
+
+static void clock_sweep(struct GB_Core* gb) {
+
+}
+
+static void clock_vol(struct GB_Core* gb) {
+
+}
+
+// this runs at 512hz
+static void step_frame_sequencer(struct GB_Core* gb, GB_U8 sequence) {
+    switch (sequence & 7) {
+        case 0: // len
+            clock_len(gb);
+            break;
+
+        case 1:
+            break;
+
+        case 2: // len, sweep
+            clock_len(gb);
+            clock_sweep(gb);
+            break;
+
+        case 3:
+            break;
+
+        case 4: // len
+            clock_len(gb);
+            break;
+
+        case 5:
+            break;
+
+        case 6: // len, sweep
+            clock_len(gb);
+            clock_sweep(gb);
+            break;
+
+        case 7: // vol
+            clock_vol(gb);
+            break;      
+    }
+
+    ++sequence;
+}
+
+static GB_U16 get_channel_1_frequency(const struct GB_Core* gb) {
+    // get the hi and low bits.
+    const GB_U16 x = ((IO_NR14.freq_msb) << 8) | IO_NR13.freq_lsb;
+    // return 131072 / (2048 - x);
+    return (2048 - x) * 4;
+}
+
+void GB_apu_on_square_1_trigger(struct GB_Core* gb) {
+    
+}
+
+void GB_apu_run(struct GB_Core* gb, GB_U16 cycles) {
+    gb->apu.next_frame_sequencer_cycles += cycles;
+
+    if (gb->apu.next_frame_sequencer_cycles >= FRAME_SEQUENCER_STEP_RATE) {
+        gb->apu.next_frame_sequencer_cycles -= FRAME_SEQUENCER_STEP_RATE;
+    }
+}

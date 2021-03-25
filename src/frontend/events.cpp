@@ -4,6 +4,7 @@
 #include "util/log.hpp"
 
 #include <cassert>
+#include <array>
 
 namespace mgb {
 
@@ -12,7 +13,7 @@ struct KeyMapEntry {
     enum GB_Button button;
 };
 
-constexpr KeyMapEntry key_map[]{
+constexpr std::array<KeyMapEntry, 8> key_map{{
     {SDLK_x, GB_BUTTON_A},
     {SDLK_z, GB_BUTTON_B},
     {SDLK_RETURN, GB_BUTTON_START},
@@ -21,7 +22,7 @@ constexpr KeyMapEntry key_map[]{
     {SDLK_UP, GB_BUTTON_UP},
     {SDLK_LEFT, GB_BUTTON_LEFT},
     {SDLK_RIGHT, GB_BUTTON_RIGHT},
-};
+}};
 
 auto App::Events() -> void {
     SDL_Event e;
@@ -178,9 +179,9 @@ auto App::OnKeyEvent(const SDL_KeyboardEvent& e) -> void {
     const GB_BOOL kdown = e.type == SDL_KEYDOWN;
 
     // first check if any of the mapped keys were pressed...
-    for (size_t i = 0; i < GB_ARR_SIZE(key_map); ++i) {
-        if (key_map[i].key == e.keysym.sym) {
-            GB_set_buttons(this->emu_instances[0].GetGB(), key_map[i].button, kdown);
+    for (auto [key, button] : key_map) {
+        if (key == e.keysym.sym) {
+            GB_set_buttons(this->emu_instances[0].GetGB(), button, kdown);
             return;
         }
     }

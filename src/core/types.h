@@ -20,10 +20,6 @@ extern "C" {
 #endif
 #endif /* GB_ENDIAN */
 
-#if defined GB_NO_STDLIB && !defined GB_CUSTOM_ALLOC
-#define GB_NO_DYNAMIC_MEMORY
-#endif /* GB_NO_STDLIB && GB_CUSTOM_ALLOC */
-
 #ifndef GB_ENDIAN
 #error GB_ENDIAN IS NOT SET! UNABLE TO DEDUCE PLATFORM ENDIANESS
 #endif /* GB_ENDIAN */
@@ -53,112 +49,6 @@ struct GB_Joypad;
 #define GB_BOOTROM_SIZE 0x100
 
 #define GB_FRAME_CPU_CYCLES 70224
-
-#define GB_MIN(x, y) (((x) < (y)) ? (x) : (y))
-#define GB_MAX(x, y) (((x) > (y)) ? (x) : (y))
-
-// msvc prepro has a hard time with (macro && macro), so they have to be
-// split into different if, else chains...
-#if defined(__has_builtin)
-#if __has_builtin(__builtin_expect)
-#define LIKELY(c) (__builtin_expect(c,1))
-#define UNLIKELY(c) (__builtin_expect(c,0))
-#else
-#define LIKELY(c) ((c))
-#define UNLIKELY(c) ((c))
-#endif // __has_builtin(__builtin_expect)
-#else
-#define LIKELY(c) ((c))
-#define UNLIKELY(c) ((c))
-#endif // __has_builtin
-
-#if defined(__has_builtin)
-#if __has_builtin(__builtin_unreachable)
-#define GB_UNREACHABLE(ret) __builtin_unreachable()
-#else
-#define GB_UNREACHABLE(ret) return ret
-#endif // __has_builtin(__builtin_unreachable)
-#else
-#define GB_UNREACHABLE(ret) return ret
-#endif // __has_builtin
-
-// todo: prefix with GB
-#define GB_UNUSED(var) ((void)(var))
-
-#define GB_ARR_SIZE(array) (sizeof(array) / sizeof(array[0]))
-
-// todo: prefix with GB
-#define IO gb->io
-// JOYPAD
-#define IO_JYP IO[0x00]
-// SERIAL
-#define IO_SB IO[0x01]
-#define IO_SC IO[0x02]
-// TIMERS
-#define IO_DIV_LOWER IO[0x03]
-#define IO_DIV_UPPER IO[0x04]
-#define IO_TIMA IO[0x05]
-#define IO_TMA IO[0x06]
-#define IO_TAC IO[0x07]
-// APU
-#define IO_NR10 IO[0x10]
-#define IO_NR11 IO[0x11]
-#define IO_NR12 IO[0x12]
-#define IO_NR13 IO[0x13]
-#define IO_NR14 IO[0x14]
-#define IO_NR21 IO[0x16]
-#define IO_NR22 IO[0x17]
-#define IO_NR23 IO[0x18]
-#define IO_NR24 IO[0x19]
-#define IO_NR30 IO[0x1A]
-#define IO_NR31 IO[0x1B]
-#define IO_NR32 IO[0x1C]
-#define IO_NR33 IO[0x1D]
-#define IO_NR34 IO[0x1E]
-#define IO_NR41 IO[0x20]
-#define IO_NR42 IO[0x21]
-#define IO_NR43 IO[0x22]
-#define IO_NR44 IO[0x23]
-#define IO_NR50 IO[0x24]
-#define IO_NR51 IO[0x25]
-#define IO_NR52 IO[0x26]
-#define IO_WAVE_TABLE (IO+0x30)
-// PPU
-#define IO_LCDC IO[0x40]
-#define IO_STAT IO[0x41]
-#define IO_SCY IO[0x42]
-#define IO_SCX IO[0x43]
-#define IO_LY IO[0x44]
-#define IO_LYC IO[0x45]
-#define IO_DMA IO[0x46]
-#define IO_BGP IO[0x47]
-#define IO_OBP0 IO[0x48]
-#define IO_OBP1 IO[0x49]
-#define IO_WY IO[0x4A]
-#define IO_WX IO[0x4B]
-#define IO_VBK IO[0x4F]
-#define IO_HDMA1 IO[0x51]
-#define IO_HDMA2 IO[0x52]
-#define IO_HDMA3 IO[0x53]
-#define IO_HDMA4 IO[0x54]
-#define IO_HDMA5 IO[0x55]
-#define IO_RP IO[0x56] // (GBC) infrared
-#define IO_BCPS IO[0x68]
-#define IO_BCPD IO[0x69]
-#define IO_OCPS IO[0x6A]
-#define IO_OCPD IO[0x6B]
-#define IO_OPRI IO[0x6C] // (GBC) object priority
-// MISC
-#define IO_SVBK IO[0x70]
-#define IO_KEY1 IO[0x4D]
-#define IO_BOOTROM IO[0x50]
-#define IO_IF IO[0x0F]
-#define IO_IE gb->hram[0x7F]
-// undocumented registers (GBC)
-#define IO_72 IO[0x72]
-#define IO_73 IO[0x73]
-#define IO_74 IO[0x74]
-#define IO_75 IO[0x75] // only bit 4-6 are usable
 
 enum GB_MbcType {
 	MBC_TYPE_NONE = 0,
@@ -585,6 +475,154 @@ struct GB_Timer {
 	GB_S16 next_cycles;
 };
 
+struct GB_ApuSquare1 {
+	struct {
+		GB_U8 : 1;
+		GB_U8 sweep_period : 3;
+		GB_U8 negate : 1;
+		GB_U8 shift : 3;
+	} nr10;
+
+	struct {
+		GB_U8 duty : 2;
+		GB_U8 length_load : 6;
+	} nr11;
+
+	struct {
+		GB_U8 starting_vol : 4;
+		GB_U8 env_add_mode : 1;
+		GB_U8 period : 3;
+	} nr12;
+
+	struct {
+		GB_U8 freq_lsb : 8;
+	} nr13;
+
+	struct {
+		GB_U8 trigger : 1;
+		GB_U8 length_enable : 1;
+		GB_U8 : 3;
+		GB_U8 freq_msb : 3;
+	} nr14;
+};
+
+struct GB_ApuSquare2 {
+	struct {
+		GB_U8 duty : 2;
+		GB_U8 length_load : 6;
+	} nr21;
+
+	struct {
+		GB_U8 starting_vol : 4;
+		GB_U8 env_add_mode : 1;
+		GB_U8 period : 3;
+	} nr22;
+
+	struct {
+		GB_U8 freq_lsb : 8;
+	} nr23;
+
+	struct {
+		GB_U8 trigger : 1;
+		GB_U8 length_enable : 1;
+		GB_U8 : 3;
+		GB_U8 freq_msb : 3;
+	} nr24;
+};
+
+struct GB_ApuWave {
+	struct {
+		GB_U8 DAC_power : 1;
+		GB_U8 : 7;
+	} nr30;
+
+	struct {
+		GB_U8 length_load : 8;
+	} nr31;
+
+	struct {
+		GB_U8 : 1;
+		GB_U8 vol_code : 2;
+		GB_U8 : 5;
+	} nr32;
+
+	struct {
+		GB_U8 freq_lsb : 8;
+	} nr33;
+
+	struct {
+		GB_U8 trigger : 1;
+		GB_U8 length_enable : 1;
+		GB_U8 : 3;
+		GB_U8 freq_msb : 3;
+	} nr34;
+};
+
+struct GB_ApuNoise {
+	struct {
+		GB_U8 : 2;
+		GB_U8 length_load : 6;
+	} nr41;
+
+	struct {
+		GB_U8 starting_vol : 4;
+		GB_U8 env_mode : 1;
+		GB_U8 period : 3;
+	} nr42;
+
+	struct {
+		GB_U8 clock_shift : 4;
+		GB_U8 width_mode : 1;
+		GB_U8 divisor_code : 3;
+	} nr43;
+
+	struct {
+		GB_U8 trigger : 1;
+		GB_U8 length_enable : 1;
+		GB_U8 : 6;
+	} nr44;
+};
+
+struct GB_ApuControl {
+	struct {
+		GB_U8 vin_l : 1;
+		GB_U8 left_vol : 3;
+		GB_U8 vin_r : 1;
+		GB_U8 right_vol : 3;
+	} nr50;
+
+	struct {
+		GB_U8 noise_left : 1;
+		GB_U8 wave_left : 1;
+		GB_U8 square2_left : 1;
+		GB_U8 square1_left : 1;
+
+		GB_U8 noise_right : 1;
+		GB_U8 wave_right : 1;
+		GB_U8 square2_right : 1;
+		GB_U8 square1_right : 1;
+	} nr51;
+
+	struct {
+		GB_U8 power : 1;
+		GB_U8 : 3;
+		GB_U8 noise : 1;
+		GB_U8 wave : 1;
+		GB_U8 square2 : 1;
+		GB_U8 square1 : 1;
+	} nr52;
+};
+
+struct GB_Apu {
+	GB_U16 next_frame_sequencer_cycles;
+	struct GB_ApuSquare1 square1;
+	struct GB_ApuSquare2 square2;
+	struct GB_ApuWave wave;
+	struct GB_ApuNoise noise;
+	struct GB_ApuControl control;
+	GB_U8 wave_ram[0x10];
+};
+
 struct GB_Core {
 	const GB_U8* mmap[0x10];
 	GB_U8 io[0x80]; // easier to have io as an array than individual bytes
@@ -592,6 +630,7 @@ struct GB_Core {
 	GB_U8 wram[8][0x1000]; // extra 6 banks in gbc
 	struct GB_Cpu cpu;
 	struct GB_Ppu ppu;
+	struct GB_Apu apu;
 	struct GB_Cart cart;
 	struct GB_Timer timer;
 	struct GB_Joypad joypad;
