@@ -149,7 +149,7 @@ GB_U8 GB_ioread(struct GB_Core* gb, GB_U16 addr) {
 			return 0xC0 | IO_NR41.length_load;
 
 		case 0x21:
-			return (IO_NR42.starting_vol << 4) | (IO_NR42.env_mode << 3) | IO_NR42.period;
+			return (IO_NR42.starting_vol << 4) | (IO_NR42.env_add_mode << 3) | IO_NR42.period;
 
 		case 0x22:
 			return (IO_NR43.clock_shift << 4) | (IO_NR43.width_mode << 3) | IO_NR43.divisor_code;
@@ -165,6 +165,11 @@ GB_U8 GB_ioread(struct GB_Core* gb, GB_U16 addr) {
 
 		case 0x26:
 			return 0x7F | (IO_NR52.power << 7);
+
+		case 0x27: case 0x28: case 0x29: case 0x2A:
+		case 0x2B: case 0x2C: case 0x2D: case 0x2E:
+		case 0x2F: case 0x1F: // unused
+			return 0xFF;
 
 		case 0x4D:
 			if (GB_is_system_gbc(gb) == GB_TRUE) {
@@ -313,7 +318,7 @@ void GB_iowrite(struct GB_Core* gb, GB_U16 addr, GB_U8 value) {
 
 		case 0x21:
 			IO_NR42.starting_vol = value >> 4;
-			IO_NR42.env_mode = (value >> 3) & 0x1;
+			IO_NR42.env_add_mode = (value >> 3) & 0x1;
 			IO_NR42.period = value & 0x7;
 			break;
 

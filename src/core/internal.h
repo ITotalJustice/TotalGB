@@ -77,7 +77,7 @@ extern "C" {
 #define IO_NR51 gb->apu.control.nr51
 #define IO_NR52 gb->apu.control.nr52
 
-#define IO_WAVE_TABLE gb->apu.wave_ram
+#define IO_WAVE_TABLE gb->apu.wave.wave_ram
 
 // PPU
 #define IO_LCDC IO[0x40]

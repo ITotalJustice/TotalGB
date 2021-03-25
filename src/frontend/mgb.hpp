@@ -14,6 +14,7 @@ extern "C" {
 struct GB_Core;
 struct GB_ErrorData;
 struct GB_Printer;
+struct GB_ApuCallbackData;
 }
 
 namespace mgb {
@@ -22,6 +23,8 @@ using u8 = std::uint8_t;
 using s8 = std::int8_t;
 using u16 = std::uint16_t;
 using s16 = std::int16_t;
+using u32 = std::uint32_t;
+using s32 = std::int32_t;
 
 enum class EmuRunState {
     NONE,
@@ -59,6 +62,7 @@ struct Instance {
 
     auto GetGB() -> GB_Core*;
 
+    auto OnAudioCallback(struct GB_ApuCallbackData* data) -> void;
     auto OnVblankCallback() -> void;
     auto OnHblankCallback() -> void;
     auto OnDmaCallback() -> void;

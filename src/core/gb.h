@@ -80,6 +80,11 @@ void GB_get_rom_info(const struct GB_Core* gb, struct GB_RomInfo* info);
 /*  */
 int GB_get_rom_name(const struct GB_Core* gb, struct GB_CartName* name);
 
+/* set a callback which will be called when apu has filled 512 stero samples. */
+/* not setting this callback is valid, just that you won't have audio... */
+/* set the cb param to NULL to remove the callback */
+void GB_set_apu_callback(struct GB_Core* gb, GB_apu_callback_t cb, void* user_data);
+
 /* set a callback which will be called when vblank happens. */
 /* set the cb param to NULL to remove the callback */
 void GB_set_vblank_callback(struct GB_Core* gb, GB_vblank_callback_t cb, void* user_data);

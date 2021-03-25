@@ -8,12 +8,32 @@
 
 #include "nativefiledialog/nfd.hpp"
 
+#include <SDL2/SDL_audio.h>
+
 #include <cstring>
 #include <cassert>
 #include <fstream>
 
 namespace mgb {
 
+// global
+static SDL_AudioDeviceID AUDIO_DEVICE_ID = 0;
+
+static void AudioCallback(struct GB_Core*, void* user_data, struct GB_ApuCallbackData* data) {
+    auto instance = static_cast<Instance*>(user_data);
+    instance->OnAudioCallback(data);
+}
+
+auto Instance::OnAudioCallback(struct GB_ApuCallbackData* data) -> void {
+    // https://wiki.libsdl.org/SDL_GetQueuedAudioSize
+    // todo: use sdl stream api instead, this delay was a temp hack
+    // for now that magically "works".
+    while ((SDL_GetQueuedAudioSize(AUDIO_DEVICE_ID)) > std::size(data->samples)) {
+        SDL_Delay(1);
+    }
+
+    SDL_QueueAudio(AUDIO_DEVICE_ID, data->samples, std::size(data->samples));
+}
 // vblank callback is to let the frontend know that it should render the screen.
 // This removes any screen tearing and changes to the pixels whilst in vblank.
 auto VblankCallback(GB_Core*, void* user) -> void {
@@ -116,6 +136,7 @@ auto Instance::LoadRom(const std::string& path) -> bool {
         GB_set_rtc_update_config(this->GetGB(), GB_RTC_UPDATE_CONFIG_USE_LOCAL_TIME);
         GB_connect_printer(this->GetGB(), this->printer.get(), NULL, NULL);
 
+        GB_set_apu_callback(this->GetGB(), AudioCallback, this);
         GB_set_vblank_callback(this->GetGB(), VblankCallback, this);
         GB_set_hblank_callback(this->GetGB(), HblankCallback, this);
         GB_set_dma_callback(this->GetGB(), DmaCallback, this);
@@ -277,8 +298,39 @@ App::App() {
             linked.major, linked.minor, linked.patch);
     }
 
-    SDL_Init(SDL_INIT_VIDEO | SDL_INIT_EVENTS | SDL_INIT_JOYSTICK | SDL_INIT_HAPTIC | SDL_INIT_GAMECONTROLLER);
+    SDL_Init(SDL_INIT_AUDIO | SDL_INIT_VIDEO | SDL_INIT_EVENTS | SDL_INIT_JOYSTICK | SDL_INIT_HAPTIC | SDL_INIT_GAMECONTROLLER);
     SDL_GameControllerAddMappingsFromFile("res/mappings/gamecontrollerdb.txt");
+
+    const SDL_AudioSpec wanted{
+        /* .freq = */ 48'000,
+        /* .format = */ AUDIO_S8,
+        // /* .format = */ AUDIO_S16LSB,
+        /* .channels = */ 2,
+        /* .silence = */ 0, // calculated
+        /* .samples = */ 1024, // 512 * 2
+        /* .padding = */ 0,
+        /* .size = */ 0, // calculated
+        /* .callback = */ NULL,
+        /* .userdata = */ NULL
+    };
+    SDL_AudioSpec obtained{};
+
+    AUDIO_DEVICE_ID = SDL_OpenAudioDevice(NULL, 0, &wanted, &obtained, SDL_AUDIO_ALLOW_SAMPLES_CHANGE);
+    // check if an audio device was failed to be found...
+    if (AUDIO_DEVICE_ID == 0) {
+        printf("failed to find valid audio device\n");
+    } else {
+        printf("\nSDL_AudioSpec:\n");
+        printf("\tfreq: %d\n", obtained.freq);
+        printf("\tformat: %d\n", obtained.format);
+        printf("\tchannels: %u\n", obtained.channels);
+        printf("\tsilence: %u\n", obtained.silence);
+        printf("\tsamples: %u\n", obtained.samples);
+        printf("\tpadding: %u\n", obtained.padding);
+        printf("\tsize: %u\n", obtained.size);
+
+        SDL_PauseAudioDevice(AUDIO_DEVICE_ID, 0);     
+    }
 }
 
 App::~App() {
@@ -298,6 +350,11 @@ App::~App() {
         p.ptr = nullptr;
     }
 
+    // close audio device if opened...
+    if (AUDIO_DEVICE_ID != 0) {
+        SDL_CloseAudioDevice(AUDIO_DEVICE_ID);
+        AUDIO_DEVICE_ID = 0;
+    }
 	SDL_Quit();
 }
 
@@ -402,8 +459,8 @@ auto App::Loop() -> void {
 
             case EmuRunState::SINGLE:
                 GB_run_frame(this->emu_instances[0].GetGB());
-                GB_run_frame(this->emu_instances[0].GetGB());
-                GB_run_frame(this->emu_instances[0].GetGB());
+                // GB_run_frame(this->emu_instances[0].GetGB());
+                // GB_run_frame(this->emu_instances[0].GetGB());
                 break;
 
             case EmuRunState::DUAL:

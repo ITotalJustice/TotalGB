@@ -1,7 +1,7 @@
 #include "gb.h"
 #include "internal.h"
 
-#include <SDL2/SDL_audio.h>
+#include <string.h>
 
 //        Square 1
 // NR10 FF10 -PPP NSSS Sweep period, negate, shift
@@ -36,64 +36,22 @@
 // NR51 FF25 NW21 NW21 Left enables, Right enables
 // NR52 FF26 P--- NW21 Power control/status, Channel length statuses
 
-/* square 1 */
-#define NR10_SWEEP 0x70
-#define NR10_NEGATE 0x08
-#define NR10_SHIFT 0x07
-#define NR11_DUTY 0xC0
-#define NR11_LENGTH_LOAD 0x3F
-#define NR12_STARTING_VOLUME 0xF0
-#define NR12_ENVELOPE_ADD_MODE 0x08
-#define NR12_PERIOD 0x07
-#define NR13_FREQ_LSB 0xFF
-#define NR14_TRIGGER 0x80
-#define NR14_LENGTH_ENABLE 0x40
-#define NR14_FREQ_MSB 0x07
+#define SQUARE1_CHANNEL gb->apu.square1
+#define SQUARE2_CHANNEL gb->apu.square2
+#define WAVE_CHANNEL gb->apu.wave
+#define NOISE_CHANNEL gb->apu.noise
+#define CONTROL_CHANNEL gb->apu.control
 
-/* square 2 */
-#define NR21_DUTY 0xC0
-#define NR21_LENGTH_LOAD 0x3F
-#define NR22_STARTING_VOLUME 0xF0
-#define NR22_ENVELOPE_ADD_MODE 0x08
-#define NR22_PERIOD 0x07
-#define NR23_FREQ_LSB 0xFF
-#define NR24_TRIGGER 0x80
-#define NR24_LENGTH_ENABLE 0x40
-#define NR24_FREQ_MSB 0x07
-
-/* wave */
-#define NR30_DAC_POWER 0x80
-#define NR31_LENGTH_LOAD 0xFF
-#define NR32_VOLUME_CODE 0x60
-#define NR33_FREQ_LSB 0xFF
-#define NR34_TRIGGER 0x80
-#define NR34_LENGTH_ENABLE 0x40
-#define NR34_FREQ_MSB 0x07
-
-/* noise */
-#define NR41_LENGTH_LOAD 0x3F
-#define NR42_STARTING_VOLUME 0xF0
-#define NR42_ENVELOPE_ADD_MODE 0x08
-#define NR42_PERIOD 0x07
-#define NR43_CLOCK_SHIFT 0xF0
-#define NR43_WIDTH_MODE 0x08
-#define NR43_DIVISOR_CODE 0x07
-#define NR44_TRIGGER 0x80
-#define NR44_LENGTH_ENABLE 0x40
-
-/* control / status */
-#define NR50_VIN_L_ENABLE 0x80
-#define NR50_LEFT_VOL 0x70
-#define NR50_VIN_R_ENABLE 0x08
-#define NR50_RIGHT_VOL 0x07
-#define NR51_LEFT_ENABLES
-#define NR51_RIGHT_ENABLES
-#define NR52_STATUS 0x80
-#define NR52_CHANNEL_LENGTH_STATUSES 0x0F
+#define SAMPLE_RATE (4194304 / 48000)
 
 /* every channel has a trigger, which is bit 7 (0x80) */
 /* when a channel is triggered, it usually resets it's values, such */
 /* as volume and timers. */
+
+enum NoiseChannelShiftWidth {
+    WIDTH_15_BITS = 0,
+    WIDTH_7_BITS = 1,
+};
 
 static inline GB_U8 GB_wave_volume(GB_U8 code) {
     /* these are volume %, so 0%, 100%... */
@@ -101,37 +59,38 @@ static inline GB_U8 GB_wave_volume(GB_U8 code) {
     return volumes[code & 0x3];
 }
 
-static inline float GB_wave_volumef(GB_U8 code) {
-    /* these are volume %, so 0%, 100%... */
-    static const float volumes[] = {0.0f, 1.0f, 0.5f, 0.25f};
-    return volumes[code & 0x3];
-}
+static inline GB_U16 get_square1_freq(const struct GB_Core* gb) { return (IO_NR14.freq_msb << 8) | IO_NR13.freq_lsb; }
+static inline GB_U16 get_square2_freq(const struct GB_Core* gb) { return (IO_NR24.freq_msb << 8) | IO_NR23.freq_lsb; }
+static inline GB_U16 get_wave_freq(const struct GB_Core* gb) { return (IO_NR34.freq_msb << 8) | IO_NR33.freq_lsb; }
 
-#define GET_CHANNEL_FREQ(num) \
-    ((IO_NR##num##4 & NR##num##4##_FREQ_MSB) << 8) | \
-    (IO_NR##num##3 & NR##num##3##_FREQ_LSB)
+static inline GB_BOOL is_square1_dac_enabled(const struct GB_Core* gb) { return IO_NR12.starting_vol > 0 || IO_NR12.env_add_mode > 0; }
+static inline GB_BOOL is_square2_dac_enabled(const struct GB_Core* gb) { return IO_NR22.starting_vol > 0 || IO_NR22.env_add_mode > 0; }
+static inline GB_BOOL is_wave_dac_enabled(const struct GB_Core* gb) { return IO_NR30.DAC_power > 0; }
+static inline GB_BOOL is_noise_dac_enabled(const struct GB_Core* gb) { return IO_NR42.starting_vol > 0 || IO_NR42.env_add_mode > 0; }
 
-#define GET_SQUARE_DUTY(num) ((IO_NR##num##1 & NR##num##1##_DUTY) >> 6)
-// #define GET_SQUARE_DUTY(num) ((IO_NR##num##1) >> 6)
+static inline GB_BOOL is_square1_enabled(const struct GB_Core* gb) { return IO_NR52.square1 > 0; }
+static inline GB_BOOL is_square2_enabled(const struct GB_Core* gb) { return IO_NR52.square2 > 0; }
+static inline GB_BOOL is_wave_enabled(const struct GB_Core* gb) { return IO_NR52.wave > 0; }
+static inline GB_BOOL is_noise_enabled(const struct GB_Core* gb) { return IO_NR52.noise > 0; }
 
-#define CHANNEL_STARTING_VOLUME(num) ((IO_NR##num##2 & NR##num##2##_STARTING_VOLUME) >> 4)
+static inline void square1_enable(struct GB_Core* gb) { IO_NR52.square1 = 1; }
+static inline void square2_enable(struct GB_Core* gb) { IO_NR52.square2 = 1; }
+static inline void wave_enable(struct GB_Core* gb) { IO_NR52.wave = 1; }
+static inline void noise_enable(struct GB_Core* gb) { IO_NR52.noise = 1; }
 
-#define CHANNEL_TRIGGER(num) ((IO_NR##num##4 & NR##num##4##_TRIGGER) > 0)
-
-#define SOUND_ENABLED() ((IO_NR52 & NR52_STATUS) > 0)
-
-#define CHANNEL_LENGTH_ENABLE(num) ((IO_NR##num##4 & NR##num##4##_LENGTH_ENABLE) > 0)
-
-#define CHANNEL_PERIOD(num) ((IO_NR##num##2 & NR##num##2##_PERIOD))
+static inline void square1_disable(struct GB_Core* gb) { IO_NR52.square1 = 0; }
+static inline void square2_disable(struct GB_Core* gb) { IO_NR52.square2 = 0; }
+static inline void wave_disable(struct GB_Core* gb) { IO_NR52.wave = 0; }
+static inline void noise_disable(struct GB_Core* gb) { IO_NR52.noise = 0; }
 
 // clocked at 512hz
 #define FRAME_SEQUENCER_CLOCK 512
 
-/*static*/ const GB_BOOL SQUARE_DUTY_CYCLE_0[8] = { 0, 0, 0, 0, 0, 0, 0, 1 };
-/*static*/ const GB_BOOL SQUARE_DUTY_CYCLE_1[8] = { 1, 0, 0, 0, 0, 0, 0, 1 };
-/*static*/ const GB_BOOL SQUARE_DUTY_CYCLE_2[8] = { 0, 0, 0, 0, 0, 1, 1, 1 };
-/*static*/ const GB_BOOL SQUARE_DUTY_CYCLE_3[8] = { 0, 1, 1, 1, 1, 1, 1, 0 };
-/*static*/ const GB_BOOL* const SQUARE_DUTY_CYCLES[4] = {
+static const GB_BOOL SQUARE_DUTY_CYCLE_0[8] = { 0, 0, 0, 0, 0, 0, 0, 1 };
+static const GB_BOOL SQUARE_DUTY_CYCLE_1[8] = { 1, 0, 0, 0, 0, 0, 0, 1 };
+static const GB_BOOL SQUARE_DUTY_CYCLE_2[8] = { 0, 0, 0, 0, 0, 1, 1, 1 };
+static const GB_BOOL SQUARE_DUTY_CYCLE_3[8] = { 0, 1, 1, 1, 1, 1, 1, 0 };
+static const GB_BOOL* const SQUARE_DUTY_CYCLES[4] = {
     SQUARE_DUTY_CYCLE_0,
     SQUARE_DUTY_CYCLE_1,
     SQUARE_DUTY_CYCLE_2,
@@ -142,10 +101,6 @@ static inline float GB_wave_volumef(GB_U8 code) {
 
 //       gb = 2048 - (131072 / Hz)
 //       Hz = 131072 / (2048 - gb)
-
-// static GB_U16 GB_apu_get_noise_freq(const struct GB_Data* gb) {
-
-// }
 
 // Channels 1-3 can produce frequencies of 64hz-131072hz
 
@@ -217,14 +172,150 @@ static GB_U16 get_channel_1_frequency(const struct GB_Core* gb) {
     return (2048 - x) * 4;
 }
 
-void GB_apu_on_square_1_trigger(struct GB_Core* gb) {
+static void on_square_1_trigger(struct GB_Core* gb) {
+    square1_enable(gb);
+
+    if (SQUARE1_CHANNEL.nr11.length_load == 0) {
+        SQUARE1_CHANNEL.nr11.length_load = 0x3F;
+    }
+    // todo:
+    // - freq timer
+    // - vol env timer
+    // - channel vol
     
+    if (is_square1_dac_enabled(gb) == GB_FALSE) {
+        square1_disable(gb);
+    }
 }
 
+static void on_square_2_trigger(struct GB_Core* gb) {
+    square2_enable(gb);
+
+    if (SQUARE2_CHANNEL.nr21.length_load == 0) {
+        SQUARE2_CHANNEL.nr21.length_load = 0x3F;
+    }
+    // todo:
+    // - freq timer
+    // - vol env timer
+    // - channel vol
+    
+    if (is_square2_dac_enabled(gb) == GB_FALSE) {
+        square2_disable(gb);
+    }
+}
+
+static void on_wave_trigger(struct GB_Core* gb) {
+    wave_enable(gb);
+
+    if (WAVE_CHANNEL.nr31.length_load == 0) {
+        WAVE_CHANNEL.nr31.length_load = 0xFF;
+    }
+    // todo:
+    // - freq timer
+    // - vol env timer
+    // - channel vol
+    
+    if (is_wave_dac_enabled(gb) == GB_FALSE) {
+        wave_disable(gb);
+    }
+}
+
+static void on_noise_trigger(struct GB_Core* gb) {
+    noise_enable(gb);
+
+    if (NOISE_CHANNEL.nr41.length_load == 0) {
+        NOISE_CHANNEL.nr41.length_load = 0x3F;
+    }
+    NOISE_CHANNEL.nr43.clock_shift = 0x0F;
+    NOISE_CHANNEL.nr43.width_mode = 0x01;
+    NOISE_CHANNEL.nr43.divisor_code = 0x07;
+    // todo:
+    // - freq timer
+    // - vol env timer
+    // - channel vol
+    
+    if (is_noise_dac_enabled(gb) == GB_FALSE) {
+        noise_disable(gb);
+    }
+}
+
+#include <stdlib.h>
+#include <stdio.h>
+
+// this is wrong but
+static GB_S8 sample_square1(struct GB_Core* gb) {
+    return SQUARE_DUTY_CYCLES[SQUARE1_CHANNEL.nr11.duty][SQUARE1_CHANNEL.duty_index] ? (SQUARE1_CHANNEL.nr12.starting_vol) : 0;
+}
+
+static GB_S8 sample_square2(struct GB_Core* gb) {
+    return SQUARE_DUTY_CYCLES[SQUARE2_CHANNEL.nr21.duty][SQUARE2_CHANNEL.duty_index] ? (SQUARE2_CHANNEL.nr22.starting_vol) : 0;
+}
+
+static GB_S8 sample_wave(struct GB_Core* gb) {
+    return 0x0000;
+}
+
+static GB_S8 sample_noise(struct GB_Core* gb) {
+    return 0x0000;
+}
+
+static void sample_channels(struct GB_Core* gb) {
+    const GB_S8 square1_sample = sample_square1(gb);
+    const GB_S8 square2_sample = sample_square2(gb);
+    const GB_S8 wave_sample = sample_wave(gb);
+    const GB_S8 noise_sample = sample_noise(gb);
+
+    const GB_S8 final_sample = (square1_sample + square2_sample) / 2;
+    gb->apu.samples[gb->apu.samples_count + 0] = final_sample;
+    gb->apu.samples[gb->apu.samples_count + 1] = final_sample;
+
+    gb->apu.samples_count += 2;
+
+    if (gb->apu.samples_count >= 1024) {
+        // printf("ye index %u sizeof %llu\n", gb->apu.samples_count, sizeof(gb->apu.samples));
+        gb->apu.samples_count -= 1024;
+        
+        if (gb->apu_cb != NULL) {
+            struct GB_ApuCallbackData data;
+            memcpy(data.samples, gb->apu.samples, sizeof(gb->apu.samples));
+            gb->apu_cb(gb, gb->apu_cb_user_data, &data);
+            // printf("sending...\n");
+        }
+    }
+}
+
+static int init_start = 0;
+
 void GB_apu_run(struct GB_Core* gb, GB_U16 cycles) {
+    // for debug...
+    if (init_start == 0) {
+        SQUARE1_CHANNEL.timer = 2048;
+        SQUARE2_CHANNEL.timer = 2048;
+        ++init_start;
+    }
+    
+    SQUARE1_CHANNEL.timer -= cycles;
+    if (SQUARE1_CHANNEL.timer <= 0) {
+        SQUARE1_CHANNEL.timer = get_square1_freq(gb);
+        ++SQUARE1_CHANNEL.duty_index;
+    }
+
+    SQUARE2_CHANNEL.timer -= cycles;
+    if (SQUARE2_CHANNEL.timer <= 0) {
+        SQUARE2_CHANNEL.timer = get_square2_freq(gb);
+        ++SQUARE2_CHANNEL.duty_index;
+    }
+
     gb->apu.next_frame_sequencer_cycles += cycles;
+    gb->apu.next_sample_cycles += cycles;
 
     if (gb->apu.next_frame_sequencer_cycles >= FRAME_SEQUENCER_STEP_RATE) {
         gb->apu.next_frame_sequencer_cycles -= FRAME_SEQUENCER_STEP_RATE;
+        step_frame_sequencer(gb, 0);
+    }
+
+    if (gb->apu.next_sample_cycles >= SAMPLE_RATE) {
+        gb->apu.next_sample_cycles -= SAMPLE_RATE;
+        sample_channels(gb);
     }
 }
