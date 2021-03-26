@@ -13,13 +13,21 @@
 #include <cstring>
 #include <cassert>
 #include <fstream>
+#include <mutex>
 
 namespace mgb {
 
 // global
 static SDL_AudioDeviceID AUDIO_DEVICE_ID = 0;
+static SDL_AudioStream* AUDIO_STREAM = NULL;
+
+static std::mutex MUTEX;
 
 static void AudioCallback(struct GB_Core*, void* user_data, struct GB_ApuCallbackData* data) {
+    // {
+    //     std::scoped_lock lock{MUTEX};
+    //     SDL_AudioStreamPut(AUDIO_STREAM, data->samples, sizeof(data->samples));
+    // }
     auto instance = static_cast<Instance*>(user_data);
     instance->OnAudioCallback(data);
 }
@@ -28,11 +36,11 @@ auto Instance::OnAudioCallback(struct GB_ApuCallbackData* data) -> void {
     // https://wiki.libsdl.org/SDL_GetQueuedAudioSize
     // todo: use sdl stream api instead, this delay was a temp hack
     // for now that magically "works".
-    while ((SDL_GetQueuedAudioSize(AUDIO_DEVICE_ID)) > std::size(data->samples)) {
+    while ((SDL_GetQueuedAudioSize(AUDIO_DEVICE_ID)) > (sizeof(data->samples) << 3)) {
         SDL_Delay(1);
     }
 
-    SDL_QueueAudio(AUDIO_DEVICE_ID, data->samples, std::size(data->samples));
+    SDL_QueueAudio(AUDIO_DEVICE_ID, data->samples, sizeof(data->samples));
 }
 // vblank callback is to let the frontend know that it should render the screen.
 // This removes any screen tearing and changes to the pixels whilst in vblank.
@@ -285,6 +293,16 @@ auto Instance::GetGB() -> GB_Core* {
     return this->gameboy.get();
 }
 
+static void sdl_audio_callback(void*, u8* stream, int len) {
+    auto data = reinterpret_cast<s8*>(stream);
+    memset(data, 0, len);
+
+    {
+        std::scoped_lock lock{MUTEX};
+        SDL_AudioStreamGet(AUDIO_STREAM, data, len);
+    }
+}
+
 App::App() {
     {
         SDL_version compiled;
@@ -304,10 +322,9 @@ App::App() {
     const SDL_AudioSpec wanted{
         /* .freq = */ 48'000,
         /* .format = */ AUDIO_S8,
-        // /* .format = */ AUDIO_S16LSB,
         /* .channels = */ 2,
         /* .silence = */ 0, // calculated
-        /* .samples = */ 1024, // 512 * 2
+        /* .samples = */ 512, // 512 * 2
         /* .padding = */ 0,
         /* .size = */ 0, // calculated
         /* .callback = */ NULL,
@@ -330,6 +347,11 @@ App::App() {
         printf("\tsize: %u\n", obtained.size);
 
         SDL_PauseAudioDevice(AUDIO_DEVICE_ID, 0);     
+
+        AUDIO_STREAM = SDL_NewAudioStream(
+            AUDIO_S8, 2, 96'000,
+            AUDIO_S8, 2, 48'000 
+        );
     }
 }
 
@@ -348,6 +370,10 @@ App::~App() {
     for (auto &p : this->controllers) {
         SDL_GameControllerClose(p.ptr);
         p.ptr = nullptr;
+    }
+
+    if (AUDIO_STREAM != nullptr) {
+        SDL_FreeAudioStream(AUDIO_STREAM);
     }
 
     // close audio device if opened...

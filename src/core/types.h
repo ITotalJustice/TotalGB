@@ -507,9 +507,14 @@ struct GB_ApuSquare1 {
 		GB_U8 freq_msb : 3;
 	} nr14;
 
+	GB_U16 freq_shadow_register;
+	GB_U8 internal_enable_flag;
+
 	GB_S16 timer;
 	GB_U8 duty_index : 3;
-	GB_U8 vol;
+	GB_U8 volume_counter : 4;
+
+	GB_U8 length_counter;
 };
 
 struct GB_ApuSquare2 {
@@ -537,7 +542,9 @@ struct GB_ApuSquare2 {
 
 	GB_S16 timer;
 	GB_U8 duty_index : 3;
-	GB_U8 vol;
+	GB_U8 volume_counter : 4;
+
+	GB_U8 length_counter;
 };
 
 struct GB_ApuWave {
@@ -569,8 +576,12 @@ struct GB_ApuWave {
 
 	GB_U8 wave_ram[0x10];
 
-	GB_U16 timer : 11;
-	GB_U8 vol;
+	GB_U16 length_counter : 9;
+	GB_U8 sample_buffer;
+	GB_U8 position_counter : 6;
+
+	GB_S16 timer;
+	GB_U8 volume_counter : 4;
 };
 
 struct GB_ApuNoise {
@@ -597,7 +608,11 @@ struct GB_ApuNoise {
 		GB_U8 : 6;
 	} nr44;
 
-	GB_U8 vol;
+	GB_U16 LFSR;
+	
+	GB_U8 volume_counter : 4;
+
+	GB_U8 length_counter;
 };
 
 struct GB_ApuControl {
@@ -643,6 +658,8 @@ struct GB_Apu {
 	struct GB_ApuWave wave;
 	struct GB_ApuNoise noise;
 	struct GB_ApuControl control;
+
+	GB_U8 frame_sequencer_counter : 3;
 
 	// stero samples built up (512 * 2)
 	GB_S8 samples[512 * 2];

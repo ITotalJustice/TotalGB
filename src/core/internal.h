@@ -133,6 +133,9 @@ void GB_write8(struct GB_Core* gb, GB_U16 addr, GB_U8 value);
 GB_U16 GB_read16(struct GB_Core* gb, GB_U16 addr);
 void GB_write16(struct GB_Core* gb, GB_U16 addr, GB_U16 value);
 
+GB_U8 GB_apu_ioread(const struct GB_Core* gb, const GB_U16 addr);
+void GB_apu_iowrite(struct GB_Core* gb, const GB_U16 addr, const GB_U8 value);
+
 GB_U8 GB_serial_sb_read(const struct GB_Core* gb);
 void GB_serial_sc_write(struct GB_Core* gb, const GB_U8 data);
 
