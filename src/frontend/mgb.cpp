@@ -13,21 +13,14 @@
 #include <cstring>
 #include <cassert>
 #include <fstream>
-#include <mutex>
 
 namespace mgb {
 
 // global
 static SDL_AudioDeviceID AUDIO_DEVICE_ID = 0;
-static SDL_AudioStream* AUDIO_STREAM = NULL;
 
-static std::mutex MUTEX;
 
 static void AudioCallback(struct GB_Core*, void* user_data, struct GB_ApuCallbackData* data) {
-    // {
-    //     std::scoped_lock lock{MUTEX};
-    //     SDL_AudioStreamPut(AUDIO_STREAM, data->samples, sizeof(data->samples));
-    // }
     auto instance = static_cast<Instance*>(user_data);
     instance->OnAudioCallback(data);
 }
@@ -104,7 +97,7 @@ auto Instance::OnHaltCallback() -> void {
 }
 
 auto Instance::OnStopCallback() -> void {
-    printf("[ERROR] cpu stop instruction called!\n");
+    printf("[WARN] cpu stop instruction called!\n");
 }
 
 auto Instance::OnErrorCallback(struct GB_ErrorData* data) -> void {
@@ -293,16 +286,6 @@ auto Instance::GetGB() -> GB_Core* {
     return this->gameboy.get();
 }
 
-static void sdl_audio_callback(void*, u8* stream, int len) {
-    auto data = reinterpret_cast<s8*>(stream);
-    memset(data, 0, len);
-
-    {
-        std::scoped_lock lock{MUTEX};
-        SDL_AudioStreamGet(AUDIO_STREAM, data, len);
-    }
-}
-
 App::App() {
     {
         SDL_version compiled;
@@ -324,7 +307,7 @@ App::App() {
         /* .format = */ AUDIO_S8,
         /* .channels = */ 2,
         /* .silence = */ 0, // calculated
-        /* .samples = */ 512, // 512 * 2
+        /* .samples = */ 512, // 512 * 2 (because stereo)
         /* .padding = */ 0,
         /* .size = */ 0, // calculated
         /* .callback = */ NULL,
@@ -346,12 +329,7 @@ App::App() {
         printf("\tpadding: %u\n", obtained.padding);
         printf("\tsize: %u\n", obtained.size);
 
-        SDL_PauseAudioDevice(AUDIO_DEVICE_ID, 0);     
-
-        AUDIO_STREAM = SDL_NewAudioStream(
-            AUDIO_S8, 2, 96'000,
-            AUDIO_S8, 2, 48'000 
-        );
+        SDL_PauseAudioDevice(AUDIO_DEVICE_ID, 0);
     }
 }
 
@@ -372,15 +350,12 @@ App::~App() {
         p.ptr = nullptr;
     }
 
-    if (AUDIO_STREAM != nullptr) {
-        SDL_FreeAudioStream(AUDIO_STREAM);
-    }
-
     // close audio device if opened...
     if (AUDIO_DEVICE_ID != 0) {
         SDL_CloseAudioDevice(AUDIO_DEVICE_ID);
         AUDIO_DEVICE_ID = 0;
     }
+    
 	SDL_Quit();
 }
 
