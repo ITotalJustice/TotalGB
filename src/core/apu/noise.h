@@ -68,7 +68,7 @@ static inline void clock_noise_vol(struct GB_Core* gb) {
         --NOISE_CHANNEL.volume_timer;
 
         if (NOISE_CHANNEL.volume_timer <= 0) {
-            NOISE_CHANNEL.volume_timer = IO_NR42.period;
+            NOISE_CHANNEL.volume_timer = IO_NR42.period == 0 ? 8 : IO_NR42.period;
 
             if (IO_NR42.period != 0) {
                 GB_U8 new_vol = NOISE_CHANNEL.volume;

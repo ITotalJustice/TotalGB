@@ -51,7 +51,7 @@ static inline void clock_square2_vol(struct GB_Core* gb) {
         --SQUARE2_CHANNEL.volume_timer;
 
         if (SQUARE2_CHANNEL.volume_timer <= 0) {
-            SQUARE2_CHANNEL.volume_timer = IO_NR22.period;
+            SQUARE2_CHANNEL.volume_timer = IO_NR22.period == 0 ? 8 : IO_NR22.period;
 
             if (IO_NR22.period != 0) {
                 GB_U8 new_vol = SQUARE2_CHANNEL.volume;

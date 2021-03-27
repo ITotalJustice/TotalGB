@@ -51,7 +51,7 @@ static inline void clock_square1_vol(struct GB_Core* gb) {
         --SQUARE1_CHANNEL.volume_timer;
 
         if (SQUARE1_CHANNEL.volume_timer <= 0) {
-            SQUARE1_CHANNEL.volume_timer = IO_NR12.period;
+            SQUARE1_CHANNEL.volume_timer = IO_NR12.period == 0 ? 8 : IO_NR12.period;
 
             if (IO_NR12.period != 0) {
                 GB_U8 new_vol = SQUARE1_CHANNEL.volume;
@@ -116,7 +116,7 @@ static inline void on_square1_trigger(struct GB_Core* gb) {
     // reload the timer with freq
     SQUARE1_CHANNEL.timer = get_square1_freq(gb);
     // reload sweep timer with period
-    SQUARE1_CHANNEL.sweep_timer = IO_NR10.sweep_period;
+    SQUARE1_CHANNEL.sweep_timer = IO_NR10.sweep_period == 0 ? 8 : IO_NR10.sweep_period;
     // the freq is loaded into the shadow_freq_reg
     SQUARE1_CHANNEL.freq_shadow_register = (IO_NR14.freq_msb << 8) | IO_NR13.freq_lsb;
     // internal flag is set is period or shift is non zero
