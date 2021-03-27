@@ -118,6 +118,9 @@
     <Filter Include="Header Files\core\accessories">
       <UniqueIdentifier>{2eb6d946-9714-42f9-840f-9d0961d43b3a}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Header Files\core\apu">
+      <UniqueIdentifier>{35787702-5161-4818-8569-c5f1a0c81c40}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\src\core\apu.c">
@@ -607,6 +610,24 @@
     </ClInclude>
     <ClInclude Include="..\..\src\core\accessories\printer.h">
       <Filter>Header Files\core\accessories</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\core\apu\common.h">
+      <Filter>Header Files\core\apu</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\core\apu\noise.h">
+      <Filter>Header Files\core\apu</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\core\apu\square_common.h">
+      <Filter>Header Files\core\apu</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\core\apu\square1.h">
+      <Filter>Header Files\core\apu</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\core\apu\square2.h">
+      <Filter>Header Files\core\apu</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\core\apu\wave.h">
+      <Filter>Header Files\core\apu</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

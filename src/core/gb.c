@@ -621,6 +621,11 @@ void GB_disable_interrupt(struct GB_Core* gb, const enum GB_Interrupts interrupt
 	IO_IF &= ~(interrupt);
 }
 
+void GB_set_apu_callback(struct GB_Core* gb, GB_apu_callback_t cb, void* user_data) {
+	gb->apu_cb = cb;
+	gb->apu_cb_user_data = user_data;
+}
+
 void GB_set_vblank_callback(struct GB_Core* gb, GB_vblank_callback_t cb, void* user_data) {
 	gb->vblank_cb = cb;
 	gb->vblank_cb_user_data = user_data;

@@ -252,6 +252,12 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\src\core\accessories\printer.h" />
+    <ClInclude Include="..\..\src\core\apu\common.h" />
+    <ClInclude Include="..\..\src\core\apu\noise.h" />
+    <ClInclude Include="..\..\src\core\apu\square1.h" />
+    <ClInclude Include="..\..\src\core\apu\square2.h" />
+    <ClInclude Include="..\..\src\core\apu\square_common.h" />
+    <ClInclude Include="..\..\src\core\apu\wave.h" />
     <ClInclude Include="..\..\src\core\gb.h" />
     <ClInclude Include="..\..\src\core\internal.h" />
     <ClInclude Include="..\..\src\core\mbc\common.h" />

@@ -34,9 +34,17 @@ extern "C" {
 #define GB_UNREACHABLE(ret) return ret
 #endif // __has_builtin
 
+// used mainly in debugging when i want to quickly silence
+// the compiler about unsed vars.
 #define GB_UNUSED(var) ((void)(var))
 
+// ONLY use this for C-arrays, not pointers, not structs
 #define GB_ARR_SIZE(array) (sizeof(array) / sizeof(array[0]))
+
+// 4-mhz
+#define DMG_CPU_CLOCK 4194304
+// 8-mhz
+#define GBC_CPU_CLOCK (DMG_CPU_CLOCK << 1)
 
 #define IO gb->io
 // JOYPAD
@@ -50,35 +58,33 @@ extern "C" {
 #define IO_TIMA IO[0x05]
 #define IO_TMA IO[0x06]
 #define IO_TAC IO[0x07]
-// APU
+// APU (square1)
 #define IO_NR10 gb->apu.square1.nr10
 #define IO_NR11 gb->apu.square1.nr11
 #define IO_NR12 gb->apu.square1.nr12
 #define IO_NR13 gb->apu.square1.nr13
 #define IO_NR14 gb->apu.square1.nr14
-
+// APU (square2)
 #define IO_NR21 gb->apu.square2.nr21
 #define IO_NR22 gb->apu.square2.nr22
 #define IO_NR23 gb->apu.square2.nr23
 #define IO_NR24 gb->apu.square2.nr24
-
+// APU (wave)
 #define IO_NR30 gb->apu.wave.nr30
 #define IO_NR31 gb->apu.wave.nr31
 #define IO_NR32 gb->apu.wave.nr32
 #define IO_NR33 gb->apu.wave.nr33
 #define IO_NR34 gb->apu.wave.nr34
-
+#define IO_WAVE_TABLE gb->apu.wave.wave_ram
+// APU (noise)
 #define IO_NR41 gb->apu.noise.nr41
 #define IO_NR42 gb->apu.noise.nr42
 #define IO_NR43 gb->apu.noise.nr43
 #define IO_NR44 gb->apu.noise.nr44
-
+// APU (control)
 #define IO_NR50 gb->apu.control.nr50
 #define IO_NR51 gb->apu.control.nr51
 #define IO_NR52 gb->apu.control.nr52
-
-#define IO_WAVE_TABLE gb->apu.wave_ram
-
 // PPU
 #define IO_LCDC IO[0x40]
 #define IO_STAT IO[0x41]
@@ -132,6 +138,9 @@ GB_U8 GB_read8(struct GB_Core* gb, const GB_U16 addr);
 void GB_write8(struct GB_Core* gb, GB_U16 addr, GB_U8 value);
 GB_U16 GB_read16(struct GB_Core* gb, GB_U16 addr);
 void GB_write16(struct GB_Core* gb, GB_U16 addr, GB_U16 value);
+
+GB_U8 GB_apu_ioread(const struct GB_Core* gb, const GB_U16 addr);
+void GB_apu_iowrite(struct GB_Core* gb, const GB_U16 addr, const GB_U8 value);
 
 GB_U8 GB_serial_sb_read(const struct GB_Core* gb);
 void GB_serial_sc_write(struct GB_Core* gb, const GB_U8 data);

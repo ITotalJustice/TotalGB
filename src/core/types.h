@@ -25,23 +25,23 @@ extern "C" {
 #endif /* GB_ENDIAN */
 
 #include <stdint.h>
-typedef uint8_t GB_U8;
-typedef uint16_t GB_U16;
-typedef uint32_t GB_U32;
-typedef int8_t GB_S8;
-typedef int16_t GB_S16;
-typedef int32_t GB_S32;
+typedef uint8_t GB_U8;		typedef int8_t GB_S8;
+typedef uint16_t GB_U16;	typedef int16_t GB_S16;
+typedef uint32_t GB_U32;	typedef int32_t GB_S32;
 
 #define GB_TRUE 1
 #define GB_FALSE 0
 typedef GB_U8 GB_BOOL;
 
-// fwd declare structs (will split into sep .c/.h soon)
+// fwd declare structs
 struct GB_Core;
 struct GB_Rtc;
 struct GB_Sprite;
 struct GB_CartHeader;
 struct GB_Joypad;
+struct GB_ApuCallbackData;
+struct GB_Config;
+struct GB_ErrorData;
 
 #define GB_SCREEN_WIDTH 160
 #define GB_SCREEN_HEIGHT 144
@@ -268,6 +268,8 @@ struct GB_ErrorData {
 	};
 };
 
+// user-set callbacks
+typedef void(*GB_apu_callback_t)(struct GB_Core* gb, void* user, struct GB_ApuCallbackData* data);
 typedef void(*GB_vblank_callback_t)(struct GB_Core* gb, void* user);
 typedef void(*GB_hblank_callback_t)(struct GB_Core* gb, void* user);
 typedef void(*GB_dma_callback_t)(struct GB_Core* gb, void* user);
@@ -504,6 +506,19 @@ struct GB_ApuSquare1 {
 		GB_U8 : 3;
 		GB_U8 freq_msb : 3;
 	} nr14;
+
+	GB_U16 freq_shadow_register;
+	GB_U8 internal_enable_flag;
+
+	GB_S16 timer;
+	GB_S8 volume_timer;
+	GB_U8 duty_index : 3;
+	GB_U8 volume : 4;
+	GB_BOOL disable_env : 1;
+
+	GB_S8 sweep_timer;
+
+	GB_U8 length_counter;
 };
 
 struct GB_ApuSquare2 {
@@ -528,6 +543,14 @@ struct GB_ApuSquare2 {
 		GB_U8 : 3;
 		GB_U8 freq_msb : 3;
 	} nr24;
+
+	GB_S16 timer;
+	GB_S8 volume_timer;
+	GB_U8 duty_index : 3;
+	GB_U8 volume : 4;
+	GB_BOOL disable_env : 1;
+
+	GB_U8 length_counter;
 };
 
 struct GB_ApuWave {
@@ -556,6 +579,14 @@ struct GB_ApuWave {
 		GB_U8 : 3;
 		GB_U8 freq_msb : 3;
 	} nr34;
+
+	GB_U8 wave_ram[0x10];
+
+	GB_U16 length_counter : 9;
+	GB_U8 sample_buffer;
+	GB_U8 position_counter : 6;
+
+	GB_S16 timer;
 };
 
 struct GB_ApuNoise {
@@ -566,7 +597,7 @@ struct GB_ApuNoise {
 
 	struct {
 		GB_U8 starting_vol : 4;
-		GB_U8 env_mode : 1;
+		GB_U8 env_add_mode : 1;
 		GB_U8 period : 3;
 	} nr42;
 
@@ -581,6 +612,17 @@ struct GB_ApuNoise {
 		GB_U8 length_enable : 1;
 		GB_U8 : 6;
 	} nr44;
+
+	// noise channel can run as fast as (4194304 / 8) = 524,288
+	GB_S32 timer;
+
+	GB_U16 LFSR : 15;
+
+	GB_S8 volume_timer;
+	GB_U8 volume : 4;
+	GB_BOOL disable_env : 1;
+
+	GB_U8 length_counter;
 };
 
 struct GB_ApuControl {
@@ -613,14 +655,26 @@ struct GB_ApuControl {
 	} nr52;
 };
 
+struct GB_ApuCallbackData {
+	GB_S8 samples[512 * 2];
+};
+
 struct GB_Apu {
 	GB_U16 next_frame_sequencer_cycles;
+	GB_U16 next_sample_cycles;
+
 	struct GB_ApuSquare1 square1;
 	struct GB_ApuSquare2 square2;
 	struct GB_ApuWave wave;
 	struct GB_ApuNoise noise;
 	struct GB_ApuControl control;
-	GB_U8 wave_ram[0x10];
+
+	GB_U8 frame_sequencer_counter : 3;
+
+	// stero samples built up (512 * 2)
+	GB_S8 samples[512 * 2];
+	// counter for how many samples we have
+	GB_U16 samples_count;
 };
 
 struct GB_Core {
@@ -640,6 +694,9 @@ struct GB_Core {
 	enum GB_SystemType system_type; // set by the rom itself
 
 	struct GB_Config config;
+
+	GB_apu_callback_t apu_cb;
+	void* apu_cb_user_data;
 
 	GB_serial_transfer_t link_cable;
 	void* link_cable_user_data;
