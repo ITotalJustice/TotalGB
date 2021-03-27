@@ -267,7 +267,7 @@ GB_U8 GB_apu_ioread(const struct GB_Core* gb, const GB_U16 addr) {
 			return (IO_NR51.noise_left << 7) | (IO_NR51.wave_left << 6) | (IO_NR51.square1_left << 5) | (IO_NR51.square2_left << 4) | (IO_NR51.noise_right << 3) | (IO_NR51.wave_right << 2) | (IO_NR51.square1_right << 1) | IO_NR51.square2_right;
 
 		case 0x26:
-			return 0x7F | (IO_NR52.power << 7);
+			return 0x70 | (IO_NR52.power << 7) | (IO_NR52.noise << 3) | (IO_NR52.wave << 2) | (IO_NR52.square2 << 1) | (IO_NR52.square1);
 	
         case 0x30: case 0x31: case 0x32: case 0x33:
         case 0x34: case 0x35: case 0x36: case 0x37:
