@@ -92,10 +92,11 @@ GB_U8 GB_ioread(struct GB_Core* gb, GB_U16 addr) {
 			return GB_joypad_get(gb);
 
 		case 0x01:
-			return GB_serial_sb_read(gb);
+			return 0xFF;
+			// return GB_serial_sb_read(gb);
 
-		// case 0x02:
-		// 	return 0xFF;
+		case 0x02:
+			return 0xFF;
 
 		case 0x03:
 			return 0xFF;

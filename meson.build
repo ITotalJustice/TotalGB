@@ -162,7 +162,10 @@ cflags = [
     '-DNOCRYPT',
 
     # speedhacks
-    '-DGB_RTC_SPEEDHACK=1'
+    '-DGB_RTC_SPEEDHACK=1',
+
+    # sdl_thread audio (race condition!)
+    # '-DGB_SDL_AUDIO_CALLBACK=1',
 ]
 
 cppflags = [

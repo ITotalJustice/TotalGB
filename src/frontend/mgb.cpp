@@ -29,7 +29,7 @@ auto Instance::OnAudioCallback(struct GB_ApuCallbackData* data) -> void {
     // https://wiki.libsdl.org/SDL_GetQueuedAudioSize
     // todo: use sdl stream api instead, this delay was a temp hack
     // for now that magically "works".
-    while ((SDL_GetQueuedAudioSize(AUDIO_DEVICE_ID)) > (sizeof(data->samples) << 3)) {
+    while ((SDL_GetQueuedAudioSize(AUDIO_DEVICE_ID)) > (1024 << 2)) {
         SDL_Delay(1);
     }
 
@@ -286,6 +286,14 @@ auto Instance::GetGB() -> GB_Core* {
     return this->gameboy.get();
 }
 
+#ifdef GB_SDL_AUDIO_CALLBACK
+static void AudioCallback(void* user, u8* buf, int len) {
+    auto instance = static_cast<Instance*>(user);
+    memset(buf, 0, len);
+    GB_SDL_audio_callback(instance->GetGB(), (s8*)buf, len);
+}
+#endif // GB_SDL_AUDIO_CALLBACK
+
 App::App() {
     {
         SDL_version compiled;
@@ -307,15 +315,20 @@ App::App() {
         /* .format = */ AUDIO_S8,
         /* .channels = */ 2,
         /* .silence = */ 0, // calculated
-        /* .samples = */ 512, // 512 * 2 (because stereo)
+        /* .samples = */ 1024, // 512 * 2 (because stereo)
         /* .padding = */ 0,
         /* .size = */ 0, // calculated
+#ifndef GB_SDL_AUDIO_CALLBACK
         /* .callback = */ NULL,
         /* .userdata = */ NULL
+#else
+        /* .callback = */ AudioCallback,
+        /* .userdata = */ &this->emu_instances[0]
+#endif // GB_SDL_AUDIO_CALLBACK
     };
     SDL_AudioSpec obtained{};
 
-    AUDIO_DEVICE_ID = SDL_OpenAudioDevice(NULL, 0, &wanted, &obtained, SDL_AUDIO_ALLOW_SAMPLES_CHANGE);
+    AUDIO_DEVICE_ID = SDL_OpenAudioDevice(NULL, 0, &wanted, &obtained, 0);
     // check if an audio device was failed to be found...
     if (AUDIO_DEVICE_ID == 0) {
         printf("failed to find valid audio device\n");

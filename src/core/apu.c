@@ -95,8 +95,8 @@ static void sample_channels(struct GB_Core* gb) {
     gb->apu.samples_count += 2;
 
     // check if we filled the buffer
-    if (gb->apu.samples_count >= 1024) {
-        gb->apu.samples_count -= 1024;
+    if (gb->apu.samples_count >= sizeof(gb->apu.samples)) {
+        gb->apu.samples_count -= sizeof(gb->apu.samples);
         
         // make sure the frontend did set a callback!
         if (gb->apu_cb != NULL) {
@@ -109,6 +109,56 @@ static void sample_channels(struct GB_Core* gb) {
     }
 }
 
+#define TEST (96000 / 2048)
+
+#ifdef GB_SDL_AUDIO_CALLBACK
+void GB_SDL_audio_callback(struct GB_Core* gb, GB_S8* buf, int len) {
+
+    for (int i = 0; i < len; i += 2) {
+        gb->apu.next_frame_sequencer_cycles += 1;
+        if (gb->apu.next_frame_sequencer_cycles >= (48000)) {
+            gb->apu.next_frame_sequencer_cycles -= (48000);
+            step_frame_sequencer(gb);
+        }
+
+        SQUARE1_CHANNEL.timer -= 100;
+        if (SQUARE1_CHANNEL.timer <= 0) {
+            SQUARE1_CHANNEL.timer = get_square1_freq(gb);
+            ++SQUARE1_CHANNEL.duty_index;
+        }
+
+        SQUARE2_CHANNEL.timer -= 100;
+        if (SQUARE2_CHANNEL.timer <= 0) {
+            SQUARE2_CHANNEL.timer = get_square2_freq(gb);
+            ++SQUARE2_CHANNEL.duty_index;
+        }
+
+        WAVE_CHANNEL.timer -= 100;
+        if (WAVE_CHANNEL.timer <= 0) {
+            WAVE_CHANNEL.timer = get_wave_freq(gb);
+            advance_wave_position_counter(gb);
+        }
+
+        NOISE_CHANNEL.timer -= 100;
+        if (NOISE_CHANNEL.timer <= 0) {
+            NOISE_CHANNEL.timer = get_noise_freq(gb);
+            step_noise_lfsr(gb);
+        }
+
+        const GB_S8 square1_sample = sample_square1(gb) * is_square1_enabled(gb);
+        const GB_S8 square2_sample = sample_square2(gb) * is_square2_enabled(gb);
+        const GB_S8 wave_sample = sample_wave(gb) * is_wave_enabled(gb);
+        const GB_S8 noise_sample = sample_noise(gb) * is_noise_enabled(gb);
+
+        const GB_S8 final_sample_left = (((square1_sample * IO_NR51.square1_left) + (square2_sample * IO_NR51.square2_left) + (wave_sample * IO_NR51.wave_left) + (noise_sample * IO_NR51.noise_left))/4) * CONTROL_CHANNEL.nr50.left_vol;
+        const GB_S8 final_sample_right = (((square1_sample * IO_NR51.square1_right) + (square2_sample * IO_NR51.square2_right) + (wave_sample * IO_NR51.wave_right) + (noise_sample * IO_NR51.noise_right))/4) * CONTROL_CHANNEL.nr50.right_vol;
+
+        buf[i] = final_sample_left;
+        buf[i + 1] = final_sample_right;
+    }
+}
+#endif // GB_SDL_AUDIO_CALLBACK
+
 void GB_apu_run(struct GB_Core* gb, GB_U16 cycles) {
     // for debug...
     static int init_start = 0;
@@ -119,6 +169,7 @@ void GB_apu_run(struct GB_Core* gb, GB_U16 cycles) {
         ++init_start;
     }
     
+#ifndef GB_SDL_AUDIO_CALLBACK
     // tick all the channels!
 
     SQUARE1_CHANNEL.timer -= cycles;
@@ -145,25 +196,25 @@ void GB_apu_run(struct GB_Core* gb, GB_U16 cycles) {
         step_noise_lfsr(gb);
     }
 
-    gb->apu.next_frame_sequencer_cycles += cycles;
-    gb->apu.next_sample_cycles += cycles;
-
     // check if we need to tick the frame sequencer!
+    gb->apu.next_frame_sequencer_cycles += cycles;
     if (gb->apu.next_frame_sequencer_cycles >= FRAME_SEQUENCER_STEP_RATE) {
         gb->apu.next_frame_sequencer_cycles -= FRAME_SEQUENCER_STEP_RATE;
         step_frame_sequencer(gb);
     }
 
     // see if it's time to create a new sample!
+    gb->apu.next_sample_cycles += cycles;
     if (gb->apu.next_sample_cycles >= SAMPLE_RATE) {
         gb->apu.next_sample_cycles -= SAMPLE_RATE;
         sample_channels(gb);
     }
+#endif // GB_SDL_AUDIO_CALLBACK
 }
 
 // IO read / writes
 GB_U8 GB_apu_ioread(const struct GB_Core* gb, const GB_U16 addr) {
-	switch (addr & 0x7F) {
+    switch (addr & 0x7F) {
 		case 0x10:
 			return 0x80 | (IO_NR10.sweep_period << 4) | (IO_NR10.negate << 3) | IO_NR10.shift;
 

@@ -146,6 +146,13 @@ GB_U8 GB_cpu_get_register(const struct GB_Core* gb, enum GB_CpuRegisters reg);
 void GB_cpu_set_register_pair(struct GB_Core* gb, enum GB_CpuRegisterPairs pair, GB_U16 value);
 GB_U16 GB_cpu_get_register_pair(const struct GB_Core* gb, enum GB_CpuRegisterPairs pair);
 
+// this is a race condition, but should solve audio pops for now
+// until i have audio drive the entire core...
+
+#ifdef GB_SDL_AUDIO_CALLBACK
+void GB_SDL_audio_callback(struct GB_Core* gb, GB_S8* buf, int len);
+#endif // GB_SDL_AUDIO_CALLBACK
+
 #ifdef __cplusplus
 }
 #endif
