@@ -1,5 +1,9 @@
 #pragma once
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include "../types.h"
 
 // indexed using the square duty code and duty cycle
@@ -13,3 +17,7 @@ static const GB_BOOL* const SQUARE_DUTY_CYCLES[4] = {
     SQUARE_DUTY_CYCLE_2,
     SQUARE_DUTY_CYCLE_3
 };
+
+#ifdef __cplusplus
+}
+#endif

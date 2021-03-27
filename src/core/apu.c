@@ -17,7 +17,7 @@ static inline void clock_len(struct GB_Core* gb) {
 }
 
 static inline void clock_sweep(struct GB_Core* gb) {
-    do_freq_sweep_calc(gb);
+    on_square1_sweep(gb);
 }
 
 static inline void clock_vol(struct GB_Core* gb) {
@@ -71,14 +71,21 @@ static void sample_channels(struct GB_Core* gb) {
     const GB_S8 noise_sample = sample_noise(gb) * is_noise_enabled(gb);
 
 // for testing, test all channels VS test everything but wave channel...
-#if 0
+#define MODE 1
+#if MODE == 0
     const GB_S8 final_sample_left = (((square1_sample * IO_NR51.square1_left) + (square2_sample * IO_NR51.square2_left) + (wave_sample * IO_NR51.wave_left) + (noise_sample * IO_NR51.noise_left)) / 4) * CONTROL_CHANNEL.nr50.left_vol;
     const GB_S8 final_sample_right = (((square1_sample * IO_NR51.square1_right) + (square2_sample * IO_NR51.square2_right) + (wave_sample * IO_NR51.wave_right) + (noise_sample * IO_NR51.noise_right)) / 4) * CONTROL_CHANNEL.nr50.right_vol;
-#else
+#elif MODE == 1
     GB_UNUSED(wave_sample);
     const GB_S8 final_sample_left = (((square1_sample * IO_NR51.square1_left) + (square2_sample * IO_NR51.square2_left) + (noise_sample * IO_NR51.noise_left)) / 3) * CONTROL_CHANNEL.nr50.left_vol;
     const GB_S8 final_sample_right = (((square1_sample * IO_NR51.square1_right) + (square2_sample * IO_NR51.square2_right) + (noise_sample * IO_NR51.noise_right)) / 3) * CONTROL_CHANNEL.nr50.right_vol;
+#elif MODE == 2
+    GB_UNUSED(wave_sample);
+    GB_UNUSED(noise_sample);
+    const GB_S8 final_sample_left = (((square1_sample * IO_NR51.square1_left) + (square2_sample * IO_NR51.square2_left)) / 2) * CONTROL_CHANNEL.nr50.left_vol;
+    const GB_S8 final_sample_right = (((square1_sample * IO_NR51.square1_right) + (square2_sample * IO_NR51.square2_right)) / 2) * CONTROL_CHANNEL.nr50.right_vol;
 #endif
+#undef MODE
 
     // store the samples in the buffer, remember this is stereo!
     gb->apu.samples[gb->apu.samples_count + 0] = final_sample_left;
@@ -102,6 +109,59 @@ static void sample_channels(struct GB_Core* gb) {
     }
 }
 
+void GB_apu_run(struct GB_Core* gb, GB_U16 cycles) {
+    // for debug...
+    static int init_start = 0;
+    if (init_start == 0) {
+        SQUARE1_CHANNEL.timer = 2048;
+        SQUARE2_CHANNEL.timer = 2048;
+        WAVE_CHANNEL.timer = 2048;
+        ++init_start;
+    }
+    
+    // tick all the channels!
+
+    SQUARE1_CHANNEL.timer -= cycles;
+    if (SQUARE1_CHANNEL.timer <= 0) {
+        SQUARE1_CHANNEL.timer = get_square1_freq(gb);
+        ++SQUARE1_CHANNEL.duty_index;
+    }
+
+    SQUARE2_CHANNEL.timer -= cycles;
+    if (SQUARE2_CHANNEL.timer <= 0) {
+        SQUARE2_CHANNEL.timer = get_square2_freq(gb);
+        ++SQUARE2_CHANNEL.duty_index;
+    }
+
+    WAVE_CHANNEL.timer -= cycles;
+    if (WAVE_CHANNEL.timer <= 0) {
+        WAVE_CHANNEL.timer = get_wave_freq(gb);
+        advance_wave_position_counter(gb);
+    }
+
+    NOISE_CHANNEL.timer -= cycles;
+    if (NOISE_CHANNEL.timer <= 0) {
+        NOISE_CHANNEL.timer = get_noise_freq(gb);
+        step_noise_lfsr(gb);
+    }
+
+    gb->apu.next_frame_sequencer_cycles += cycles;
+    gb->apu.next_sample_cycles += cycles;
+
+    // check if we need to tick the frame sequencer!
+    if (gb->apu.next_frame_sequencer_cycles >= FRAME_SEQUENCER_STEP_RATE) {
+        gb->apu.next_frame_sequencer_cycles -= FRAME_SEQUENCER_STEP_RATE;
+        step_frame_sequencer(gb);
+    }
+
+    // see if it's time to create a new sample!
+    if (gb->apu.next_sample_cycles >= SAMPLE_RATE) {
+        gb->apu.next_sample_cycles -= SAMPLE_RATE;
+        sample_channels(gb);
+    }
+}
+
+// IO read / writes
 GB_U8 GB_apu_ioread(const struct GB_Core* gb, const GB_U16 addr) {
 	switch (addr & 0x7F) {
 		case 0x10:
@@ -319,50 +379,4 @@ void GB_apu_iowrite(struct GB_Core* gb, const GB_U16 addr, const GB_U8 value) {
             IO_WAVE_TABLE[WAVE_CHANNEL.position_counter >> 1] = value;
             break;
 	}
-}
-
-void GB_apu_run(struct GB_Core* gb, GB_U16 cycles) {
-    // for debug...
-    static int init_start = 0;
-    if (init_start == 0) {
-        SQUARE1_CHANNEL.timer = 2048;
-        SQUARE2_CHANNEL.timer = 2048;
-        WAVE_CHANNEL.timer = 2048;
-        ++init_start;
-    }
-    
-    // tick all the channels!
-
-    SQUARE1_CHANNEL.timer -= cycles;
-    if (SQUARE1_CHANNEL.timer <= 0) {
-        SQUARE1_CHANNEL.timer = get_square1_freq(gb);
-        ++SQUARE1_CHANNEL.duty_index;
-    }
-
-    SQUARE2_CHANNEL.timer -= cycles;
-    if (SQUARE2_CHANNEL.timer <= 0) {
-        SQUARE2_CHANNEL.timer = get_square2_freq(gb);
-        ++SQUARE2_CHANNEL.duty_index;
-    }
-
-    WAVE_CHANNEL.timer -= cycles;
-    if (WAVE_CHANNEL.timer <= 0) {
-        WAVE_CHANNEL.timer = get_wave_freq(gb);
-        advance_wave_position_counter(gb);
-    }
-
-    gb->apu.next_frame_sequencer_cycles += cycles;
-    gb->apu.next_sample_cycles += cycles;
-
-    // check if we need to tick the frame sequencer!
-    if (gb->apu.next_frame_sequencer_cycles >= FRAME_SEQUENCER_STEP_RATE) {
-        gb->apu.next_frame_sequencer_cycles -= FRAME_SEQUENCER_STEP_RATE;
-        step_frame_sequencer(gb);
-    }
-
-    // see if it's time to create a new sample!
-    if (gb->apu.next_sample_cycles >= SAMPLE_RATE) {
-        gb->apu.next_sample_cycles -= SAMPLE_RATE;
-        sample_channels(gb);
-    }
 }

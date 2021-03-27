@@ -511,8 +511,12 @@ struct GB_ApuSquare1 {
 	GB_U8 internal_enable_flag;
 
 	GB_S16 timer;
+	GB_S8 volume_timer;
 	GB_U8 duty_index : 3;
-	GB_U8 volume_counter : 4;
+	GB_U8 volume : 4;
+	GB_BOOL disable_env : 1;
+
+	GB_S8 sweep_timer;
 
 	GB_U8 length_counter;
 };
@@ -541,8 +545,10 @@ struct GB_ApuSquare2 {
 	} nr24;
 
 	GB_S16 timer;
+	GB_S8 volume_timer;
 	GB_U8 duty_index : 3;
-	GB_U8 volume_counter : 4;
+	GB_U8 volume : 4;
+	GB_BOOL disable_env : 1;
 
 	GB_U8 length_counter;
 };
@@ -581,7 +587,6 @@ struct GB_ApuWave {
 	GB_U8 position_counter : 6;
 
 	GB_S16 timer;
-	GB_U8 volume_counter : 4;
 };
 
 struct GB_ApuNoise {
@@ -608,9 +613,14 @@ struct GB_ApuNoise {
 		GB_U8 : 6;
 	} nr44;
 
-	GB_U16 LFSR;
-	
-	GB_U8 volume_counter : 4;
+	// noise channel can run as fast as (4194304 / 8) = 524,288
+	GB_S32 timer;
+
+	GB_U16 LFSR : 15;
+
+	GB_S8 volume_timer;
+	GB_U8 volume : 4;
+	GB_BOOL disable_env : 1;
 
 	GB_U8 length_counter;
 };

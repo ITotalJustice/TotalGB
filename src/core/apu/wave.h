@@ -1,5 +1,9 @@
 #pragma once
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include "common.h"
 #include "../internal.h"
 
@@ -39,11 +43,11 @@ static inline GB_S8 sample_wave(struct GB_Core* gb) {
     // this is a hack, because i have not fixed the volumes
     // the wave channel is very loud at 100%.
     // so for now, 0-75% vol.
-    if (t == 0) {
-        t = 1;
-    }
+    // if (t == 0) {
+    //     t = 1;
+    // }
 
-    return sample >> 1;//WAVE_SHIFT[IO_NR32.vol_code];
+    return (sample >> t);//WAVE_SHIFT[IO_NR32.vol_code];
 }
 
 static inline void clock_wave_len(struct GB_Core* gb) {
@@ -82,3 +86,7 @@ static inline void on_wave_trigger(struct GB_Core* gb) {
         wave_disable(gb);
     }
 }
+
+#ifdef __cplusplus
+}
+#endif

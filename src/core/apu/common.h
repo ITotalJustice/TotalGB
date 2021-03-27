@@ -1,5 +1,9 @@
 #pragma once
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 //        Square 1
 // NR10 FF10 -PPP NSSS Sweep period, negate, shift
 // NR11 FF11 DDLL LLLL Duty, Length load (64-L)
@@ -51,3 +55,7 @@ enum EnvelopeMode {
     SUB = 0,
     ADD = 1
 };
+
+#ifdef __cplusplus
+}
+#endif
