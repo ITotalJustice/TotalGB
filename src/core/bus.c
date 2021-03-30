@@ -9,9 +9,8 @@ static inline void GB_iowrite_gbc(struct GB_Core* gb, GB_U16 addr, GB_U8 value) 
 
 	switch (addr & 0x7F) {
 		case 0x4D:
-			// only set bit-0, first unset it, then set it
-			IO_KEY1 &= ~(0x1);
-			IO_KEY1 |= value & 0x1;
+			IO_KEY1 |= 1;//value & 0x1;
+			printf("writing to key1 0x%02X\n", value);
 			break;
 
 		case 0x4F: // (VBK)
@@ -141,6 +140,11 @@ GB_U8 GB_ioread(struct GB_Core* gb, GB_U16 addr) {
 			} else {
 				return 0xFF;
 			}
+
+		case 0x4D:
+			printf("reading key1 0x%02X\n", IO_KEY1);
+			return IO_KEY1;
+			// return 0x80;
 
 		default:
 			return IO[addr & 0x7F];

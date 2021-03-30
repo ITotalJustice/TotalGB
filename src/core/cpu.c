@@ -814,7 +814,7 @@ static void STOP(struct GB_Core* gb) {
 		// only set if speed-switch is requested
 		if ((IO_KEY1 & 0x1) == 1) {
 			GB_throw_info(gb, "changing speed mode");
-			
+
 			// switch speed state.
 			gb->cpu.double_speed = !gb->cpu.double_speed;
 			// this clears bit-0 and sets bit-7 to whether we are in double

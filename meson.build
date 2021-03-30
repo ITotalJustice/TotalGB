@@ -133,9 +133,12 @@ cflags = [
 
     # sdl_thread audio (race condition!)
     # '-DGB_SDL_AUDIO_CALLBACK=1',
+
+    # '-DGB_SDL_AUDIO_CALLBACK_STREAM=1',
+    
     # '-DUSE_AUDIO_FLOAT = 1',
     # '-DDUMP_AUDIO=1',
-    # '-DCHANNEL_8=1',
+    '-DCHANNEL_8=1',
 ]
 
 cppflags = [

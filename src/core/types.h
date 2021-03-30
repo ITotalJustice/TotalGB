@@ -553,7 +553,6 @@ struct GB_ApuSquare2 {
 struct GB_ApuWave {
 	struct {
 		GB_U8 DAC_power : 1;
-		GB_U8 : 7;
 	} nr30;
 
 	struct {
@@ -562,7 +561,6 @@ struct GB_ApuWave {
 
 	struct {
 		GB_U8 vol_code : 2;
-		GB_U8 : 5;
 	} nr32;
 
 	struct {
@@ -606,7 +604,6 @@ struct GB_ApuNoise {
 		GB_U8 length_enable : 1;
 	} nr44;
 
-	// noise channel can run as fast as (4194304 / 8) = 524,288
 	GB_S32 timer;
 
 	GB_U16 LFSR : 15;

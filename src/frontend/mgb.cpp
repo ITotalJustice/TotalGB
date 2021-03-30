@@ -17,7 +17,9 @@
 namespace mgb {
 
 // global
+static std::mutex MUTEX{};
 static SDL_AudioDeviceID AUDIO_DEVICE_ID = 0;
+static SDL_AudioStream* AUDIO_STREAM = NULL;
 static FILE* AUDIO_DUMP_FILE = NULL;
 
 
@@ -43,6 +45,7 @@ auto Instance::OnAudioCallback(struct GB_ApuCallbackData* data) -> void {
 
     SDL_QueueAudio(AUDIO_DEVICE_ID, data->samples, sizeof(data->samples));
 }
+
 // vblank callback is to let the frontend know that it should render the screen.
 // This removes any screen tearing and changes to the pixels whilst in vblank.
 auto VblankCallback(GB_Core*, void* user) -> void {
@@ -108,11 +111,24 @@ auto core_audio_cb(struct GB_Core*, void* user_data, struct GB_ApuCallbackData* 
     *boolean = false;
 }
 
+#ifdef GB_SDL_AUDIO_CALLBACK_STREAM
+static void core_sdl_stream_callback(struct GB_Core*gb, void*, GB_ApuCallbackData *data) {
+    std::scoped_lock lock{MUTEX};
+    SDL_AudioStreamPut(AUDIO_STREAM, data->samples, sizeof(data->samples));
+}
+
+static void audio_stream_callback(void *user, uint8_t* buf, int len) {
+    std::scoped_lock lock{MUTEX};
+    SDL_AudioStreamGet(AUDIO_STREAM, buf, len);
+}
+#endif GB_SDL_AUDIO_CALLBACK_STREAM
+
 static void audio_callback(void *user, uint8_t* buf, int len) {
     // the idea is that this callback drives the amu core
     // for this to work
     auto instance = static_cast<Instance*>(user);
 
+    
     bool running = true;
     GB_set_apu_callback(instance->GetGB(), core_audio_cb, &running);
 
@@ -166,7 +182,13 @@ auto Instance::LoadRom(const std::string& path) -> bool {
         GB_set_rtc_update_config(this->GetGB(), GB_RTC_UPDATE_CONFIG_USE_LOCAL_TIME);
         GB_connect_printer(this->GetGB(), this->printer.get(), NULL, NULL);
 
+    #ifdef GB_SDL_AUDIO_CALLBACK_STREAM
+        GB_set_apu_callback(this->GetGB(), core_sdl_stream_callback, this);
+    #elif GB_SDL_AUDIO_CALLBACK
+        GB_set_apu_callback(this->GetGB(), core_audio_cb, this);
+    #else
         GB_set_apu_callback(this->GetGB(), AudioCallback, this);
+    #endif
         GB_set_vblank_callback(this->GetGB(), VblankCallback, this);
         GB_set_hblank_callback(this->GetGB(), HblankCallback, this);
         GB_set_dma_callback(this->GetGB(), DmaCallback, this);
@@ -224,15 +246,26 @@ auto Instance::LoadRom(const std::string& path) -> bool {
         /* .samples = */ 512, // 512 * 2 (because stereo)
         /* .padding = */ 0,
         /* .size = */ 0, // calculated
-#ifndef GB_SDL_AUDIO_CALLBACK
-        /* .callback = */ NULL,
-        /* .userdata = */ NULL
-#else
+#ifdef GB_SDL_AUDIO_CALLBACK_STREAM
+        /* .callback = */ audio_stream_callback,
+        /* .userdata = */ this
+#elif GB_SDL_AUDIO_CALLBACK
         /* .callback = */ audio_callback,
         /* .userdata = */ this
+#else
+        /* .callback = */ NULL,
+        /* .userdata = */ NULL
 #endif // GB_SDL_AUDIO_CALLBACK
     };
     SDL_AudioSpec obtained{};
+
+#ifdef GB_SDL_AUDIO_CALLBACK_STREAM
+    AUDIO_STREAM = SDL_NewAudioStream(
+        AUDIO_S8, 2, 4213440/4,
+        AUDIO_S8, 2, 48000
+    );
+#endif
+
 
     AUDIO_DEVICE_ID = SDL_OpenAudioDevice(NULL, 0, &wanted, &obtained, 0);
     // check if an audio device was failed to be found...

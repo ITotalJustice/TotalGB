@@ -101,6 +101,12 @@ static void sample_channels(struct GB_Core* gb) {
     GB_UNUSED(noise_sample);
     const GB_S8 final_sample_left = (((square1_sample * IO_NR51.square1_left) + (square2_sample * IO_NR51.square2_left)) / 2) * CONTROL_CHANNEL.nr50.left_vol;
     const GB_S8 final_sample_right = (((square1_sample * IO_NR51.square1_right) + (square2_sample * IO_NR51.square2_right)) / 2) * CONTROL_CHANNEL.nr50.right_vol;
+#elif MODE == 3
+    GB_UNUSED(square1_sample);
+    GB_UNUSED(square2_sample);
+    GB_UNUSED(noise_sample);
+    const GB_S8 final_sample_left = (wave_sample * IO_NR51.wave_left) * CONTROL_CHANNEL.nr50.left_vol;
+    const GB_S8 final_sample_right = (wave_sample * IO_NR51.wave_right) * CONTROL_CHANNEL.nr50.right_vol;
 #endif
 #undef MODE
 
@@ -115,7 +121,7 @@ static void sample_channels(struct GB_Core* gb) {
 
     // check if we filled the buffer
     if (gb->apu.samples_count >= sizeof(gb->apu.samples)) {
-        gb->apu.samples_count -= sizeof(gb->apu.samples);
+        gb->apu.samples_count =0;//-= sizeof(gb->apu.samples);
         
         // make sure the frontend did set a callback!
         if (gb->apu_cb != NULL) {
@@ -131,13 +137,13 @@ static void sample_channels(struct GB_Core* gb) {
 }
 
 void GB_apu_run(struct GB_Core* gb, GB_U16 cycles) {
-    // for debug...
-    static int init_start = 0;
-    if (init_start == 0) {
-        SQUARE1_CHANNEL.timer = 2048;
-        SQUARE2_CHANNEL.timer = 2048;
-        WAVE_CHANNEL.timer = 2048;
-        ++init_start;
+    // todo: handle if the apu is disabled!
+    if (IO_NR52.power == 0) {
+        // still tick samples but fill empty
+        // nothing else should tick i dont think?
+        // not sure if when apu is disabled, do all regs reset?
+        // what happens when apu is re-enabled? do they all trigger?
+        return;
     }
 
     SQUARE1_CHANNEL.timer -= cycles;
@@ -171,12 +177,19 @@ void GB_apu_run(struct GB_Core* gb, GB_U16 cycles) {
         step_frame_sequencer(gb);
     }
 
+#ifdef GB_SDL_AUDIO_CALLBACK_STREAM
+    // sample channels as fast as possible
+    for (int i = 0; i < cycles; i+= 4) {
+        sample_channels(gb);
+    }
+#else
     // see if it's time to create a new sample!
     gb->apu.next_sample_cycles += cycles;
     if (gb->apu.next_sample_cycles >= SAMPLE_RATE) {
         gb->apu.next_sample_cycles -= SAMPLE_RATE;
         sample_channels(gb);
     }
+#endif // GB_SDL_AUDIO_CALLBACK_STREAM
 }
 
 // IO read / writes
@@ -240,7 +253,10 @@ GB_U8 GB_apu_ioread(const struct GB_Core* gb, const GB_U16 addr) {
         case 0x34: case 0x35: case 0x36: case 0x37:
         case 0x38: case 0x39: case 0x3A: case 0x3B:
         case 0x3C: case 0x3D: case 0x3E: case 0x3F:
-            return IO_WAVE_TABLE[WAVE_CHANNEL.position_counter >> 1];
+            if (!is_wave_enabled(gb)) {
+                return IO_WAVE_TABLE[addr & 0xF];
+            }
+            return 0xFF;
 
         default:
             return 0xFF;
@@ -325,7 +341,11 @@ void GB_apu_iowrite(struct GB_Core* gb, const GB_U16 addr, const GB_U8 value) {
 		case 0x1B:
 			IO_NR31.length_load = value;
             // set length load
-            WAVE_CHANNEL.length_counter = 256 - IO_NR31.length_load;
+            if (WAVE_CHANNEL.nr34.length_enable) {
+                WAVE_CHANNEL.length_counter = 256 - IO_NR31.length_load;
+            } else {
+                WAVE_CHANNEL.length_counter = 256;
+            }
 			break;
 
 		case 0x1C:
@@ -401,7 +421,19 @@ void GB_apu_iowrite(struct GB_Core* gb, const GB_U16 addr, const GB_U8 value) {
         case 0x34: case 0x35: case 0x36: case 0x37:
         case 0x38: case 0x39: case 0x3A: case 0x3B:
         case 0x3C: case 0x3D: case 0x3E: case 0x3F:
-            IO_WAVE_TABLE[WAVE_CHANNEL.position_counter >> 1] = value;
+            // wave ram should only be accessed whilst the channel
+            // is disabled.
+            // otherwise, for the first few clocks after the last
+            // time the wave channel accessed this wave ram, it will read
+            // and write to the current index.
+            // otherwise, writes are ignored and reads return 0xFF.
+
+            // for now, all reads / writes that happen whilst the channel is
+            // disabled only!
+
+            if (!is_wave_enabled(gb)) {
+                IO_WAVE_TABLE[addr & 0xF] = value;
+            }
             break;
 	}
 }

@@ -298,6 +298,7 @@ void GB_on_lcdc_write(struct GB_Core* gb, const GB_U8 value) {
         IO_LY = 0;
         // i think this is reset also...
         gb->ppu.next_cycles = 0;
+        printf("disabling ppu...\n");
     }
     else {
         // if the value is enabling the ppu and the ppu is
