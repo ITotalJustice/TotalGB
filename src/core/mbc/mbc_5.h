@@ -6,7 +6,7 @@ extern "C" {
 
 #include "common.h"
 
-static void GB_mbc5_write(struct GB_Core* gb, GB_U16 addr, GB_U8 value) { 
+static void GB_mbc5_write(struct GB_Core* gb, uint16_t addr, uint8_t value) { 
     switch ((addr >> 12) & 0xF) {
     // RAM
         case 0x0: case 0x1:
@@ -19,7 +19,7 @@ static void GB_mbc5_write(struct GB_Core* gb, GB_U16 addr, GB_U8 value) {
     // ROM BANK LOW
         case 0x2: {
             // sets bits 0-7
-            const GB_U16 bank = (gb->cart.rom_bank & 0xFF00) | value;
+            const uint16_t bank = (gb->cart.rom_bank & 0xFF00) | value;
             gb->cart.rom_bank = bank % gb->cart.rom_bank_max;
             GB_update_rom_banks(gb);
         } break;
@@ -27,7 +27,7 @@ static void GB_mbc5_write(struct GB_Core* gb, GB_U16 addr, GB_U8 value) {
     // ROM BANK HIGH
         case 0x3: {
             // sets the 8th bit
-            const GB_U16 bank = (gb->cart.rom_bank & 0x00FF) | ((value & 0x1) << 8);
+            const uint16_t bank = (gb->cart.rom_bank & 0x00FF) | ((value & 0x1) << 8);
             gb->cart.rom_bank = bank % gb->cart.rom_bank_max;
             GB_update_rom_banks(gb);
         } break;
@@ -35,7 +35,7 @@ static void GB_mbc5_write(struct GB_Core* gb, GB_U16 addr, GB_U8 value) {
     // RAM BANK
         case 0x4: case 0x5:
             if (gb->cart.flags & MBC_FLAGS_RAM) {
-                const GB_U8 bank = value & 0x0F;
+                const uint8_t bank = value & 0x0F;
                 gb->cart.ram_bank = bank % gb->cart.ram_bank_max;
                 GB_update_ram_banks(gb);
             }
@@ -49,7 +49,7 @@ static void GB_mbc5_write(struct GB_Core* gb, GB_U16 addr, GB_U8 value) {
     }
 }
 
-static const GB_U8* GB_mbc5_get_rom_bank(struct GB_Core* gb, GB_U8 bank) {
+static const uint8_t* GB_mbc5_get_rom_bank(struct GB_Core* gb, uint8_t bank) {
 	if (bank == 0) {
 		return gb->cart.rom;
 	}
@@ -58,7 +58,7 @@ static const GB_U8* GB_mbc5_get_rom_bank(struct GB_Core* gb, GB_U8 bank) {
 }
 
 // todo: rtc support
-static const GB_U8* GB_mbc5_get_ram_bank(struct GB_Core* gb, GB_U8 bank) {
+static const uint8_t* GB_mbc5_get_ram_bank(struct GB_Core* gb, uint8_t bank) {
 	GB_UNUSED(bank);
     
 	if (!(gb->cart.flags & MBC_FLAGS_RAM) || !gb->cart.ram_enabled) {

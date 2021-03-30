@@ -5,7 +5,6 @@
 #include <stdio.h>
 #include <string.h>
 
-static int file_time = 0;
 
 // the printer is always the slave device, meaning, it never tries to send data
 // it *can* send data of course by returning a value once the DMG
@@ -119,7 +118,7 @@ static void recievie_printer_checksum_1(struct GB_Printer* printer, struct GB_Li
     printer->checksum |= data->in_data << 8;
 
     // to perform the checksum, loop over all recieved data (not including magic)
-    GB_U16 checksum_value = 0;
+    uint16_t checksum_value = 0;
 
     // save the header data (cmd, comp, len0, len1)
     checksum_value += printer->command;
@@ -127,7 +126,7 @@ static void recievie_printer_checksum_1(struct GB_Printer* printer, struct GB_Li
     checksum_value += printer->data_len;
 
     // now loop the recieved data (if any)
-    for (GB_U16 i = 0; i < printer->data_len; ++i) {
+    for (uint16_t i = 0; i < printer->data_len; ++i) {
         checksum_value += printer->ram[i];
     }
 
@@ -161,17 +160,6 @@ static void execute_printer_command(struct GB_Printer* printer, struct GB_LinkCa
             printf("\tmargins hi: 0x%02X\n", printer->print_data.margins >> 4);
             printf("\tpalette: 0x%02X\n", printer->print_data.palette);
             printf("\texposure: 0x%02X\n", printer->print_data.exposure);
-            // if (file_time == 0) {
-            //     FILE* f = fopen("print_0.bin", "wb");
-            //     fwrite(printer->ram, 1, printer->data_len, f);
-            //     fclose(f);
-            //     ++file_time;
-            // } else {
-            //     FILE* f = fopen("print_1.bin", "wb");
-            //     fwrite(printer->ram, 1, printer->data_len, f);
-            //     fclose(f);
-            // }
-            
             break;
 
         case DATA:
@@ -205,7 +193,7 @@ static void send_printer_acknowledgement_1(struct GB_Printer* printer, struct GB
     execute_printer_command(printer, data);
 }
 
-static GB_BOOL printer_cb(void* user_data, struct GB_LinkCableData* data) {
+static bool printer_cb(void* user_data, struct GB_LinkCableData* data) {
     struct GB_Printer* printer = (struct GB_Printer*)user_data;
 
     // most commands set the out_data to zero.
@@ -257,7 +245,7 @@ static GB_BOOL printer_cb(void* user_data, struct GB_LinkCableData* data) {
             break;
     }
 
-    return GB_TRUE;
+    return true;
 }
 
 void GB_connect_printer(struct GB_Core* gb, struct GB_Printer* printer, GB_print_callback_t cb, void* user_data) {

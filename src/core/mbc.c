@@ -21,18 +21,18 @@
 
 // TODO: this can be const, however, i need to manually set the entire
 // array to 0xFF, atm im using memset but this can be set at compile-time!
-GB_U8 MBC_NO_RAM[0x2000];
+uint8_t MBC_NO_RAM[0x2000];
 
 struct GB_MbcInterface {
 	// function callbacks
-	void (*write)(struct GB_Core *gb, GB_U16 addr, GB_U8 value);
-	const GB_U8* (*get_rom_bank)(struct GB_Core *gb, GB_U8 bank);
-	const GB_U8* (*get_ram_bank)(struct GB_Core *gb, GB_U8 bank);
+	void (*write)(struct GB_Core *gb, uint16_t addr, uint8_t value);
+	const uint8_t* (*get_rom_bank)(struct GB_Core *gb, uint8_t bank);
+	const uint8_t* (*get_ram_bank)(struct GB_Core *gb, uint8_t bank);
 	// all normal mbc's start we rombank == 1
 	// however, other mbcs (HUC1) seem to start at 0
-	GB_U8 starting_rom_bank;
+	uint8_t starting_rom_bank;
 	// ram, rtc, battery etc...
-	GB_U8 flags;
+	uint8_t flags;
 };
 
 // this data is indexed using the [cart_type] member from the
@@ -89,32 +89,32 @@ int GB_get_rom_name(const struct GB_Core* gb, struct GB_CartName* name) {
 	return 0;
 }
 
-GB_BOOL GB_get_cart_ram_size(GB_U8 type, GB_U32* size) {
+bool GB_get_cart_ram_size(uint8_t type, uint32_t* size) {
 	// i think that more ram sizes are valid, however
 	// i have yet to see a ram size bigger than this...
-	static const GB_U32 GB_CART_RAM_SIZES[6] = { 0, 0x800, 0x2000, 0x8000, 0x20000, 0x10000 };
+	static const uint32_t GB_CART_RAM_SIZES[6] = { 0, 0x800, 0x2000, 0x8000, 0x20000, 0x10000 };
 	
 	assert(type < GB_ARR_SIZE(GB_CART_RAM_SIZES) && "OOB type access!");
 
 	if (type >= GB_ARR_SIZE(GB_CART_RAM_SIZES)) {
-		return GB_FALSE;
+		return false;
 	}
 
 	if (type == 1) {
 		printf("ram size is 0x800, this will break mapped ram!\n");
 		assert(type != 1);
-		return GB_FALSE;
+		return false;
 	}
 
 	*size = GB_CART_RAM_SIZES[type];
-	return GB_TRUE;
+	return true;
 }
 
-GB_BOOL GB_setup_mbc(struct GB_Cart* mbc, const struct GB_CartHeader* header) {
+bool GB_setup_mbc(struct GB_Cart* mbc, const struct GB_CartHeader* header) {
 	memset(MBC_NO_RAM, 0xFF, sizeof(MBC_NO_RAM));
 
 	if (!mbc || !header) {
-		return GB_FALSE;
+		return false;
 	}
 
 	// this won't fail because the type is 8-bit and theres 0x100 entries.
@@ -126,7 +126,7 @@ GB_BOOL GB_setup_mbc(struct GB_Cart* mbc, const struct GB_CartHeader* header) {
 	if (!data->write || !data->get_rom_bank || !data->get_ram_bank) {
 		printf("MBC NOT IMPLEMENTED: 0x%02X\n", header->cart_type);
 		assert(0);
-		return GB_FALSE;
+		return false;
 	}
 
 	// set the function ptr's and flags!
@@ -151,12 +151,12 @@ GB_BOOL GB_setup_mbc(struct GB_Cart* mbc, const struct GB_CartHeader* header) {
 		// otherwise get the ram size via a LUT
 		else if (!GB_get_cart_ram_size(header->ram_size, &mbc->ram_size)) {
 			printf("rom has ram but the size entry in header is invalid! %u\n", header->ram_size);
-			return GB_FALSE;
+			return false;
 		}
 		else {
 			mbc->ram_bank_max = mbc->ram_size / 0x2000;
 		}
 	}
 
-	return GB_TRUE;
+	return true;
 }

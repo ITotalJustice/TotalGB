@@ -85,7 +85,7 @@ void GB_rtc_tick_frame(struct GB_Core* gb) {
 //     GB_UNREACHABLE(0xFF);
 // }
 
-static inline void GB_mbc3_rtc_write(struct GB_Core* gb, GB_U8 value) {
+static inline void GB_mbc3_rtc_write(struct GB_Core* gb, uint8_t value) {
     switch (gb->cart.rtc_mapped_reg) {
         case GB_RTC_MAPPED_REG_S: gb->cart.rtc.S = value; break;
         case GB_RTC_MAPPED_REG_M: gb->cart.rtc.M = value; break;
@@ -107,7 +107,7 @@ static inline void GB_speed_hack_map_rtc_reg(struct GB_Core* gb) {
 }
 #endif // GB_RTC_SPEEDHACK
 
-static void GB_mbc3_write(struct GB_Core* gb, GB_U16 addr, GB_U8 value) { 
+static void GB_mbc3_write(struct GB_Core* gb, uint16_t addr, uint8_t value) { 
     switch ((addr >> 12) & 0xF) {
 	// RAM / RTC REGISTER ENABLE
         case 0x0: case 0x1:
@@ -127,13 +127,13 @@ static void GB_mbc3_write(struct GB_Core* gb, GB_U16 addr, GB_U8 value) {
             if (value <= 0x03) {
                 // NOTE: can this be out of range?
                 gb->cart.ram_bank = value & 0x3;
-                gb->cart.in_ram = GB_TRUE;
+                gb->cart.in_ram = true;
                 GB_update_ram_banks(gb);
             }
             // if we have rtc and in range, set the mapped rtc reg
             else if (GB_has_mbc_flags(gb, MBC_FLAGS_RTC) && value >= 0x08 && value <= 0x0C) {
                 gb->cart.rtc_mapped_reg = value - 0x08;
-                gb->cart.in_ram = GB_FALSE;
+                gb->cart.in_ram = false;
             
             #if GB_RTC_SPEEDHACK
                 GB_speed_hack_map_rtc_reg(gb);
@@ -159,7 +159,7 @@ static void GB_mbc3_write(struct GB_Core* gb, GB_U16 addr, GB_U8 value) {
     }
 }
 
-static const GB_U8* GB_mbc3_get_rom_bank(struct GB_Core* gb, GB_U8 bank) {
+static const uint8_t* GB_mbc3_get_rom_bank(struct GB_Core* gb, uint8_t bank) {
 	if (bank == 0) {
 		return gb->cart.rom;
 	}
@@ -168,7 +168,7 @@ static const GB_U8* GB_mbc3_get_rom_bank(struct GB_Core* gb, GB_U8 bank) {
 }
 
 // todo: rtc support
-static const GB_U8* GB_mbc3_get_ram_bank(struct GB_Core* gb, GB_U8 bank) {
+static const uint8_t* GB_mbc3_get_ram_bank(struct GB_Core* gb, uint8_t bank) {
 	GB_UNUSED(bank);
     
 	if (!(gb->cart.flags & MBC_FLAGS_RAM) || !gb->cart.ram_enabled || !gb->cart.in_ram) {

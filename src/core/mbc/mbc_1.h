@@ -8,7 +8,7 @@ extern "C" {
 
 #include <stdio.h>
 
-static void GB_mbc1_write(struct GB_Core* gb, GB_U16 addr, GB_U8 value) {
+static void GB_mbc1_write(struct GB_Core* gb, uint16_t addr, uint8_t value) {
 	switch ((addr >> 12) & 0xF) {
 	// RAM ENABLE
         case 0x0: case 0x1:
@@ -70,10 +70,10 @@ static void GB_mbc1_write(struct GB_Core* gb, GB_U16 addr, GB_U8 value) {
 	}
 }
 
-static const GB_U8* GB_mbc1_get_rom_bank(struct GB_Core* gb, GB_U8 bank) {
+static const uint8_t* GB_mbc1_get_rom_bank(struct GB_Core* gb, uint8_t bank) {
 	if (bank == 0) {
         if (gb->cart.rom_bank_max > 18 && gb->cart.bank_mode == 1) {
-            GB_U16 b = (gb->cart.rom_bank_hi << 5);
+            uint16_t b = (gb->cart.rom_bank_hi << 5);
             if (b > gb->cart.rom_bank_max) {
                 b %= gb->cart.rom_bank_max;
             }
@@ -87,7 +87,7 @@ static const GB_U8* GB_mbc1_get_rom_bank(struct GB_Core* gb, GB_U8 bank) {
 	return gb->cart.rom + (gb->cart.rom_bank * 0x4000);
 }
 
-static const GB_U8* GB_mbc1_get_ram_bank(struct GB_Core* gb, GB_U8 bank) {
+static const uint8_t* GB_mbc1_get_ram_bank(struct GB_Core* gb, uint8_t bank) {
 	GB_UNUSED(bank);
     
 	if (!(gb->cart.flags & MBC_FLAGS_RAM) || !gb->cart.ram_enabled) {

@@ -4,7 +4,7 @@
 
 #include <assert.h>
 
-static inline void UNK_OP(struct GB_Core* gb, GB_U8 opcode, GB_BOOL cb_prefix) {
+static inline void UNK_OP(struct GB_Core* gb, uint8_t opcode, bool cb_prefix) {
 	if (gb->error_cb != NULL) {
 		struct GB_ErrorData data = {0};
 		data.type = GB_ERROR_TYPE_UNKNOWN_INSTRUCTION;
@@ -70,7 +70,7 @@ static inline void UNK_OP(struct GB_Core* gb, GB_U8 opcode, GB_BOOL cb_prefix) {
 
 #endif
 
-void GB_cpu_set_flag(struct GB_Core* gb, enum GB_CpuFlags flag, GB_BOOL value) {
+void GB_cpu_set_flag(struct GB_Core* gb, enum GB_CpuFlags flag, bool value) {
 	switch (flag) {
 		case GB_CPU_FLAG_C: SET_FLAG_C(value); break;
 		case GB_CPU_FLAG_H: SET_FLAG_H(value); break;
@@ -79,7 +79,7 @@ void GB_cpu_set_flag(struct GB_Core* gb, enum GB_CpuFlags flag, GB_BOOL value) {
 	}
 }
 
-GB_BOOL GB_cpu_get_flag(const struct GB_Core* gb, enum GB_CpuFlags flag) {
+bool GB_cpu_get_flag(const struct GB_Core* gb, enum GB_CpuFlags flag) {
 	switch (flag) {
 		case GB_CPU_FLAG_C: return FLAG_C;
 		case GB_CPU_FLAG_H: return FLAG_H;
@@ -87,10 +87,10 @@ GB_BOOL GB_cpu_get_flag(const struct GB_Core* gb, enum GB_CpuFlags flag) {
 		case GB_CPU_FLAG_Z: return FLAG_Z;
 	}
 	
-	GB_UNREACHABLE(GB_FALSE);
+	GB_UNREACHABLE(false);
 }
 
-void GB_cpu_set_register(struct GB_Core* gb, enum GB_CpuRegisters reg, GB_U8 value) {
+void GB_cpu_set_register(struct GB_Core* gb, enum GB_CpuRegisters reg, uint8_t value) {
 	switch (reg) {
 		case GB_CPU_REGISTER_B: REG_B = value; break;
 		case GB_CPU_REGISTER_C: REG_C = value; break;
@@ -103,7 +103,7 @@ void GB_cpu_set_register(struct GB_Core* gb, enum GB_CpuRegisters reg, GB_U8 val
 	}
 }
 
-GB_U8 GB_cpu_get_register(const struct GB_Core* gb, enum GB_CpuRegisters reg) {
+uint8_t GB_cpu_get_register(const struct GB_Core* gb, enum GB_CpuRegisters reg) {
 	switch (reg) {
 		case GB_CPU_REGISTER_B: return REG_B;
 		case GB_CPU_REGISTER_C: return REG_C;
@@ -118,7 +118,7 @@ GB_U8 GB_cpu_get_register(const struct GB_Core* gb, enum GB_CpuRegisters reg) {
 	GB_UNREACHABLE(0xFF);
 }
 
-void GB_cpu_set_register_pair(struct GB_Core* gb, enum GB_CpuRegisterPairs pair, GB_U16 value) {
+void GB_cpu_set_register_pair(struct GB_Core* gb, enum GB_CpuRegisterPairs pair, uint16_t value) {
 	switch (pair) {
 		case GB_CPU_REGISTER_PAIR_BC: SET_REG_BC(value); break;
 		case GB_CPU_REGISTER_PAIR_DE: SET_REG_DE(value); break;
@@ -129,7 +129,7 @@ void GB_cpu_set_register_pair(struct GB_Core* gb, enum GB_CpuRegisterPairs pair,
 	}
 }
 
-GB_U16 GB_cpu_get_register_pair(const struct GB_Core* gb, enum GB_CpuRegisterPairs pair) {
+uint16_t GB_cpu_get_register_pair(const struct GB_Core* gb, enum GB_CpuRegisterPairs pair) {
 	switch (pair) {
 		case GB_CPU_REGISTER_PAIR_BC: return REG_BC;
 		case GB_CPU_REGISTER_PAIR_DE: return REG_DE;
@@ -175,13 +175,13 @@ SET_FLAG_Z(z);
 static void GB_execute(struct GB_Core* gb);
 static void GB_execute_cb(struct GB_Core* gb);
 
-static inline void GB_PUSH(struct GB_Core* gb, GB_U16 value) {
+static inline void GB_PUSH(struct GB_Core* gb, uint16_t value) {
 	write8(--REG_SP, (value >> 8) & 0xFF);
 	write8(--REG_SP, value & 0xFF);
 }
 
-static inline GB_U16 GB_POP(struct GB_Core* gb) {
-	const GB_U16 result = read16(REG_SP);
+static inline uint16_t GB_POP(struct GB_Core* gb) {
+	const uint16_t result = read16(REG_SP);
 	REG_SP += 2;
 	return result;
 }
@@ -190,7 +190,7 @@ static inline GB_U16 GB_POP(struct GB_Core* gb) {
 #define POP() GB_POP(gb)
 
 #define CALL() do { \
-	const GB_U16 result = read16(REG_PC); \
+	const uint16_t result = read16(REG_PC); \
 	PUSH(REG_PC + 2); \
 	REG_PC = result; \
 } while(0)
@@ -274,7 +274,7 @@ static inline GB_U16 GB_POP(struct GB_Core* gb) {
 } while(0)
 
 #define JR() do { \
-	REG_PC += ((GB_S8)read8(REG_PC)) + 1; \
+	REG_PC += ((int8_t)read8(REG_PC)) + 1; \
 } while(0)
 
 #define JR_NZ() do { \
@@ -347,24 +347,24 @@ static inline GB_U16 GB_POP(struct GB_Core* gb) {
 
 #define INC_r() do { \
 	REG((opcode >> 3))++; \
-	SET_FLAGS_HNZ(((REG((opcode >> 3)) & 0xF) == 0), GB_FALSE, REG((opcode >> 3)) == 0); \
+	SET_FLAGS_HNZ(((REG((opcode >> 3)) & 0xF) == 0), false, REG((opcode >> 3)) == 0); \
 } while(0)
 
 #define INC_HLa() do { \
-	const GB_U8 result = read8(REG_HL) + 1; \
+	const uint8_t result = read8(REG_HL) + 1; \
 	write8(REG_HL, result); \
-	SET_FLAGS_HNZ((result & 0xF) == 0, GB_FALSE, result == 0); \
+	SET_FLAGS_HNZ((result & 0xF) == 0, false, result == 0); \
 } while (0)
 
 #define DEC_r() do { \
 	--REG((opcode >> 3)); \
-	SET_FLAGS_HNZ(((REG((opcode >> 3)) & 0xF) == 0xF), GB_TRUE, REG((opcode >> 3)) == 0); \
+	SET_FLAGS_HNZ(((REG((opcode >> 3)) & 0xF) == 0xF), true, REG((opcode >> 3)) == 0); \
 } while(0)
 
 #define DEC_HLa() do { \
-	const GB_U8 result = read8(REG_HL) - 1; \
+	const uint8_t result = read8(REG_HL) - 1; \
 	write8(REG_HL, result); \
-	SET_FLAGS_HNZ((result & 0xF) == 0xF, GB_TRUE, result == 0); \
+	SET_FLAGS_HNZ((result & 0xF) == 0xF, true, result == 0); \
 } while(0)
 
 #define INC_BC() do { SET_REG_BC(REG_BC + 1); } while(0)
@@ -377,8 +377,8 @@ static inline GB_U16 GB_POP(struct GB_Core* gb) {
 #define DEC_SP() do { --REG_SP; } while(0)
 
 #define CP() do { \
-	const GB_U8 result = REG_A - REG(opcode); \
-	SET_ALL_FLAGS(REG(opcode) < REG_A, (REG_A & 0xF) < (REG(opcode) & 0xF), GB_TRUE, result == 0); \
+	const uint8_t result = REG_A - REG(opcode); \
+	SET_ALL_FLAGS(REG(opcode) < REG_A, (REG_A & 0xF) < (REG(opcode) & 0xF), true, result == 0); \
 } while(0)
 
 #define LD_r_r() do { REG(opcode >> 3) = REG(opcode); } while(0)
@@ -408,17 +408,17 @@ static inline GB_U16 GB_POP(struct GB_Core* gb) {
 #define LD_A_FFRC() do { REG_A = read8(0xFF00 | REG_C); } while(0);
 
 #define LD_BC_u16() do { \
-	const GB_U16 result = read16(REG_PC); \
+	const uint16_t result = read16(REG_PC); \
 	SET_REG_BC(result); \
 	REG_PC += 2; \
 } while(0)
 #define LD_DE_u16() do { \
-	const GB_U16 result = read16(REG_PC); \
+	const uint16_t result = read16(REG_PC); \
 	SET_REG_DE(result); \
 	REG_PC += 2; \
 } while(0)
 #define LD_HL_u16() do { \
-	const GB_U16 result = read16(REG_PC); \
+	const uint16_t result = read16(REG_PC); \
 	SET_REG_HL(result); \
 	REG_PC += 2; \
 } while(0)
@@ -433,46 +433,46 @@ static inline GB_U16 GB_POP(struct GB_Core* gb) {
 #define LD_SP_HL() do { REG_SP = REG_HL; } while(0);
 
 #define CP_r() do { \
-	const GB_U8 value = REG(opcode); \
-	const GB_U8 result = REG_A - value; \
-	SET_ALL_FLAGS(value > REG_A, (REG_A & 0xF) < (value & 0xF), GB_TRUE, result == 0); \
+	const uint8_t value = REG(opcode); \
+	const uint8_t result = REG_A - value; \
+	SET_ALL_FLAGS(value > REG_A, (REG_A & 0xF) < (value & 0xF), true, result == 0); \
 } while(0)
 
 #define CP_u8() do { \
-	const GB_U8 value = read8(REG_PC++); \
-	const GB_U8 result = REG_A - value; \
-	SET_ALL_FLAGS(value > REG_A, (REG_A & 0xF) < (value & 0xF), GB_TRUE, result == 0); \
+	const uint8_t value = read8(REG_PC++); \
+	const uint8_t result = REG_A - value; \
+	SET_ALL_FLAGS(value > REG_A, (REG_A & 0xF) < (value & 0xF), true, result == 0); \
 } while(0)
 
 #define CP_HLa() do { \
-	const GB_U8 value = read8(REG_HL); \
-	const GB_U8 result = REG_A - value; \
-	SET_ALL_FLAGS(value > REG_A, (REG_A & 0xF) < (value & 0xF), GB_TRUE, result == 0); \
+	const uint8_t value = read8(REG_HL); \
+	const uint8_t result = REG_A - value; \
+	SET_ALL_FLAGS(value > REG_A, (REG_A & 0xF) < (value & 0xF), true, result == 0); \
 } while(0)
 
 #define __ADD(value, carry) do { \
-	const GB_U8 result = REG_A + value + carry; \
-    SET_ALL_FLAGS((REG_A + value + carry) > 0xFF, ((REG_A & 0xF) + (value & 0xF) + carry) > 0xF, GB_FALSE, result == 0); \
+	const uint8_t result = REG_A + value + carry; \
+    SET_ALL_FLAGS((REG_A + value + carry) > 0xFF, ((REG_A & 0xF) + (value & 0xF) + carry) > 0xF, false, result == 0); \
     REG_A = result; \
 } while (0)
 
 #define ADD_r() do { \
-	__ADD(REG(opcode), GB_FALSE); \
+	__ADD(REG(opcode), false); \
 } while(0)
 
 #define ADD_u8() do { \
-	const GB_U8 value = read8(REG_PC++); \
-	__ADD(value, GB_FALSE); \
+	const uint8_t value = read8(REG_PC++); \
+	__ADD(value, false); \
 } while(0)
 
 #define ADD_HLa() do { \
-	const GB_U8 value = read8(REG_HL); \
-	__ADD(value, GB_FALSE); \
+	const uint8_t value = read8(REG_HL); \
+	__ADD(value, false); \
 } while(0)
 
 #define __ADD_HL(value) do { \
-	const GB_U16 result = REG_HL + value; \
-	SET_FLAGS_CHN((REG_HL + value) > 0xFFFF, (REG_HL & 0xFFF) + (value & 0xFFF) > 0xFFF, GB_FALSE); \
+	const uint16_t result = REG_HL + value; \
+	SET_FLAGS_CHN((REG_HL + value) > 0xFFFF, (REG_HL & 0xFFF) + (value & 0xFFF) > 0xFFF, false); \
 	SET_REG_HL(result); \
 } while(0)
 
@@ -481,274 +481,274 @@ static inline GB_U16 GB_POP(struct GB_Core* gb) {
 #define ADD_HL_HL() do { __ADD_HL(REG_HL); } while(0)
 #define ADD_HL_SP() do { __ADD_HL(REG_SP); } while(0)
 #define ADD_SP_i8() do { \
-	const GB_U8 value = read8(REG_PC++); \
-    const GB_U16 result = REG_SP + (GB_S8)value; \
-    SET_ALL_FLAGS(((REG_SP & 0xFF) + value) > 0xFF, ((REG_SP & 0xF) + (value & 0xF)) > 0xF, GB_FALSE, GB_FALSE); \
+	const uint8_t value = read8(REG_PC++); \
+    const uint16_t result = REG_SP + (int8_t)value; \
+    SET_ALL_FLAGS(((REG_SP & 0xFF) + value) > 0xFF, ((REG_SP & 0xF) + (value & 0xF)) > 0xF, false, false); \
 	REG_SP = result; \
 } while (0)
 
 #define LD_HL_SP_i8() do { \
-	const GB_U8 value = read8(REG_PC++); \
-    const GB_U16 result = REG_SP + (GB_S8)value; \
-    SET_ALL_FLAGS(((REG_SP & 0xFF) + value) > 0xFF, ((REG_SP & 0xF) + (value & 0xF)) > 0xF, GB_FALSE, GB_FALSE); \
+	const uint8_t value = read8(REG_PC++); \
+    const uint16_t result = REG_SP + (int8_t)value; \
+    SET_ALL_FLAGS(((REG_SP & 0xFF) + value) > 0xFF, ((REG_SP & 0xF) + (value & 0xF)) > 0xF, false, false); \
 	SET_REG_HL(result); \
 } while (0)
 
 #define ADC_r() do { \
-	const GB_BOOL fc = FLAG_C; \
+	const bool fc = FLAG_C; \
 	__ADD(REG(opcode), fc); \
 } while(0)
 
 #define ADC_u8() do { \
-	const GB_U8 value = read8(REG_PC++); \
-	const GB_BOOL fc = FLAG_C; \
+	const uint8_t value = read8(REG_PC++); \
+	const bool fc = FLAG_C; \
 	__ADD(value, fc); \
 } while(0)
 
 #define ADC_HLa() do { \
-	const GB_U8 value = read8(REG_HL); \
-	const GB_BOOL fc = FLAG_C; \
+	const uint8_t value = read8(REG_HL); \
+	const bool fc = FLAG_C; \
 	__ADD(value, fc); \
 } while(0)
 
 #define __SUB(value, carry) do { \
-	const GB_U8 result = REG_A - value - carry; \
-	SET_ALL_FLAGS((value + carry) > REG_A, (REG_A & 0xF) < ((value & 0xF) + carry), GB_TRUE, result == 0); \
+	const uint8_t result = REG_A - value - carry; \
+	SET_ALL_FLAGS((value + carry) > REG_A, (REG_A & 0xF) < ((value & 0xF) + carry), true, result == 0); \
     REG_A = result; \
 } while (0)
 
 #define SUB_r() do { \
-	__SUB(REG(opcode), GB_FALSE); \
+	__SUB(REG(opcode), false); \
 } while(0)
 
 #define SUB_u8() do { \
-	const GB_U8 value = read8(REG_PC++); \
-	__SUB(value, GB_FALSE); \
+	const uint8_t value = read8(REG_PC++); \
+	__SUB(value, false); \
 } while(0)
 
 #define SUB_HLa() do { \
-	const GB_U8 value = read8(REG_HL); \
-	__SUB(value, GB_FALSE); \
+	const uint8_t value = read8(REG_HL); \
+	__SUB(value, false); \
 } while(0)
 
 #define SBC_r() do { \
-	const GB_BOOL fc = FLAG_C; \
+	const bool fc = FLAG_C; \
 	__SUB(REG(opcode), fc); \
 } while(0)
 
 #define SBC_u8() do { \
-	const GB_U8 value = read8(REG_PC++); \
-	const GB_BOOL fc = FLAG_C; \
+	const uint8_t value = read8(REG_PC++); \
+	const bool fc = FLAG_C; \
 	__SUB(value, fc); \
 } while(0)
 
 #define SBC_HLa() do { \
-	const GB_U8 value = read8(REG_HL); \
-	const GB_BOOL fc = FLAG_C; \
+	const uint8_t value = read8(REG_HL); \
+	const bool fc = FLAG_C; \
 	__SUB(value, fc); \
 } while(0)
 
 #define AND_r() do { \
 	REG_A &= REG(opcode); \
-	SET_ALL_FLAGS(GB_FALSE, GB_TRUE, GB_FALSE, REG_A == 0); \
+	SET_ALL_FLAGS(false, true, false, REG_A == 0); \
 } while(0)
 
 #define AND_u8() do { \
 	REG_A &= read8(REG_PC++); \
-	SET_ALL_FLAGS(GB_FALSE, GB_TRUE, GB_FALSE, REG_A == 0); \
+	SET_ALL_FLAGS(false, true, false, REG_A == 0); \
 } while(0)
 
 #define AND_HLa() do { \
 	REG_A &= read8(REG_HL); \
-	SET_ALL_FLAGS(GB_FALSE, GB_TRUE, GB_FALSE, REG_A == 0); \
+	SET_ALL_FLAGS(false, true, false, REG_A == 0); \
 } while(0)
 
 #define XOR_r() do { \
 	REG_A ^= REG(opcode); \
-	SET_ALL_FLAGS(GB_FALSE, GB_FALSE, GB_FALSE, REG_A == 0); \
+	SET_ALL_FLAGS(false, false, false, REG_A == 0); \
 } while(0)
 
 #define XOR_u8() do { \
 	REG_A ^= read8(REG_PC++); \
-	SET_ALL_FLAGS(GB_FALSE, GB_FALSE, GB_FALSE, REG_A == 0); \
+	SET_ALL_FLAGS(false, false, false, REG_A == 0); \
 } while(0)
 
 #define XOR_HLa() do { \
 	REG_A ^= read8(REG_HL); \
-	SET_ALL_FLAGS(GB_FALSE, GB_FALSE, GB_FALSE, REG_A == 0); \
+	SET_ALL_FLAGS(false, false, false, REG_A == 0); \
 } while(0)
 
 #define OR_r() do { \
 	REG_A |= REG(opcode); \
-	SET_ALL_FLAGS(GB_FALSE, GB_FALSE, GB_FALSE, REG_A == 0); \
+	SET_ALL_FLAGS(false, false, false, REG_A == 0); \
 } while(0)
 
 #define OR_u8() do { \
 	REG_A |= read8(REG_PC++); \
-	SET_ALL_FLAGS(GB_FALSE, GB_FALSE, GB_FALSE, REG_A == 0); \
+	SET_ALL_FLAGS(false, false, false, REG_A == 0); \
 } while(0)
 
 #define OR_HLa() do { \
 	REG_A |= read8(REG_HL); \
-	SET_ALL_FLAGS(GB_FALSE, GB_FALSE, GB_FALSE, REG_A == 0); \
+	SET_ALL_FLAGS(false, false, false, REG_A == 0); \
 } while(0)
 
-#define DI() do { gb->cpu.ime = GB_FALSE; } while(0)
-#define EI() do { gb->cpu.ime = GB_TRUE; } while(0)
+#define DI() do { gb->cpu.ime = false; } while(0)
+#define EI() do { gb->cpu.ime = true; } while(0)
 
 #define POP_BC() do { \
-	const GB_U16 result = POP(); \
+	const uint16_t result = POP(); \
 	SET_REG_BC(result); \
 } while(0)
 
 #define POP_DE() do { \
-	const GB_U16 result = POP(); \
+	const uint16_t result = POP(); \
 	SET_REG_DE(result); \
 } while(0)
 
 #define POP_HL() do { \
-	const GB_U16 result = POP(); \
+	const uint16_t result = POP(); \
 	SET_REG_HL(result); \
 } while(0)
 
 #define POP_AF() do { \
-	const GB_U16 result = POP(); \
+	const uint16_t result = POP(); \
 	SET_REG_AF(result); \
 } while(0)
 
 #define RL_r() do { \
-	const GB_U8 value = REG(opcode); \
+	const uint8_t value = REG(opcode); \
 	REG(opcode) = (REG(opcode) << 1) | (FLAG_C); \
-	SET_ALL_FLAGS(value >> 7, GB_FALSE, GB_FALSE, REG(opcode) == 0); \
+	SET_ALL_FLAGS(value >> 7, false, false, REG(opcode) == 0); \
 } while(0)
 
 #define RLA() do { \
-	const GB_U8 value = REG(opcode); \
+	const uint8_t value = REG(opcode); \
 	REG(opcode) = (REG(opcode) << 1) | (FLAG_C); \
-	SET_ALL_FLAGS(value >> 7, GB_FALSE, GB_FALSE, GB_FALSE); \
+	SET_ALL_FLAGS(value >> 7, false, false, false); \
 } while(0)
 
 #define RL_HLa() do { \
-	const GB_U8 value = read8(REG_HL); \
-	const GB_U8 result = (value << 1) | (FLAG_C); \
+	const uint8_t value = read8(REG_HL); \
+	const uint8_t result = (value << 1) | (FLAG_C); \
 	write8(REG_HL, result); \
-	SET_ALL_FLAGS(value >> 7, GB_FALSE, GB_FALSE, result == 0); \
+	SET_ALL_FLAGS(value >> 7, false, false, result == 0); \
 } while (0)
 
 #define RLC_r() do { \
-	const GB_U8 value = REG(opcode); \
+	const uint8_t value = REG(opcode); \
 	REG(opcode) = (REG(opcode) << 1) | ((REG(opcode) >> 7) & 1); \
-	SET_ALL_FLAGS(value >> 7, GB_FALSE, GB_FALSE, REG(opcode) == 0); \
+	SET_ALL_FLAGS(value >> 7, false, false, REG(opcode) == 0); \
 } while(0)
 
 #define RLC_HLa() do { \
-	const GB_U8 value = read8(REG_HL); \
-	const GB_U8 result = (value << 1) | ((value >> 7) & 1); \
+	const uint8_t value = read8(REG_HL); \
+	const uint8_t result = (value << 1) | ((value >> 7) & 1); \
 	write8(REG_HL, result); \
-	SET_ALL_FLAGS(value >> 7, GB_FALSE, GB_FALSE, result == 0); \
+	SET_ALL_FLAGS(value >> 7, false, false, result == 0); \
 } while(0)
 
 #define RLCA() do { \
-	const GB_U8 value = REG(opcode); \
+	const uint8_t value = REG(opcode); \
 	REG(opcode) = (REG(opcode) << 1) | ((REG(opcode) >> 7) & 1); \
-	SET_ALL_FLAGS(value >> 7, GB_FALSE, GB_FALSE, GB_FALSE); \
+	SET_ALL_FLAGS(value >> 7, false, false, false); \
 } while(0)
 
 #define RR_r() do { \
-	const GB_U8 value = REG(opcode); \
+	const uint8_t value = REG(opcode); \
 	REG(opcode) = (REG(opcode) >> 1) | (FLAG_C << 7); \
-	SET_ALL_FLAGS(value & 1, GB_FALSE, GB_FALSE, REG(opcode) == 0); \
+	SET_ALL_FLAGS(value & 1, false, false, REG(opcode) == 0); \
 } while(0)
 
 #define RR_HLa() do { \
-	const GB_U8 value = read8(REG_HL); \
-	const GB_U8 result = (value >> 1) | (FLAG_C << 7); \
+	const uint8_t value = read8(REG_HL); \
+	const uint8_t result = (value >> 1) | (FLAG_C << 7); \
 	write8(REG_HL, result); \
-	SET_ALL_FLAGS(value & 1, GB_FALSE, GB_FALSE, result == 0); \
+	SET_ALL_FLAGS(value & 1, false, false, result == 0); \
 } while(0)
 
 #define RRA() do { \
-	const GB_U8 value = REG(opcode); \
+	const uint8_t value = REG(opcode); \
 	REG(opcode) = (REG(opcode) >> 1) | (FLAG_C << 7); \
-	SET_ALL_FLAGS(value & 1, GB_FALSE, GB_FALSE, GB_FALSE); \
+	SET_ALL_FLAGS(value & 1, false, false, false); \
 } while(0)
 
 #define RRC_r() do { \
-	const GB_U8 value = REG(opcode); \
+	const uint8_t value = REG(opcode); \
 	REG(opcode) = (REG(opcode) >> 1) | (REG(opcode) << 7); \
-	SET_ALL_FLAGS(value & 1, GB_FALSE, GB_FALSE, REG(opcode) == 0); \
+	SET_ALL_FLAGS(value & 1, false, false, REG(opcode) == 0); \
 } while(0)
 
 #define RRCA() do { \
-	const GB_U8 value = REG(opcode); \
+	const uint8_t value = REG(opcode); \
 	REG(opcode) = (REG(opcode) >> 1) | (REG(opcode) << 7); \
-	SET_ALL_FLAGS(value & 1, GB_FALSE, GB_FALSE, GB_FALSE); \
+	SET_ALL_FLAGS(value & 1, false, false, false); \
 } while(0)
 
 #define RRC_HLa() do { \
-	const GB_U8 value = read8(REG_HL); \
-    const GB_U8 result = (value >> 1) | (value << 7); \
+	const uint8_t value = read8(REG_HL); \
+    const uint8_t result = (value >> 1) | (value << 7); \
 	write8(REG_HL, result); \
-	SET_ALL_FLAGS(value & 1, GB_FALSE, GB_FALSE, result == 0); \
+	SET_ALL_FLAGS(value & 1, false, false, result == 0); \
 } while (0)
 
 #define SLA_r() do { \
-	const GB_U8 value = REG(opcode); \
+	const uint8_t value = REG(opcode); \
 	REG(opcode) <<= 1; \
-	SET_ALL_FLAGS(value >> 7, GB_FALSE, GB_FALSE, REG(opcode) == 0); \
+	SET_ALL_FLAGS(value >> 7, false, false, REG(opcode) == 0); \
 } while(0)
 
 #define SLA_HLa() do { \
-	const GB_U8 value = read8(REG_HL); \
-    const GB_U8 result = value << 1; \
+	const uint8_t value = read8(REG_HL); \
+    const uint8_t result = value << 1; \
 	write8(REG_HL, result); \
-	SET_ALL_FLAGS(value >> 7, GB_FALSE, GB_FALSE, result == 0); \
+	SET_ALL_FLAGS(value >> 7, false, false, result == 0); \
 } while(0)
 
 #define SRA_r() do { \
-	const GB_U8 value = REG(opcode); \
+	const uint8_t value = REG(opcode); \
 	REG(opcode) = (REG(opcode) >> 1) | (REG(opcode) & 0x80); \
-	SET_ALL_FLAGS(value & 1, GB_FALSE, GB_FALSE, REG(opcode) == 0); \
+	SET_ALL_FLAGS(value & 1, false, false, REG(opcode) == 0); \
 } while(0)
 
 #define SRA_HLa() do { \
-	const GB_U8 value = read8(REG_HL); \
-    const GB_U8 result = (value >> 1) | (value & 0x80); \
+	const uint8_t value = read8(REG_HL); \
+    const uint8_t result = (value >> 1) | (value & 0x80); \
 	write8(REG_HL, result); \
-	SET_ALL_FLAGS(value & 1, GB_FALSE, GB_FALSE, result == 0); \
+	SET_ALL_FLAGS(value & 1, false, false, result == 0); \
 } while(0)
 
 #define SRL_r() do { \
-	const GB_U8 value = REG(opcode); \
+	const uint8_t value = REG(opcode); \
 	REG(opcode) >>= 1; \
-	SET_ALL_FLAGS(value & 1, GB_FALSE, GB_FALSE, REG(opcode) == 0); \
+	SET_ALL_FLAGS(value & 1, false, false, REG(opcode) == 0); \
 } while(0)
 
 #define SRL_HLa() do { \
-	const GB_U8 value = read8(REG_HL); \
-    const GB_U8 result = (value >> 1); \
+	const uint8_t value = read8(REG_HL); \
+    const uint8_t result = (value >> 1); \
 	write8(REG_HL, result); \
-	SET_ALL_FLAGS(value & 1, GB_FALSE, GB_FALSE, result == 0); \
+	SET_ALL_FLAGS(value & 1, false, false, result == 0); \
 } while(0)
 
 #define SWAP_r() do { \
     REG(opcode) = (REG(opcode) << 4) | (REG(opcode) >> 4); \
-	SET_ALL_FLAGS(GB_FALSE, GB_FALSE, GB_FALSE, REG(opcode) == 0); \
+	SET_ALL_FLAGS(false, false, false, REG(opcode) == 0); \
 } while(0)
 
 #define SWAP_HLa() do { \
-	const GB_U8 value = read8(REG_HL); \
-    const GB_U8 result = (value << 4) | (value >> 4); \
+	const uint8_t value = read8(REG_HL); \
+    const uint8_t result = (value << 4) | (value >> 4); \
 	write8(REG_HL, result); \
-	SET_ALL_FLAGS(GB_FALSE, GB_FALSE, GB_FALSE, result == 0); \
+	SET_ALL_FLAGS(false, false, false, result == 0); \
 } while(0)
 
 #define BIT_r() do { \
-    SET_FLAGS_HNZ(GB_TRUE, GB_FALSE, (REG(opcode) & (1 << ((opcode >> 3) & 0x7))) == 0); \
+    SET_FLAGS_HNZ(true, false, (REG(opcode) & (1 << ((opcode >> 3) & 0x7))) == 0); \
 } while(0)
 
 #define BIT_HLa() do { \
-	SET_FLAGS_HNZ(GB_TRUE, GB_FALSE, (read8(REG_HL) & (1 << ((opcode >> 3) & 0x7))) == 0); \
+	SET_FLAGS_HNZ(true, false, (read8(REG_HL) & (1 << ((opcode >> 3) & 0x7))) == 0); \
 } while(0)
 
 #define RES_r() do { \
@@ -771,7 +771,7 @@ static inline GB_U16 GB_POP(struct GB_Core* gb) {
 	if (FLAG_N) { \
         if (FLAG_C) { \
             REG_A -= 0x60; \
-            SET_FLAG_C(GB_TRUE); \
+            SET_FLAG_C(true); \
         } \
         if (FLAG_H) { \
             REG_A -= 0x6; \
@@ -779,13 +779,13 @@ static inline GB_U16 GB_POP(struct GB_Core* gb) {
     } else { \
         if (FLAG_C || REG_A > 0x99) { \
             REG_A += 0x60; \
-            SET_FLAG_C(GB_TRUE); \
+            SET_FLAG_C(true); \
         } \
         if (FLAG_H || (REG_A & 0x0F) > 0x09) { \
             REG_A += 0x6; \
         } \
     } \
-	SET_FLAGS_HZ(GB_FALSE, REG_A == 0); \
+	SET_FLAGS_HZ(false, REG_A == 0); \
 } while(0)
 
 #define RETI() do { \
@@ -798,12 +798,12 @@ static inline GB_U16 GB_POP(struct GB_Core* gb) {
 	REG_PC = value; \
 } while (0)
 
-#define CPL() do { REG_A = ~REG_A; SET_FLAGS_HN(GB_TRUE, GB_TRUE); } while(0)
-#define SCF() do { SET_FLAGS_CHN(GB_TRUE, GB_FALSE, GB_FALSE); } while (0)
-#define CCF() do { SET_FLAGS_CHN(FLAG_C ^ 1, GB_FALSE, GB_FALSE); } while(0)
+#define CPL() do { REG_A = ~REG_A; SET_FLAGS_HN(true, true); } while(0)
+#define SCF() do { SET_FLAGS_CHN(true, false, false); } while (0)
+#define CCF() do { SET_FLAGS_CHN(FLAG_C ^ 1, false, false); } while(0)
 
 #define HALT() do { \
-	gb->cpu.halt = GB_TRUE; \
+	gb->cpu.halt = true; \
 	if (gb->halt_cb != NULL) { \
 		gb->halt_cb(gb, gb->halt_cb_user_data); \
 	} \
@@ -845,22 +845,22 @@ static void GB_interrupt_handler(struct GB_Core* gb) {
 		return;
 	}
 	
-	const GB_U8 live_interrupts = IO_IF & IO_IE;
+	const uint8_t live_interrupts = IO_IF & IO_IE;
 	if (!live_interrupts) {
 		return;
 	}
 
-	gb->cpu.halt = GB_FALSE;
+	gb->cpu.halt = false;
 	
 	if (!gb->cpu.ime) {
 		return;
 	}
-	gb->cpu.ime = GB_FALSE;
+	gb->cpu.ime = false;
 
 #if defined(__has_builtin) && __has_builtin(__builtin_ctz)
 
-	const GB_U8 ctz = __builtin_ctz(live_interrupts);
-	const GB_U8 reset_vector = 64 | (ctz << 3);
+	const uint8_t ctz = __builtin_ctz(live_interrupts);
+	const uint8_t reset_vector = 64 | (ctz << 3);
 	RST(reset_vector);
 	GB_disable_interrupt(gb, 1 << ctz);
 #else
@@ -887,7 +887,7 @@ static void GB_interrupt_handler(struct GB_Core* gb) {
 }
 
 static void GB_execute(struct GB_Core* gb) {
-	const GB_U8 opcode = read8(REG_PC++);
+	const uint8_t opcode = read8(REG_PC++);
 
 	switch (opcode) {
 		case 0x00: break; // nop
@@ -1047,7 +1047,7 @@ static void GB_execute(struct GB_Core* gb) {
 		case 0xFF: RST(0x38); break;
 
 		default:
-			UNK_OP(gb, opcode, GB_FALSE);
+			UNK_OP(gb, opcode, false);
 			break;
 	}
 
@@ -1055,7 +1055,7 @@ static void GB_execute(struct GB_Core* gb) {
 }
 
 static void GB_execute_cb(struct GB_Core* gb) {
-	const GB_U8 opcode = read8(REG_PC++);
+	const uint8_t opcode = read8(REG_PC++);
 
 	switch (opcode) {
 		case 0x00: case 0x01: case 0x02: case 0x03:
@@ -1194,14 +1194,14 @@ static void GB_execute_cb(struct GB_Core* gb) {
 			break;
 		
 		default:
-			UNK_OP(gb, opcode, GB_TRUE);
+			UNK_OP(gb, opcode, true);
 			break;
 	}
 
 	gb->cpu.cycles += CYCLE_TABLE_CB[opcode];
 }
 
-GB_U16 GB_cpu_run(struct GB_Core* gb, GB_U16 cycles) {
+uint16_t GB_cpu_run(struct GB_Core* gb, uint16_t cycles) {
 	GB_UNUSED(cycles);
 
 	// reset cycles counter

@@ -66,10 +66,10 @@ static void step_frame_sequencer(struct GB_Core* gb) {
 }
 
 static void sample_channels(struct GB_Core* gb) {
-    const GB_S8 square1_sample = sample_square1(gb) * is_square1_enabled(gb);
-    const GB_S8 square2_sample = sample_square2(gb) * is_square2_enabled(gb);
-    const GB_S8 wave_sample = sample_wave(gb) * is_wave_enabled(gb);
-    const GB_S8 noise_sample = sample_noise(gb) * is_noise_enabled(gb);
+    const int8_t square1_sample = sample_square1(gb) * is_square1_enabled(gb);
+    const int8_t square2_sample = sample_square2(gb) * is_square2_enabled(gb);
+    const int8_t wave_sample = sample_wave(gb) * is_wave_enabled(gb);
+    const int8_t noise_sample = sample_noise(gb) * is_noise_enabled(gb);
 
 #ifdef CHANNEL_8
     gb->apu.samples[gb->apu.samples_count + 0] = square1_sample * IO_NR51.square1_left * CONTROL_CHANNEL.nr50.left_vol;
@@ -90,23 +90,23 @@ static void sample_channels(struct GB_Core* gb) {
 // for testing, test all channels VS test everything but wave channel...
 #define MODE 0
 #if MODE == 0
-    const GB_S8 final_sample_left = (((square1_sample * IO_NR51.square1_left) + (square2_sample * IO_NR51.square2_left) + (wave_sample * IO_NR51.wave_left) + (noise_sample * IO_NR51.noise_left)) / 4) * CONTROL_CHANNEL.nr50.left_vol;
-    const GB_S8 final_sample_right = (((square1_sample * IO_NR51.square1_right) + (square2_sample * IO_NR51.square2_right) + (wave_sample * IO_NR51.wave_right) + (noise_sample * IO_NR51.noise_right)) / 4) * CONTROL_CHANNEL.nr50.right_vol;
+    const int8_t final_sample_left = (((square1_sample * IO_NR51.square1_left) + (square2_sample * IO_NR51.square2_left) + (wave_sample * IO_NR51.wave_left) + (noise_sample * IO_NR51.noise_left)) / 4) * CONTROL_CHANNEL.nr50.left_vol;
+    const int8_t final_sample_right = (((square1_sample * IO_NR51.square1_right) + (square2_sample * IO_NR51.square2_right) + (wave_sample * IO_NR51.wave_right) + (noise_sample * IO_NR51.noise_right)) / 4) * CONTROL_CHANNEL.nr50.right_vol;
 #elif MODE == 1
     GB_UNUSED(wave_sample);
-    const GB_S8 final_sample_left = (((square1_sample * IO_NR51.square1_left) + (square2_sample * IO_NR51.square2_left) + (noise_sample * IO_NR51.noise_left)) / 3) * CONTROL_CHANNEL.nr50.left_vol;
-    const GB_S8 final_sample_right = (((square1_sample * IO_NR51.square1_right) + (square2_sample * IO_NR51.square2_right) + (noise_sample * IO_NR51.noise_right)) / 3) * CONTROL_CHANNEL.nr50.right_vol;
+    const int8_t final_sample_left = (((square1_sample * IO_NR51.square1_left) + (square2_sample * IO_NR51.square2_left) + (noise_sample * IO_NR51.noise_left)) / 3) * CONTROL_CHANNEL.nr50.left_vol;
+    const int8_t final_sample_right = (((square1_sample * IO_NR51.square1_right) + (square2_sample * IO_NR51.square2_right) + (noise_sample * IO_NR51.noise_right)) / 3) * CONTROL_CHANNEL.nr50.right_vol;
 #elif MODE == 2
     GB_UNUSED(wave_sample);
     GB_UNUSED(noise_sample);
-    const GB_S8 final_sample_left = (((square1_sample * IO_NR51.square1_left) + (square2_sample * IO_NR51.square2_left)) / 2) * CONTROL_CHANNEL.nr50.left_vol;
-    const GB_S8 final_sample_right = (((square1_sample * IO_NR51.square1_right) + (square2_sample * IO_NR51.square2_right)) / 2) * CONTROL_CHANNEL.nr50.right_vol;
+    const int8_t final_sample_left = (((square1_sample * IO_NR51.square1_left) + (square2_sample * IO_NR51.square2_left)) / 2) * CONTROL_CHANNEL.nr50.left_vol;
+    const int8_t final_sample_right = (((square1_sample * IO_NR51.square1_right) + (square2_sample * IO_NR51.square2_right)) / 2) * CONTROL_CHANNEL.nr50.right_vol;
 #elif MODE == 3
     GB_UNUSED(square1_sample);
     GB_UNUSED(square2_sample);
     GB_UNUSED(noise_sample);
-    const GB_S8 final_sample_left = (wave_sample * IO_NR51.wave_left) * CONTROL_CHANNEL.nr50.left_vol;
-    const GB_S8 final_sample_right = (wave_sample * IO_NR51.wave_right) * CONTROL_CHANNEL.nr50.right_vol;
+    const int8_t final_sample_left = (wave_sample * IO_NR51.wave_left) * CONTROL_CHANNEL.nr50.left_vol;
+    const int8_t final_sample_right = (wave_sample * IO_NR51.wave_right) * CONTROL_CHANNEL.nr50.right_vol;
 #endif
 #undef MODE
 
@@ -136,7 +136,7 @@ static void sample_channels(struct GB_Core* gb) {
     }
 }
 
-void GB_apu_run(struct GB_Core* gb, GB_U16 cycles) {
+void GB_apu_run(struct GB_Core* gb, uint16_t cycles) {
     // todo: handle if the apu is disabled!
     if (IO_NR52.power == 0) {
         // still tick samples but fill empty
@@ -193,7 +193,7 @@ void GB_apu_run(struct GB_Core* gb, GB_U16 cycles) {
 }
 
 // IO read / writes
-GB_U8 GB_apu_ioread(const struct GB_Core* gb, const GB_U16 addr) {
+uint8_t GB_apu_ioread(const struct GB_Core* gb, const uint16_t addr) {
     switch (addr & 0x7F) {
 		case 0x10:
 			return 0x80 | (IO_NR10.sweep_period << 4) | (IO_NR10.negate << 3) | IO_NR10.shift;
@@ -263,7 +263,7 @@ GB_U8 GB_apu_ioread(const struct GB_Core* gb, const GB_U16 addr) {
     }
 }
 
-void GB_apu_iowrite(struct GB_Core* gb, const GB_U16 addr, const GB_U8 value) {
+void GB_apu_iowrite(struct GB_Core* gb, const uint16_t addr, const uint8_t value) {
 	switch (addr & 0x7F) {
 		case 0x10:
 			IO_NR10.sweep_period = (value >> 4) & 0x7;
@@ -282,7 +282,7 @@ void GB_apu_iowrite(struct GB_Core* gb, const GB_U16 addr, const GB_U8 value) {
 			IO_NR12.starting_vol = value >> 4;
 			IO_NR12.env_add_mode = (value >> 3) & 0x1;
 			IO_NR12.period = value & 0x7;
-            if (is_square1_dac_enabled(gb) == GB_FALSE) {
+            if (is_square1_dac_enabled(gb) == false) {
                 square1_disable(gb);
             }
 			break;
@@ -312,7 +312,7 @@ void GB_apu_iowrite(struct GB_Core* gb, const GB_U16 addr, const GB_U8 value) {
 			IO_NR22.starting_vol = value >> 4;
 			IO_NR22.env_add_mode = (value >> 3) & 0x1;
 			IO_NR22.period = value & 0x7;
-            if (is_square2_dac_enabled(gb) == GB_FALSE) {
+            if (is_square2_dac_enabled(gb) == false) {
                 square2_disable(gb);
             }
 			break;
@@ -333,7 +333,7 @@ void GB_apu_iowrite(struct GB_Core* gb, const GB_U16 addr, const GB_U8 value) {
 
 		case 0x1A:
 			IO_NR30.DAC_power = value >> 7;
-            if (is_wave_dac_enabled(gb) == GB_FALSE) {
+            if (is_wave_dac_enabled(gb) == false) {
                 wave_disable(gb);
             }
 			break;
@@ -375,7 +375,7 @@ void GB_apu_iowrite(struct GB_Core* gb, const GB_U16 addr, const GB_U8 value) {
 			IO_NR42.starting_vol = value >> 4;
 			IO_NR42.env_add_mode = (value >> 3) & 0x1;
 			IO_NR42.period = value & 0x7;
-            if (is_noise_dac_enabled(gb) == GB_FALSE) {
+            if (is_noise_dac_enabled(gb) == false) {
                 noise_disable(gb);
             }
 			break;

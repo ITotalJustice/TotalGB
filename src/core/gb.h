@@ -9,19 +9,19 @@ extern "C" {
 
 #include "types.h"
 
-GB_BOOL GB_init(struct GB_Core* gb);
+bool GB_init(struct GB_Core* gb);
 void GB_quit(struct GB_Core* gb);
 void GB_reset(struct GB_Core* gb);
 
 // pass the fully loaded rom data.
 // this memory is NOT owned.
 // freeing the memory should still be handled by the caller!
-int GB_loadrom_data(struct GB_Core* gb, GB_U8* data, GB_U32 size);
+int GB_loadrom_data(struct GB_Core* gb, uint8_t* data, uint32_t size);
 
-GB_BOOL GB_has_save(const struct GB_Core* gb);
-GB_BOOL GB_has_rtc(const struct GB_Core* gb);
-GB_U32 GB_calculate_savedata_size(const struct GB_Core* gb);
-GB_U32 GB_calculate_state_size(const struct GB_Core* gb);
+bool GB_has_save(const struct GB_Core* gb);
+bool GB_has_rtc(const struct GB_Core* gb);
+uint32_t GB_calculate_savedata_size(const struct GB_Core* gb);
+uint32_t GB_calculate_state_size(const struct GB_Core* gb);
 
 int GB_savegame(const struct GB_Core* gb, struct GB_SaveData* save);
 int GB_loadsave(struct GB_Core* gb, const struct GB_SaveData* save);
@@ -36,7 +36,7 @@ int GB_loadstate(struct GB_Core* gb, const struct GB_State* state);
 // if swap_endian=false or the system is little-endian, it is not swapped.
 // this is to be used if creating a rewind buffer as endianess and headers
 // are not needed.
-int GB_savestate2(const struct GB_Core* gb, struct GB_CoreState* state, GB_BOOL swap_endian);
+int GB_savestate2(const struct GB_Core* gb, struct GB_CoreState* state, bool swap_endian);
 int GB_loadstate2(struct GB_Core* gb, const struct GB_CoreState* state);
 
 // int GB_set_colour_mode(struct GB_Core* gb, enum GB_ColourMode mode);
@@ -46,16 +46,16 @@ int GB_loadstate2(struct GB_Core* gb, const struct GB_CoreState* state);
 // NOTE: the s, m, h will be clamped to the max values
 // so there won't be 255 seconds, it'll be clamped to 59.
 // returns false if the game does not support rtc.
-GB_BOOL GB_set_rtc(struct GB_Core* gb, const struct GB_Rtc rtc);
+bool GB_set_rtc(struct GB_Core* gb, const struct GB_Rtc rtc);
 
 // this will work even if the game does NOT have RTC
 // this setting persits accross games!
 void GB_set_rtc_update_config(struct GB_Core* gb, const enum GB_RtcUpdateConfig config);
 
-GB_BOOL GB_has_mbc_flags(const struct GB_Core* gb, const GB_U8 flags);
+bool GB_has_mbc_flags(const struct GB_Core* gb, const uint8_t flags);
 
 /* returns the number of cycles ran */
-GB_U16 GB_run_step(struct GB_Core* gb);
+uint16_t GB_run_step(struct GB_Core* gb);
 
 /* run until the end of a frame */
 void GB_run_frame(struct GB_Core* gb);
@@ -65,10 +65,10 @@ void GB_set_render_palette_layer_config(struct GB_Core* gb, enum GB_RenderLayerC
 enum GB_SystemType GB_get_system_type(const struct GB_Core* gb);
 
 // calls GB_get_system_type(gb) and compares the result
-GB_BOOL GB_is_system_gbc(const struct GB_Core* gb);
+bool GB_is_system_gbc(const struct GB_Core* gb);
 
 // fills out the header struct using the loaded rom data
-GB_BOOL GB_get_rom_header(const struct GB_Core* gb, struct GB_CartHeader* header);
+bool GB_get_rom_header(const struct GB_Core* gb, struct GB_CartHeader* header);
 
 /* returns a pointer to the loaded rom data as a GB_CartHeader */
 // this can be used to modify the contents of the header,
@@ -118,33 +118,33 @@ void GB_connect_link_cable(struct GB_Core* gb, GB_serial_transfer_t cb, void* us
 // WARNING: this will overwrite the exisitng link_cable_cb and user_data! 
 void GB_connect_link_cable_builtin(struct GB_Core* gb, struct GB_Core* gb2);
 
-GB_BOOL GB_get_rom_palette_hash_from_header(const struct GB_CartHeader* header, GB_U8* hash, GB_U8* forth);
+bool GB_get_rom_palette_hash_from_header(const struct GB_CartHeader* header, uint8_t* hash, uint8_t* forth);
 
-GB_BOOL GB_get_rom_palette_hash(const struct GB_Core* gb, GB_U8* hash, GB_U8* forth);
+bool GB_get_rom_palette_hash(const struct GB_Core* gb, uint8_t* hash, uint8_t* forth);
 
-GB_BOOL GB_set_palette_from_table_entry(struct GB_Core* gb, GB_U8 table, GB_U8 entry);
+bool GB_set_palette_from_table_entry(struct GB_Core* gb, uint8_t table, uint8_t entry);
 
-GB_BOOL GB_set_palette_from_hash(struct GB_Core* gb, GB_U8 hash);
+bool GB_set_palette_from_hash(struct GB_Core* gb, uint8_t hash);
 
-GB_BOOL GB_set_palette_from_buttons(struct GB_Core* gb, GB_U8 buttons);
+bool GB_set_palette_from_buttons(struct GB_Core* gb, uint8_t buttons);
 
 /* set a custom palette, must be BGR555 format */
-GB_BOOL GB_set_palette_from_palette(struct GB_Core* gb, const struct GB_PaletteEntry* palette);
+bool GB_set_palette_from_palette(struct GB_Core* gb, const struct GB_PaletteEntry* palette);
 
 // this can be used to set multiple buttons down or up
 // at once, or can set just 1.
-void GB_set_buttons(struct GB_Core* gb, GB_U8 buttons, GB_BOOL is_down);
-GB_U8 GB_get_buttons(const struct GB_Core* gb);
-GB_BOOL GB_is_button_down(const struct GB_Core* gb, enum GB_Button button);
+void GB_set_buttons(struct GB_Core* gb, uint8_t buttons, bool is_down);
+uint8_t GB_get_buttons(const struct GB_Core* gb);
+bool GB_is_button_down(const struct GB_Core* gb, enum GB_Button button);
 
-void GB_cpu_set_flag(struct GB_Core* gb, enum GB_CpuFlags flag, GB_BOOL value);
-GB_BOOL GB_cpu_get_flag(const struct GB_Core* gb, enum GB_CpuFlags flag);
+void GB_cpu_set_flag(struct GB_Core* gb, enum GB_CpuFlags flag, bool value);
+bool GB_cpu_get_flag(const struct GB_Core* gb, enum GB_CpuFlags flag);
 
-void GB_cpu_set_register(struct GB_Core* gb, enum GB_CpuRegisters reg, GB_U8 value);
-GB_U8 GB_cpu_get_register(const struct GB_Core* gb, enum GB_CpuRegisters reg);
+void GB_cpu_set_register(struct GB_Core* gb, enum GB_CpuRegisters reg, uint8_t value);
+uint8_t GB_cpu_get_register(const struct GB_Core* gb, enum GB_CpuRegisters reg);
 
-void GB_cpu_set_register_pair(struct GB_Core* gb, enum GB_CpuRegisterPairs pair, GB_U16 value);
-GB_U16 GB_cpu_get_register_pair(const struct GB_Core* gb, enum GB_CpuRegisterPairs pair);
+void GB_cpu_set_register_pair(struct GB_Core* gb, enum GB_CpuRegisterPairs pair, uint16_t value);
+uint16_t GB_cpu_get_register_pair(const struct GB_Core* gb, enum GB_CpuRegisterPairs pair);
 
 // this is a race condition, but should solve audio pops for now
 // until i have audio drive the entire core...

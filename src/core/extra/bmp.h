@@ -28,38 +28,38 @@ enum GB_BmpCompressionType {
 };
 
 struct GB_BmpHeader {
-    GB_U16 signature; /* BM */
-    GB_U32 file_size;
-    GB_U32 reserved; /* = 0 */
-    GB_U32 data_offset;
+    uint16_t signature; /* BM */
+    uint32_t file_size;
+    uint32_t reserved; /* = 0 */
+    uint32_t data_offset;
 } __attribute__((__packed__));
 
 struct GB_BmpInfoHeader {
-    GB_U32 size; /* = 40 */
-    GB_S32 width;
-    GB_S32 height;
-    GB_U16 planes; /* = 1 */
-    GB_U16 bits_per_pixel;
-    GB_U32 compression;
-    GB_U32 image_size;
-    GB_S32 xpixels_per_m;
-    GB_S32 ypixels_per_m;
-    GB_U32 colours_used;
-    GB_U32 important_colours;
+    uint32_t size; /* = 40 */
+    int32_t width;
+    int32_t height;
+    uint16_t planes; /* = 1 */
+    uint16_t bits_per_pixel;
+    uint32_t compression;
+    uint32_t image_size;
+    int32_t xpixels_per_m;
+    int32_t ypixels_per_m;
+    uint32_t colours_used;
+    uint32_t important_colours;
 } __attribute__((__packed__));
 
 struct GB_Bmp {
     struct GB_BmpHeader header;
     struct GB_BmpInfoHeader info_header;
-    GB_U16 pixel_data[GB_SCREEN_HEIGHT][GB_SCREEN_WIDTH];
+    uint16_t pixel_data[GB_SCREEN_HEIGHT][GB_SCREEN_WIDTH];
 } __attribute__((__packed__));
 
 /* The filled out bmp struct can be written directly to a file and saved with */
 /* extension .bmp to be opened by any image reader. */
-GB_BOOL GB_screenshot(const struct GB_Core* gb, struct GB_Bmp* bmp);
+bool GB_screenshot(const struct GB_Core* gb, struct GB_Bmp* bmp);
 
 #ifndef GB_NO_STDIO
-GB_BOOL GB_screenshot_to_file(const struct GB_Core* gb, const char* path);
+bool GB_screenshot_to_file(const struct GB_Core* gb, const char* path);
 #endif /* GB_NO_STDIO */
 
 #ifdef __cplusplus

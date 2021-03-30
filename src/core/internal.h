@@ -132,29 +132,29 @@ void GB_throw_error(const struct GB_Core* gb, enum GB_ErrorDataType type, const 
 
 void GB_rtc_tick_frame(struct GB_Core* gb);
 
-GB_U8 GB_ioread(struct GB_Core* gb, GB_U16 addr);
-void GB_iowrite(struct GB_Core* gb, GB_U16 addr, GB_U8 value);
-GB_U8 GB_read8(struct GB_Core* gb, const GB_U16 addr);
-void GB_write8(struct GB_Core* gb, GB_U16 addr, GB_U8 value);
-GB_U16 GB_read16(struct GB_Core* gb, GB_U16 addr);
-void GB_write16(struct GB_Core* gb, GB_U16 addr, GB_U16 value);
+uint8_t GB_ioread(struct GB_Core* gb, uint16_t addr);
+void GB_iowrite(struct GB_Core* gb, uint16_t addr, uint8_t value);
+uint8_t GB_read8(struct GB_Core* gb, const uint16_t addr);
+void GB_write8(struct GB_Core* gb, uint16_t addr, uint8_t value);
+uint16_t GB_read16(struct GB_Core* gb, uint16_t addr);
+void GB_write16(struct GB_Core* gb, uint16_t addr, uint16_t value);
 
-void GB_on_lcdc_write(struct GB_Core* gb, const GB_U8 value);
+void GB_on_lcdc_write(struct GB_Core* gb, const uint8_t value);
 
-GB_U8 GB_apu_ioread(const struct GB_Core* gb, const GB_U16 addr);
-void GB_apu_iowrite(struct GB_Core* gb, const GB_U16 addr, const GB_U8 value);
+uint8_t GB_apu_ioread(const struct GB_Core* gb, const uint16_t addr);
+void GB_apu_iowrite(struct GB_Core* gb, const uint16_t addr, const uint8_t value);
 
-GB_U8 GB_serial_sb_read(const struct GB_Core* gb);
-void GB_serial_sc_write(struct GB_Core* gb, const GB_U8 data);
+uint8_t GB_serial_sb_read(const struct GB_Core* gb);
+void GB_serial_sc_write(struct GB_Core* gb, const uint8_t data);
 
-void GB_bcpd_write(struct GB_Core* gb, GB_U8 value);
-void GB_ocpd_write(struct GB_Core* gb, GB_U8 value);
+void GB_bcpd_write(struct GB_Core* gb, uint8_t value);
+void GB_ocpd_write(struct GB_Core* gb, uint8_t value);
 
-GB_U8 GB_hdma5_read(const struct GB_Core* gb);
-void GB_hdma5_write(struct GB_Core* gb, GB_U8 value);
+uint8_t GB_hdma5_read(const struct GB_Core* gb);
+void GB_hdma5_write(struct GB_Core* gb, uint8_t value);
 
 // these should also be static
-GB_BOOL GB_setup_mbc(struct GB_Cart* mbc, const struct GB_CartHeader* header);
+bool GB_setup_mbc(struct GB_Cart* mbc, const struct GB_CartHeader* header);
 void GB_setup_mmap(struct GB_Core* gb);
 void GB_update_rom_banks(struct GB_Core* gb);
 void GB_update_ram_banks(struct GB_Core* gb);
@@ -165,27 +165,27 @@ void GB_update_wram_banks(struct GB_Core* gb);
 void GB_DMA(struct GB_Core* gb);
 void GB_draw_scanline(struct GB_Core* gb);
 void GB_update_all_colours_gb(struct GB_Core* gb);
-void GB_set_coincidence_flag(struct GB_Core* gb, const GB_BOOL n);
+void GB_set_coincidence_flag(struct GB_Core* gb, const bool n);
 
 void GB_set_status_mode(struct GB_Core* gb, const enum GB_StatusModes mode);
 enum GB_StatusModes GB_get_status_mode(const struct GB_Core* gb);
 
 void GB_compare_LYC(struct GB_Core* gb);
-GB_U8 GB_joypad_get(const struct GB_Core* gb);
+uint8_t GB_joypad_get(const struct GB_Core* gb);
 
 void GB_enable_interrupt(struct GB_Core* gb, const enum GB_Interrupts interrupt);
 void GB_disable_interrupt(struct GB_Core* gb, const enum GB_Interrupts interrupt);
 
 // used internally
-GB_U16 GB_cpu_run(struct GB_Core* gb, GB_U16 cycles);
-void GB_timer_run(struct GB_Core* gb, GB_U16 cycles);
-void GB_ppu_run(struct GB_Core* gb, GB_U16 cycles);
-void GB_apu_run(struct GB_Core* gb, GB_U16 cycles);
+uint16_t GB_cpu_run(struct GB_Core* gb, uint16_t cycles);
+void GB_timer_run(struct GB_Core* gb, uint16_t cycles);
+void GB_ppu_run(struct GB_Core* gb, uint16_t cycles);
+void GB_apu_run(struct GB_Core* gb, uint16_t cycles);
 
-GB_BOOL GB_is_lcd_enabled(const struct GB_Core* gb);
-GB_BOOL GB_is_win_enabled(const struct GB_Core* gb);
-GB_BOOL GB_is_obj_enabled(const struct GB_Core* gb);
-GB_BOOL GB_is_bg_enabled(const struct GB_Core* gb);
+bool GB_is_lcd_enabled(const struct GB_Core* gb);
+bool GB_is_win_enabled(const struct GB_Core* gb);
+bool GB_is_obj_enabled(const struct GB_Core* gb);
+bool GB_is_bg_enabled(const struct GB_Core* gb);
 
 #ifdef __cplusplus
 }

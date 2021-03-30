@@ -4,8 +4,8 @@
 #include <stdio.h>
 #include <assert.h>
 
-static inline void GB_iowrite_gbc(struct GB_Core* gb, GB_U16 addr, GB_U8 value) {
-	assert(GB_is_system_gbc(gb) == GB_TRUE);
+static inline void GB_iowrite_gbc(struct GB_Core* gb, uint16_t addr, uint8_t value) {
+	assert(GB_is_system_gbc(gb) == true);
 
 	switch (addr & 0x7F) {
 		case 0x4D:
@@ -87,7 +87,7 @@ static inline void GB_iowrite_gbc(struct GB_Core* gb, GB_U16 addr, GB_U8 value) 
 	}
 }
 
-GB_U8 GB_ioread(struct GB_Core* gb, GB_U16 addr) {
+uint8_t GB_ioread(struct GB_Core* gb, uint16_t addr) {
 	switch (addr & 0x7F) {
 		case 0x00:
 			return GB_joypad_get(gb);
@@ -120,7 +120,7 @@ GB_U8 GB_ioread(struct GB_Core* gb, GB_U16 addr) {
 			return 0xFF;
 
 		case 0x4F: // (GBC) VBK
-			if (GB_is_system_gbc(gb) == GB_TRUE) {
+			if (GB_is_system_gbc(gb) == true) {
 				return IO_VBK;
 			} else {
 				return 0xFF;
@@ -128,14 +128,14 @@ GB_U8 GB_ioread(struct GB_Core* gb, GB_U16 addr) {
 			
 
 		case 0x55: // (GBC) HDMA5
-			if (GB_is_system_gbc(gb) == GB_TRUE) {
+			if (GB_is_system_gbc(gb) == true) {
 				return GB_hdma5_read(gb);
 			} else {
 				return 0xFF;
 			}
 
 		case 0x70: // (GBC) SVBK
-			if (GB_is_system_gbc(gb) == GB_TRUE) {
+			if (GB_is_system_gbc(gb) == true) {
 				return IO_SVBK;
 			} else {
 				return 0xFF;
@@ -151,7 +151,7 @@ GB_U8 GB_ioread(struct GB_Core* gb, GB_U16 addr) {
 	}
 }
 
-void GB_iowrite(struct GB_Core* gb, GB_U16 addr, GB_U8 value) {
+void GB_iowrite(struct GB_Core* gb, uint16_t addr, uint8_t value) {
 	switch (addr & 0x7F) {
 		case 0x00: // joypad
 			IO_JYP = value;
@@ -250,14 +250,14 @@ void GB_iowrite(struct GB_Core* gb, GB_U16 addr, GB_U8 value) {
 			break;
 
 		default:
-			if (GB_is_system_gbc(gb) == GB_TRUE) {
+			if (GB_is_system_gbc(gb) == true) {
 				GB_iowrite_gbc(gb, addr, value);
 			}
 			break;
 	}
 }
 
-static inline GB_U8 GB_mbc3_rtc_read(const struct GB_Core* gb) {
+static inline uint8_t GB_mbc3_rtc_read(const struct GB_Core* gb) {
     switch (gb->cart.rtc_mapped_reg) {
         case GB_RTC_MAPPED_REG_S: return gb->cart.rtc.S;
         case GB_RTC_MAPPED_REG_M: return gb->cart.rtc.M;
@@ -270,11 +270,11 @@ static inline GB_U8 GB_mbc3_rtc_read(const struct GB_Core* gb) {
     GB_UNREACHABLE(0xFF);
 }
 
-static inline GB_BOOL GB_is_rtc_read(const struct GB_Core* gb) {
-	return gb->cart.in_ram == GB_FALSE && GB_has_mbc_flags(gb, MBC_FLAGS_RTC);
+static inline bool GB_is_rtc_read(const struct GB_Core* gb) {
+	return gb->cart.in_ram == false && GB_has_mbc_flags(gb, MBC_FLAGS_RTC);
 }
 
-GB_U8 GB_read8(struct GB_Core* gb, const GB_U16 addr) {
+uint8_t GB_read8(struct GB_Core* gb, const uint16_t addr) {
 	if (LIKELY(addr < 0xFE00)) {
 		#if GB_RTC_SPEEDHACK
 		#ifndef NDEBUG
@@ -308,7 +308,7 @@ GB_U8 GB_read8(struct GB_Core* gb, const GB_U16 addr) {
 }
 
 // static int isset = 0;
-void GB_write8(struct GB_Core* gb, GB_U16 addr, GB_U8 value) {
+void GB_write8(struct GB_Core* gb, uint16_t addr, uint8_t value) {
 	if (LIKELY(addr < 0xFE00)) {
 		switch ((addr >> 12) & 0xF) {
 			case 0x0: case 0x1: case 0x2: case 0x3: case 0x4:
@@ -337,20 +337,20 @@ void GB_write8(struct GB_Core* gb, GB_U16 addr, GB_U8 value) {
     }
 }
 
-GB_U16 GB_read16(struct GB_Core* gb, GB_U16 addr) {
-	const GB_U8 lo = GB_read8(gb, addr);
-	const GB_U8 hi = GB_read8(gb, addr + 1);
+uint16_t GB_read16(struct GB_Core* gb, uint16_t addr) {
+	const uint8_t lo = GB_read8(gb, addr);
+	const uint8_t hi = GB_read8(gb, addr + 1);
 	return (hi << 8) | lo;
 }
 
-void GB_write16(struct GB_Core* gb, GB_U16 addr, GB_U16 value) {
+void GB_write16(struct GB_Core* gb, uint16_t addr, uint16_t value) {
 	GB_write8(gb, addr + 0, value & 0xFF);
     GB_write8(gb, addr + 1, value >> 8);
 }
 
 void GB_update_rom_banks(struct GB_Core* gb) {
-	const GB_U8* rom_bank0 = gb->cart.get_rom_bank(gb, 0);
-	const GB_U8* rom_bankx = gb->cart.get_rom_bank(gb, 1);
+	const uint8_t* rom_bank0 = gb->cart.get_rom_bank(gb, 0);
+	const uint8_t* rom_bankx = gb->cart.get_rom_bank(gb, 1);
 	gb->mmap[0x0] = rom_bank0 + 0x0000;
 	gb->mmap[0x1] = rom_bank0 + 0x1000;
 	gb->mmap[0x2] = rom_bank0 + 0x2000;
@@ -363,13 +363,13 @@ void GB_update_rom_banks(struct GB_Core* gb) {
 }
 
 void GB_update_ram_banks(struct GB_Core* gb) {
-	const GB_U8* cart_ram = gb->cart.get_ram_bank(gb, 0);
+	const uint8_t* cart_ram = gb->cart.get_ram_bank(gb, 0);
 	gb->mmap[0xA] = cart_ram + 0x0000;
 	gb->mmap[0xB] = cart_ram + 0x1000;
 }
 
 void GB_update_vram_banks(struct GB_Core* gb) {
-	if (GB_is_system_gbc(gb) == GB_TRUE) {
+	if (GB_is_system_gbc(gb) == true) {
 		gb->mmap[0x8] = gb->ppu.vram[IO_VBK] + 0x0000;
 		gb->mmap[0x9] = gb->ppu.vram[IO_VBK] + 0x1000;
 	} else {
@@ -382,7 +382,7 @@ void GB_update_wram_banks(struct GB_Core* gb) {
 	gb->mmap[0xC] = gb->wram[0];
 	gb->mmap[0xE] = gb->wram[0];
 
-	if (GB_is_system_gbc(gb) == GB_TRUE) {
+	if (GB_is_system_gbc(gb) == true) {
 		gb->mmap[0xD] = gb->wram[IO_SVBK];
 		gb->mmap[0xF] = gb->wram[IO_SVBK];
 	} else {

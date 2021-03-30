@@ -7,6 +7,9 @@ extern "C" {
 #include "tables/palette_table.h"
 
 #include <stddef.h>
+#include <stdbool.h>
+#include <stdint.h>
+
 
 #define GB_LITTLE_ENDIAN 1
 #define GB_BIG_ENDIAN 2
@@ -24,14 +27,6 @@ extern "C" {
 #error GB_ENDIAN IS NOT SET! UNABLE TO DEDUCE PLATFORM ENDIANESS
 #endif /* GB_ENDIAN */
 
-#include <stdint.h>
-typedef uint8_t GB_U8;		typedef int8_t GB_S8;
-typedef uint16_t GB_U16;	typedef int16_t GB_S16;
-typedef uint32_t GB_U32;	typedef int32_t GB_S32;
-
-#define GB_TRUE 1
-#define GB_FALSE 0
-typedef GB_U8 GB_BOOL;
 
 // fwd declare structs
 struct GB_Core;
@@ -43,12 +38,14 @@ struct GB_ApuCallbackData;
 struct GB_Config;
 struct GB_ErrorData;
 
+
 #define GB_SCREEN_WIDTH 160
 #define GB_SCREEN_HEIGHT 144
 
 #define GB_BOOTROM_SIZE 0x100
 
 #define GB_FRAME_CPU_CYCLES 70224
+
 
 enum GB_MbcType {
 	MBC_TYPE_NONE = 0,
@@ -74,21 +71,21 @@ enum GB_ColourMode {
 
 enum GB_SaveSizes {
 	GB_SAVE_SIZE_NONE = 0,
-	GB_SAVE_SIZE_1 = 0x800U,
-	GB_SAVE_SIZE_2 = 0x2000U,
-	GB_SAVE_SIZE_3 = 0x8000U,
-	GB_SAVE_SIZE_4 = 0x20000U,
-	GB_SAVE_SIZE_5 = 0x10000U,
+	GB_SAVE_SIZE_1 = 0x800,
+	GB_SAVE_SIZE_2 = 0x2000,
+	GB_SAVE_SIZE_3 = 0x8000,
+	GB_SAVE_SIZE_4 = 0x20000,
+	GB_SAVE_SIZE_5 = 0x10000,
 
 	GB_SAVE_SIZE_MAX = GB_SAVE_SIZE_5,
 };
 
 enum GB_MbcFlags {
-	MBC_FLAGS_NONE = 0,
-	MBC_FLAGS_RAM = 1 << 0,
-	MBC_FLAGS_BATTERY = 1 << 1,
-	MBC_FLAGS_RTC = 1 << 2,
-	MBC_FLAGS_RUMBLE = 1 << 3,
+	MBC_FLAGS_NONE		= 0,
+	MBC_FLAGS_RAM		= 1 << 0,
+	MBC_FLAGS_BATTERY	= 1 << 1,
+	MBC_FLAGS_RTC		= 1 << 2,
+	MBC_FLAGS_RUMBLE	= 1 << 3,
 };
 
 enum GB_RtcMappedReg {
@@ -127,30 +124,30 @@ enum GB_CpuRegisterPairs {
 };
 
 enum GB_Button {
-	GB_BUTTON_A = 1 << 0,
-    GB_BUTTON_B = 1 << 1,
-    GB_BUTTON_SELECT = 1 << 2,
-    GB_BUTTON_START = 1 << 3,
+	GB_BUTTON_A			= 1 << 0,
+    GB_BUTTON_B			= 1 << 1,
+    GB_BUTTON_SELECT	= 1 << 2,
+    GB_BUTTON_START		= 1 << 3,
 
-    GB_BUTTON_RIGHT = 1 << 4,
-    GB_BUTTON_LEFT = 1 << 5,
-    GB_BUTTON_UP = 1 << 6,
-    GB_BUTTON_DOWN = 1 << 7
+    GB_BUTTON_RIGHT		= 1 << 4,
+    GB_BUTTON_LEFT		= 1 << 5,
+    GB_BUTTON_UP		= 1 << 6,
+    GB_BUTTON_DOWN		= 1 << 7
 };
 
 enum GB_Interrupts {
-    GB_INTERRUPT_VBLANK = 0x01,
-    GB_INTERRUPT_LCD_STAT = 0x02,
-    GB_INTERRUPT_TIMER = 0x04,
-    GB_INTERRUPT_SERIAL = 0x08,
-    GB_INTERRUPT_JOYPAD = 0x10,
+    GB_INTERRUPT_VBLANK		= 0x01,
+    GB_INTERRUPT_LCD_STAT	= 0x02,
+    GB_INTERRUPT_TIMER		= 0x04,
+    GB_INTERRUPT_SERIAL		= 0x08,
+    GB_INTERRUPT_JOYPAD		= 0x10,
 };
 
 enum GB_StatusModes {
-    STATUS_MODE_HBLANK = 0,
-    STATUS_MODE_VBLANK = 1,
-    STATUS_MODE_SPRITE = 2,
-    STATUS_MODE_TRANSFER = 3
+    STATUS_MODE_HBLANK		= 0,
+    STATUS_MODE_VBLANK		= 1,
+    STATUS_MODE_SPRITE		= 2,
+    STATUS_MODE_TRANSFER	= 3
 };
 
 enum GB_StatIntModes {
@@ -233,8 +230,8 @@ enum GB_ErrorType {
 };
 
 struct GB_UnkownInstructionTypeData {
-	GB_U8 opcode;
-	GB_BOOL cb_prefix;
+	uint8_t opcode;
+	bool cb_prefix : 1;
 };
 
 enum GB_ErrorDataType {
@@ -288,8 +285,8 @@ enum GB_LinkTransferType {
 
 struct GB_LinkCableData {
     enum GB_LinkTransferType type;
-    GB_U8 in_data;
-    GB_U8 out_data;
+    uint8_t in_data;
+    uint8_t out_data;
 };
 
 // serial data transfer callback is used when IO_SC is set to 0x81
@@ -301,360 +298,360 @@ struct GB_LinkCableData {
 
 // this callback should return GB_TRUE if the data was accepted AND
 // data_out is filled, else, return GB_FALSE
-typedef GB_BOOL(*GB_serial_transfer_t)(void* user, struct GB_LinkCableData* data);
+typedef bool(*GB_serial_transfer_t)(void* user, struct GB_LinkCableData* data);
 
 // structs
 
 struct GB_CartHeader {
-	GB_U8 entry_point[0x4];
-	GB_U8 logo[0x30];
+	uint8_t entry_point[0x4];
+	uint8_t logo[0x30];
 	char title[0x10];
-	GB_U16 new_licensee_code;
-	GB_U8 sgb_flag;
-	GB_U8 cart_type;
-	GB_U8 rom_size;
-	GB_U8 ram_size;
-	GB_U8 destination_code;
-	GB_U8 old_licensee_code;
-	GB_U8 rom_version;
-	GB_U8 header_checksum;
-	GB_U16 global_checksum;
+	uint16_t new_licensee_code;
+	uint8_t sgb_flag;
+	uint8_t cart_type;
+	uint8_t rom_size;
+	uint8_t ram_size;
+	uint8_t destination_code;
+	uint8_t old_licensee_code;
+	uint8_t rom_version;
+	uint8_t header_checksum;
+	uint16_t global_checksum;
 };
 
 struct GB_RomInfo {
 	char name[0x10]; /* from cart_header */
-	GB_U32 rom_size;
-	GB_U32 ram_size;
-	GB_U8 mbc_flags; /* flags ored together */
+	uint32_t rom_size;
+	uint32_t ram_size;
+	uint8_t mbc_flags; /* flags ored together */
 };
 
-// todo: ensure packed to 2 bytes (GB_U16).
+// todo: ensure packed to 2 bytes (uint16_t).
 struct GB_Colour {
 #if GB_ENDIAN == GB_LITTLE_ENDIAN
-	GB_U8 r:5;
-	GB_U8 g:5;
-	GB_U8 b:5;
-	GB_U8 _pad[1];
+	uint8_t r:5;
+	uint8_t g:5;
+	uint8_t b:5;
+	uint8_t _pad[1];
 #else
-	GB_U8 _pad[1];
-	GB_U8 b:5;
-	GB_U8 g:5;
-	GB_U8 r:5;
+	uint8_t _pad[1];
+	uint8_t b:5;
+	uint8_t g:5;
+	uint8_t r:5;
 #endif /* GB_ENDIAN */
 };
 
 struct GB_BgAttributes {
 #if GB_ENDIAN == GB_LITTLE_ENDIAN
-	GB_U8 pal:3;
-	GB_U8 bank:1;
-	GB_U8 _pad:1;
-	GB_U8 xflip:1;
-	GB_U8 yflip:1;
-	GB_U8 priority:1;
+	uint8_t pal:3;
+	uint8_t bank:1;
+	uint8_t _pad:1;
+	uint8_t xflip:1;
+	uint8_t yflip:1;
+	uint8_t priority:1;
 #else
-	GB_U8 priority:1;
-	GB_U8 yflip:1;
-	GB_U8 xflip:1;
-	GB_U8 _pad[1];
-	GB_U8 bank:1;
-	GB_U8 pal:3;
+	uint8_t priority:1;
+	uint8_t yflip:1;
+	uint8_t xflip:1;
+	uint8_t _pad[1];
+	uint8_t bank:1;
+	uint8_t pal:3;
 #endif /* GB_ENDIAN */
 };
 
 // todo: ensure packed to 4 bytes.
 struct GB_Sprite {
-	GB_U8 y;
-	GB_U8 x;
-	GB_U8 num;
+	uint8_t y;
+	uint8_t x;
+	uint8_t num;
 #if GB_ENDIAN == GB_LITTLE_ENDIAN
 	struct {
-		GB_U8 pal_gbc:3;
-		GB_U8 bank:1;
-		GB_U8 pal_gb:1;
-		GB_U8 xflip:1;
-		GB_U8 yflip:1;
-		GB_U8 priority:1;
+		uint8_t pal_gbc:3;
+		uint8_t bank:1;
+		uint8_t pal_gb:1;
+		uint8_t xflip:1;
+		uint8_t yflip:1;
+		uint8_t priority:1;
 	} flag;
 #else
 	struct {
-		GB_U8 priority:1;
-		GB_U8 yflip:1;
-		GB_U8 xflip:1;
-		GB_U8 pal_gb:1;
-		GB_U8 bank:1;
-		GB_U8 pal_gbc:3;
+		uint8_t priority:1;
+		uint8_t yflip:1;
+		uint8_t xflip:1;
+		uint8_t pal_gb:1;
+		uint8_t bank:1;
+		uint8_t pal_gbc:3;
 	} flag;
 #endif /* GB_ENDIAN */
 };
 
 struct GB_Rtc {
-	GB_U8 S;
-	GB_U8 M;
-	GB_U8 H;
-	GB_U8 DL;
-	GB_U8 DH;
+	uint8_t S;
+	uint8_t M;
+	uint8_t H;
+	uint8_t DL;
+	uint8_t DH;
 };
 
 struct GB_Joypad {
-	GB_U8 var;
+	uint8_t var;
 };
 
 struct GB_Cpu {
-	GB_U16 cycles;
-	GB_U16 SP;
-	GB_U16 PC;
-	GB_U8 registers[8];
-	GB_BOOL ime;
-	GB_BOOL halt;
-	GB_BOOL double_speed;
+	uint16_t cycles;
+	uint16_t SP;
+	uint16_t PC;
+	uint8_t registers[8];
+	bool ime : 1;
+	bool halt : 1;
+	bool double_speed : 1;
 };
 
 struct GB_Ppu {
-	GB_S16 next_cycles;
-	GB_U16 pixles[GB_SCREEN_HEIGHT][GB_SCREEN_WIDTH]; // h*w
+	int16_t next_cycles;
+	uint16_t pixles[GB_SCREEN_HEIGHT][GB_SCREEN_WIDTH]; // h*w
 	union {
 		struct GB_BgAttributes bg_attributes[2][0x2000];
-		GB_U8 vram[2][0x2000]; // 2 banks of 8kb
+		uint8_t vram[2][0x2000]; // 2 banks of 8kb
 	};
 	union {
 		struct GB_Sprite sprites[40]; // will remove if unions cause problems.
-		GB_U8 oam[0xA0]; // sprite mem
+		uint8_t oam[0xA0]; // sprite mem
 	};
 	union {
 		struct GB_Colour bg_colours_bgr555[8][4];
-    	GB_U16 bg_colours[8][4]; // calculate the colours from the palette once.
+    	uint16_t bg_colours[8][4]; // calculate the colours from the palette once.
 	};
 	union {
 		struct GB_Colour obj_colours_bgr555[8][4];
-    	GB_U16 obj_colours[8][4];
+    	uint16_t obj_colours[8][4];
 	};
 
 	// these are set when a hdma occurs (not a DMA or GDMA)
-	GB_U16 hdma_src_addr;
-	GB_U16 hdma_dst_addr;
-	GB_U16 hdma_length;
+	uint16_t hdma_src_addr;
+	uint16_t hdma_dst_addr;
+	uint16_t hdma_length;
 
 	// this is the internal line counter which is used as the index
 	// for the window instead of IO_LY.
-	GB_U8 window_line;
+	uint8_t window_line;
 
-	GB_U8 bg_palette[0x40]; // background palette memory.
-	GB_U8 obj_palette[0x40]; // sprite palette memory.
-	GB_BOOL dirty_bg[8]; // only update the colours if the palette changes values.
-    GB_BOOL dirty_obj[8];
+	uint8_t bg_palette[0x40]; // background palette memory.
+	uint8_t obj_palette[0x40]; // sprite palette memory.
+	bool dirty_bg[8]; // only update the colours if the palette changes values.
+    bool dirty_obj[8];
 };
 
 struct GB_Cart {
-	void (*write)(struct GB_Core* gb, GB_U16 addr, GB_U8 val);
-	const GB_U8* (*get_rom_bank)(struct GB_Core* gb, GB_U8 val);
-	const GB_U8* (*get_ram_bank)(struct GB_Core* gb, GB_U8 val);
+	void (*write)(struct GB_Core* gb, uint16_t addr, uint8_t val);
+	const uint8_t* (*get_rom_bank)(struct GB_Core* gb, uint8_t val);
+	const uint8_t* (*get_ram_bank)(struct GB_Core* gb, uint8_t val);
 
-	GB_U8* rom;
-	GB_U8 ram[0x10000];
-	GB_U32 rom_size;
-	GB_U32 ram_size;
+	uint8_t* rom;
+	uint8_t ram[0x10000];
+	uint32_t rom_size;
+	uint32_t ram_size;
 	
-	GB_U16 rom_bank_max;
-	GB_U16 rom_bank;
-	GB_U8 rom_bank_lo;
-	GB_U8 rom_bank_hi;
+	uint16_t rom_bank_max;
+	uint16_t rom_bank;
+	uint8_t rom_bank_lo;
+	uint8_t rom_bank_hi;
 
-	GB_U8 ram_bank_max;
-	GB_U8 ram_bank;
+	uint8_t ram_bank_max;
+	uint8_t ram_bank;
 
 	enum GB_RtcMappedReg rtc_mapped_reg;
 	struct GB_Rtc rtc;
-	GB_U8 internal_rtc_counter;
-	GB_BOOL bank_mode;
-	GB_BOOL ram_enabled;
-	GB_BOOL in_ram;
+	uint8_t internal_rtc_counter;
+	bool bank_mode : 1;
+	bool ram_enabled : 1;
+	bool in_ram : 1;
 
-	GB_U8 flags;
+	uint8_t flags;
 	enum GB_MbcType mbc_type;
 };
 
 struct GB_Timer {
-	GB_S16 next_cycles;
+	int16_t next_cycles;
 };
 
 struct GB_ApuSquare1 {
 	struct {
-		GB_U8 sweep_period : 3;
-		GB_U8 negate : 1;
-		GB_U8 shift : 3;
+		uint8_t sweep_period : 3;
+		uint8_t negate : 1;
+		uint8_t shift : 3;
 	} nr10;
 
 	struct {
-		GB_U8 duty : 2;
-		GB_U8 length_load : 6;
+		uint8_t duty : 2;
+		uint8_t length_load : 6;
 	} nr11;
 
 	struct {
-		GB_U8 starting_vol : 4;
-		GB_U8 env_add_mode : 1;
-		GB_U8 period : 3;
+		uint8_t starting_vol : 4;
+		uint8_t env_add_mode : 1;
+		uint8_t period : 3;
 	} nr12;
 
 	struct {
-		GB_U8 freq_lsb : 8;
+		uint8_t freq_lsb : 8;
 	} nr13;
 
 	struct {
-		GB_U8 trigger : 1;
-		GB_U8 length_enable : 1;
-		GB_U8 freq_msb : 3;
+		uint8_t trigger : 1;
+		uint8_t length_enable : 1;
+		uint8_t freq_msb : 3;
 	} nr14;
 
-	GB_U16 freq_shadow_register;
-	GB_U8 internal_enable_flag;
+	uint16_t freq_shadow_register;
+	uint8_t internal_enable_flag;
 
-	GB_S16 timer;
-	GB_S8 volume_timer;
-	GB_U8 duty_index : 3;
-	GB_U8 volume : 4;
-	GB_BOOL disable_env : 1;
+	int16_t timer;
+	int8_t volume_timer;
+	uint8_t duty_index : 3;
+	uint8_t volume : 4;
+	bool disable_env : 1;
 
-	GB_S8 sweep_timer;
+	int8_t sweep_timer;
 
-	GB_U8 length_counter;
+	uint8_t length_counter;
 };
 
 struct GB_ApuSquare2 {
 	struct {
-		GB_U8 duty : 2;
-		GB_U8 length_load : 6;
+		uint8_t duty : 2;
+		uint8_t length_load : 6;
 	} nr21;
 
 	struct {
-		GB_U8 starting_vol : 4;
-		GB_U8 env_add_mode : 1;
-		GB_U8 period : 3;
+		uint8_t starting_vol : 4;
+		uint8_t env_add_mode : 1;
+		uint8_t period : 3;
 	} nr22;
 
 	struct {
-		GB_U8 freq_lsb : 8;
+		uint8_t freq_lsb : 8;
 	} nr23;
 
 	struct {
-		GB_U8 trigger : 1;
-		GB_U8 length_enable : 1;
-		GB_U8 freq_msb : 3;
+		uint8_t trigger : 1;
+		uint8_t length_enable : 1;
+		uint8_t freq_msb : 3;
 	} nr24;
 
-	GB_S16 timer;
-	GB_S8 volume_timer;
-	GB_U8 duty_index : 3;
-	GB_U8 volume : 4;
-	GB_BOOL disable_env : 1;
+	int16_t timer;
+	int8_t volume_timer;
+	uint8_t duty_index : 3;
+	uint8_t volume : 4;
+	bool disable_env : 1;
 
-	GB_U8 length_counter;
+	uint8_t length_counter;
 };
 
 struct GB_ApuWave {
 	struct {
-		GB_U8 DAC_power : 1;
+		uint8_t DAC_power : 1;
 	} nr30;
 
 	struct {
-		GB_U8 length_load : 8;
+		uint8_t length_load : 8;
 	} nr31;
 
 	struct {
-		GB_U8 vol_code : 2;
+		uint8_t vol_code : 2;
 	} nr32;
 
 	struct {
-		GB_U8 freq_lsb : 8;
+		uint8_t freq_lsb : 8;
 	} nr33;
 
 	struct {
-		GB_U8 trigger : 1;
-		GB_U8 length_enable : 1;
-		GB_U8 freq_msb : 3;
+		uint8_t trigger : 1;
+		uint8_t length_enable : 1;
+		uint8_t freq_msb : 3;
 	} nr34;
 
-	GB_U8 wave_ram[0x10];
+	uint8_t wave_ram[0x10];
 
-	GB_U16 length_counter : 9;
-	GB_U8 sample_buffer;
-	GB_U8 position_counter : 6;
+	uint16_t length_counter : 9;
+	uint8_t sample_buffer;
+	uint8_t position_counter : 6;
 
-	GB_S16 timer;
+	int16_t timer;
 };
 
 struct GB_ApuNoise {
 	struct {
-		GB_U8 length_load : 6;
+		uint8_t length_load : 6;
 	} nr41;
 
 	struct {
-		GB_U8 starting_vol : 4;
-		GB_U8 env_add_mode : 1;
-		GB_U8 period : 3;
+		uint8_t starting_vol : 4;
+		uint8_t env_add_mode : 1;
+		uint8_t period : 3;
 	} nr42;
 
 	struct {
-		GB_U8 clock_shift : 4;
-		GB_U8 width_mode : 1;
-		GB_U8 divisor_code : 3;
+		uint8_t clock_shift : 4;
+		uint8_t width_mode : 1;
+		uint8_t divisor_code : 3;
 	} nr43;
 
 	struct {
-		GB_U8 trigger : 1;
-		GB_U8 length_enable : 1;
+		uint8_t trigger : 1;
+		uint8_t length_enable : 1;
 	} nr44;
 
-	GB_S32 timer;
+	int32_t timer;
 
-	GB_U16 LFSR : 15;
+	uint16_t LFSR : 15;
 
-	GB_S8 volume_timer;
-	GB_U8 volume : 4;
-	GB_BOOL disable_env : 1;
+	int8_t volume_timer;
+	uint8_t volume : 4;
+	bool disable_env : 1;
 
-	GB_U8 length_counter;
+	uint8_t length_counter;
 };
 
 struct GB_ApuControl {
 	struct {
-		GB_U8 vin_l : 1;
-		GB_U8 left_vol : 3;
-		GB_U8 vin_r : 1;
-		GB_U8 right_vol : 3;
+		uint8_t vin_l : 1;
+		uint8_t left_vol : 3;
+		uint8_t vin_r : 1;
+		uint8_t right_vol : 3;
 	} nr50;
 
 	struct {
-		GB_U8 noise_left : 1;
-		GB_U8 wave_left : 1;
-		GB_U8 square2_left : 1;
-		GB_U8 square1_left : 1;
+		uint8_t noise_left : 1;
+		uint8_t wave_left : 1;
+		uint8_t square2_left : 1;
+		uint8_t square1_left : 1;
 
-		GB_U8 noise_right : 1;
-		GB_U8 wave_right : 1;
-		GB_U8 square2_right : 1;
-		GB_U8 square1_right : 1;
+		uint8_t noise_right : 1;
+		uint8_t wave_right : 1;
+		uint8_t square2_right : 1;
+		uint8_t square1_right : 1;
 	} nr51;
 
 	struct {
-		GB_U8 power : 1;
-		GB_U8 noise : 1;
-		GB_U8 wave : 1;
-		GB_U8 square2 : 1;
-		GB_U8 square1 : 1;
+		uint8_t power : 1;
+		uint8_t noise : 1;
+		uint8_t wave : 1;
+		uint8_t square2 : 1;
+		uint8_t square1 : 1;
 	} nr52;
 };
 
 struct GB_ApuCallbackData {
 #ifdef CHANNEL_8
-	GB_S8 samples[512 * 8];
+	int8_t samples[512 * 8];
 #else
-	GB_S8 samples[512 * 2];
+	int8_t samples[512 * 2];
 #endif
 };
 
 struct GB_Apu {
-	GB_U16 next_frame_sequencer_cycles;
-	GB_U16 next_sample_cycles;
+	uint16_t next_frame_sequencer_cycles;
+	uint16_t next_sample_cycles;
 
 	struct GB_ApuSquare1 square1;
 	struct GB_ApuSquare2 square2;
@@ -662,23 +659,23 @@ struct GB_Apu {
 	struct GB_ApuNoise noise;
 	struct GB_ApuControl control;
 
-	GB_U8 frame_sequencer_counter : 3;
+	uint8_t frame_sequencer_counter : 3;
 
 	// stero samples built up (512 * 2)
 #ifdef CHANNEL_8
-	GB_S8 samples[512 * 8];
+	int8_t samples[512 * 8];
 #else
-	GB_S8 samples[512 * 2];
+	int8_t samples[512 * 2];
 #endif
 	// counter for how many samples we have
-	GB_U16 samples_count;
+	uint16_t samples_count;
 };
 
 struct GB_Core {
-	const GB_U8* mmap[0x10];
-	GB_U8 io[0x80]; // easier to have io as an array than individual bytes
-	GB_U8 hram[0x80]; // 0x7F + IE reg
-	GB_U8 wram[8][0x1000]; // extra 6 banks in gbc
+	const uint8_t* mmap[0x10];
+	uint8_t io[0x80]; // easier to have io as an array than individual bytes
+	uint8_t hram[0x80]; // 0x7F + IE reg
+	uint8_t wram[8][0x1000]; // extra 6 banks in gbc
 	struct GB_Cpu cpu;
 	struct GB_Ppu ppu;
 	struct GB_Apu apu;
@@ -697,7 +694,7 @@ struct GB_Core {
 
 	GB_serial_transfer_t link_cable;
 	void* link_cable_user_data;
-	GB_BOOL is_master;
+	bool is_master : 1;
 
 	// callbacks + user_data
 	GB_vblank_callback_t vblank_cb;
@@ -726,19 +723,23 @@ struct GB_Core {
 // however *most* games do have ram, and fixing the size removes the
 // need to allocate and simplifies savestate / rewinding *a lot*.
 struct GB_CartState {
-	GB_U16 rom_bank;
-	GB_U16 ram_bank;
-	GB_U8 ram[0x10000];
+	uint16_t rom_bank;
+	uint16_t ram_bank;
+	uint8_t ram[0x10000];
 	struct GB_Rtc rtc;
-	GB_BOOL bank_mode;
-	GB_BOOL ram_enabled;
-	GB_BOOL in_ram;
+	// NOTE: these should probably be u8 as the bool
+	// might be saved differently across platform!
+	// this is only needed if i want to support loading
+	// savstates across platforms..likely i do not.
+	bool bank_mode : 1;
+	bool ram_enabled : 1;
+	bool in_ram : 1;
 };
 
 struct GB_CoreState {
-	GB_U8 io[0x80]; // easier to have io as an array than individual bytes
-	GB_U8 hram[0x80]; // 0x7F + IE reg
-	GB_U8 wram[8][0x1000]; // extra 6 banks in gbc
+	uint8_t io[0x80]; // easier to have io as an array than individual bytes
+	uint8_t hram[0x80]; // 0x7F + IE reg
+	uint8_t wram[8][0x1000]; // extra 6 banks in gbc
 	struct GB_Cpu cpu;
 	struct GB_Ppu ppu;
 	struct GB_Timer timer;
@@ -746,9 +747,9 @@ struct GB_CoreState {
 };
 
 struct GB_StateHeader {
-	GB_U32 magic;
-    GB_U32 version;
-    GB_U8 padding[0x20];
+	uint32_t magic;
+    uint32_t version;
+    uint8_t padding[0x20];
 };
 
 struct GB_State {
@@ -757,10 +758,10 @@ struct GB_State {
 };
 
 struct GB_SaveData {
-	GB_U32 size; // is filled internally
-	GB_U8 data[GB_SAVE_SIZE_MAX];
+	uint32_t size; // is filled internally
+	uint8_t data[GB_SAVE_SIZE_MAX];
 	struct GB_Rtc rtc;
-	GB_BOOL has_rtc; // is filled internally
+	bool has_rtc : 1; // is filled internally
 };
 
 struct GB_CartName {

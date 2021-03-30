@@ -8,7 +8,8 @@
 #include <stdio.h>
 #endif /* GB_NO_STDIO */
 
-static GB_U32 GB_bmp_get_colours_used(enum GB_BmpBitsPerPixel type) {
+
+static uint32_t GB_bmp_get_colours_used(enum GB_BmpBitsPerPixel type) {
     switch (type) {
         case GB_BITS_PER_PIXEL_MONOCHROME:
             return 1U;
@@ -62,11 +63,11 @@ static void GB_bmp_fill_pixel_data(const struct GB_Core* gb, struct GB_Bmp* bmp)
     }
 }
 
-GB_BOOL GB_screenshot(const struct GB_Core* gb, struct GB_Bmp* bmp) {
+bool GB_screenshot(const struct GB_Core* gb, struct GB_Bmp* bmp) {
     assert(gb && bmp);
     
     if (!gb || !bmp) {
-        return GB_FALSE;
+        return false;
     }
 
     memset(bmp, 0, sizeof(struct GB_Bmp));
@@ -80,21 +81,21 @@ GB_BOOL GB_screenshot(const struct GB_Core* gb, struct GB_Bmp* bmp) {
     /* copy the pixel data */
     GB_bmp_fill_pixel_data(gb, bmp);
 
-    return GB_TRUE;
+    return true;
 }
 
 #ifndef GB_NO_STDIO
-GB_BOOL GB_screenshot_to_file(const struct GB_Core* gb, const char* path) {
+bool GB_screenshot_to_file(const struct GB_Core* gb, const char* path) {
     assert(gb && path);
 
     if (!gb || !path) {
-        return GB_FALSE;
+        return false;
     }
 
     FILE* file = fopen(path, "wb");
     if (!file) {
         printf("failed to open\n");
-        return GB_FALSE;
+        return false;
     }
 
     struct GB_Bmp bmp = {0};
@@ -118,10 +119,10 @@ GB_BOOL GB_screenshot_to_file(const struct GB_Core* gb, const char* path) {
     }
 
     fclose(file);
-    return GB_TRUE;
+    return true;
 
 fail_close:
     fclose(file);
-    return GB_FALSE;
+    return false;
 }
 #endif /* GB_NO_STDIO */

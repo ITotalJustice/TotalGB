@@ -315,7 +315,7 @@ auto Instance::SaveGame(const std::string& path) -> void {
         }
 
         // save rtc
-        if (save_data.has_rtc == GB_TRUE) {
+        if (save_data.has_rtc == true) {
             const auto save_path = util::getRtcPathFromString(path);
             io::Cfile file{save_path, "wb"};
             if (file.good()) {
@@ -351,7 +351,7 @@ auto Instance::LoadSave(const std::string& path) -> void {
 
         if (file.good() && file.size() == sizeof(save_data.rtc)) {
             file.read((u8*)&save_data.rtc, sizeof(save_data.rtc));
-            save_data.has_rtc = GB_TRUE;
+            save_data.has_rtc = true;
         }
     }
 
@@ -515,8 +515,8 @@ auto App::ResizeScreen() -> void {
 }
 
 void GB_run_frames(struct GB_Core* gb1, struct GB_Core* gb2) {
-	GB_U32 cycles_elapsed1 = 0;
-    GB_U32 cycles_elapsed2 = 0;
+	u32 cycles_elapsed1 = 0;
+    u32 cycles_elapsed2 = 0;
 
     while (cycles_elapsed1 < GB_FRAME_CPU_CYCLES || cycles_elapsed2 < GB_FRAME_CPU_CYCLES) {
         if (cycles_elapsed1 < GB_FRAME_CPU_CYCLES) {

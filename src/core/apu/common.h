@@ -56,7 +56,7 @@ enum EnvelopeMode {
     ADD = 1
 };
 
-static const GB_U8 PERIOD_TABLE[8] = {
+static const uint8_t PERIOD_TABLE[8] = {
     8, 1, 2, 3, 4, 5, 6, 7,
 };
 

@@ -43,12 +43,12 @@ enum PrinterDataType {
 };
 
 struct PrinterDataInfo {
-    GB_U16 data_length;
+    uint16_t data_length;
 
-    GB_U8 margin_lo : 4;
-    GB_U8 margin_hi : 4;
+    uint8_t margin_lo : 4;
+    uint8_t margin_hi : 4;
 
-    GB_U8 exposure;
+    uint8_t exposure;
 };
 
 struct PrinterCallbackData {
@@ -62,10 +62,10 @@ struct PrinterCallbackData {
 typedef void(*GB_print_callback_t)(void* user, struct PrinterCallbackData* data);
 
 struct GB_PrinterPrintData {
-    GB_U8 unk;
-    GB_U8 margins;
-    GB_U8 palette;
-    GB_U8 exposure;
+    uint8_t unk;
+    uint8_t margins;
+    uint8_t palette;
+    uint8_t exposure;
 };
 
 struct GB_Printer {
@@ -75,20 +75,20 @@ struct GB_Printer {
     void* print_callback_user_data;
 
     //sync
-    GB_U16 magic;
+    uint16_t magic;
 
     // header
-    GB_U8 command;
-    GB_U8 compression_flag;
-    GB_U16 data_len;
+    uint8_t command;
+    uint8_t compression_flag;
+    uint16_t data_len;
 
     // data
-    GB_U8 ram[0x2000]; // 8-KiB
+    uint8_t ram[0x2000]; // 8-KiB
     
     // checksum
-    GB_U16 checksum;
+    uint16_t checksum;
 
-    GB_U8 status;
+    uint8_t status;
 
     enum GB_PrinterMode mode;
 
@@ -96,7 +96,7 @@ struct GB_Printer {
     struct GB_PrinterPrintData print_data;
 
     // used when recieving data, offset into the ram array
-    GB_U16 data_offset;
+    uint16_t data_offset;
 };
 
 // internally this saves the passed in *printer* pointer, so be sure that

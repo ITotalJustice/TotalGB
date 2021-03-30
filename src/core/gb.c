@@ -51,15 +51,15 @@ void GB_throw_error(const struct GB_Core* gb, enum GB_ErrorDataType type, const 
 	}
 }
 
-GB_BOOL GB_init(struct GB_Core* gb) {
+bool GB_init(struct GB_Core* gb) {
 	if (!gb) {
 		GB_throw_error(gb, GB_ERROR_DATA_TYPE_NULL_PARAM, __func__);
-		return GB_FALSE;
+		return false;
 	}
 
 	memset(gb, 0, sizeof(struct GB_Core));
 
-	return GB_TRUE;
+	return true;
 }
 
 void GB_quit(struct GB_Core* gb) {
@@ -148,7 +148,7 @@ void GB_reset(struct GB_Core* gb) {
 	}
 }
 
-static const char* cart_type_str(const GB_U8 type) {
+static const char* cart_type_str(const uint8_t type) {
     switch (type) {
         case 0x00:  return "ROM ONLY";                 case 0x19:  return "MBC5";
         case 0x01:  return "MBC1";                     case 0x1A:  return "MBC5+RAM";
@@ -185,30 +185,30 @@ static void cart_header_print(const struct GB_CartHeader* header) {
     printf("RAM SIZE: 0x%02X\n", header->ram_size);
 	printf("HEADER CHECKSUM: 0x%02X\n", header->header_checksum);
 	printf("GLOBAL CHECKSUM: 0x%04X\n", header->global_checksum);
-	GB_U8 hash, forth;
+	uint8_t hash, forth;
 	GB_get_rom_palette_hash_from_header(header, &hash, &forth);
 	printf("HASH: 0x%02X, 0x%02X\n", hash, forth);
     putchar('\n');
 }
 
-GB_BOOL GB_get_rom_header_from_data(const GB_U8* data, struct GB_CartHeader* header) {
+bool GB_get_rom_header_from_data(const uint8_t* data, struct GB_CartHeader* header) {
 	assert(data && header);
 	memcpy(header, data + GB_BOOTROM_SIZE, sizeof(struct GB_CartHeader));
-	return GB_TRUE;
+	return true;
 }
 
-GB_BOOL GB_get_rom_header(const struct GB_Core* gb, struct GB_CartHeader* header) {
+bool GB_get_rom_header(const struct GB_Core* gb, struct GB_CartHeader* header) {
 	assert(gb && gb->cart.rom && header);
 
 	if (!gb || !gb->cart.rom || (gb->cart.ram_size < (sizeof(struct GB_CartHeader) + GB_BOOTROM_SIZE))) {
 		GB_throw_error(gb, GB_ERROR_DATA_TYPE_ROM, "[ERROR] invalid rom passed to get_rom_header!");
-		return GB_FALSE;
+		return false;
 	}
 
 	return GB_get_rom_header_from_data(gb->cart.rom, header);
 }
 
-static struct GB_CartHeader* GB_get_rom_header_ptr_from_data(const GB_U8* data) {
+static struct GB_CartHeader* GB_get_rom_header_ptr_from_data(const uint8_t* data) {
 	assert(data);
 	return (struct GB_CartHeader*)&data[GB_BOOTROM_SIZE];
 }
@@ -218,31 +218,31 @@ struct GB_CartHeader* GB_get_rom_header_ptr(const struct GB_Core* gb) {
 	return GB_get_rom_header_ptr_from_data(gb->cart.rom);
 }
 
-GB_BOOL GB_get_rom_palette_hash_from_header(const struct GB_CartHeader* header, GB_U8* hash, GB_U8* forth) {
+bool GB_get_rom_palette_hash_from_header(const struct GB_CartHeader* header, uint8_t* hash, uint8_t* forth) {
 	assert(header && hash && forth);
 
 	if (!header || !hash || !forth) {
 		// GB_throw_error(gb, GB_ERROR_DATA_TYPE_NULL_PARAM, __func__);
-		return GB_FALSE;
+		return false;
 	}
 
-	GB_U16 temp_hash = 0;
-	for (GB_U16 i = 0; i < sizeof(header->title); ++i) {
+	uint8_t temp_hash = 0;
+	for (uint16_t i = 0; i < sizeof(header->title); ++i) {
 		temp_hash += header->title[i];
 	}
 
-	*hash = temp_hash & 0xFF;
+	*hash = temp_hash;
 	*forth = header->title[0x3];
 
-	return GB_TRUE;
+	return true;
 }
 
-GB_BOOL GB_get_rom_palette_hash(const struct GB_Core* gb, GB_U8* hash, GB_U8* forth) {
+bool GB_get_rom_palette_hash(const struct GB_Core* gb, uint8_t* hash, uint8_t* forth) {
 	assert(gb && hash);
 
 	if (!gb || !hash) {
 		GB_throw_error(gb, GB_ERROR_DATA_TYPE_NULL_PARAM, __func__);
-		return GB_FALSE;
+		return false;
 	}
 
 	return GB_get_rom_palette_hash_from_header(
@@ -251,17 +251,17 @@ GB_BOOL GB_get_rom_palette_hash(const struct GB_Core* gb, GB_U8* hash, GB_U8* fo
 	);
 }
 
-GB_BOOL GB_set_palette_from_palette(struct GB_Core* gb, const struct GB_PaletteEntry* palette) {
+bool GB_set_palette_from_palette(struct GB_Core* gb, const struct GB_PaletteEntry* palette) {
 	assert(gb && palette);
 
 	if (!gb || !palette) {
 		GB_throw_error(gb, GB_ERROR_DATA_TYPE_NULL_PARAM, __func__);
-		return GB_FALSE;
+		return false;
 	}
 
 	gb->palette = *palette;
 
-	return GB_TRUE;
+	return true;
 }
 
 void GB_set_render_palette_layer_config(struct GB_Core* gb, enum GB_RenderLayerConfig layer) {
@@ -272,11 +272,11 @@ void GB_set_rtc_update_config(struct GB_Core* gb, const enum GB_RtcUpdateConfig 
     gb->config.rtc_update_config = config;
 }
 
-GB_BOOL GB_set_rtc(struct GB_Core* gb, const struct GB_Rtc rtc) {
+bool GB_set_rtc(struct GB_Core* gb, const struct GB_Rtc rtc) {
 	assert(gb);
 
-	if (GB_has_mbc_flags(gb, MBC_FLAGS_RTC) == GB_FALSE) {
-		return GB_FALSE;
+	if (GB_has_mbc_flags(gb, MBC_FLAGS_RTC) == false) {
+		return false;
 	}
 
 	gb->cart.rtc.S = rtc.S > 59 ? 59 : rtc.S;
@@ -285,10 +285,10 @@ GB_BOOL GB_set_rtc(struct GB_Core* gb, const struct GB_Rtc rtc) {
 	gb->cart.rtc.DL = rtc.DL;
 	gb->cart.rtc.DH = rtc.DH & 0xC1; // only bit 0,6,7
 
-	return GB_TRUE;
+	return true;
 }
 
-GB_BOOL GB_has_mbc_flags(const struct GB_Core* gb, const GB_U8 flags) {
+bool GB_has_mbc_flags(const struct GB_Core* gb, const uint8_t flags) {
     return (gb->cart.flags & flags) == flags;
 }
 
@@ -296,7 +296,7 @@ enum GB_SystemType GB_get_system_type(const struct GB_Core* gb) {
 	return gb->system_type;
 }
 
-GB_BOOL GB_is_system_gbc(const struct GB_Core* gb) {
+bool GB_is_system_gbc(const struct GB_Core* gb) {
 	return GB_get_system_type(gb) == GB_SYSTEM_TYPE_GBC;
 }
 
@@ -317,7 +317,7 @@ static void GB_set_system_type(struct GB_Core* gb, const enum GB_SystemType type
 
 static void GB_setup_palette(struct GB_Core* gb, const struct GB_CartHeader* header) {
 	// this should only ever be called in NONE GBC system.
-	assert(GB_is_system_gbc(gb) == GB_FALSE);
+	assert(GB_is_system_gbc(gb) == false);
 
 	if (gb->config.palette_config == GB_PALETTE_CONFIG_NONE) {
 		GB_Palette_fill_from_custom(GB_CUSTOM_PALETTE_CREAM, &gb->palette);
@@ -327,7 +327,7 @@ static void GB_setup_palette(struct GB_Core* gb, const struct GB_CartHeader* hea
 	}
 	else if ((gb->config.palette_config & GB_PALETTE_CONFIG_USE_BUILTIN) == GB_PALETTE_CONFIG_USE_BUILTIN) {
 		// attempt to fill set the palatte from the builtins...
-		GB_U8 hash, forth;
+		uint8_t hash, forth;
 		// this will never fail...
 		GB_get_rom_palette_hash_from_header(header, &hash, &forth);
 		struct GB_PaletteEntry palette;
@@ -348,7 +348,7 @@ static void GB_setup_palette(struct GB_Core* gb, const struct GB_CartHeader* hea
 	}
 }
 
-int GB_loadrom_data(struct GB_Core* gb, GB_U8* data, GB_U32 size) {
+int GB_loadrom_data(struct GB_Core* gb, uint8_t* data, uint32_t size) {
 	if (!gb || !data || !size) {
 		GB_throw_error(gb, GB_ERROR_DATA_TYPE_NULL_PARAM, __func__);
 		return -1;
@@ -435,7 +435,7 @@ int GB_loadrom_data(struct GB_Core* gb, GB_U8* data, GB_U32 size) {
 	GB_setup_mmap(gb);
 
 	// set the palette!
-	if (GB_is_system_gbc(gb) == GB_FALSE) {
+	if (GB_is_system_gbc(gb) == false) {
 		GB_setup_palette(gb, header);
 	} else {
 		// TODO: remove this!
@@ -446,17 +446,17 @@ int GB_loadrom_data(struct GB_Core* gb, GB_U8* data, GB_U32 size) {
 	return 0;
 }
 
-GB_BOOL GB_has_save(const struct GB_Core* gb) {
+bool GB_has_save(const struct GB_Core* gb) {
 	assert(gb);
 	return (gb->cart.flags & (MBC_FLAGS_RAM | MBC_FLAGS_BATTERY)) == (MBC_FLAGS_RAM | MBC_FLAGS_BATTERY);
 }
 
-GB_BOOL GB_has_rtc(const struct GB_Core* gb) {
+bool GB_has_rtc(const struct GB_Core* gb) {
 	assert(gb);
 	return (gb->cart.flags & MBC_FLAGS_RTC) == MBC_FLAGS_RTC;
 }
 
-GB_U32 GB_calculate_savedata_size(const struct GB_Core* gb) {
+uint32_t GB_calculate_savedata_size(const struct GB_Core* gb) {
 	assert(gb);
 	return gb->cart.ram_size;
 }
@@ -472,9 +472,9 @@ int GB_savegame(const struct GB_Core* gb, struct GB_SaveData* save) {
 	save->size = GB_calculate_savedata_size(gb);
 	memcpy(save->data, gb->cart.ram, save->size);
 
-	if (GB_has_rtc(gb) == GB_TRUE) {
+	if (GB_has_rtc(gb) == true) {
 		memcpy(&save->rtc, &gb->cart.rtc, sizeof(save->rtc));
-		save->has_rtc = GB_TRUE;
+		save->has_rtc = true;
 	}
 
 	return 0;
@@ -497,7 +497,7 @@ int GB_loadsave(struct GB_Core* gb, const struct GB_SaveData* save) {
 	// NOTE: when adding support for vba saves, i should
 	// then restore the rtc from that save IF the user has not passed in
 	// their own rtc save data.
-	const GB_U32 wanted_size = GB_calculate_savedata_size(gb);
+	const uint32_t wanted_size = GB_calculate_savedata_size(gb);
 	if (save->size != wanted_size) {
 		printf("[GB-ERROR] wrong wanted savesize. got: %u wanted %u\n", save->size, wanted_size);
 		return -1;
@@ -532,7 +532,7 @@ int GB_savestate(const struct GB_Core* gb, struct GB_State* state) {
 	}
 
 	memcpy(&state->header, &STATE_HEADER, sizeof(state->header));
-	return GB_savestate2(gb, &state->core, GB_TRUE);
+	return GB_savestate2(gb, &state->core, true);
 }
 
 int GB_loadstate(struct GB_Core* gb, const struct GB_State* state) {
@@ -550,7 +550,7 @@ int GB_loadstate(struct GB_Core* gb, const struct GB_State* state) {
 	return GB_loadstate2(gb, &state->core);
 }
 
-int GB_savestate2(const struct GB_Core* gb, struct GB_CoreState* state, GB_BOOL swap_endian) {
+int GB_savestate2(const struct GB_Core* gb, struct GB_CoreState* state, bool swap_endian) {
 	if (!gb || !state) {
 		GB_throw_error(gb, GB_ERROR_DATA_TYPE_NULL_PARAM, __func__);
 		return -1;
@@ -570,9 +570,9 @@ int GB_savestate2(const struct GB_Core* gb, struct GB_CoreState* state, GB_BOOL 
 	memcpy(&state->cart.ram_bank, &gb->cart.ram_bank, sizeof(state->cart.ram_bank));
 	memcpy(state->cart.ram, gb->cart.ram, sizeof(state->cart.ram));
 	memcpy(&state->cart.rtc, &gb->cart.rtc, sizeof(state->cart.rtc));
-	memcpy(&state->cart.bank_mode, &gb->cart.bank_mode, sizeof(state->cart.bank_mode));
-	memcpy(&state->cart.ram_enabled, &gb->cart.ram_enabled, sizeof(state->cart.ram_enabled));
-	memcpy(&state->cart.in_ram, &gb->cart.in_ram, sizeof(state->cart.in_ram));
+	state->cart.bank_mode = gb->cart.bank_mode;
+	state->cart.ram_enabled = gb->cart.ram_enabled;
+	state->cart.in_ram = gb->cart.in_ram;
 
 	return 0;
 }
@@ -595,9 +595,9 @@ int GB_loadstate2(struct GB_Core* gb, const struct GB_CoreState* state) {
 	memcpy(&gb->cart.ram_bank, &state->cart.ram_bank, sizeof(state->cart.ram_bank));
 	memcpy(gb->cart.ram, state->cart.ram, sizeof(state->cart.ram));
 	memcpy(&gb->cart.rtc, &state->cart.rtc, sizeof(state->cart.rtc));
-	memcpy(&gb->cart.bank_mode, &state->cart.bank_mode, sizeof(state->cart.bank_mode));
-	memcpy(&gb->cart.ram_enabled, &state->cart.ram_enabled, sizeof(state->cart.ram_enabled));
-	memcpy(&gb->cart.in_ram, &state->cart.in_ram, sizeof(state->cart.in_ram));
+	gb->cart.bank_mode = state->cart.bank_mode;
+	gb->cart.ram_enabled = state->cart.ram_enabled;
+	gb->cart.in_ram = state->cart.in_ram;
 
 	// we need to reload mmaps
 	GB_setup_mmap(gb);
@@ -658,8 +658,8 @@ void GB_set_error_callback(struct GB_Core* gb, GB_error_callback_t cb, void* use
 }
 
 // the actual run_step(), this gets inlined
-static inline GB_U16 GB_run_step_internal(struct GB_Core* gb) {
-	GB_U16 cycles = GB_cpu_run(gb, 0 /*unused*/);
+static inline uint16_t GB_run_step_internal(struct GB_Core* gb) {
+	uint16_t cycles = GB_cpu_run(gb, 0 /*unused*/);
 
 	GB_timer_run(gb, cycles);
 	GB_ppu_run(gb, cycles >> gb->cpu.double_speed);
@@ -670,14 +670,14 @@ static inline GB_U16 GB_run_step_internal(struct GB_Core* gb) {
 	return cycles >> gb->cpu.double_speed;
 }
 
-GB_U16 GB_run_step(struct GB_Core* gb) {
+uint16_t GB_run_step(struct GB_Core* gb) {
 	return GB_run_step_internal(gb);
 }
 
 #include <time.h>
 
 // returns false if the game does not use rtc or if time_t is NULL.
-static GB_BOOL GB_set_rtc_from_time_t(struct GB_Core* gb) {
+static bool GB_set_rtc_from_time_t(struct GB_Core* gb) {
 	time_t the_time = time(NULL);
 	const struct tm* tm = localtime(&the_time);
 	
@@ -685,7 +685,7 @@ static GB_BOOL GB_set_rtc_from_time_t(struct GB_Core* gb) {
 
 	if (!gb || !tm) {
 		GB_throw_error(gb, GB_ERROR_DATA_TYPE_NULL_PARAM, __func__);
-		return GB_FALSE;
+		return false;
 	}
 
 	struct GB_Rtc rtc = {0};
@@ -701,7 +701,7 @@ static GB_BOOL GB_set_rtc_from_time_t(struct GB_Core* gb) {
 void GB_run_frame(struct GB_Core* gb) {
 	assert(gb);
 
-	GB_U32 cycles_elapsed = 0;
+	uint32_t cycles_elapsed = 0;
 
 	do {
 		cycles_elapsed += GB_run_step_internal(gb);
@@ -710,7 +710,7 @@ void GB_run_frame(struct GB_Core* gb) {
 
 	// check if we should update rtc using a switch so that
 	// compiler warns if i add new enum entries...
-	if (GB_has_rtc(gb) == GB_TRUE) {
+	if (GB_has_rtc(gb) == true) {
 		++gb->cart.internal_rtc_counter;
 
 		if (gb->cart.internal_rtc_counter > 59) {

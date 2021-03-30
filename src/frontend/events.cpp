@@ -176,7 +176,7 @@ auto App::OnDisplayEvent(const SDL_DisplayEvent& e) -> void {
 #endif
 
 auto App::OnKeyEvent(const SDL_KeyboardEvent& e) -> void {
-    const GB_BOOL kdown = e.type == SDL_KEYDOWN;
+    const auto kdown = e.type == SDL_KEYDOWN;
 
     // first check if any of the mapped keys were pressed...
     for (auto [key, button] : key_map) {
