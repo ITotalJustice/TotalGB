@@ -86,11 +86,6 @@ void GB_reset(struct GB_Core* gb) {
 	gb->cpu.halt = 0;
 	gb->cpu.ime = 0;
 	// CPU
-	if (GB_is_system_gbc(gb) == GB_TRUE) {
-		GB_cpu_set_register_pair(gb, GB_CPU_REGISTER_PAIR_AF, 0x11B0);
-	} else {
-		GB_cpu_set_register_pair(gb, GB_CPU_REGISTER_PAIR_AF, 0x01B0);
-	}
 	GB_cpu_set_register_pair(gb, GB_CPU_REGISTER_PAIR_BC, 0x0013);
 	GB_cpu_set_register_pair(gb, GB_CPU_REGISTER_PAIR_DE, 0x00D8);
 	GB_cpu_set_register_pair(gb, GB_CPU_REGISTER_PAIR_HL, 0x014D);
@@ -115,32 +110,41 @@ void GB_reset(struct GB_Core* gb) {
 	IO_WX = 0x00;
 	IO_IE = 0x00;
 
-	if (GB_is_system_gbc(gb) == GB_TRUE) {
-		IO_SVBK = 0x01;
-		IO_VBK = 0x00;
-		IO_BCPS = 0x00;
-		IO_BCPD = 0x00;
-		IO_OCPS = 0x00;
-		IO_OCPD = 0x00;
-		IO_OPRI = 0x00;
-		IO_KEY1 = 0x00;
-		// undoc
-		IO_72 = 0x00;
-		IO_73 = 0x00;
-		IO_74 = 0x00;
-		IO_75 = 0x00;
-	} else {
-		IO_SVBK = 0x01;
-		// this might not work for all DMG games as there may be some that
-		// check if this value returns 0xFF, however, this is set to 0
-		// to avoid having an extra `if` when writing to vram, allowing
-		// me to use the IO reg directly (the if being is_system_gbc)
-		IO_VBK = 0x00; //IO_VBK = 0xFF;
-		IO_BCPS = 0xFF;
-		IO_BCPD = 0xFF;
-		IO_OCPS = 0xFF;
-		IO_OCPD = 0xFF;
-		IO_KEY1 = 0x00;
+	switch (GB_get_system_type(gb)) {
+		case GB_SYSTEM_TYPE_DMG:
+			GB_cpu_set_register_pair(gb, GB_CPU_REGISTER_PAIR_AF, 0x01B0);
+			IO_SVBK = 0x01;
+			// this might not work for all DMG games as there may be some that
+			// check if this value returns 0xFF, however, this is set to 0
+			// to avoid having an extra `if` when writing to vram, allowing
+			// me to use the IO reg directly (the if being is_system_gbc)
+			IO_VBK = 0x00; //IO_VBK = 0xFF;
+			IO_BCPS = 0xFF;
+			IO_BCPD = 0xFF;
+			IO_OCPS = 0xFF;
+			IO_OCPD = 0xFF;
+			IO_KEY1 = 0x00;
+			break;
+
+		case GB_SYSTEM_TYPE_SGB:
+			break;
+
+		case GB_SYSTEM_TYPE_GBC:
+			GB_cpu_set_register_pair(gb, GB_CPU_REGISTER_PAIR_AF, 0x11B0);
+			IO_SVBK = 0x01;
+			IO_VBK = 0x00;
+			IO_BCPS = 0x00;
+			IO_BCPD = 0x00;
+			IO_OCPS = 0x00;
+			IO_OCPD = 0x00;
+			IO_OPRI = 0x00;
+			IO_KEY1 = 0x00;
+			// undoc
+			IO_72 = 0x00;
+			IO_73 = 0x00;
+			IO_74 = 0x00;
+			IO_75 = 0x00;
+			break;
 	}
 }
 
