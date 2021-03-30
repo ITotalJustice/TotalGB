@@ -373,6 +373,7 @@ int GB_loadrom_data(struct GB_Core* gb, GB_U8* data, GB_U32 size) {
 	};
 
 	const char gbc_flag = header->title[sizeof(header->title) - 1];
+	
 	if ((gbc_flag & GBC_ONLY) == GBC_ONLY) {
 		// check if the user wants to force gbc mode
 		if (gb->config.system_type_config == GB_SYSTEM_TYPE_CONFIG_DMG) {
@@ -380,11 +381,6 @@ int GB_loadrom_data(struct GB_Core* gb, GB_U8* data, GB_U32 size) {
 			return -1;
 		}
 
-
-		// printf("[ERROR] GBC mode is not yet supported!\n");
-		// return -1;
-
-		// once supported is added, use this code...
 		if (gb->config.system_type_config == GB_SYSTEM_TYPE_CONFIG_DMG) {
 			GB_throw_info(gb, "GBC only game but set to SGB system via config...");
 			GB_set_system_type(gb, GB_SYSTEM_TYPE_SGB);
@@ -401,8 +397,9 @@ int GB_loadrom_data(struct GB_Core* gb, GB_U8* data, GB_U32 size) {
 			GB_throw_info(gb, "rom supports GBC mode, however falling back to SGB mode...");
 			GB_set_system_type(gb, GB_SYSTEM_TYPE_SGB);
 		} else {
-			GB_throw_info(gb, "rom supports GBC mode, however falling back to DMG mode...");
-			GB_set_system_type(gb, GB_SYSTEM_TYPE_DMG);
+			GB_set_system_type(gb, GB_SYSTEM_TYPE_GBC);
+			// GB_throw_info(gb, "rom supports GBC mode, however falling back to DMG mode...");
+			// GB_set_system_type(gb, GB_SYSTEM_TYPE_DMG);
 		}
 	}
 	else {

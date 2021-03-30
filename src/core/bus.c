@@ -8,8 +8,10 @@ static inline void GB_iowrite_gbc(struct GB_Core* gb, GB_U16 addr, GB_U8 value) 
 	assert(GB_is_system_gbc(gb) == GB_TRUE);
 
 	switch (addr & 0x7F) {
-		case 0x4D: // (KEY1)
-			IO_KEY1 = value & 1;
+		case 0x4D:
+			// only set bit-0, first unset it, then set it
+			IO_KEY1 &= ~(0x1);
+			IO_KEY1 |= value & 0x1;
 			break;
 
 		case 0x4F: // (VBK)
@@ -117,13 +119,6 @@ GB_U8 GB_ioread(struct GB_Core* gb, GB_U16 addr) {
 		case 0x2B: case 0x2C: case 0x2D: case 0x2E:
 		case 0x2F: case 0x1F: // unused
 			return 0xFF;
-
-		case 0x4D:
-			if (GB_is_system_gbc(gb) == GB_TRUE) {
-				return gb->cpu.double_speed > 0 ? 0x80 : 0x00;
-			} else {
-				return 0xFF;
-			}
 
 		case 0x4F: // (GBC) VBK
 			if (GB_is_system_gbc(gb) == GB_TRUE) {

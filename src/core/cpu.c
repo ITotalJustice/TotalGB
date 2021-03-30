@@ -809,19 +809,36 @@ static inline GB_U16 GB_POP(struct GB_Core* gb) {
 	} \
 } while(0)
 
-#define STOP() do { \
-	if (GB_is_system_gbc(gb)) { \
-		if ((IO_KEY1 & 1) == 1) { \
-			gb->cpu.double_speed = !gb->cpu.double_speed; \
-			IO_KEY1 = 0; \
-		} \
-	} \
-	\
-	gb->cpu.cycles += 2050; \
-	if (gb->stop_cb != NULL) { \
-		gb->stop_cb(gb, gb->stop_cb_user_data); \
-	} \
-} while (0)
+static void STOP(struct GB_Core* gb) {
+	if (GB_is_system_gbc(gb)) {
+		// only set if speed-switch is requested
+		if ((IO_KEY1 & 0x1) == 1) {
+			GB_throw_info(gb, "changing speed mode");
+			
+			// switch speed state.
+			gb->cpu.double_speed = !gb->cpu.double_speed;
+			// this clears bit-0 and sets bit-7 to whether we are in double
+			// or normal speed mode.
+			IO_KEY1 = (gb->cpu.double_speed << 7);
+		}
+		// if stop was called and speed-switch wasn't set, then
+		// something has gone wrong, report this via callback
+		else {
+			if (gb->stop_cb != NULL) {
+				gb->stop_cb(gb, gb->stop_cb_user_data);
+			}
+		}
+	}
+	// the game should never try to stop if it's a normal DMG game
+	// should this happen, call the error callback
+	else {
+		if (gb->stop_cb != NULL) {
+			gb->stop_cb(gb, gb->stop_cb_user_data);
+		}
+	}
+	
+	gb->cpu.cycles += 2050;
+}
 
 static void GB_interrupt_handler(struct GB_Core* gb) {
 	if (!gb->cpu.ime && !gb->cpu.halt) {
@@ -889,7 +906,7 @@ static void GB_execute(struct GB_Core* gb) {
 		case 0x0B: DEC_BC(); break;
 		case 0x0E: LD_r_u8(); break;
 		case 0x0F: RRCA(); break;
-		case 0x10: STOP(); break;
+		case 0x10: STOP(gb); break;
 		case 0x11: LD_DE_u16(); break;
 		case 0x12: LD_DEa_A(); break;
 		case 0x13: INC_DE(); break;
