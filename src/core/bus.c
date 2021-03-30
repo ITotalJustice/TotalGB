@@ -203,7 +203,7 @@ void GB_iowrite(struct GB_Core* gb, GB_U16 addr, GB_U8 value) {
 			break;
 
 		case 0x40:
-			IO_LCDC = value;
+			GB_on_lcdc_write(gb, value);
 			break;
 
 		case 0x41:

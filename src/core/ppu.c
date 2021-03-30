@@ -290,10 +290,29 @@ void GB_change_status_mode(struct GB_Core* gb, const GB_U8 new_mode) {
     }
 }
 
+void GB_on_lcdc_write(struct GB_Core* gb, const GB_U8 value) {
+    // check if the game wants to disable the ppu
+    if ((value & 0x80) == 0) {
+        // we need to set a few vars, LY is reset and stat mode is HBLANK
+        IO_STAT &= ~(0x3);
+        IO_LY = 0;
+        // i think this is reset also...
+        gb->ppu.next_cycles = 0;
+    }
+    else {
+        // if the value is enabling the ppu and the ppu is
+        // currently disabled, something else is meant to happen
+        // i think...not handled yet anyway
+        if (GB_is_lcd_enabled(gb) == GB_FALSE) {
+
+        }
+    }
+
+    IO_LCDC = value;
+}
+
 void GB_ppu_run(struct GB_Core* gb, GB_U16 cycles) {
     if (UNLIKELY(!GB_is_lcd_enabled(gb))) {
-        GB_set_status_mode(gb, STATUS_MODE_VBLANK);
-        gb->ppu.next_cycles = 456;
         return;
     }
 
