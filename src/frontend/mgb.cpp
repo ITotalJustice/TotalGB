@@ -18,6 +18,7 @@ namespace mgb {
 
 // global
 static SDL_AudioDeviceID AUDIO_DEVICE_ID = 0;
+static FILE* AUDIO_DUMP_FILE = NULL;
 
 
 static void AudioCallback(struct GB_Core*, void* user_data, struct GB_ApuCallbackData* data) {
@@ -29,7 +30,14 @@ auto Instance::OnAudioCallback(struct GB_ApuCallbackData* data) -> void {
     // https://wiki.libsdl.org/SDL_GetQueuedAudioSize
     // todo: use sdl stream api instead, this delay was a temp hack
     // for now that magically "works".
-    while ((SDL_GetQueuedAudioSize(AUDIO_DEVICE_ID)) > (1024 << 2)) {
+    #ifdef DUMP_AUDIO
+        fwrite(data->samples, 1, sizeof(data->samples), AUDIO_DUMP_FILE);
+        // for (size_t i = 0; i < sizeof(data->samples); ++i) {
+        //     fprintf(AUDIO_DUMP_FILE, "%X");
+        // }
+    #endif
+
+    while ((SDL_GetQueuedAudioSize(AUDIO_DEVICE_ID)) > (1024)) {
         SDL_Delay(1);
     }
 
@@ -77,11 +85,8 @@ auto ErrorCallback(GB_Core*, void* user, struct GB_ErrorData* data) -> void {
 }
 
 auto Instance::OnVblankCallback() -> void {
-    void* pixles; int pitch;
-
-    SDL_LockTexture(texture, NULL, &pixles, &pitch);
-    std::memcpy(pixles, gameboy->ppu.pixles, sizeof(gameboy->ppu.pixles));
-    SDL_UnlockTexture(texture);
+    std::scoped_lock lock{this->gfx_mutex};
+    std::memcpy(this->buffered_pixels, gameboy->ppu.pixles, sizeof(gameboy->ppu.pixles));
 }
 
 auto Instance::OnHblankCallback() -> void {
@@ -94,6 +99,30 @@ auto Instance::OnDmaCallback() -> void {
 
 auto Instance::OnHaltCallback() -> void {
 
+}
+
+auto core_audio_cb(struct GB_Core*, void* user_data, struct GB_ApuCallbackData* data) -> void {
+    // printf("ye\n");
+    auto boolean = static_cast<bool*>(user_data);
+    // this will stop the thread from running
+    *boolean = false;
+}
+
+static void audio_callback(void *user, uint8_t* buf, int len) {
+    // the idea is that this callback drives the amu core
+    // for this to work
+    auto instance = static_cast<Instance*>(user);
+
+    bool running = true;
+    GB_set_apu_callback(instance->GetGB(), core_audio_cb, &running);
+
+    while (running == true) {
+        GB_run_step(instance->GetGB());
+    }
+
+    // once we get here, this means that we have enough samples!
+    // simply memcpy them over.
+    memcpy(buf, instance->GetGB()->apu.samples, len);
 }
 
 auto Instance::OnStopCallback() -> void {
@@ -182,6 +211,45 @@ auto Instance::LoadRom(const std::string& path) -> bool {
 
     // try and load a savefile (if any...)
     this->LoadSave(this->rom_path);
+
+        const SDL_AudioSpec wanted{
+        /* .freq = */ 48000,
+        /* .format = */ AUDIO_S8,
+#ifdef CHANNEL_8
+        /* .channels = */ 8,
+#else
+        /* .channels = */ 2,
+#endif
+        /* .silence = */ 0, // calculated
+        /* .samples = */ 512, // 512 * 2 (because stereo)
+        /* .padding = */ 0,
+        /* .size = */ 0, // calculated
+#ifndef GB_SDL_AUDIO_CALLBACK
+        /* .callback = */ NULL,
+        /* .userdata = */ NULL
+#else
+        /* .callback = */ audio_callback,
+        /* .userdata = */ this
+#endif // GB_SDL_AUDIO_CALLBACK
+    };
+    SDL_AudioSpec obtained{};
+
+    AUDIO_DEVICE_ID = SDL_OpenAudioDevice(NULL, 0, &wanted, &obtained, 0);
+    // check if an audio device was failed to be found...
+    if (AUDIO_DEVICE_ID == 0) {
+        printf("failed to find valid audio device\n");
+    } else {
+        printf("\nSDL_AudioSpec:\n");
+        printf("\tfreq: %d\n", obtained.freq);
+        printf("\tformat: %d\n", obtained.format);
+        printf("\tchannels: %u\n", obtained.channels);
+        printf("\tsilence: %u\n", obtained.silence);
+        printf("\tsamples: %u\n", obtained.samples);
+        printf("\tpadding: %u\n", obtained.padding);
+        printf("\tsize: %u\n", obtained.size);
+
+        SDL_PauseAudioDevice(AUDIO_DEVICE_ID, 0);
+    }
 
     return true;
 }
@@ -286,15 +354,11 @@ auto Instance::GetGB() -> GB_Core* {
     return this->gameboy.get();
 }
 
-#ifdef GB_SDL_AUDIO_CALLBACK
-static void AudioCallback(void* user, u8* buf, int len) {
-    auto instance = static_cast<Instance*>(user);
-    memset(buf, 0, len);
-    GB_SDL_audio_callback(instance->GetGB(), (s8*)buf, len);
-}
-#endif // GB_SDL_AUDIO_CALLBACK
-
 App::App() {
+    #ifdef DUMP_AUDIO
+    AUDIO_DUMP_FILE = fopen("audio_dump.raw", "wb");
+    #endif
+
     {
         SDL_version compiled;
         SDL_version linked;
@@ -309,44 +373,13 @@ App::App() {
 
     SDL_Init(SDL_INIT_AUDIO | SDL_INIT_VIDEO | SDL_INIT_EVENTS | SDL_INIT_JOYSTICK | SDL_INIT_HAPTIC | SDL_INIT_GAMECONTROLLER);
     SDL_GameControllerAddMappingsFromFile("res/mappings/gamecontrollerdb.txt");
-
-    const SDL_AudioSpec wanted{
-        /* .freq = */ 48'000,
-        /* .format = */ AUDIO_S8,
-        /* .channels = */ 2,
-        /* .silence = */ 0, // calculated
-        /* .samples = */ 1024, // 512 * 2 (because stereo)
-        /* .padding = */ 0,
-        /* .size = */ 0, // calculated
-#ifndef GB_SDL_AUDIO_CALLBACK
-        /* .callback = */ NULL,
-        /* .userdata = */ NULL
-#else
-        /* .callback = */ AudioCallback,
-        /* .userdata = */ &this->emu_instances[0]
-#endif // GB_SDL_AUDIO_CALLBACK
-    };
-    SDL_AudioSpec obtained{};
-
-    AUDIO_DEVICE_ID = SDL_OpenAudioDevice(NULL, 0, &wanted, &obtained, 0);
-    // check if an audio device was failed to be found...
-    if (AUDIO_DEVICE_ID == 0) {
-        printf("failed to find valid audio device\n");
-    } else {
-        printf("\nSDL_AudioSpec:\n");
-        printf("\tfreq: %d\n", obtained.freq);
-        printf("\tformat: %d\n", obtained.format);
-        printf("\tchannels: %u\n", obtained.channels);
-        printf("\tsilence: %u\n", obtained.silence);
-        printf("\tsamples: %u\n", obtained.samples);
-        printf("\tpadding: %u\n", obtained.padding);
-        printf("\tsize: %u\n", obtained.size);
-
-        SDL_PauseAudioDevice(AUDIO_DEVICE_ID, 0);
-    }
 }
 
 App::~App() {
+    #ifdef DUMP_AUDIO
+    fclose(AUDIO_DUMP_FILE);
+    #endif
+
     for (auto& p : this->emu_instances) {
         // we want to close the window as well this time...
         p.CloseRom(true);
@@ -467,6 +500,7 @@ auto App::Loop() -> void {
         // handle sdl2 events
         this->Events();
 
+#ifndef GB_SDL_AUDIO_CALLBACK
         switch (this->run_state) {
             case EmuRunState::NONE:
                 break;
@@ -486,17 +520,34 @@ auto App::Loop() -> void {
                 // );
                 break;
         }
+#endif // GB_SDL_AUDIO_CALLBACK
 
         // render the screen
         this->Draw();
     }
 }
 
+auto Instance::Draw() -> void {
+    if (this->renderer == NULL) {
+        return;
+    }
+
+    void* pixles; int pitch;
+    SDL_LockTexture(texture, NULL, &pixles, &pitch);
+    {
+        std::scoped_lock lock{this->gfx_mutex};
+        std::memcpy(pixles, this->buffered_pixels, sizeof(this->buffered_pixels));
+    }
+    SDL_UnlockTexture(texture);
+
+    SDL_RenderClear(this->renderer);
+    SDL_RenderCopy(this->renderer, this->texture, NULL, NULL);
+    SDL_RenderPresent(this->renderer);
+}
+
 auto App::Draw() -> void {
     for (auto& p : this->emu_instances) {
-        SDL_RenderClear(p.renderer);
-        SDL_RenderCopy(p.renderer, p.texture, NULL, NULL);
-        SDL_RenderPresent(p.renderer);
+        p.Draw();
     }
 }
 

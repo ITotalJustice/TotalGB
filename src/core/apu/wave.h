@@ -8,10 +8,11 @@ extern "C" {
 #include "../internal.h"
 
 
-// indexed using the wave shift.
-// the values in this table are used to right-shift the sample from wave_table
-static const GB_U8 WAVE_SHIFT[4] = { 4, 0, 1, 2 };
-
+// static const GB_S8 test[15] = {
+//     -128, -128/2, -128/4, -128/8, -128/16, -128/32, -128/64,
+//     0,
+//     128/64, 128/32, 128/16, 128/8, 128/4, 128/2, 128
+// };
 
 static inline GB_U16 get_wave_freq(const struct GB_Core* gb) {
     return (2048 - ((IO_NR34.freq_msb << 8) | IO_NR33.freq_lsb)) << 1;
@@ -34,20 +35,23 @@ static inline void wave_disable(struct GB_Core* gb) {
 }
 
 static inline GB_S8 sample_wave(struct GB_Core* gb) {
+    static const GB_S8 test_table[15] = {
+        -7, -6, -5, -4, -3, -2, -1,
+        0,
+        +1, +2, +3, +4, +5, +6, +7
+    };
+
+    // indexed using the wave shift.
+    // the values in this table are used to right-shift the sample from wave_table
+    static const GB_U8 WAVE_SHIFT[4] = { 4, 0, 1, 2 };
+
     // this now uses the sample buffer, rather than indexing the array
     // which is *correct*, but still sounds very bad
-    GB_S8 sample = (WAVE_CHANNEL.position_counter & 1) ? WAVE_CHANNEL.sample_buffer & 0xF : WAVE_CHANNEL.sample_buffer >> 4;
+    GB_U8 sample = (WAVE_CHANNEL.position_counter & 1) ? WAVE_CHANNEL.sample_buffer & 0xF : WAVE_CHANNEL.sample_buffer >> 4;
 
-    // next, we have to do this shift thing.
-    GB_U8 t = WAVE_SHIFT[IO_NR32.vol_code];
-    // this is a hack, because i have not fixed the volumes
-    // the wave channel is very loud at 100%.
-    // so for now, 0-75% vol.
-    // if (t == 0) {
-    //     t = 1;
-    // }
+    GB_U8 oof = (sample >> WAVE_SHIFT[IO_NR32.vol_code]);
 
-    return (sample >> t);//WAVE_SHIFT[IO_NR32.vol_code];
+    return test_table[oof];
 }
 
 static inline void clock_wave_len(struct GB_Core* gb) {
@@ -74,7 +78,7 @@ static inline void on_wave_trigger(struct GB_Core* gb) {
     wave_enable(gb);
 
     if (WAVE_CHANNEL.length_counter == 0) {
-        WAVE_CHANNEL.length_counter = 256 - WAVE_CHANNEL.nr31.length_load;
+        WAVE_CHANNEL.length_counter = 256;
     }
 
     // reset position counter

@@ -43,7 +43,7 @@ extern "C" {
 #define NOISE_CHANNEL gb->apu.noise
 #define CONTROL_CHANNEL gb->apu.control
 
-#define SAMPLE_RATE (4194304 / 48000)
+#define SAMPLE_RATE ((4194304 / 48000))
 
 // clocked at 512hz
 #define FRAME_SEQUENCER_CLOCK 512
@@ -54,6 +54,10 @@ extern "C" {
 enum EnvelopeMode {
     SUB = 0,
     ADD = 1
+};
+
+static const GB_U8 PERIOD_TABLE[8] = {
+    8, 1, 2, 3, 4, 5, 6, 7,
 };
 
 #ifdef __cplusplus

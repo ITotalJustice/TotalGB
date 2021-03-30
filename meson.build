@@ -38,7 +38,7 @@ source = files([
     'src/frontend/main.cpp',
     'src/frontend/mgb.cpp',
     'src/frontend/events.cpp',
-    'src/frontend/util/rewind.cpp',
+    # 'src/frontend/util/rewind.cpp',
     'src/frontend/util/mem.cpp',
     'src/frontend/util/util.cpp',
     'src/frontend/io/ifile_7z.cpp',
@@ -70,36 +70,6 @@ source = files([
     'src/libs/zlib/trees.c',
     'src/libs/zlib/uncompr.c',
     'src/libs/zlib/zutil.c',
-
-    # LZ4
-    'src/libs/lz4/lz4.c',
-
-    # ZSTD
-    'src/libs/zstd/common/debug.c',
-    'src/libs/zstd/common/entropy_common.c',
-    'src/libs/zstd/common/error_private.c',
-    'src/libs/zstd/common/fse_decompress.c',
-    'src/libs/zstd/common/pool.c',
-    'src/libs/zstd/common/threading.c',
-    'src/libs/zstd/common/xxhash.c',
-    'src/libs/zstd/common/zstd_common.c',
-    'src/libs/zstd/compress/fse_compress.c',
-    'src/libs/zstd/compress/hist.c',
-    'src/libs/zstd/compress/huf_compress.c',
-    'src/libs/zstd/compress/zstd_compress.c',
-    'src/libs/zstd/compress/zstd_compress_literals.c',
-    'src/libs/zstd/compress/zstd_compress_sequences.c',
-    'src/libs/zstd/compress/zstd_compress_superblock.c',
-    'src/libs/zstd/compress/zstd_double_fast.c',
-    'src/libs/zstd/compress/zstd_fast.c',
-    'src/libs/zstd/compress/zstd_lazy.c',
-    'src/libs/zstd/compress/zstd_ldm.c',
-    'src/libs/zstd/compress/zstd_opt.c',
-    'src/libs/zstd/compress/zstdmt_compress.c',
-    'src/libs/zstd/decompress/huf_decompress.c',
-    'src/libs/zstd/decompress/zstd_ddict.c',
-    'src/libs/zstd/decompress/zstd_decompress.c',
-    'src/libs/zstd/decompress/zstd_decompress_block.c',
 
     # LZMA
     'src/libs/lzma/Alloc.c',
@@ -151,12 +121,6 @@ cflags = [
     # 7zip
     '-D_7ZIP_ST',
 
-    # zstd
-    '-DZSTD_LIB_MINIFY=1',
-
-    # lz4
-    '-DLZ4_FAST_DEC_LOOP=1',
-
     # minizip
     '-DNOUNCRYPT',
     '-DNOCRYPT',
@@ -164,8 +128,14 @@ cflags = [
     # speedhacks
     '-DGB_RTC_SPEEDHACK=1',
 
+    '-DMGB_NO_LZ4',
+    '-DMGB_NO_ZSTD',
+
     # sdl_thread audio (race condition!)
     # '-DGB_SDL_AUDIO_CALLBACK=1',
+    # '-DUSE_AUDIO_FLOAT = 1',
+    # '-DDUMP_AUDIO=1',
+    # '-DCHANNEL_8=1',
 ]
 
 cppflags = [

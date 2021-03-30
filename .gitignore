@@ -36,6 +36,7 @@
 roms/
 unused/
 tests/
+audio_dump.raw
 
 # VS stuff
 msvc/.*

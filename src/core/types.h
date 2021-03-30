@@ -479,7 +479,6 @@ struct GB_Timer {
 
 struct GB_ApuSquare1 {
 	struct {
-		GB_U8 : 1;
 		GB_U8 sweep_period : 3;
 		GB_U8 negate : 1;
 		GB_U8 shift : 3;
@@ -503,7 +502,6 @@ struct GB_ApuSquare1 {
 	struct {
 		GB_U8 trigger : 1;
 		GB_U8 length_enable : 1;
-		GB_U8 : 3;
 		GB_U8 freq_msb : 3;
 	} nr14;
 
@@ -540,7 +538,6 @@ struct GB_ApuSquare2 {
 	struct {
 		GB_U8 trigger : 1;
 		GB_U8 length_enable : 1;
-		GB_U8 : 3;
 		GB_U8 freq_msb : 3;
 	} nr24;
 
@@ -564,7 +561,6 @@ struct GB_ApuWave {
 	} nr31;
 
 	struct {
-		GB_U8 : 1;
 		GB_U8 vol_code : 2;
 		GB_U8 : 5;
 	} nr32;
@@ -576,7 +572,6 @@ struct GB_ApuWave {
 	struct {
 		GB_U8 trigger : 1;
 		GB_U8 length_enable : 1;
-		GB_U8 : 3;
 		GB_U8 freq_msb : 3;
 	} nr34;
 
@@ -591,7 +586,6 @@ struct GB_ApuWave {
 
 struct GB_ApuNoise {
 	struct {
-		GB_U8 : 2;
 		GB_U8 length_load : 6;
 	} nr41;
 
@@ -610,7 +604,6 @@ struct GB_ApuNoise {
 	struct {
 		GB_U8 trigger : 1;
 		GB_U8 length_enable : 1;
-		GB_U8 : 6;
 	} nr44;
 
 	// noise channel can run as fast as (4194304 / 8) = 524,288
@@ -647,7 +640,6 @@ struct GB_ApuControl {
 
 	struct {
 		GB_U8 power : 1;
-		GB_U8 : 3;
 		GB_U8 noise : 1;
 		GB_U8 wave : 1;
 		GB_U8 square2 : 1;
@@ -656,7 +648,11 @@ struct GB_ApuControl {
 };
 
 struct GB_ApuCallbackData {
+#ifdef CHANNEL_8
+	GB_S8 samples[512 * 8];
+#else
 	GB_S8 samples[512 * 2];
+#endif
 };
 
 struct GB_Apu {
@@ -672,7 +668,11 @@ struct GB_Apu {
 	GB_U8 frame_sequencer_counter : 3;
 
 	// stero samples built up (512 * 2)
+#ifdef CHANNEL_8
+	GB_S8 samples[512 * 8];
+#else
 	GB_S8 samples[512 * 2];
+#endif
 	// counter for how many samples we have
 	GB_U16 samples_count;
 };

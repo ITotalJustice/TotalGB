@@ -3,6 +3,7 @@
 #include <memory>
 #include <vector>
 #include <string>
+#include <mutex>
 
 #ifdef WIN32
 #include <SDL.h>
@@ -70,6 +71,8 @@ struct Instance {
     auto OnStopCallback() -> void;
     auto OnErrorCallback(struct GB_ErrorData* data) -> void;
 
+    auto Draw() -> void;
+
 private:
     auto CreateWindow() -> void;
     auto DestroyWindow() -> void;
@@ -77,6 +80,10 @@ private:
 private:
     std::unique_ptr<GB_Core> gameboy;
     std::unique_ptr<GB_Printer> printer;
+    
+    // thread safe
+    std::mutex gfx_mutex;
+    u16 buffered_pixels[144][160];
 };
 
 struct App {
