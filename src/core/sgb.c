@@ -1,4 +1,5 @@
 #include "core/internal.h"
+#include "core/gb.h"
 
 
 #include <stdio.h>
@@ -115,6 +116,13 @@ struct SGB_Stub {
     struct {
         enum SGB_ScreenMask mask;
     } mask_en;
+
+    // 0-3 are used for the game
+    // 4-7 are used for the border only.
+    uint16_t palettes[8][16];
+
+    // 4kb
+    uint16_t palette_ram[512][4];
 };
 
 // for testing.
@@ -172,81 +180,139 @@ static void cmd_mask_en(struct GB_Core* gb) {
     }
 }
 
-static void execute_sgb_cmd(struct GB_Core* gb) {
+static void _cmd_palxx(struct GB_Core* gb, uint8_t p0, uint8_t p1) {
+    const uint16_t col1 = *(uint16_t*)(&(transfer.packets[0].data[0x1]));
+    const uint16_t col2 = *(uint16_t*)(&(transfer.packets[0].data[0x3]));
+    const uint16_t col3 = *(uint16_t*)(&(transfer.packets[0].data[0x5]));
+    const uint16_t col4 = *(uint16_t*)(&(transfer.packets[0].data[0x7]));
+    const uint16_t col5 = *(uint16_t*)(&(transfer.packets[0].data[0x9]));
+    const uint16_t col6 = *(uint16_t*)(&(transfer.packets[0].data[0xB]));
+    const uint16_t col7 = *(uint16_t*)(&(transfer.packets[0].data[0xD]));
+
+    const uint8_t array[2] = { p0, p1 };
+
+    GB_UNUSED(col1); GB_UNUSED(col2); GB_UNUSED(col3); GB_UNUSED(col4);
+    GB_UNUSED(col5); GB_UNUSED(col6); GB_UNUSED(col7); GB_UNUSED(array);
+
+    // for (size_t i = 0; i < 2; ++i) {
+    //     switch (array[i]) {
+    //         case 0:
+    //             memcpy(gb->palette.BG, pal_array, sizeof(pal_array));
+    //             break;
+
+    //         case 1:
+    //             memcpy(gb->palette.OBJ0, pal_array, sizeof(pal_array));
+    //             break;
+
+    //         case 2:
+    //             memcpy(gb->palette.OBJ1, pal_array, sizeof(pal_array));
+    //             break;
+
+    //         case 3:
+    //             memcpy(gb->palette.OBJ0, pal_array, sizeof(pal_array));
+    //             break; 
+    //     }
+    // }
+
+    // refresh the palette cache.
+    GB_update_all_colours_gb(gb);
+}
+
+static void cmd_pal01(struct GB_Core* gb) {
+    _cmd_palxx(gb, 0, 1);
+}
+
+static void cmd_pal23(struct GB_Core* gb) {
+    _cmd_palxx(gb, 2, 3);
+}
+
+static void cmd_pal03(struct GB_Core* gb) {
+    _cmd_palxx(gb, 0, 3);
+}
+
+static void cmd_pal12(struct GB_Core* gb) {
+    _cmd_palxx(gb, 1, 2);
+}
+
+static void cmd_pal_set(struct GB_Core* gb) {
+    GB_UNUSED(gb);
+}
+
+static void execute_cmd(struct GB_Core* gb) {
     switch (transfer.header_byte.cmd) {
         case CMD_PAL01:   // Set SGB Palette 0 & 1
             printf("[SGB] %s\n", "CMD_PAL01");
-            assert(0 && "CMD_PAL01");
+            cmd_pal01(gb);
             break;
 
         case CMD_PAL23:   // Set SGB Palette 2 & 3
             printf("[SGB] %s\n", "CMD_PAL23");
-            assert(0 && "CMD_PAL23");
+            cmd_pal23(gb);
             break;
 
         case CMD_PAL03:   // Set SGB Palette 0 & 3
             printf("[SGB] %s\n", "CMD_PAL03");
-            assert(0 && "CMD_PAL03");
+            cmd_pal03(gb);
             break;
 
         case CMD_PAL12:   // Set SGB Palette 1 & 2
             printf("[SGB] %s\n", "CMD_PAL12");
-            assert(0 && "CMD_PAL12");
+            cmd_pal12(gb);
             break;
 
         case CMD_ATTR_BLK:// "Block" Area Designation Mode
             printf("[SGB] %s\n", "CMD_ATTR_BLK");
-            assert(0 && "CMD_ATTR_BLK");
+            // assert(0 && "CMD_ATTR_BLK");
             break;
 
         case CMD_ATTR_LIN:// "Line" Area Designation Mode
             printf("[SGB] %s\n", "CMD_ATTR_LIN");
-            assert(0 && "CMD_ATTR_LIN");
+            // assert(0 && "CMD_ATTR_LIN");
             break;
 
         case CMD_ATTR_DIV:// "Divide" Area Designation Mode
             printf("[SGB] %s\n", "CMD_ATTR_DIV");
-            assert(0 && "CMD_ATTR_DIV");
+            // assert(0 && "CMD_ATTR_DIV");
             break;
 
         case CMD_ATTR_CHR:// "1CHR" Area Designation Mode
             printf("[SGB] %s\n", "CMD_ATTR_CHR");
-            assert(0 && "CMD_ATTR_CHR");
+            // assert(0 && "CMD_ATTR_CHR");
             break;
 
         case CMD_SOUND:   // Sound On/Off
             printf("[SGB] %s\n", "CMD_SOUND");
-            assert(0 && "CMD_SOUND");
+            // assert(0 && "CMD_SOUND");
             break;
 
         case CMD_SOU_TRN: // Transfer Sound PRG/DATA
             printf("[SGB] %s\n", "CMD_SOU_TRN");
-            assert(0 && "CMD_SOU_TRN");
+            // assert(0 && "CMD_SOU_TRN");
             break;
 
         case CMD_PAL_SET: // Set SGB Palette Indirect
             printf("[SGB] %s\n", "CMD_PAL_SET");
-            assert(0 && "CMD_PAL_SET");
+            cmd_pal_set(gb);
             break;
 
         case CMD_PAL_TRN: // Set System Color Palette Data
             printf("[SGB] %s\n", "CMD_PAL_TRN");
-            assert(0 && "CMD_PAL_TRN");
+            // assert(0 && "CMD_PAL_TRN");
             break;
 
         case CMD_ATRC_EN: // Enable/disable Attraction Mode
             printf("[SGB] %s\n", "CMD_ATRC_EN");
-            assert(0 && "CMD_ATRC_EN");
+            // assert(0 && "CMD_ATRC_EN");
             break;
 
         case CMD_TEST_EN: // Speed Function
             printf("[SGB] %s\n", "CMD_TEST_EN");
-            assert(0 && "CMD_TEST_EN");
+            // assert(0 && "CMD_TEST_EN");
             break;
 
         case CMD_ICON_EN: // SGB Function
             printf("[SGB] %s\n", "CMD_ICON_EN");
-            assert(0 && "CMD_ICON_EN");
+            // assert(0 && "CMD_ICON_EN");
             break;
 
         case CMD_DATA_SND:// SUPER NES WRAM Transfer 1
@@ -256,7 +322,7 @@ static void execute_sgb_cmd(struct GB_Core* gb) {
 
         case CMD_DATA_TRN:// SUPER NES WRAM Transfer 2
             printf("[SGB] %s\n", "CMD_DATA_TRN");
-            assert(0 && "CMD_DATA_TRN");
+            // assert(0 && "CMD_DATA_TRN");
             break;
 
         case CMD_MLT_REG: // Controller 2 Request
@@ -266,27 +332,27 @@ static void execute_sgb_cmd(struct GB_Core* gb) {
 
         case CMD_JUMP:    // Set SNES Program Counter
             printf("[SGB] %s\n", "CMD_JUMP");
-            assert(0 && "CMD_JUMP");
+            // assert(0 && "CMD_JUMP");
             break;
 
         case CMD_CHR_TRN: // Transfer Character Font Data
             printf("[SGB] %s\n", "CMD_CHR_TRN");
-            assert(0 && "CMD_CHR_TRN");
+            // assert(0 && "CMD_CHR_TRN");
             break;
 
         case CMD_PCT_TRN: // Set Screen Data Color Data
             printf("[SGB] %s\n", "CMD_PCT_TRN");
-            assert(0 && "CMD_PCT_TRN");
+            // assert(0 && "CMD_PCT_TRN");
             break;
 
         case CMD_ATTR_TRN:// Set Attribute from ATF
             printf("[SGB] %s\n", "CMD_ATTR_TRN");
-            assert(0 && "CMD_ATTR_TRN");
+            // assert(0 && "CMD_ATTR_TRN");
             break;
 
         case CMD_ATTR_SET:// Set Data to ATF
             printf("[SGB] %s\n", "CMD_ATTR_SET");
-            assert(0 && "CMD_ATTR_SET");
+            // assert(0 && "CMD_ATTR_SET");
             break;
 
         case CMD_MASK_EN: // Game Boy Window Mask
@@ -296,7 +362,7 @@ static void execute_sgb_cmd(struct GB_Core* gb) {
 
         case CMD_OBJ_TRN: // Super NES OBJ Mode
             printf("[SGB] %s\n", "CMD_OBJ_TRN");
-            assert(0 && "CMD_OBJ_TRN");
+            // assert(0 && "CMD_OBJ_TRN");
             break;
 
         default:
@@ -384,7 +450,7 @@ void SGB_handle_joyp_write(struct GB_Core* gb, uint8_t value) {
 
             // check the len, if 0, no more transfers
             if (transfer.header_byte.len == 0) {
-                execute_sgb_cmd(gb);
+                execute_cmd(gb);
                 transfer.state = WAITING_FOR_RESET;
             }
             else {

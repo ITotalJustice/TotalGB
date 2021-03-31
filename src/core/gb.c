@@ -450,8 +450,7 @@ int GB_loadrom_data(struct GB_Core* gb, uint8_t* data, uint32_t size) {
 	// for now, try and detect SGB
 	if (header->sgb_flag == SGB_FLAG && header->old_licensee_code == NEW_LICENSEE_USED) {
 		printf("[INFO] game supports SGB!\n");
-		// GB_set_system_type(gb, GB_SYSTEM_TYPE_DMG);
-		GB_set_system_type(gb, GB_SYSTEM_TYPE_SGB);
+		// GB_set_system_type(gb, GB_SYSTEM_TYPE_SGB);
 	}
 
 	// try and setup the mbc, this also implicitly sets up
