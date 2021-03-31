@@ -8,8 +8,6 @@
 
 #include "nativefiledialog/nfd.hpp"
 
-//#include <SDL2/SDL_audio.h>
-#include <SDL_audio.h>
 
 #include <cstring>
 #include <cassert>
