@@ -23,6 +23,7 @@ source = files([
     'src/core/mbc.c',
     'src/core/timers.c',
     'src/core/serial.c',
+    'src/core/sgb.c',
     'src/core/accessories/printer.c',
     'src/core/tables/palette_table.c',
 
@@ -80,6 +81,7 @@ source = files([
 ])
 
 includes = include_directories([
+    'src',
     'src/libs/'
 ])
 

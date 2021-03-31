@@ -90,7 +90,7 @@ static inline void GB_iowrite_gbc(struct GB_Core* gb, uint16_t addr, uint8_t val
 uint8_t GB_ioread(struct GB_Core* gb, uint16_t addr) {
 	switch (addr & 0x7F) {
 		case 0x00:
-			return GB_joypad_get(gb);
+			return GB_joypad_read(gb);
 
 		case 0x01:
 			return 0xFF;
@@ -154,7 +154,7 @@ uint8_t GB_ioread(struct GB_Core* gb, uint16_t addr) {
 void GB_iowrite(struct GB_Core* gb, uint16_t addr, uint8_t value) {
 	switch (addr & 0x7F) {
 		case 0x00: // joypad
-			IO_JYP = value;
+			GB_joypad_write(gb, value);
 			break;
 
 		case 0x01: // SB (Serial transfer data)
