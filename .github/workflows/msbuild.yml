@@ -37,5 +37,5 @@ jobs:
         # Artifact name
         name: TotalGB-win
         # A file, directory or wildcard pattern that describes what to upload
-        path: msvc/Release/
+        path: msvc/x64/Release/
         # The desired behavior if no files are found using the provided path.
