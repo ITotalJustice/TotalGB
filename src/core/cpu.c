@@ -4,72 +4,67 @@
 
 #include <assert.h>
 
-static inline void UNK_OP(struct GB_Core* gb, uint8_t opcode, bool cb_prefix) {
-	if (gb->error_cb != NULL) {
-		struct GB_ErrorData data = {0};
-		data.type = GB_ERROR_TYPE_UNKNOWN_INSTRUCTION;
-		data.unk_instruction.cb_prefix = cb_prefix;
-		data.unk_instruction.opcode = opcode;
 
-		gb->error_cb(gb, gb->error_cb_user_data, &data);	
-	}
-}
+enum FlagMasks {
+	FLAG_C_MASK = 0x10,
+	FLAG_H_MASK = 0x20,
+	FLAG_N_MASK = 0x40,
+	FLAG_Z_MASK = 0x80,
+};
 
-// todo: prefix with GB
+// flag getters
+#define FLAG_C gb->cpu.c
+#define FLAG_H gb->cpu.h
+#define FLAG_N gb->cpu.n
+#define FLAG_Z gb->cpu.z
+
+// flag setters
+#define SET_FLAG_C(value) gb->cpu.c = !!(value)
+#define SET_FLAG_H(value) gb->cpu.h = !!(value)
+#define SET_FLAG_N(value) gb->cpu.n = !!(value)
+#define SET_FLAG_Z(value) gb->cpu.z = !!(value)
+
+// reg array, indexed by decoding the opcode in most cases
+#define REG(v) gb->cpu.registers[(v) & 0x7]
+
 // SINGLE REGS
-#define REG_B gb->cpu.registers[0]
-#define REG_C gb->cpu.registers[1]
-#define REG_D gb->cpu.registers[2]
-#define REG_E gb->cpu.registers[3]
-#define REG_H gb->cpu.registers[4]
-#define REG_L gb->cpu.registers[5]
-#define REG_F gb->cpu.registers[6]
-// AF is flipped because of how the oprand decoding works.
-// F flag isn't used, instead (HL) is reg 6.
-// sperate instructions have been created for every (HL) instruction.
-#define REG_A gb->cpu.registers[7]
-// PAIRS
-#if GB_ENDIAN == GB_LITTLE_ENDIAN
+#define REG_B REG(0)
+#define REG_C REG(1)
+#define REG_D REG(2)
+#define REG_E REG(3)
+#define REG_H REG(4)
+#define REG_L REG(5)
+#define REG_A REG(7)
+
+// REG_F getter
+#define REG_F_GET() \
+	((FLAG_Z << 7) | (FLAG_N << 6) | (FLAG_H << 5) | (FLAG_C << 4))
+
+// REG_F setter
+#define REG_F_SET(v) \
+	SET_FLAG_Z((v) & FLAG_Z_MASK); \
+	SET_FLAG_N((v) & FLAG_N_MASK); \
+	SET_FLAG_H((v) & FLAG_H_MASK); \
+	SET_FLAG_C((v) & FLAG_C_MASK)
+
+// getters
 #define REG_BC ((REG_B << 8) | REG_C)
 #define REG_DE ((REG_D << 8) | REG_E)
 #define REG_HL ((REG_H << 8) | REG_L)
-#define REG_AF ((REG_A << 8) | (REG_F & 0xF0))
+#define REG_AF ((REG_A << 8) | REG_F_GET())
+
+// setters
 #define SET_REG_BC(v) REG_B = (((v) >> 8) & 0xFF); REG_C = ((v) & 0xFF)
 #define SET_REG_DE(v) REG_D = (((v) >> 8) & 0xFF); REG_E = ((v) & 0xFF)
 #define SET_REG_HL(v) REG_H = (((v) >> 8) & 0xFF); REG_L = ((v) & 0xFF)
-#define SET_REG_AF(v) REG_A = (((v) >> 8) & 0xFF); REG_F = ((v) & 0xF0)
-#else
-// TODO: BIG ENDIAN (PPC (WII / GAMECUBE))
-#endif
+#define SET_REG_AF(v) REG_A = (((v) >> 8) & 0xFF); REG_F_SET(v)
+
+// getters / setters
 #define REG_SP gb->cpu.SP
 #define REG_PC gb->cpu.PC
 
-// todo: prefix with GB
-#define FLAG_C (!!(REG_F & 0x10))
-#define FLAG_H (!!(REG_F & 0x20))
-#define FLAG_N (!!(REG_F & 0x40))
-#define FLAG_Z (!!(REG_F & 0x80))
 
-#define REG(v) gb->cpu.registers[(v) & 0x7]
-
-#if 1
-
-#define SET_FLAG_C(n) REG_F = n ? REG_F | 0x10 : REG_F & ~(0x10)
-#define SET_FLAG_H(n) REG_F = n ? REG_F | 0x20 : REG_F & ~(0x20)
-#define SET_FLAG_N(n) REG_F = n ? REG_F | 0x40 : REG_F & ~(0x40)
-#define SET_FLAG_Z(n) REG_F = n ? REG_F | 0x80 : REG_F & ~(0x80)
-
-#else
-// this (acording to msvc) is UB
-// SOURCE: https://docs.microsoft.com/en-us/cpp/error-messages/compiler-warnings/c5105
-
-#define SET_FLAG_C(n) REG_F ^= (-(!!(n)) ^ REG_F) & 0x10
-#define SET_FLAG_H(n) REG_F ^= (-(!!(n)) ^ REG_F) & 0x20
-#define SET_FLAG_N(n) REG_F ^= (-(!!(n)) ^ REG_F) & 0x40
-#define SET_FLAG_Z(n) REG_F ^= (-(!!(n)) ^ REG_F) & 0x80
-
-#endif
-
+// [API] not used by the cpu core
 void GB_cpu_set_flag(struct GB_Core* gb, enum GB_CpuFlags flag, bool value) {
 	switch (flag) {
 		case GB_CPU_FLAG_C: SET_FLAG_C(value); break;
@@ -99,7 +94,7 @@ void GB_cpu_set_register(struct GB_Core* gb, enum GB_CpuRegisters reg, uint8_t v
 		case GB_CPU_REGISTER_H: REG_H = value; break;
 		case GB_CPU_REGISTER_L: REG_L = value; break;
 		case GB_CPU_REGISTER_A: REG_A = value; break;
-		case GB_CPU_REGISTER_F: REG_F = value; break;
+		case GB_CPU_REGISTER_F: REG_F_SET(value); break;
 	}
 }
 
@@ -112,7 +107,7 @@ uint8_t GB_cpu_get_register(const struct GB_Core* gb, enum GB_CpuRegisters reg) 
 		case GB_CPU_REGISTER_H: return REG_H;
 		case GB_CPU_REGISTER_L: return REG_L;
 		case GB_CPU_REGISTER_A: return REG_A;
-		case GB_CPU_REGISTER_F: return REG_F;
+		case GB_CPU_REGISTER_F: return REG_F_GET();
 	}
 
 	GB_UNREACHABLE(0xFF);
@@ -143,28 +138,28 @@ uint16_t GB_cpu_get_register_pair(const struct GB_Core* gb, enum GB_CpuRegisterP
 }
 
 #define SET_FLAGS_HN(h,n) \
-SET_FLAG_H(h); \
-SET_FLAG_N(n);
+	SET_FLAG_H(h); \
+	SET_FLAG_N(n);
 
 #define SET_FLAGS_HZ(h,z) \
-SET_FLAG_H(h); \
-SET_FLAG_Z(z);
+	SET_FLAG_H(h); \
+	SET_FLAG_Z(z);
 
 #define SET_FLAGS_HNZ(h,n,z) \
-SET_FLAG_H(h); \
-SET_FLAG_N(n); \
-SET_FLAG_Z(z);
+	SET_FLAG_H(h); \
+	SET_FLAG_N(n); \
+	SET_FLAG_Z(z);
 
 #define SET_FLAGS_CHN(c,h,n) \
-SET_FLAG_C(c); \
-SET_FLAG_H(h); \
-SET_FLAG_N(n);
+	SET_FLAG_C(c); \
+	SET_FLAG_H(h); \
+	SET_FLAG_N(n);
 
 #define SET_ALL_FLAGS(c,h,n,z) \
-SET_FLAG_C(c); \
-SET_FLAG_H(h); \
-SET_FLAG_N(n); \
-SET_FLAG_Z(z);
+	SET_FLAG_C(c); \
+	SET_FLAG_H(h); \
+	SET_FLAG_N(n); \
+	SET_FLAG_Z(z);
 
 #define read8(addr) GB_read8(gb, addr)
 #define read16(addr) GB_read16(gb, addr)
@@ -370,10 +365,12 @@ static inline uint16_t GB_POP(struct GB_Core* gb) {
 #define INC_BC() do { SET_REG_BC(REG_BC + 1); } while(0)
 #define INC_DE() do { SET_REG_DE(REG_DE + 1); } while(0)
 #define INC_HL() do { SET_REG_HL(REG_HL + 1); } while(0)
-#define INC_SP() do { ++REG_SP; } while(0)
+
 #define DEC_BC() do { SET_REG_BC(REG_BC - 1); } while(0)
 #define DEC_DE() do { SET_REG_DE(REG_DE - 1); } while(0)
 #define DEC_HL() do { SET_REG_HL(REG_HL - 1); } while(0)
+
+#define INC_SP() do { ++REG_SP; } while(0)
 #define DEC_SP() do { --REG_SP; } while(0)
 
 #define CP() do { \
@@ -383,22 +380,27 @@ static inline uint16_t GB_POP(struct GB_Core* gb) {
 
 #define LD_r_r() do { REG(opcode >> 3) = REG(opcode); } while(0)
 #define LD_r_u8() do { REG(opcode >> 3) = read8(REG_PC++); } while(0)
+
 #define LD_HLa_r() do { write8(REG_HL, REG(opcode)); } while(0)
 #define LD_HLa_u8() do { write8(REG_HL, read8(REG_PC++)); } while(0)
+
 #define LD_r_HLa() do { REG(opcode >> 3) = read8(REG_HL); } while(0)
 #define LD_SP_u16() do { REG_SP = read16(REG_PC); REG_PC+=2; } while(0)
+
 #define LD_A_u16() do { REG_A = read8(read16(REG_PC)); REG_PC+=2; } while(0)
 #define LD_u16_A() do { write8(read16(REG_PC), REG_A); REG_PC+=2; } while(0)
 
 #define LD_HLi_A() do { write8(REG_HL, REG_A); INC_HL(); } while(0)
-#define LD_A_HLi() do { REG_A = read8(REG_HL); INC_HL(); } while(0)
 #define LD_HLd_A() do { write8(REG_HL, REG_A); DEC_HL(); } while(0)
+
+#define LD_A_HLi() do { REG_A = read8(REG_HL); INC_HL(); } while(0)
 #define LD_A_HLd() do { REG_A = read8(REG_HL); DEC_HL(); } while(0)
 
 #define LD_A_BCa() do { REG_A = read8(REG_BC); } while(0)
 #define LD_A_DEa() do { REG_A = read8(REG_DE); } while(0)
 #define LD_A_HLa() do { REG_A = read8(REG_HL); } while(0)
 #define LD_A_AFa() do { REG_A = read8(REG_AF); } while(0)
+
 #define LD_BCa_A() do { write8(REG_BC, REG_A); } while(0)
 #define LD_DEa_A() do { write8(REG_DE, REG_A); } while(0)
 #define LD_HLa_A() do { write8(REG_HL, REG_A); } while(0)
@@ -412,25 +414,29 @@ static inline uint16_t GB_POP(struct GB_Core* gb) {
 	SET_REG_BC(result); \
 	REG_PC += 2; \
 } while(0)
+
 #define LD_DE_u16() do { \
 	const uint16_t result = read16(REG_PC); \
 	SET_REG_DE(result); \
 	REG_PC += 2; \
 } while(0)
+
 #define LD_HL_u16() do { \
 	const uint16_t result = read16(REG_PC); \
 	SET_REG_HL(result); \
 	REG_PC += 2; \
 } while(0)
 
-#define LD_SP_u16() do { REG_SP = read16(REG_PC); REG_PC+=2; } while(0)
 #define LD_u16_BC() do { write16(read16(REG_PC), REG_BC); REG_PC+=2; } while(0)
 #define LD_u16_DE() do { write16(read16(REG_PC), REG_DE); REG_PC+=2; } while(0)
 #define LD_u16_HL() do { write16(read16(REG_PC), REG_HL); REG_PC+=2; } while(0)
 #define LD_u16_SP() do { write16(read16(REG_PC), REG_SP); REG_PC+=2; } while(0)
+
+#define LD_SP_u16() do { REG_SP = read16(REG_PC); REG_PC+=2; } while(0)
+#define LD_SP_HL() do { REG_SP = REG_HL; } while(0);
+
 #define LD_FFu8_A() do { write8((0xFF00 | read8(REG_PC++)), REG_A); } while(0)
 #define LD_A_FFu8() do { REG_A = read8(0xFF00 | read8(REG_PC++)); } while(0)
-#define LD_SP_HL() do { REG_SP = REG_HL; } while(0);
 
 #define CP_r() do { \
 	const uint8_t value = REG(opcode); \
@@ -480,6 +486,7 @@ static inline uint16_t GB_POP(struct GB_Core* gb) {
 #define ADD_HL_DE() do { __ADD_HL(REG_DE); } while(0)
 #define ADD_HL_HL() do { __ADD_HL(REG_HL); } while(0)
 #define ADD_HL_SP() do { __ADD_HL(REG_SP); } while(0)
+
 #define ADD_SP_i8() do { \
 	const uint8_t value = read8(REG_PC++); \
     const uint16_t result = REG_SP + (int8_t)value; \
@@ -838,6 +845,17 @@ static void STOP(struct GB_Core* gb) {
 	}
 	
 	gb->cpu.cycles += 2050;
+}
+
+static void UNK_OP(struct GB_Core* gb, uint8_t opcode, bool cb_prefix) {
+	if (gb->error_cb != NULL) {
+		struct GB_ErrorData data = {0};
+		data.type = GB_ERROR_TYPE_UNKNOWN_INSTRUCTION;
+		data.unk_instruction.cb_prefix = cb_prefix;
+		data.unk_instruction.opcode = opcode;
+
+		gb->error_cb(gb, gb->error_cb_user_data, &data);	
+	}
 }
 
 static void GB_interrupt_handler(struct GB_Core* gb) {
