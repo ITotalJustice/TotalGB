@@ -5,11 +5,13 @@
 #include <string>
 #include <mutex>
 
-#ifdef WIN32
+//#ifdef WIN32
+//#include <SDL.h>
+//#else
+//#include <SDL2/SDL.h>
+//#endif // WIN32
+
 #include <SDL.h>
-#else
-#include <SDL2/SDL.h>
-#endif // WIN32
 
 extern "C" {
 struct GB_Core;
