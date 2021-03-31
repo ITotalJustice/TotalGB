@@ -94,7 +94,7 @@
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;_7ZIP_ST;ZSTD_LIB_MINIFY=1;NOUNCRYPT;NOCRYPT;WIN32;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;MGB_NO_LZ4;MGB_NO_ZSTD;CHANNEL_8;_7ZIP_ST;NOUNCRYPT;NOCRYPT;WIN32;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp17</LanguageStandard>
       <LanguageStandard_C>stdc11</LanguageStandard_C>
@@ -114,7 +114,7 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;_7ZIP_ST;ZSTD_LIB_MINIFY=1;NOUNCRYPT;NOCRYPT;WIN32;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;MGB_NO_LZ4;MGB_NO_ZSTD;CHANNEL_8;_7ZIP_ST;NOUNCRYPT;NOCRYPT;WIN32;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp17</LanguageStandard>
       <LanguageStandard_C>stdc11</LanguageStandard_C>
@@ -134,7 +134,7 @@
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;_7ZIP_ST;ZSTD_LIB_MINIFY=1;NOUNCRYPT;NOCRYPT;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;MGB_NO_LZ4;MGB_NO_ZSTD;CHANNEL_8;_7ZIP_ST;NOUNCRYPT;NOCRYPT;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp17</LanguageStandard>
       <LanguageStandard_C>stdc11</LanguageStandard_C>
@@ -154,7 +154,7 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;_7ZIP_ST;ZSTD_LIB_MINIFY=1;NOUNCRYPT;NOCRYPT;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;MGB_NO_LZ4;MGB_NO_ZSTD;CHANNEL_8;_7ZIP_ST;NOUNCRYPT;NOCRYPT;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp17</LanguageStandard>
       <LanguageStandard_C>stdc11</LanguageStandard_C>
@@ -194,9 +194,7 @@
     <ClCompile Include="..\..\src\frontend\main.cpp" />
     <ClCompile Include="..\..\src\frontend\mgb.cpp" />
     <ClCompile Include="..\..\src\frontend\util\mem.cpp" />
-    <ClCompile Include="..\..\src\frontend\util\rewind.cpp" />
     <ClCompile Include="..\..\src\frontend\util\util.cpp" />
-    <ClCompile Include="..\..\src\libs\lz4\lz4.c" />
     <ClCompile Include="..\..\src\libs\lzma\Alloc.c" />
     <ClCompile Include="..\..\src\libs\lzma\LzFind.c" />
     <ClCompile Include="..\..\src\libs\lzma\LzmaDec.c" />
@@ -220,35 +218,6 @@
     <ClCompile Include="..\..\src\libs\zlib\trees.c" />
     <ClCompile Include="..\..\src\libs\zlib\uncompr.c" />
     <ClCompile Include="..\..\src\libs\zlib\zutil.c" />
-    <ClCompile Include="..\..\src\libs\zstd\common\debug.c" />
-    <ClCompile Include="..\..\src\libs\zstd\common\entropy_common.c" />
-    <ClCompile Include="..\..\src\libs\zstd\common\error_private.c" />
-    <ClCompile Include="..\..\src\libs\zstd\common\fse_decompress.c" />
-    <ClCompile Include="..\..\src\libs\zstd\common\pool.c" />
-    <ClCompile Include="..\..\src\libs\zstd\common\threading.c" />
-    <ClCompile Include="..\..\src\libs\zstd\common\xxhash.c" />
-    <ClCompile Include="..\..\src\libs\zstd\common\zstd_common.c" />
-    <ClCompile Include="..\..\src\libs\zstd\compress\fse_compress.c" />
-    <ClCompile Include="..\..\src\libs\zstd\compress\hist.c" />
-    <ClCompile Include="..\..\src\libs\zstd\compress\huf_compress.c" />
-    <ClCompile Include="..\..\src\libs\zstd\compress\zstdmt_compress.c" />
-    <ClCompile Include="..\..\src\libs\zstd\compress\zstd_compress.c" />
-    <ClCompile Include="..\..\src\libs\zstd\compress\zstd_compress_literals.c" />
-    <ClCompile Include="..\..\src\libs\zstd\compress\zstd_compress_sequences.c" />
-    <ClCompile Include="..\..\src\libs\zstd\compress\zstd_compress_superblock.c" />
-    <ClCompile Include="..\..\src\libs\zstd\compress\zstd_double_fast.c" />
-    <ClCompile Include="..\..\src\libs\zstd\compress\zstd_fast.c" />
-    <ClCompile Include="..\..\src\libs\zstd\compress\zstd_lazy.c" />
-    <ClCompile Include="..\..\src\libs\zstd\compress\zstd_ldm.c" />
-    <ClCompile Include="..\..\src\libs\zstd\compress\zstd_opt.c" />
-    <ClCompile Include="..\..\src\libs\zstd\decompress\huf_decompress.c" />
-    <ClCompile Include="..\..\src\libs\zstd\decompress\zstd_ddict.c" />
-    <ClCompile Include="..\..\src\libs\zstd\decompress\zstd_decompress.c" />
-    <ClCompile Include="..\..\src\libs\zstd\decompress\zstd_decompress_block.c" />
-    <ClCompile Include="..\..\src\libs\zstd\dictBuilder\cover.c" />
-    <ClCompile Include="..\..\src\libs\zstd\dictBuilder\divsufsort.c" />
-    <ClCompile Include="..\..\src\libs\zstd\dictBuilder\fastcover.c" />
-    <ClCompile Include="..\..\src\libs\zstd\dictBuilder\zdict.c" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\src\core\accessories\printer.h" />
@@ -281,9 +250,7 @@
     <ClInclude Include="..\..\src\frontend\mgb.hpp" />
     <ClInclude Include="..\..\src\frontend\util\log.hpp" />
     <ClInclude Include="..\..\src\frontend\util\mem.hpp" />
-    <ClInclude Include="..\..\src\frontend\util\rewind.hpp" />
     <ClInclude Include="..\..\src\frontend\util\util.hpp" />
-    <ClInclude Include="..\..\src\libs\lz4\lz4.h" />
     <ClInclude Include="..\..\src\libs\lzma\7zTypes.h" />
     <ClInclude Include="..\..\src\libs\lzma\Alloc.h" />
     <ClInclude Include="..\..\src\libs\lzma\Compiler.h" />
@@ -308,39 +275,6 @@
     <ClInclude Include="..\..\src\libs\zlib\zconf.h" />
     <ClInclude Include="..\..\src\libs\zlib\zlib.h" />
     <ClInclude Include="..\..\src\libs\zlib\zutil.h" />
-    <ClInclude Include="..\..\src\libs\zstd\common\bitstream.h" />
-    <ClInclude Include="..\..\src\libs\zstd\common\compiler.h" />
-    <ClInclude Include="..\..\src\libs\zstd\common\cpu.h" />
-    <ClInclude Include="..\..\src\libs\zstd\common\debug.h" />
-    <ClInclude Include="..\..\src\libs\zstd\common\error_private.h" />
-    <ClInclude Include="..\..\src\libs\zstd\common\fse.h" />
-    <ClInclude Include="..\..\src\libs\zstd\common\huf.h" />
-    <ClInclude Include="..\..\src\libs\zstd\common\mem.h" />
-    <ClInclude Include="..\..\src\libs\zstd\common\pool.h" />
-    <ClInclude Include="..\..\src\libs\zstd\common\threading.h" />
-    <ClInclude Include="..\..\src\libs\zstd\common\xxhash.h" />
-    <ClInclude Include="..\..\src\libs\zstd\common\zstd_deps.h" />
-    <ClInclude Include="..\..\src\libs\zstd\common\zstd_errors.h" />
-    <ClInclude Include="..\..\src\libs\zstd\common\zstd_internal.h" />
-    <ClInclude Include="..\..\src\libs\zstd\compress\hist.h" />
-    <ClInclude Include="..\..\src\libs\zstd\compress\zstdmt_compress.h" />
-    <ClInclude Include="..\..\src\libs\zstd\compress\zstd_compress_internal.h" />
-    <ClInclude Include="..\..\src\libs\zstd\compress\zstd_compress_literals.h" />
-    <ClInclude Include="..\..\src\libs\zstd\compress\zstd_compress_sequences.h" />
-    <ClInclude Include="..\..\src\libs\zstd\compress\zstd_compress_superblock.h" />
-    <ClInclude Include="..\..\src\libs\zstd\compress\zstd_cwksp.h" />
-    <ClInclude Include="..\..\src\libs\zstd\compress\zstd_double_fast.h" />
-    <ClInclude Include="..\..\src\libs\zstd\compress\zstd_fast.h" />
-    <ClInclude Include="..\..\src\libs\zstd\compress\zstd_lazy.h" />
-    <ClInclude Include="..\..\src\libs\zstd\compress\zstd_ldm.h" />
-    <ClInclude Include="..\..\src\libs\zstd\compress\zstd_opt.h" />
-    <ClInclude Include="..\..\src\libs\zstd\decompress\zstd_ddict.h" />
-    <ClInclude Include="..\..\src\libs\zstd\decompress\zstd_decompress_block.h" />
-    <ClInclude Include="..\..\src\libs\zstd\decompress\zstd_decompress_internal.h" />
-    <ClInclude Include="..\..\src\libs\zstd\dictBuilder\cover.h" />
-    <ClInclude Include="..\..\src\libs\zstd\dictBuilder\divsufsort.h" />
-    <ClInclude Include="..\..\src\libs\zstd\dictBuilder\zdict.h" />
-    <ClInclude Include="..\..\src\libs\zstd\zstd.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
