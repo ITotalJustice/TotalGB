@@ -79,6 +79,7 @@ void GB_get_rom_info(const struct GB_Core* gb, struct GB_RomInfo* info);
 
 /*  */
 int GB_get_rom_name(const struct GB_Core* gb, struct GB_CartName* name);
+int GB_get_rom_name_from_header(const struct GB_CartHeader* header, struct GB_CartName* name);
 
 /* set a callback which will be called when apu has filled 512 stero samples. */
 /* not setting this callback is valid, just that you won't have audio... */

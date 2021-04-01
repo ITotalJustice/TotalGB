@@ -182,11 +182,11 @@ static const char* cart_type_str(const uint8_t type) {
 
 static void cart_header_print(const struct GB_CartHeader* header) {
     printf("\nROM HEADER INFO\n");
-    printf("TITLE: ");
-    for (int i = 0; i < 0x10 && header->title[i] >= 32 && header->title[i] < 127; i++) {
-        putchar(header->title[i]);
-    }
-    putchar('\n');
+
+	struct GB_CartName cart_name;
+	GB_get_rom_name_from_header(header, &cart_name);
+
+    printf("TITLE: %s\n", cart_name.name);
     printf("NEW LICENSEE CODE: 0x%02X\n", header->new_licensee_code);
     printf("SGB FLAG: 0x%02X\n", header->sgb_flag);
     printf("CART TYPE: %s\n", cart_type_str(header->cart_type));
@@ -195,6 +195,7 @@ static void cart_header_print(const struct GB_CartHeader* header) {
     printf("RAM SIZE: 0x%02X\n", header->ram_size);
 	printf("HEADER CHECKSUM: 0x%02X\n", header->header_checksum);
 	printf("GLOBAL CHECKSUM: 0x%04X\n", header->global_checksum);
+	
 	uint8_t hash, forth;
 	GB_get_rom_palette_hash_from_header(header, &hash, &forth);
 	printf("HASH: 0x%02X, 0x%02X\n", hash, forth);

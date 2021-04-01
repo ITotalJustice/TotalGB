@@ -58,12 +58,33 @@ static const struct GB_MbcInterface MBC_SETUP_DATA[0x100] = {
 	[0x1E] = {GB_mbc5_write, GB_mbc5_get_rom_bank, GB_mbc5_get_ram_bank, 1, MBC_FLAGS_RAM | MBC_FLAGS_BATTERY},
 };
 
-int GB_get_rom_name(const struct GB_Core* gb, struct GB_CartName* name) {
-	assert(gb && name);
+static bool is_ascii_char_valid(const char c) {
+	// always uppercase
+	if (c >= 'A' && c <= 'Z') {
+		return true;
+	}
 
-	const struct GB_CartHeader* header = GB_get_rom_header_ptr(gb);
-	assert(header);
+	if (c >= '0' && c <= '9') {
+		return true;
+	}
 
+	// vaid symbols
+	static const char symbols[] = {
+		'?', '!', '-', '_', ' ',
+	};
+
+	// check against the symbol table
+	for (size_t i = 0; i < GB_ARR_SIZE(symbols); ++i) {
+		// try and find 1 valid match
+		if (c == symbols[i]) {
+			return true;
+		}
+	}
+
+	return false;
+}
+
+int GB_get_rom_name_from_header(const struct GB_CartHeader* header, struct GB_CartName* name) {
 	// in later games, including all gbc games, the title area was
 	// actually reduced in size from 16 bytes down to 15, then 11.
 	// as all titles are UPPER_CASE ASCII, it is easy to range check each
@@ -76,14 +97,24 @@ int GB_get_rom_name(const struct GB_Core* gb, struct GB_CartName* name) {
 	// manually copy the name using range check as explained above...
 	for (size_t i = 0; i < sizeof(header->title); ++i) {
 		const char c = header->title[i];
-		// not upper-case ascii
-		if ((c < 'A' || c > 'Z') && c != ' ') {
+		
+		if (is_ascii_char_valid(c) == false) {
 			break;
 		}
+		
 		name->name[i] = c;
 	}
 
 	return 0;
+}
+
+int GB_get_rom_name(const struct GB_Core* gb, struct GB_CartName* name) {
+	assert(gb && name);
+
+	const struct GB_CartHeader* header = GB_get_rom_header_ptr(gb);
+	assert(header);
+
+	return GB_get_rom_name_from_header(header, name);
 }
 
 bool GB_get_cart_ram_size(uint8_t type, uint32_t* size) {
