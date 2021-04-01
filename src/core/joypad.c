@@ -1,5 +1,5 @@
-#include "gb.h"
-#include "internal.h"
+#include "core/gb.h"
+#include "core/internal.h"
 
 static inline bool GB_is_directional(const struct GB_Core* gb) {
     return !!(IO_JYP & 0x10);

@@ -1,6 +1,6 @@
-#include "gb.h"
-#include "internal.h"
-#include "tables/cycle_table.h"
+#include "core/gb.h"
+#include "core/internal.h"
+#include "core/tables/cycle_table.h"
 
 #include <assert.h>
 

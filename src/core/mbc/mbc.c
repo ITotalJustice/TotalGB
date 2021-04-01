@@ -1,10 +1,7 @@
-#include "gb.h"
-#include "internal.h"
-#include "mbc/mbc_0.h"
-#include "mbc/mbc_1.h"
-#include "mbc/mbc_2.h"
-#include "mbc/mbc_3.h"
-#include "mbc/mbc_5.h"
+#include "core/gb.h"
+#include "core/internal.h"
+#include "core/mbc/mbc.h"
+#include "core/mbc/common.h"
 
 #include <stdio.h>
 #include <string.h>

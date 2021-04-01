@@ -18,9 +18,20 @@ source = files([
     'src/core/cpu.c',
     'src/core/ppu.c',
     'src/core/bus.c',
-    'src/core/apu.c',
     'src/core/joypad.c',
-    'src/core/mbc.c',
+    'src/core/apu/apu.c',
+    'src/core/apu/square1.c',
+    'src/core/apu/square2.c',
+    'src/core/apu/wave.c',
+    'src/core/apu/noise.c',
+
+    'src/core/mbc/mbc.c',
+    'src/core/mbc/mbc_0.c',
+    'src/core/mbc/mbc_1.c',
+    'src/core/mbc/mbc_2.c',
+    'src/core/mbc/mbc_3.c',
+    'src/core/mbc/mbc_5.c',
+
     'src/core/timers.c',
     'src/core/serial.c',
     'src/core/accessories/printer.c',
@@ -38,7 +49,6 @@ source = files([
     'src/frontend/main.cpp',
     'src/frontend/mgb.cpp',
     'src/frontend/events.cpp',
-    # 'src/frontend/util/rewind.cpp',
     'src/frontend/util/mem.cpp',
     'src/frontend/util/util.cpp',
     'src/frontend/io/ifile_7z.cpp',
@@ -80,7 +90,8 @@ source = files([
 ])
 
 includes = include_directories([
-    'src/libs/'
+    'src',
+    'src/libs/',
 ])
 
 # https://github.com/mesonbuild/meson/blob/master/docs/markdown/Reference-manual.md#build_machine-object

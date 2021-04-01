@@ -72,22 +72,22 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <LinkIncremental>true</LinkIncremental>
-    <IncludePath>..\..\src\libs;$(IncludePath)</IncludePath>
+    <IncludePath>..\..\src;..\..\src\libs;$(IncludePath)</IncludePath>
     <LibraryPath>$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <LinkIncremental>false</LinkIncremental>
-    <IncludePath>..\..\src\libs;$(IncludePath)</IncludePath>
+    <IncludePath>..\..\src;..\..\src\libs;$(IncludePath)</IncludePath>
     <LibraryPath>$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <LinkIncremental>true</LinkIncremental>
-    <IncludePath>..\..\src\libs;$(IncludePath)</IncludePath>
+    <IncludePath>..\..\src;..\..\src\libs;$(IncludePath)</IncludePath>
     <LibraryPath>C:\VS\SDL2-2.0.12\lib\x64;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <LinkIncremental>false</LinkIncremental>
-    <IncludePath>..\..\src\libs;$(IncludePath)</IncludePath>
+    <IncludePath>..\..\src;..\..\src\libs;$(IncludePath)</IncludePath>
     <LibraryPath>C:\VS\SDL2-2.0.12\lib\x64;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
@@ -172,12 +172,21 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="..\..\src\core\accessories\printer.c" />
-    <ClCompile Include="..\..\src\core\apu.c" />
+    <ClCompile Include="..\..\src\core\apu\apu.c" />
+    <ClCompile Include="..\..\src\core\apu\noise.c" />
+    <ClCompile Include="..\..\src\core\apu\square1.c" />
+    <ClCompile Include="..\..\src\core\apu\square2.c" />
+    <ClCompile Include="..\..\src\core\apu\wave.c" />
     <ClCompile Include="..\..\src\core\bus.c" />
     <ClCompile Include="..\..\src\core\cpu.c" />
     <ClCompile Include="..\..\src\core\gb.c" />
     <ClCompile Include="..\..\src\core\joypad.c" />
-    <ClCompile Include="..\..\src\core\mbc.c" />
+    <ClCompile Include="..\..\src\core\mbc\mbc.c" />
+    <ClCompile Include="..\..\src\core\mbc\mbc_0.c" />
+    <ClCompile Include="..\..\src\core\mbc\mbc_1.c" />
+    <ClCompile Include="..\..\src\core\mbc\mbc_2.c" />
+    <ClCompile Include="..\..\src\core\mbc\mbc_3.c" />
+    <ClCompile Include="..\..\src\core\mbc\mbc_5.c" />
     <ClCompile Include="..\..\src\core\ppu.c" />
     <ClCompile Include="..\..\src\core\serial.c" />
     <ClCompile Include="..\..\src\core\tables\palette_table.c" />
@@ -221,19 +230,13 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\src\core\accessories\printer.h" />
+    <ClInclude Include="..\..\src\core\apu\apu.h" />
     <ClInclude Include="..\..\src\core\apu\common.h" />
-    <ClInclude Include="..\..\src\core\apu\noise.h" />
-    <ClInclude Include="..\..\src\core\apu\square1.h" />
-    <ClInclude Include="..\..\src\core\apu\square2.h" />
     <ClInclude Include="..\..\src\core\apu\square_common.h" />
-    <ClInclude Include="..\..\src\core\apu\wave.h" />
     <ClInclude Include="..\..\src\core\gb.h" />
     <ClInclude Include="..\..\src\core\internal.h" />
     <ClInclude Include="..\..\src\core\mbc\common.h" />
-    <ClInclude Include="..\..\src\core\mbc\mbc_0.h" />
-    <ClInclude Include="..\..\src\core\mbc\mbc_1.h" />
-    <ClInclude Include="..\..\src\core\mbc\mbc_3.h" />
-    <ClInclude Include="..\..\src\core\mbc\mbc_5.h" />
+    <ClInclude Include="..\..\src\core\mbc\mbc.h" />
     <ClInclude Include="..\..\src\core\tables\cycle_table.h" />
     <ClInclude Include="..\..\src\core\tables\cycle_table_debug.h" />
     <ClInclude Include="..\..\src\core\tables\palette_table.h" />

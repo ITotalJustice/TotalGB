@@ -1,8 +1,5 @@
-#include "palette_table.h"
-
-/* this is from my gb emu, it's used to pull in the GB_Button enum. */
-/* The values for the buttons are commented out in palette_table.h */
-#include "../types.h"
+#include "core/tables/palette_table.h"
+#include "core/types.h"
 
 #include <assert.h>
 

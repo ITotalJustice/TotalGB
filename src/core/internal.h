@@ -4,7 +4,7 @@
 extern "C" {
 #endif
 
-#include "types.h"
+#include "core/types.h"
 
 #define GB_MIN(x, y) (((x) < (y)) ? (x) : (y))
 #define GB_MAX(x, y) (((x) > (y)) ? (x) : (y))

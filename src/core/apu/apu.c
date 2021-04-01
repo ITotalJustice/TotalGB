@@ -1,10 +1,7 @@
-#include "gb.h"
-#include "internal.h"
-
-#include "apu/square1.h"
-#include "apu/square2.h"
-#include "apu/wave.h"
-#include "apu/noise.h"
+#include "core/gb.h"
+#include "core/internal.h"
+#include "core/apu/apu.h"
+#include "core/apu/common.h"
 
 #include <stdio.h>
 #include <string.h>

@@ -1,15 +1,7 @@
-#pragma once
+#include "core/mbc/common.h"
 
-#ifdef __cplusplus
-extern "C" {
-#endif
 
-#include "common.h"
-
-// NOTE: this is mostly MBC1 pasted here, it seems to work with
-// "Final Fantasy Adventures".
-// however it will likely break using anything else...
-static void GB_mbc2_write(struct GB_Core* gb, uint16_t addr, uint8_t value) {
+void GB_mbc2_write(struct GB_Core* gb, uint16_t addr, uint8_t value) {
 	switch ((addr >> 12) & 0xF) {
 	// RAM ENABLE / ROM BANK
         case 0x0: case 0x1: case 0x2: case 0x3:
@@ -56,7 +48,7 @@ static void GB_mbc2_write(struct GB_Core* gb, uint16_t addr, uint8_t value) {
 	}
 }
 
-static const uint8_t* GB_mbc2_get_rom_bank(struct GB_Core* gb, uint8_t bank) {
+const uint8_t* GB_mbc2_get_rom_bank(struct GB_Core* gb, uint8_t bank) {
 	if (bank == 0) {
 		return gb->cart.rom;
 	}
@@ -64,7 +56,7 @@ static const uint8_t* GB_mbc2_get_rom_bank(struct GB_Core* gb, uint8_t bank) {
 	return gb->cart.rom + (gb->cart.rom_bank * 0x4000);
 }
 
-static const uint8_t* GB_mbc2_get_ram_bank(struct GB_Core* gb, uint8_t bank) {
+const uint8_t* GB_mbc2_get_ram_bank(struct GB_Core* gb, uint8_t bank) {
 	GB_UNUSED(bank);
     
 	if (!(gb->cart.flags & MBC_FLAGS_RAM) || !gb->cart.ram_enabled) {
@@ -73,7 +65,3 @@ static const uint8_t* GB_mbc2_get_ram_bank(struct GB_Core* gb, uint8_t bank) {
 
 	return gb->cart.ram;
 }
-
-#ifdef __cplusplus
-}
-#endif

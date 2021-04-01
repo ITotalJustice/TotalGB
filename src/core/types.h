@@ -4,7 +4,7 @@
 extern "C" {
 #endif
 
-#include "tables/palette_table.h"
+#include "core/tables/palette_table.h"
 
 #include <stddef.h>
 #include <stdbool.h>

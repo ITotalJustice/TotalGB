@@ -7,7 +7,7 @@
 extern "C" {
 #endif
 
-#include "types.h"
+#include "core/types.h"
 
 bool GB_init(struct GB_Core* gb);
 void GB_quit(struct GB_Core* gb);

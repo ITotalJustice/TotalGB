@@ -1,42 +1,36 @@
-#pragma once
-
-#ifdef __cplusplus
-extern "C" {
-#endif
-
-#include "common.h"
-#include  "square_common.h"
-#include "../internal.h"
+#include "core/apu/common.h"
+#include  "core/apu/square_common.h"
+#include "core/internal.h"
 
 
-static inline uint16_t get_square1_freq(const struct GB_Core* gb) {
+uint16_t get_square1_freq(const struct GB_Core* gb) {
     return (2048 - ((IO_NR14.freq_msb << 8) | IO_NR13.freq_lsb)) << 2;
 }
 
-static inline bool is_square1_dac_enabled(const struct GB_Core* gb) {
+bool is_square1_dac_enabled(const struct GB_Core* gb) {
     return IO_NR12.starting_vol > 0 || IO_NR12.env_add_mode > 0;
 }
 
-static inline bool is_square1_enabled(const struct GB_Core* gb) {
+bool is_square1_enabled(const struct GB_Core* gb) {
     return IO_NR52.square1 > 0;
 }
 
-static inline void square1_enable(struct GB_Core* gb) {
+void square1_enable(struct GB_Core* gb) {
     IO_NR52.square1 = 1;
 }
 
-static inline void square1_disable(struct GB_Core* gb) {
+void square1_disable(struct GB_Core* gb) {
     IO_NR52.square1 = 0;
 }
 
-static inline int8_t sample_square1(struct GB_Core* gb) {
+int8_t sample_square1(struct GB_Core* gb) {
     if (SQUARE_DUTY_CYCLES[SQUARE1_CHANNEL.nr11.duty][SQUARE1_CHANNEL.duty_index]) {
         return SQUARE1_CHANNEL.volume;
     }
     return -SQUARE1_CHANNEL.volume;
 }
 
-static inline void clock_square1_len(struct GB_Core* gb) {
+void clock_square1_len(struct GB_Core* gb) {
     if (IO_NR14.length_enable && SQUARE1_CHANNEL.length_counter > 0) {
         --SQUARE1_CHANNEL.length_counter;
         // disable channel if we hit zero...
@@ -46,7 +40,7 @@ static inline void clock_square1_len(struct GB_Core* gb) {
     }
 }
 
-static inline void clock_square1_vol(struct GB_Core* gb) {
+void clock_square1_vol(struct GB_Core* gb) {
     if (SQUARE1_CHANNEL.disable_env == false) {
         --SQUARE1_CHANNEL.volume_timer;
 
@@ -71,7 +65,7 @@ static inline void clock_square1_vol(struct GB_Core* gb) {
     }
 }
 
-static inline void do_freq_sweep_calc(struct GB_Core* gb) {
+void do_freq_sweep_calc(struct GB_Core* gb) {
     if (SQUARE1_CHANNEL.internal_enable_flag && IO_NR10.sweep_period) {
         uint16_t new_freq = SQUARE1_CHANNEL.freq_shadow_register >> IO_NR10.shift;
         
@@ -91,7 +85,7 @@ static inline void do_freq_sweep_calc(struct GB_Core* gb) {
     }
 }
 
-static inline void on_square1_sweep(struct GB_Core* gb) {
+void on_square1_sweep(struct GB_Core* gb) {
     // decrement the counter, reload after
     --SQUARE1_CHANNEL.sweep_timer;
 
@@ -102,7 +96,7 @@ static inline void on_square1_sweep(struct GB_Core* gb) {
     }
 }
 
-static inline void on_square1_trigger(struct GB_Core* gb) {
+void on_square1_trigger(struct GB_Core* gb) {
     square1_enable(gb);
 
     if (SQUARE1_CHANNEL.length_counter == 0) {
@@ -130,7 +124,3 @@ static inline void on_square1_trigger(struct GB_Core* gb) {
         square1_disable(gb);
     }
 }
-
-#ifdef __cplusplus
-}
-#endif

@@ -1,10 +1,6 @@
-#pragma once
+#include "core/mbc/common.h"
+#include "core/gb.h" // for has flags functions
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
-#include "common.h"
 
 #include <stdio.h>
 
@@ -73,7 +69,7 @@ void GB_rtc_tick_frame(struct GB_Core* gb) {
     }
 }
 
-// static const char* GB_mbc3_rtc_type(const struct GB_Core* gb) {
+// const char* GB_mbc3_rtc_type(const struct GB_Core* gb) {
 //     switch (gb->cart.rtc_mapped_reg) {
 //         case GB_RTC_MAPPED_REG_S: return "GB_RTC_MAPPED_REG_S";
 //         case GB_RTC_MAPPED_REG_M: return "GB_RTC_MAPPED_REG_M";
@@ -107,7 +103,7 @@ static inline void GB_speed_hack_map_rtc_reg(struct GB_Core* gb) {
 }
 #endif // GB_RTC_SPEEDHACK
 
-static void GB_mbc3_write(struct GB_Core* gb, uint16_t addr, uint8_t value) { 
+void GB_mbc3_write(struct GB_Core* gb, uint16_t addr, uint8_t value) { 
     switch ((addr >> 12) & 0xF) {
 	// RAM / RTC REGISTER ENABLE
         case 0x0: case 0x1:
@@ -159,7 +155,7 @@ static void GB_mbc3_write(struct GB_Core* gb, uint16_t addr, uint8_t value) {
     }
 }
 
-static const uint8_t* GB_mbc3_get_rom_bank(struct GB_Core* gb, uint8_t bank) {
+const uint8_t* GB_mbc3_get_rom_bank(struct GB_Core* gb, uint8_t bank) {
 	if (bank == 0) {
 		return gb->cart.rom;
 	}
@@ -168,7 +164,7 @@ static const uint8_t* GB_mbc3_get_rom_bank(struct GB_Core* gb, uint8_t bank) {
 }
 
 // todo: rtc support
-static const uint8_t* GB_mbc3_get_ram_bank(struct GB_Core* gb, uint8_t bank) {
+const uint8_t* GB_mbc3_get_ram_bank(struct GB_Core* gb, uint8_t bank) {
 	GB_UNUSED(bank);
     
 	if (!(gb->cart.flags & MBC_FLAGS_RAM) || !gb->cart.ram_enabled || !gb->cart.in_ram) {
@@ -177,7 +173,3 @@ static const uint8_t* GB_mbc3_get_ram_bank(struct GB_Core* gb, uint8_t bank) {
 
 	return gb->cart.ram + (0x2000 * gb->cart.ram_bank);
 }
-
-#ifdef __cplusplus
-}
-#endif

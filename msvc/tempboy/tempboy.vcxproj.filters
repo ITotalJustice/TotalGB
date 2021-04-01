@@ -85,11 +85,14 @@
     <Filter Include="Header Files\core\apu">
       <UniqueIdentifier>{35787702-5161-4818-8569-c5f1a0c81c40}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source Files\core\mbc">
+      <UniqueIdentifier>{aa5848ab-9be2-425d-a968-9a19d209f834}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\core\apu">
+      <UniqueIdentifier>{7479fb9e-5d43-425a-ae90-565122d0f92b}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\src\core\apu.c">
-      <Filter>Source Files\core</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\src\core\bus.c">
       <Filter>Source Files\core</Filter>
     </ClCompile>
@@ -100,9 +103,6 @@
       <Filter>Source Files\core</Filter>
     </ClCompile>
     <ClCompile Include="..\..\src\core\joypad.c">
-      <Filter>Source Files\core</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\src\core\mbc.c">
       <Filter>Source Files\core</Filter>
     </ClCompile>
     <ClCompile Include="..\..\src\core\ppu.c">
@@ -228,6 +228,39 @@
     <ClCompile Include="..\..\src\core\accessories\printer.c">
       <Filter>Source Files\core\accessories</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\src\core\mbc\mbc.c">
+      <Filter>Source Files\core\mbc</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\core\mbc\mbc_0.c">
+      <Filter>Source Files\core\mbc</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\core\mbc\mbc_1.c">
+      <Filter>Source Files\core\mbc</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\core\mbc\mbc_2.c">
+      <Filter>Source Files\core\mbc</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\core\mbc\mbc_3.c">
+      <Filter>Source Files\core\mbc</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\core\mbc\mbc_5.c">
+      <Filter>Source Files\core\mbc</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\core\apu\apu.c">
+      <Filter>Source Files\core\apu</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\core\apu\noise.c">
+      <Filter>Source Files\core\apu</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\core\apu\square1.c">
+      <Filter>Source Files\core\apu</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\core\apu\square2.c">
+      <Filter>Source Files\core\apu</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\core\apu\wave.c">
+      <Filter>Source Files\core\apu</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\src\core\gb.h">
@@ -240,18 +273,6 @@
       <Filter>Header Files\core</Filter>
     </ClInclude>
     <ClInclude Include="..\..\src\core\mbc\common.h">
-      <Filter>Header Files\core\mbc</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\src\core\mbc\mbc_0.h">
-      <Filter>Header Files\core\mbc</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\src\core\mbc\mbc_1.h">
-      <Filter>Header Files\core\mbc</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\src\core\mbc\mbc_3.h">
-      <Filter>Header Files\core\mbc</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\src\core\mbc\mbc_5.h">
       <Filter>Header Files\core\mbc</Filter>
     </ClInclude>
     <ClInclude Include="..\..\src\core\tables\cycle_table.h">
@@ -380,20 +401,14 @@
     <ClInclude Include="..\..\src\core\apu\common.h">
       <Filter>Header Files\core\apu</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\src\core\apu\noise.h">
-      <Filter>Header Files\core\apu</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\src\core\apu\square_common.h">
       <Filter>Header Files\core\apu</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\src\core\apu\square1.h">
+    <ClInclude Include="..\..\src\core\apu\apu.h">
       <Filter>Header Files\core\apu</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\src\core\apu\square2.h">
-      <Filter>Header Files\core\apu</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\src\core\apu\wave.h">
-      <Filter>Header Files\core\apu</Filter>
+    <ClInclude Include="..\..\src\core\mbc\mbc.h">
+      <Filter>Header Files\core\mbc</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

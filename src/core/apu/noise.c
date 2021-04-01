@@ -1,11 +1,6 @@
-#pragma once
+#include "core/apu/common.h"
+#include "core/internal.h"
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
-#include "common.h"
-#include "../internal.h"
 
 // used for LFSR shifter
 enum NoiseChannelShiftWidth {
@@ -14,30 +9,30 @@ enum NoiseChannelShiftWidth {
 };
 
 
-static inline uint32_t get_noise_freq(const struct GB_Core* gb) {
+uint32_t get_noise_freq(const struct GB_Core* gb) {
     // indexed using the noise divisor code
     static const uint8_t NOISE_DIVISOR[8] = { 8, 16, 32, 48, 64, 80, 96, 112 };
 
     return NOISE_DIVISOR[IO_NR43.divisor_code] << IO_NR43.clock_shift;
 }
 
-static inline bool is_noise_dac_enabled(const struct GB_Core* gb) {
+bool is_noise_dac_enabled(const struct GB_Core* gb) {
     return IO_NR42.starting_vol > 0 || IO_NR42.env_add_mode > 0;
 }
 
-static inline bool is_noise_enabled(const struct GB_Core* gb) {
+bool is_noise_enabled(const struct GB_Core* gb) {
     return IO_NR52.noise > 0;
 }
 
-static inline void noise_enable(struct GB_Core* gb) {
+void noise_enable(struct GB_Core* gb) {
     IO_NR52.noise = 1;
 }
 
-static inline void noise_disable(struct GB_Core* gb) {
+void noise_disable(struct GB_Core* gb) {
     IO_NR52.noise = 0;
 }
 
-static inline int8_t sample_noise(struct GB_Core* gb) {
+int8_t sample_noise(struct GB_Core* gb) {
     // docs say that it's bit-0 INVERTED
     const bool bit = !(NOISE_CHANNEL.LFSR & 0x1);
     if (bit == 1) {
@@ -47,7 +42,7 @@ static inline int8_t sample_noise(struct GB_Core* gb) {
     return -NOISE_CHANNEL.volume;
 }
 
-static inline void clock_noise_len(struct GB_Core* gb) {
+void clock_noise_len(struct GB_Core* gb) {
     if (IO_NR44.length_enable && NOISE_CHANNEL.length_counter > 0) {
         --NOISE_CHANNEL.length_counter;
         // disable channel if we hit zero...
@@ -57,7 +52,7 @@ static inline void clock_noise_len(struct GB_Core* gb) {
     }
 }
 
-static inline void clock_noise_vol(struct GB_Core* gb) {
+void clock_noise_vol(struct GB_Core* gb) {
     if (NOISE_CHANNEL.disable_env == false) {
         --NOISE_CHANNEL.volume_timer;
 
@@ -82,7 +77,7 @@ static inline void clock_noise_vol(struct GB_Core* gb) {
     }
 }
 
-static inline void step_noise_lfsr(struct GB_Core* gb) {
+void step_noise_lfsr(struct GB_Core* gb) {
     // this is explicit...
     const uint8_t bit0 = NOISE_CHANNEL.LFSR & 0x1;
     const uint8_t bit1 = (NOISE_CHANNEL.LFSR >> 1) & 0x1;
@@ -102,7 +97,7 @@ static inline void step_noise_lfsr(struct GB_Core* gb) {
     }
 }
 
-static inline void on_noise_trigger(struct GB_Core* gb) {
+void on_noise_trigger(struct GB_Core* gb) {
     noise_enable(gb);
 
     if (NOISE_CHANNEL.length_counter == 0) {
@@ -122,7 +117,3 @@ static inline void on_noise_trigger(struct GB_Core* gb) {
         noise_disable(gb);
     }
 }
-
-#ifdef __cplusplus
-}
-#endif
