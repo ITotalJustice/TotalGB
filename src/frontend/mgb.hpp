@@ -5,11 +5,14 @@
 #include <string>
 #include <mutex>
 
-#ifdef WIN32
+#ifdef _MSC_VER
 #include <SDL.h>
+#include <SDL_audio.h>
 #else
 #include <SDL2/SDL.h>
-#endif // WIN32
+#include <SDL2/SDL_audio.h>
+#endif // _MSC_VER
+
 
 extern "C" {
 struct GB_Core;

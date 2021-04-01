@@ -61,12 +61,6 @@
     <Filter Include="Source Files\libs\minizip">
       <UniqueIdentifier>{9d91ba0e-78e5-4786-9402-b75f2f2ffddc}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Source Files\libs\lz4">
-      <UniqueIdentifier>{698d798c-ec88-4c67-bee8-81c842399c96}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Source Files\libs\zstd">
-      <UniqueIdentifier>{2e2efd3e-b62d-4099-82a8-84e567c1fc5d}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Source Files\libs\lzma">
       <UniqueIdentifier>{15d1e8a3-961d-4b20-b94e-52496a0fc0cb}</UniqueIdentifier>
     </Filter>
@@ -79,38 +73,8 @@
     <Filter Include="Header Files\libs\zlib">
       <UniqueIdentifier>{d363ee51-bfa2-43e7-a98c-97ae216f2606}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Header Files\libs\lz4">
-      <UniqueIdentifier>{08eb198a-c7fb-4eb0-84f4-0ec5ed26abae}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Header Files\libs\lzma">
       <UniqueIdentifier>{87d84f29-fe0d-4c50-b43d-9694b0a09adc}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Header Files\libs\zstd">
-      <UniqueIdentifier>{cfa1d357-3a67-48ea-9726-43f98eef603d}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Source Files\libs\zstd\dictBuilder">
-      <UniqueIdentifier>{8b70bed5-1e39-4141-88bc-c80a6b4c7d99}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Source Files\libs\zstd\decompress">
-      <UniqueIdentifier>{b0a64c6c-4372-411a-a3f4-3d863ceebafd}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Source Files\libs\zstd\compress">
-      <UniqueIdentifier>{96c4f3a2-e164-4c24-bc91-302af921f843}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Source Files\libs\zstd\common">
-      <UniqueIdentifier>{521603ee-5c3c-4eba-8b94-e1171c6a707d}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Header Files\libs\zstd\dictBuilder">
-      <UniqueIdentifier>{68cd26e3-511e-419e-96f7-6752944161bb}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Header Files\libs\zstd\common">
-      <UniqueIdentifier>{3f84c2e2-3c2b-4d8e-955b-e19b03e9278d}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Header Files\libs\zstd\decompress">
-      <UniqueIdentifier>{3e7c8ad5-7069-4bed-aa27-dc16ddac82e2}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Header Files\libs\zstd\compress">
-      <UniqueIdentifier>{335007fa-0a51-4e97-b272-619c7cd3f813}</UniqueIdentifier>
     </Filter>
     <Filter Include="Source Files\core\accessories">
       <UniqueIdentifier>{63e03b37-e4ec-4862-8ee7-e9d37b5324e2}</UniqueIdentifier>
@@ -121,11 +85,14 @@
     <Filter Include="Header Files\core\apu">
       <UniqueIdentifier>{35787702-5161-4818-8569-c5f1a0c81c40}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source Files\core\mbc">
+      <UniqueIdentifier>{aa5848ab-9be2-425d-a968-9a19d209f834}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\core\apu">
+      <UniqueIdentifier>{7479fb9e-5d43-425a-ae90-565122d0f92b}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\src\core\apu.c">
-      <Filter>Source Files\core</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\src\core\bus.c">
       <Filter>Source Files\core</Filter>
     </ClCompile>
@@ -136,9 +103,6 @@
       <Filter>Source Files\core</Filter>
     </ClCompile>
     <ClCompile Include="..\..\src\core\joypad.c">
-      <Filter>Source Files\core</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\src\core\mbc.c">
       <Filter>Source Files\core</Filter>
     </ClCompile>
     <ClCompile Include="..\..\src\core\ppu.c">
@@ -189,9 +153,6 @@
     <ClCompile Include="..\..\src\frontend\util\mem.cpp">
       <Filter>Source Files\frontend\util</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\src\frontend\util\rewind.cpp">
-      <Filter>Source Files\frontend\util</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\src\frontend\util\util.cpp">
       <Filter>Source Files\frontend\util</Filter>
     </ClCompile>
@@ -240,93 +201,6 @@
     <ClCompile Include="..\..\src\libs\zlib\zutil.c">
       <Filter>Source Files\libs\zlib</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\src\libs\zstd\common\zstd_common.c">
-      <Filter>Source Files\libs\zstd\common</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\src\libs\zstd\common\xxhash.c">
-      <Filter>Source Files\libs\zstd\common</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\src\libs\zstd\common\threading.c">
-      <Filter>Source Files\libs\zstd\common</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\src\libs\zstd\common\pool.c">
-      <Filter>Source Files\libs\zstd\common</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\src\libs\zstd\common\fse_decompress.c">
-      <Filter>Source Files\libs\zstd\common</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\src\libs\zstd\common\error_private.c">
-      <Filter>Source Files\libs\zstd\common</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\src\libs\zstd\common\entropy_common.c">
-      <Filter>Source Files\libs\zstd\common</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\src\libs\zstd\common\debug.c">
-      <Filter>Source Files\libs\zstd\common</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\src\libs\zstd\compress\fse_compress.c">
-      <Filter>Source Files\libs\zstd\compress</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\src\libs\zstd\compress\hist.c">
-      <Filter>Source Files\libs\zstd\compress</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\src\libs\zstd\compress\huf_compress.c">
-      <Filter>Source Files\libs\zstd\compress</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\src\libs\zstd\compress\zstd_compress.c">
-      <Filter>Source Files\libs\zstd\compress</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\src\libs\zstd\compress\zstd_compress_literals.c">
-      <Filter>Source Files\libs\zstd\compress</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\src\libs\zstd\compress\zstd_compress_sequences.c">
-      <Filter>Source Files\libs\zstd\compress</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\src\libs\zstd\compress\zstd_compress_superblock.c">
-      <Filter>Source Files\libs\zstd\compress</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\src\libs\zstd\compress\zstd_double_fast.c">
-      <Filter>Source Files\libs\zstd\compress</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\src\libs\zstd\compress\zstd_fast.c">
-      <Filter>Source Files\libs\zstd\compress</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\src\libs\zstd\compress\zstd_lazy.c">
-      <Filter>Source Files\libs\zstd\compress</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\src\libs\zstd\compress\zstd_ldm.c">
-      <Filter>Source Files\libs\zstd\compress</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\src\libs\zstd\compress\zstd_opt.c">
-      <Filter>Source Files\libs\zstd\compress</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\src\libs\zstd\compress\zstdmt_compress.c">
-      <Filter>Source Files\libs\zstd\compress</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\src\libs\zstd\decompress\huf_decompress.c">
-      <Filter>Source Files\libs\zstd\decompress</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\src\libs\zstd\decompress\zstd_ddict.c">
-      <Filter>Source Files\libs\zstd\decompress</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\src\libs\zstd\decompress\zstd_decompress.c">
-      <Filter>Source Files\libs\zstd\decompress</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\src\libs\zstd\decompress\zstd_decompress_block.c">
-      <Filter>Source Files\libs\zstd\decompress</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\src\libs\zstd\dictBuilder\cover.c">
-      <Filter>Source Files\libs\zstd\dictBuilder</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\src\libs\zstd\dictBuilder\divsufsort.c">
-      <Filter>Source Files\libs\zstd\dictBuilder</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\src\libs\zstd\dictBuilder\fastcover.c">
-      <Filter>Source Files\libs\zstd\dictBuilder</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\src\libs\zstd\dictBuilder\zdict.c">
-      <Filter>Source Files\libs\zstd\dictBuilder</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\src\libs\lzma\Alloc.c">
       <Filter>Source Files\libs\lzma</Filter>
     </ClCompile>
@@ -342,9 +216,6 @@
     <ClCompile Include="..\..\src\libs\lzma\LzmaLib.c">
       <Filter>Source Files\libs\lzma</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\src\libs\lz4\lz4.c">
-      <Filter>Source Files\libs\lz4</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\src\libs\minizip\ioapi.c">
       <Filter>Source Files\libs\minizip</Filter>
     </ClCompile>
@@ -356,6 +227,42 @@
     </ClCompile>
     <ClCompile Include="..\..\src\core\accessories\printer.c">
       <Filter>Source Files\core\accessories</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\core\mbc\mbc.c">
+      <Filter>Source Files\core\mbc</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\core\mbc\mbc_0.c">
+      <Filter>Source Files\core\mbc</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\core\mbc\mbc_1.c">
+      <Filter>Source Files\core\mbc</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\core\mbc\mbc_2.c">
+      <Filter>Source Files\core\mbc</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\core\mbc\mbc_3.c">
+      <Filter>Source Files\core\mbc</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\core\mbc\mbc_5.c">
+      <Filter>Source Files\core\mbc</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\core\apu\apu.c">
+      <Filter>Source Files\core\apu</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\core\apu\noise.c">
+      <Filter>Source Files\core\apu</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\core\apu\square1.c">
+      <Filter>Source Files\core\apu</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\core\apu\square2.c">
+      <Filter>Source Files\core\apu</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\core\apu\wave.c">
+      <Filter>Source Files\core\apu</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\core\apu\apu_io.c">
+      <Filter>Source Files\core\apu</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -369,18 +276,6 @@
       <Filter>Header Files\core</Filter>
     </ClInclude>
     <ClInclude Include="..\..\src\core\mbc\common.h">
-      <Filter>Header Files\core\mbc</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\src\core\mbc\mbc_0.h">
-      <Filter>Header Files\core\mbc</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\src\core\mbc\mbc_1.h">
-      <Filter>Header Files\core\mbc</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\src\core\mbc\mbc_3.h">
-      <Filter>Header Files\core\mbc</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\src\core\mbc\mbc_5.h">
       <Filter>Header Files\core\mbc</Filter>
     </ClInclude>
     <ClInclude Include="..\..\src\core\tables\cycle_table.h">
@@ -425,9 +320,6 @@
     <ClInclude Include="..\..\src\frontend\util\mem.hpp">
       <Filter>Header Files\frontend\util</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\src\frontend\util\rewind.hpp">
-      <Filter>Header Files\frontend\util</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\src\frontend\util\util.hpp">
       <Filter>Header Files\frontend\util</Filter>
     </ClInclude>
@@ -467,105 +359,6 @@
     <ClInclude Include="..\..\src\libs\zlib\zutil.h">
       <Filter>Header Files\libs\zlib</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\src\libs\zstd\common\zstd_internal.h">
-      <Filter>Header Files\libs\zstd\common</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\src\libs\zstd\common\zstd_errors.h">
-      <Filter>Header Files\libs\zstd\common</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\src\libs\zstd\common\zstd_deps.h">
-      <Filter>Header Files\libs\zstd\common</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\src\libs\zstd\common\xxhash.h">
-      <Filter>Header Files\libs\zstd\common</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\src\libs\zstd\common\threading.h">
-      <Filter>Header Files\libs\zstd\common</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\src\libs\zstd\common\pool.h">
-      <Filter>Header Files\libs\zstd\common</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\src\libs\zstd\common\mem.h">
-      <Filter>Header Files\libs\zstd\common</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\src\libs\zstd\common\huf.h">
-      <Filter>Header Files\libs\zstd\common</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\src\libs\zstd\common\fse.h">
-      <Filter>Header Files\libs\zstd\common</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\src\libs\zstd\common\error_private.h">
-      <Filter>Header Files\libs\zstd\common</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\src\libs\zstd\common\debug.h">
-      <Filter>Header Files\libs\zstd\common</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\src\libs\zstd\common\cpu.h">
-      <Filter>Header Files\libs\zstd\common</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\src\libs\zstd\common\compiler.h">
-      <Filter>Header Files\libs\zstd\common</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\src\libs\zstd\common\bitstream.h">
-      <Filter>Header Files\libs\zstd\common</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\src\libs\zstd\compress\hist.h">
-      <Filter>Header Files\libs\zstd\compress</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\src\libs\zstd\compress\zstd_compress_internal.h">
-      <Filter>Header Files\libs\zstd\compress</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\src\libs\zstd\compress\zstd_compress_literals.h">
-      <Filter>Header Files\libs\zstd\compress</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\src\libs\zstd\compress\zstd_compress_sequences.h">
-      <Filter>Header Files\libs\zstd\compress</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\src\libs\zstd\compress\zstd_compress_superblock.h">
-      <Filter>Header Files\libs\zstd\compress</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\src\libs\zstd\compress\zstd_cwksp.h">
-      <Filter>Header Files\libs\zstd\compress</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\src\libs\zstd\compress\zstd_double_fast.h">
-      <Filter>Header Files\libs\zstd\compress</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\src\libs\zstd\compress\zstd_fast.h">
-      <Filter>Header Files\libs\zstd\compress</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\src\libs\zstd\compress\zstd_lazy.h">
-      <Filter>Header Files\libs\zstd\compress</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\src\libs\zstd\compress\zstd_ldm.h">
-      <Filter>Header Files\libs\zstd\compress</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\src\libs\zstd\compress\zstd_opt.h">
-      <Filter>Header Files\libs\zstd\compress</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\src\libs\zstd\compress\zstdmt_compress.h">
-      <Filter>Header Files\libs\zstd\compress</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\src\libs\zstd\decompress\zstd_ddict.h">
-      <Filter>Header Files\libs\zstd\decompress</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\src\libs\zstd\decompress\zstd_decompress_block.h">
-      <Filter>Header Files\libs\zstd\decompress</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\src\libs\zstd\decompress\zstd_decompress_internal.h">
-      <Filter>Header Files\libs\zstd\decompress</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\src\libs\zstd\dictBuilder\cover.h">
-      <Filter>Header Files\libs\zstd\dictBuilder</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\src\libs\zstd\dictBuilder\divsufsort.h">
-      <Filter>Header Files\libs\zstd\dictBuilder</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\src\libs\zstd\dictBuilder\zdict.h">
-      <Filter>Header Files\libs\zstd\dictBuilder</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\src\libs\zstd\zstd.h">
-      <Filter>Header Files\libs\zstd</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\src\libs\lzma\7zTypes.h">
       <Filter>Header Files\libs\lzma</Filter>
     </ClInclude>
@@ -593,9 +386,6 @@
     <ClInclude Include="..\..\src\libs\lzma\Precomp.h">
       <Filter>Header Files\libs\lzma</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\src\libs\lz4\lz4.h">
-      <Filter>Header Files\libs\lz4</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\src\libs\minizip\ioapi.h">
       <Filter>Header Files\libs\minizip</Filter>
     </ClInclude>
@@ -614,20 +404,14 @@
     <ClInclude Include="..\..\src\core\apu\common.h">
       <Filter>Header Files\core\apu</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\src\core\apu\noise.h">
-      <Filter>Header Files\core\apu</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\src\core\apu\square_common.h">
       <Filter>Header Files\core\apu</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\src\core\apu\square1.h">
+    <ClInclude Include="..\..\src\core\apu\apu.h">
       <Filter>Header Files\core\apu</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\src\core\apu\square2.h">
-      <Filter>Header Files\core\apu</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\src\core\apu\wave.h">
-      <Filter>Header Files\core\apu</Filter>
+    <ClInclude Include="..\..\src\core\mbc\mbc.h">
+      <Filter>Header Files\core\mbc</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

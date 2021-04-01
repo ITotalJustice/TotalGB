@@ -4,6 +4,9 @@
 extern "C" {
 #endif
 
+#include <stdint.h>
+
+
 //        Square 1
 // NR10 FF10 -PPP NSSS Sweep period, negate, shift
 // NR11 FF11 DDLL LLLL Duty, Length load (64-L)

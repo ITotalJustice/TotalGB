@@ -1,6 +1,6 @@
 #include "mgb.hpp"
-#include "../core/gb.h"
-#include "../core/accessories/printer.h"
+#include "core/gb.h"
+#include "core/accessories/printer.h"
 #include "io/romloader.hpp"
 #include "io/ifile_cfile.hpp"
 #include "util/util.hpp"
@@ -8,7 +8,6 @@
 
 #include "nativefiledialog/nfd.hpp"
 
-#include <SDL2/SDL_audio.h>
 
 #include <cstring>
 #include <cassert>

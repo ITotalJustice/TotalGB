@@ -4,7 +4,7 @@
 extern "C" {
 #endif
 
-#include "tables/palette_table.h"
+#include "core/tables/palette_table.h"
 
 #include <stddef.h>
 #include <stdbool.h>
@@ -401,6 +401,12 @@ struct GB_Cpu {
 	uint16_t SP;
 	uint16_t PC;
 	uint8_t registers[8];
+	
+	bool c : 1;
+	bool h : 1;
+	bool n : 1;
+	bool z : 1;
+
 	bool ime : 1;
 	bool halt : 1;
 	bool double_speed : 1;

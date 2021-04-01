@@ -1,10 +1,11 @@
-#include "gb.h"
-#include "internal.h"
-#include "tables/palette_table.h"
+#include "core/gb.h"
+#include "core/internal.h"
+#include "core/tables/palette_table.h"
 
 #include <stdio.h>
 #include <string.h>
 #include <assert.h>
+
 
 static inline uint16_t GB_calculate_col_from_palette(const uint8_t palette, const uint8_t colour) {
     return ((palette >> (colour << 1)) & 3);

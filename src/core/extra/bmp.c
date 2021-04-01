@@ -1,12 +1,9 @@
-#include "bmp.h"
-#include "../internal.h"
+#include "core/extra/bmp.h"
+#include "core/internal.h"
 
 #include <assert.h>
 #include <string.h>
-
-#ifndef GB_NO_STDIO
 #include <stdio.h>
-#endif /* GB_NO_STDIO */
 
 
 static uint32_t GB_bmp_get_colours_used(enum GB_BmpBitsPerPixel type) {
@@ -23,7 +20,7 @@ static uint32_t GB_bmp_get_colours_used(enum GB_BmpBitsPerPixel type) {
             return 16777216U; /* 2^24 */
     }
 
-    __builtin_unreachable();
+    GB_UNREACHABLE(0xFF);
 }
 
 static void GB_bmp_fill_header(struct GB_BmpHeader* header) {
@@ -84,7 +81,6 @@ bool GB_screenshot(const struct GB_Core* gb, struct GB_Bmp* bmp) {
     return true;
 }
 
-#ifndef GB_NO_STDIO
 bool GB_screenshot_to_file(const struct GB_Core* gb, const char* path) {
     assert(gb && path);
 
@@ -125,4 +121,3 @@ fail_close:
     fclose(file);
     return false;
 }
-#endif /* GB_NO_STDIO */
