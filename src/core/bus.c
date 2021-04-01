@@ -9,7 +9,7 @@ static inline void GB_iowrite_gbc(struct GB_Core* gb, uint16_t addr, uint8_t val
 
 	switch (addr & 0x7F) {
 		case 0x4D:
-			IO_KEY1 |= 1;//value & 0x1;
+			IO_KEY1 = value & 0x1;
 			printf("writing to key1 0x%02X\n", value);
 			break;
 
@@ -219,6 +219,7 @@ void GB_iowrite(struct GB_Core* gb, uint16_t addr, uint8_t value) {
 
 		case 0x45:
 			IO_LYC = value;
+			GB_compare_LYC(gb);
 			break;
 
 		case 0x46:
