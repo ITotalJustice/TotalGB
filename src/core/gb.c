@@ -86,6 +86,7 @@ void GB_reset(struct GB_Core* gb) {
 	gb->cpu.halt = 0;
 	gb->cpu.ime = 0;
 	// CPU
+	GB_cpu_set_register(gb, GB_CPU_REGISTER_F, 0xB0);
 	GB_cpu_set_register_pair(gb, GB_CPU_REGISTER_PAIR_BC, 0x0013);
 	GB_cpu_set_register_pair(gb, GB_CPU_REGISTER_PAIR_DE, 0x00D8);
 	GB_cpu_set_register_pair(gb, GB_CPU_REGISTER_PAIR_HL, 0x014D);
@@ -110,15 +111,22 @@ void GB_reset(struct GB_Core* gb) {
 	IO_WX = 0x00;
 	IO_IE = 0x00;
 
+	enum rega_start_values {
+		REGA_DMG = 0x01,
+		REGA_SGB = 0x01,
+		
+		REGA_SGB2 = 0xFF,
+		REGA_POCKET = 0xFF,
+
+		REGA_GBC = 0x11,
+		REGA_GBA = 0x11,
+	};
+
 	switch (GB_get_system_type(gb)) {
 		case GB_SYSTEM_TYPE_DMG:
-			GB_cpu_set_register_pair(gb, GB_CPU_REGISTER_PAIR_AF, 0x01B0);
+			GB_cpu_set_register(gb, GB_CPU_REGISTER_A, REGA_DMG);
 			IO_SVBK = 0x01;
-			// this might not work for all DMG games as there may be some that
-			// check if this value returns 0xFF, however, this is set to 0
-			// to avoid having an extra `if` when writing to vram, allowing
-			// me to use the IO reg directly (the if being is_system_gbc)
-			IO_VBK = 0x00; //IO_VBK = 0xFF;
+			IO_VBK = 0x00;
 			IO_BCPS = 0xFF;
 			IO_BCPD = 0xFF;
 			IO_OCPS = 0xFF;
@@ -127,10 +135,18 @@ void GB_reset(struct GB_Core* gb) {
 			break;
 
 		case GB_SYSTEM_TYPE_SGB:
+			GB_cpu_set_register(gb, GB_CPU_REGISTER_A, REGA_SGB);
+			IO_SVBK = 0x01;
+			IO_VBK = 0x00;
+			IO_BCPS = 0xFF;
+			IO_BCPD = 0xFF;
+			IO_OCPS = 0xFF;
+			IO_OCPD = 0xFF;
+			IO_KEY1 = 0x00;
 			break;
 
 		case GB_SYSTEM_TYPE_GBC:
-			GB_cpu_set_register_pair(gb, GB_CPU_REGISTER_PAIR_AF, 0x11B0);
+			GB_cpu_set_register(gb, GB_CPU_REGISTER_A, REGA_GBC);
 			IO_SVBK = 0x01;
 			IO_VBK = 0x00;
 			IO_BCPS = 0x00;
@@ -367,13 +383,21 @@ int GB_loadrom_data(struct GB_Core* gb, uint8_t* data, uint32_t size) {
 		return -1;
 	}
 
-	enum GB_GBCFlag {
+	enum {
 		GBC_ONLY = 0xC0,
 		GBC_AND_DMG = 0x80,
 		// not much is known about these types
 		// these are not checked atm, but soon will be...
 		PGB_1 = 0x84,
 		PGB_2 = 0x88,
+	};
+
+	enum {
+		SGB_FLAG = 0x03
+	};
+
+	enum {
+		NEW_LICENSEE_USED = 0x33
 	};
 
 	const char gbc_flag = header->title[sizeof(header->title) - 1];
@@ -420,6 +444,13 @@ int GB_loadrom_data(struct GB_Core* gb, uint8_t* data, uint32_t size) {
 		} else {
 			GB_set_system_type(gb, GB_SYSTEM_TYPE_DMG);
 		}
+	}
+
+	// need to change the above if-else tree to support this
+	// for now, try and detect SGB
+	if (header->sgb_flag == SGB_FLAG && header->old_licensee_code == NEW_LICENSEE_USED) {
+		printf("[INFO] game supports SGB!\n");
+		// GB_set_system_type(gb, GB_SYSTEM_TYPE_SGB);
 	}
 
 	// try and setup the mbc, this also implicitly sets up

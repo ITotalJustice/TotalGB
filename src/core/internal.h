@@ -171,7 +171,9 @@ void GB_set_status_mode(struct GB_Core* gb, const enum GB_StatusModes mode);
 enum GB_StatusModes GB_get_status_mode(const struct GB_Core* gb);
 
 void GB_compare_LYC(struct GB_Core* gb);
-uint8_t GB_joypad_get(const struct GB_Core* gb);
+
+uint8_t GB_joypad_read(const struct GB_Core* gb);
+void GB_joypad_write(struct GB_Core* gb, uint8_t value);
 
 void GB_enable_interrupt(struct GB_Core* gb, const enum GB_Interrupts interrupt);
 void GB_disable_interrupt(struct GB_Core* gb, const enum GB_Interrupts interrupt);
@@ -186,6 +188,11 @@ bool GB_is_lcd_enabled(const struct GB_Core* gb);
 bool GB_is_win_enabled(const struct GB_Core* gb);
 bool GB_is_obj_enabled(const struct GB_Core* gb);
 bool GB_is_bg_enabled(const struct GB_Core* gb);
+
+
+// SGB stuff
+bool SGB_handle_joyp_read(const struct GB_Core* gb, uint8_t* data_out);
+void SGB_handle_joyp_write(struct GB_Core* gb, uint8_t value);
 
 #ifdef __cplusplus
 }
