@@ -264,6 +264,9 @@
     <ClCompile Include="..\..\src\core\apu\apu_io.c">
       <Filter>Source Files\core\apu</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\src\core\sgb.c">
+      <Filter>Source Files\core</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\src\core\gb.h">

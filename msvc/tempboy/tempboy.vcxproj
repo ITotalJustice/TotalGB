@@ -190,6 +190,7 @@
     <ClCompile Include="..\..\src\core\mbc\mbc_5.c" />
     <ClCompile Include="..\..\src\core\ppu.c" />
     <ClCompile Include="..\..\src\core\serial.c" />
+    <ClCompile Include="..\..\src\core\sgb.c" />
     <ClCompile Include="..\..\src\core\tables\palette_table.c" />
     <ClCompile Include="..\..\src\core\timers.c" />
     <ClCompile Include="..\..\src\frontend\events.cpp" />
