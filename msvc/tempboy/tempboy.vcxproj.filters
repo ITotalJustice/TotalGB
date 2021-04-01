@@ -261,6 +261,9 @@
     <ClCompile Include="..\..\src\core\apu\wave.c">
       <Filter>Source Files\core\apu</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\src\core\apu\apu_io.c">
+      <Filter>Source Files\core\apu</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\src\core\gb.h">

@@ -173,6 +173,7 @@
   <ItemGroup>
     <ClCompile Include="..\..\src\core\accessories\printer.c" />
     <ClCompile Include="..\..\src\core\apu\apu.c" />
+    <ClCompile Include="..\..\src\core\apu\apu_io.c" />
     <ClCompile Include="..\..\src\core\apu\noise.c" />
     <ClCompile Include="..\..\src\core\apu\square1.c" />
     <ClCompile Include="..\..\src\core\apu\square2.c" />
