@@ -118,7 +118,7 @@ void perform_hdma(struct GB_Core* gb) {
         IO_HDMA2 = 0xFF;
         IO_HDMA3 = 0xFF;
         IO_HDMA4 = 0xFF;
-        IO_HDMA5 = 0x80;
+        IO_HDMA5 = 0xFF;
     }
 }
 
@@ -154,12 +154,8 @@ void GB_hdma5_write(struct GB_Core* gb, uint8_t value) {
             return;
         }
 
-        // printf("gdma src %04X dst %04X len %u\n", dma_src, dma_dst, dma_len);
-
         // GDMA are performed immediately
         for (uint16_t i = 0; i < dma_len; ++i) {
-            // uint8_t data = GB_read8(gb, dma_src + i);
-            // GB_write8(gb, dma_dst + i, data);
             hdma_write(gb,
                 dma_dst + i, // dst
                 hdma_read(gb, dma_src + i) // value
@@ -174,7 +170,7 @@ void GB_hdma5_write(struct GB_Core* gb, uint8_t value) {
         IO_HDMA2 = 0xFF;
         IO_HDMA3 = 0xFF;
         IO_HDMA4 = 0xFF;
-        IO_HDMA5 = 0x80;
+        IO_HDMA5 = 0xFF;
     }
     else {
         gb->ppu.hdma_src_addr = dma_src;

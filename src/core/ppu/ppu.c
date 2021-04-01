@@ -150,9 +150,13 @@ FF41 - STAT - LCDC Status (R/W)
 void GB_on_lcdc_write(struct GB_Core* gb, const uint8_t value) {
     // check if the game wants to disable the ppu
     // this *should* only happen in vblank!
-    if (GB_is_lcd_enabled(gb) && (value & 0x80) == 0 && GB_get_status_mode(gb) == STATUS_MODE_VBLANK) {
+    if (GB_is_lcd_enabled(gb) && (value & 0x80) == 0) {
+        if (GB_get_status_mode(gb) != STATUS_MODE_VBLANK) {
+            printf("[PPU-WARN] game is disabling lcd outside vblank: 0x%0X\n", GB_get_status_mode(gb));
+        }
+
         IO_LY = 0;
-        IO_STAT &= ~(0x7);
+        IO_STAT &= ~(0x3);
         printf("disabling ppu...\n");
     }
 

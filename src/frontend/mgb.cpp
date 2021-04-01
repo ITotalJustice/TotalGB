@@ -179,7 +179,7 @@ auto Instance::LoadRom(const std::string& path) -> bool {
         GB_init(this->GetGB());
 
         GB_set_rtc_update_config(this->GetGB(), GB_RTC_UPDATE_CONFIG_USE_LOCAL_TIME);
-        GB_connect_printer(this->GetGB(), this->printer.get(), NULL, NULL);
+        // GB_connect_printer(this->GetGB(), this->printer.get(), NULL, NULL);
 
     #ifdef GB_SDL_AUDIO_CALLBACK_STREAM
         GB_set_apu_callback(this->GetGB(), core_sdl_stream_callback, this);

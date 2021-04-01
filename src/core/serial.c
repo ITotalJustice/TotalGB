@@ -84,7 +84,7 @@ void GB_connect_link_cable_builtin(struct GB_Core* gb, struct GB_Core* gb2) {
 uint8_t GB_serial_sb_read(const struct GB_Core* gb) {
     // check if we have a serial cable connected
     if (GB_has_link_cable(gb) == false) {
-        printf("not link cable on sb read\n");
+        // printf("not link cable on sb read\n");
         return 0xFF;
     }
 
@@ -97,7 +97,7 @@ void GB_serial_sc_write(struct GB_Core* gb, const uint8_t data) {
 
     // check if we have a serial cable connected and if we are host
     if (!GB_has_link_cable(gb)) {
-        printf("no link cable in sc write! value: 0x%02X SB: 0x%02X\n", data, IO_SB);
+        // printf("no link cable in sc write! value: 0x%02X SB: 0x%02X\n", data, IO_SB);
         return;
     }
 
