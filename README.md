@@ -14,10 +14,6 @@ PR's, issues and any help is very much welcome!
 
 - <https://github.com/btzy/nativefiledialog-extended>
 
-- <https://github.com/lz4/lz4>
-
-- <https://github.com/facebook/zstd>
-
 - <https://github.com/madler/zlib>
 
 - <https://github.com/zlib-ng/minizip-ng>
