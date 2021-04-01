@@ -135,9 +135,9 @@ void GB_change_status_mode(struct GB_Core* gb, const uint8_t new_mode) {
 void GB_on_lcdc_write(struct GB_Core* gb, const uint8_t value) {
     // check if the game wants to disable the ppu
     if ((value & 0x80) == 0) {
-        // we need to set a few vars, LY is reset and stat mode is HBLANK
-        IO_STAT &= ~(0x3);
         IO_LY = 0;
+        IO_STAT = 0;
+        IO_LYC = 0;
         // i think this is reset also...
         gb->ppu.next_cycles = 0;
         printf("disabling ppu...\n");
