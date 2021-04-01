@@ -1,5 +1,4 @@
 #include "core/apu/common.h"
-#include "core/apu/square_common.h"
 #include "core/internal.h"
 
 
