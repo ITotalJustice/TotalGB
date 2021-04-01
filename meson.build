@@ -16,9 +16,12 @@ source = files([
     # core
     'src/core/gb.c',
     'src/core/cpu.c',
-    'src/core/ppu.c',
     'src/core/bus.c',
     'src/core/joypad.c',
+    'src/core/ppu/ppu.c',
+    'src/core/ppu/dmg_renderer.c',
+    'src/core/ppu/gbc_renderer.c',
+    'src/core/ppu/sgb_renderer.c',
     'src/core/apu/apu.c',
     'src/core/apu/apu_io.c',
     'src/core/apu/square1.c',

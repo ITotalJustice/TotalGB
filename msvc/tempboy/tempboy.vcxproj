@@ -188,7 +188,10 @@
     <ClCompile Include="..\..\src\core\mbc\mbc_2.c" />
     <ClCompile Include="..\..\src\core\mbc\mbc_3.c" />
     <ClCompile Include="..\..\src\core\mbc\mbc_5.c" />
-    <ClCompile Include="..\..\src\core\ppu.c" />
+    <ClCompile Include="..\..\src\core\ppu\dmg_renderer.c" />
+    <ClCompile Include="..\..\src\core\ppu\gbc_renderer.c" />
+    <ClCompile Include="..\..\src\core\ppu\ppu.c" />
+    <ClCompile Include="..\..\src\core\ppu\sgb_renderer.c" />
     <ClCompile Include="..\..\src\core\serial.c" />
     <ClCompile Include="..\..\src\core\sgb.c" />
     <ClCompile Include="..\..\src\core\tables\palette_table.c" />
@@ -239,6 +242,7 @@
     <ClInclude Include="..\..\src\core\internal.h" />
     <ClInclude Include="..\..\src\core\mbc\common.h" />
     <ClInclude Include="..\..\src\core\mbc\mbc.h" />
+    <ClInclude Include="..\..\src\core\ppu\ppu.h" />
     <ClInclude Include="..\..\src\core\tables\cycle_table.h" />
     <ClInclude Include="..\..\src\core\tables\cycle_table_debug.h" />
     <ClInclude Include="..\..\src\core\tables\palette_table.h" />

@@ -91,6 +91,12 @@
     <Filter Include="Source Files\core\apu">
       <UniqueIdentifier>{7479fb9e-5d43-425a-ae90-565122d0f92b}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source Files\core\ppu">
+      <UniqueIdentifier>{82a16131-7a91-449c-9178-b6899801e230}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\core\ppu">
+      <UniqueIdentifier>{8f7ddc4f-ba0f-4612-8014-d150a83266cc}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\src\core\bus.c">
@@ -103,9 +109,6 @@
       <Filter>Source Files\core</Filter>
     </ClCompile>
     <ClCompile Include="..\..\src\core\joypad.c">
-      <Filter>Source Files\core</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\src\core\ppu.c">
       <Filter>Source Files\core</Filter>
     </ClCompile>
     <ClCompile Include="..\..\src\core\serial.c">
@@ -267,6 +270,18 @@
     <ClCompile Include="..\..\src\core\sgb.c">
       <Filter>Source Files\core</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\src\core\ppu\dmg_renderer.c">
+      <Filter>Source Files\core\ppu</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\core\ppu\gbc_renderer.c">
+      <Filter>Source Files\core\ppu</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\core\ppu\ppu.c">
+      <Filter>Source Files\core\ppu</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\core\ppu\sgb_renderer.c">
+      <Filter>Source Files\core\ppu</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\src\core\gb.h">
@@ -415,6 +430,9 @@
     </ClInclude>
     <ClInclude Include="..\..\src\core\mbc\mbc.h">
       <Filter>Header Files\core\mbc</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\core\ppu\ppu.h">
+      <Filter>Header Files\core\ppu</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
