@@ -106,9 +106,9 @@ extern "C" {
 #define IO_HDMA5 IO[0x55]
 #define IO_RP IO[0x56] // (GBC) infrared
 #define IO_BCPS IO[0x68]
-#define IO_BCPD IO[0x69]
+// #define IO_BCPD IO[0x69]
 #define IO_OCPS IO[0x6A]
-#define IO_OCPD IO[0x6B]
+// #define IO_OCPD IO[0x6B]
 #define IO_OPRI IO[0x6C] // (GBC) object priority
 // MISC
 #define IO_SVBK IO[0x70]
@@ -149,6 +149,9 @@ void GB_serial_sc_write(struct GB_Core* gb, const uint8_t data);
 
 void GB_bcpd_write(struct GB_Core* gb, uint8_t value);
 void GB_ocpd_write(struct GB_Core* gb, uint8_t value);
+
+uint8_t GBC_bcpd_read(struct GB_Core* gb);
+uint8_t GBC_ocpd_read(struct GB_Core* gb);
 
 uint8_t GB_hdma5_read(const struct GB_Core* gb);
 void GB_hdma5_write(struct GB_Core* gb, uint8_t value);

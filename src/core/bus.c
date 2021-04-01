@@ -9,7 +9,7 @@ static inline void GB_iowrite_gbc(struct GB_Core* gb, uint16_t addr, uint8_t val
 
 	switch (addr & 0x7F) {
 		case 0x4D:
-			IO_KEY1 = value & 0x1;
+			IO_KEY1 |= value & 0x1;
 			printf("writing to key1 0x%02X\n", value);
 			break;
 
@@ -47,7 +47,6 @@ static inline void GB_iowrite_gbc(struct GB_Core* gb, uint16_t addr, uint8_t val
 
 		case 0x69: // BCPD
 			GB_bcpd_write(gb, value);
-			IO_BCPD = value;
 			break;
 
 		case 0x6A: // OCPS
@@ -56,10 +55,10 @@ static inline void GB_iowrite_gbc(struct GB_Core* gb, uint16_t addr, uint8_t val
 
 		case 0x6B: // OCPD
 			GB_ocpd_write(gb, value);
-			IO_OCPD = value;
 			break;
 
 		case 0x6C: // OPRI
+			assert(0&&"opri");
 			IO_OPRI = value & 1;
 			printf("[INFO] IO_OPRI %u\n", value & 1);
 			break;
@@ -119,6 +118,14 @@ uint8_t GB_ioread(struct GB_Core* gb, uint16_t addr) {
 		case 0x2F: case 0x1F: // unused
 			return 0xFF;
 
+		case 0x4D:
+			if (GB_is_system_gbc(gb) == true) {
+				printf("reading key1 0x%02X\n", IO_KEY1);
+				return 0x7E | IO_KEY1;
+			} else {
+				return 0xFF;
+			}
+
 		case 0x4F: // (GBC) VBK
 			if (GB_is_system_gbc(gb) == true) {
 				return IO_VBK;
@@ -134,17 +141,26 @@ uint8_t GB_ioread(struct GB_Core* gb, uint16_t addr) {
 				return 0xFF;
 			}
 
+		case 0x69:
+			if (GB_is_system_gbc(gb) == true) {
+				return GBC_bcpd_read(gb);
+			} else {
+				return 0xFF;
+			}
+
+		case 0x6B:
+			if (GB_is_system_gbc(gb) == true) {
+				return GBC_ocpd_read(gb);
+			} else {
+				return 0xFF;
+			}
+
 		case 0x70: // (GBC) SVBK
 			if (GB_is_system_gbc(gb) == true) {
 				return IO_SVBK;
 			} else {
 				return 0xFF;
 			}
-
-		case 0x4D:
-			printf("reading key1 0x%02X\n", IO_KEY1);
-			return IO_KEY1;
-			// return 0x80;
 
 		default:
 			return IO[addr & 0x7F];

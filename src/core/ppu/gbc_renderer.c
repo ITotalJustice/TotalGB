@@ -3,6 +3,18 @@
 #include "core/internal.h"
 
 #include <assert.h>
+#include <string.h>
+#include <stdio.h>
+
+
+// store a 1 when bg / win writes to the screen
+// this is used by obj rendering to check firstly if
+// the bg always has priority.
+// if it does, then it checks this buffer for a 1
+// at the same xpos, if its 1, rendering that pixel is skipped.
+struct PrioBuf {
+    bool d[GB_SCREEN_WIDTH];
+};
 
 
 static bool is_bcps_auto_increment(const struct GB_Core* gb) {
@@ -46,6 +58,16 @@ void GB_bcpd_write(struct GB_Core* gb, uint8_t value) {
 
     gb->ppu.bg_palette[index] = value;
     bcps_increment(gb);
+}
+
+uint8_t GBC_bcpd_read(struct GB_Core* gb) {
+    const uint8_t index = get_bcps_index(gb);
+    return gb->ppu.bg_palette[index];
+}
+
+uint8_t GBC_ocpd_read(struct GB_Core* gb) {
+    const uint8_t index = get_ocps_index(gb);
+    return gb->ppu.obj_palette[index];
 }
 
 void GB_ocpd_write(struct GB_Core* gb, uint8_t value) {
@@ -132,8 +154,12 @@ void GB_hdma5_write(struct GB_Core* gb, uint8_t value) {
             return;
         }
 
+        // printf("gdma src %04X dst %04X len %u\n", dma_src, dma_dst, dma_len);
+
         // GDMA are performed immediately
         for (uint16_t i = 0; i < dma_len; ++i) {
+            // uint8_t data = GB_read8(gb, dma_src + i);
+            // GB_write8(gb, dma_dst + i, data);
             hdma_write(gb,
                 dma_dst + i, // dst
                 hdma_read(gb, dma_src + i) // value
@@ -160,7 +186,7 @@ void GB_hdma5_write(struct GB_Core* gb, uint8_t value) {
     }
 }
 
-static void render_scanline_bg(struct GB_Core* gb) {
+static void render_scanline_bg(struct GB_Core* gb, struct PrioBuf* prio_buffer) {
     const uint8_t scanline = IO_LY;
     const uint8_t base_tile_x = IO_SCX >> 3;
     const uint8_t sub_tile_x = (IO_SCX & 7);
@@ -199,12 +225,18 @@ static void render_scanline_bg(struct GB_Core* gb) {
             }
 
             const uint8_t pixel = ((!!(byte_b & bit[x])) << 1) | (!!(byte_a & bit[x]));
+            
+            // set priority
+            if (attributes.bank == 0) {
+                prio_buffer->d[pixel_x] = attributes.priority;
+            }
+
             pixels[pixel_x] = gb->ppu.bg_colours[attributes.pal][pixel];
         }
     }
 }
 
-static void render_scanline_win(struct GB_Core* gb) {
+static void render_scanline_win(struct GB_Core* gb, struct PrioBuf* prio_buffer) {
     const uint8_t scanline = IO_LY;
     const uint8_t base_tile_x = 20 - (IO_WX >> 3);
     const int16_t sub_tile_x = IO_WX - 7;
@@ -244,6 +276,12 @@ static void render_scanline_win(struct GB_Core* gb) {
             did_draw |= 1;
 
             const uint8_t pixel = ((!!(byte_b & bit[x])) << 1) | (!!(byte_a & bit[x]));
+            
+            // set priority
+            if (attributes.bank == 0) {
+                prio_buffer->d[pixel_x] = attributes.priority;
+            }
+
             pixels[pixel_x] = gb->ppu.bg_colours[attributes.pal][pixel];
         }
     }
@@ -251,11 +289,17 @@ static void render_scanline_win(struct GB_Core* gb) {
     gb->ppu.window_line += did_draw;
 }
 
-static void render_scanline_obj(struct GB_Core* gb) {
+static void render_scanline_obj(struct GB_Core* gb, const struct PrioBuf* prio_buffer) {
     const uint8_t scanline = IO_LY;
     const uint8_t sprite_size = GB_get_sprite_size(gb);
     const bool bg_prio = (IO_LCDC & 0x1) > 0;
+    const uint16_t bg_zero = gb->ppu.bg_colours[0][0];
     uint16_t* pixels = gb->ppu.pixles[scanline];
+
+    // gbc uses oam prio rather than x-pos
+    // so we need to keep track if a obj has already
+    // been written to from a previous oam entry!
+    bool oam_priority[GB_SCREEN_WIDTH] = {0};
 
     for (uint8_t i = 0, sprite_total = 0; i < 40 && sprite_total < 10; ++i) {
         const struct GB_Sprite sprite = gb->ppu.sprites[i];
@@ -279,15 +323,42 @@ static void render_scanline_obj(struct GB_Core* gb) {
             const uint8_t* bit = sprite.flag.xflip ? PIXEL_BIT_GROW : PIXEL_BIT_SHRINK;
 
             for (uint8_t x = 0; x < 8; ++x) {
-                if ((spx + x) < 0 || (sprite.flag.priority && bg_prio)) {
+                // check if this has already been written to
+                // from a previous oam entry
+                if (oam_priority[spx + x]) {
                     continue;
                 }
+
+                // ensure that we are in bounds
+                if ((spx + x) < 0) {
+                    continue;
+                }
+
                 const uint8_t pixel = ((!!(byte_b & bit[x])) << 1) | (!!(byte_a & bit[x]));
                 
+                // this tests if the obj is transparrent
                 if (pixel == 0) {
                     continue;
                 }
 
+                if (bg_prio == 1) {
+                    // this tests if bg always has priority over obj
+                    if (prio_buffer->d[spx + x] == 1) {
+                        continue;
+                    }
+
+                    // this tests if bg col 1-3 has priority,
+                    // then checks if the col is non-zero, if yes, skip
+                    if (sprite.flag.priority && bg_zero != pixels[spx + x]) {
+                        continue;
+                    }
+                }
+
+                // save that we have already written to this xpos so the next
+                // oam entries cannot overwrite this pixel!
+                oam_priority[spx + x] = true;
+
+                // write the pixel (finally!)
                 pixels[spx + x] = gb->ppu.obj_colours[sprite.flag.pal_gbc][pixel];
             }
         }
@@ -312,27 +383,27 @@ static void update_colours(bool dirty[8], uint16_t map[8][4], const uint8_t pale
 
 
 void GBC_render_scanline(struct GB_Core* gb) {
+    struct PrioBuf prio_buffer = {0};
+
     // update the bg colour palettes
     update_colours(gb->ppu.dirty_bg, gb->ppu.bg_colours, gb->ppu.bg_palette);
     // update the obj colour palettes
     update_colours(gb->ppu.dirty_obj, gb->ppu.obj_colours, gb->ppu.obj_palette);
 
-    if (LIKELY(GB_is_bg_enabled(gb))) {
-        if (LIKELY(GB_is_render_layer_enabled(gb, GB_RENDER_LAYER_CONFIG_BG))) {
-            render_scanline_bg(gb);
-        }
+    if (LIKELY(GB_is_render_layer_enabled(gb, GB_RENDER_LAYER_CONFIG_BG))) {
+        render_scanline_bg(gb, &prio_buffer);
+    }
 
-        // WX=0..166, WY=0..143
-        if ((GB_is_win_enabled(gb)) && (IO_WX <= 166) && (IO_WY <= 143) && (IO_WY <= IO_LY)) {
-            if (LIKELY(GB_is_render_layer_enabled(gb, GB_RENDER_LAYER_CONFIG_WIN))) {
-                render_scanline_win(gb);
-            }
+    // WX=0..166, WY=0..143
+    if ((GB_is_win_enabled(gb)) && (IO_WX <= 166) && (IO_WY <= 143) && (IO_WY <= IO_LY)) {
+        if (LIKELY(GB_is_render_layer_enabled(gb, GB_RENDER_LAYER_CONFIG_WIN))) {
+            render_scanline_win(gb, &prio_buffer);
         }
     }
 
     if (LIKELY(GB_is_obj_enabled(gb))) {
         if (LIKELY(GB_is_render_layer_enabled(gb, GB_RENDER_LAYER_CONFIG_OBJ))) {
-            render_scanline_obj(gb);
+            render_scanline_obj(gb, &prio_buffer);
         }
     }
 }

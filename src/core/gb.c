@@ -128,9 +128,7 @@ void GB_reset(struct GB_Core* gb) {
 			IO_SVBK = 0x01;
 			IO_VBK = 0x00;
 			IO_BCPS = 0xFF;
-			IO_BCPD = 0xFF;
 			IO_OCPS = 0xFF;
-			IO_OCPD = 0xFF;
 			IO_KEY1 = 0x00;
 			break;
 
@@ -139,9 +137,7 @@ void GB_reset(struct GB_Core* gb) {
 			IO_SVBK = 0x01;
 			IO_VBK = 0x00;
 			IO_BCPS = 0xFF;
-			IO_BCPD = 0xFF;
 			IO_OCPS = 0xFF;
-			IO_OCPD = 0xFF;
 			IO_KEY1 = 0x00;
 			break;
 
@@ -150,11 +146,9 @@ void GB_reset(struct GB_Core* gb) {
 			IO_SVBK = 0x01;
 			IO_VBK = 0x00;
 			IO_BCPS = 0x00;
-			IO_BCPD = 0x00;
 			IO_OCPS = 0x00;
-			IO_OCPD = 0x00;
 			IO_OPRI = 0x00;
-			IO_KEY1 = 0x00;
+			IO_KEY1 = 0x7E;
 			// undoc
 			IO_72 = 0x00;
 			IO_73 = 0x00;

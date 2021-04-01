@@ -224,7 +224,14 @@ void GB_DMA(struct GB_Core* gb) {
     assert(IO_DMA <= 0xF1);
 
     memcpy(gb->ppu.oam, gb->mmap[IO_DMA >> 4] + ((IO_DMA & 0xF) << 8), sizeof(gb->ppu.oam));
-	gb->cpu.cycles += 646;
+	
+    // because i am peforming the dma at once, i am also adding the cycles
+    // at once as well.
+    // however, this has broken at least one game (Heroes of Might and Magic II)
+    // so far because it throws the timing too far off.
+    // as a hack, i just reduce the cycles by half, this fixes the game
+    // but may be an issue in the future!
+    gb->cpu.cycles += 646 >> 1;
 }
 
 bool GB_is_render_layer_enabled(const struct GB_Core* gb, enum GB_RenderLayerConfig want) {
