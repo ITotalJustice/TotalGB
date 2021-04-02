@@ -214,6 +214,15 @@ auto App::OnKeyEvent(const SDL_KeyboardEvent& e) -> void {
         case SDLK_3:
             GB_set_render_palette_layer_config(this->emu_instances[0].GetGB(), GB_RENDER_LAYER_CONFIG_OBJ);
             break;
+
+    // these are for savestates
+        case SDLK_F1:
+            this->emu_instances[0].SaveState();
+            break;
+
+        case SDLK_F2:
+            this->emu_instances[0].LoadState();
+            break;
     }
 }
 

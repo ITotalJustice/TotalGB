@@ -32,11 +32,9 @@ int GB_savestate(const struct GB_Core* gb, struct GB_State* state);
 int GB_loadstate(struct GB_Core* gb, const struct GB_State* state);
 
 // like save/loadstate but does not fill out the header.
-// setting swap_endian=true will swap the endian if the system is NOT little-endian.
-// if swap_endian=false or the system is little-endian, it is not swapped.
 // this is to be used if creating a rewind buffer as endianess and headers
 // are not needed.
-int GB_savestate2(const struct GB_Core* gb, struct GB_CoreState* state, bool swap_endian);
+int GB_savestate2(const struct GB_Core* gb, struct GB_CoreState* state);
 int GB_loadstate2(struct GB_Core* gb, const struct GB_CoreState* state);
 
 // int GB_set_colour_mode(struct GB_Core* gb, enum GB_ColourMode mode);

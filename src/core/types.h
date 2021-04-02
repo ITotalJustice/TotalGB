@@ -468,6 +468,7 @@ struct GB_Cart {
 	enum GB_RtcMappedReg rtc_mapped_reg;
 	struct GB_Rtc rtc;
 	uint8_t internal_rtc_counter;
+
 	bool bank_mode : 1;
 	bool ram_enabled : 1;
 	bool in_ram : 1;
@@ -729,14 +730,18 @@ struct GB_Core {
 // however *most* games do have ram, and fixing the size removes the
 // need to allocate and simplifies savestate / rewinding *a lot*.
 struct GB_CartState {
-	uint16_t rom_bank;
-	uint16_t ram_bank;
 	uint8_t ram[0x10000];
+
+	uint16_t rom_bank;
+	uint8_t rom_bank_lo;
+	uint8_t rom_bank_hi;
+
+	uint8_t ram_bank;
+
+	enum GB_RtcMappedReg rtc_mapped_reg;
 	struct GB_Rtc rtc;
-	// NOTE: these should probably be u8 as the bool
-	// might be saved differently across platform!
-	// this is only needed if i want to support loading
-	// savstates across platforms..likely i do not.
+	uint8_t internal_rtc_counter;
+
 	bool bank_mode : 1;
 	bool ram_enabled : 1;
 	bool in_ram : 1;
@@ -748,7 +753,9 @@ struct GB_CoreState {
 	uint8_t wram[8][0x1000]; // extra 6 banks in gbc
 	struct GB_Cpu cpu;
 	struct GB_Ppu ppu;
+	struct GB_Apu apu;
 	struct GB_Timer timer;
+	struct GB_Joypad joypad;
 	struct GB_CartState cart;
 };
 

@@ -558,7 +558,7 @@ int GB_savestate(const struct GB_Core* gb, struct GB_State* state) {
 	}
 
 	memcpy(&state->header, &STATE_HEADER, sizeof(state->header));
-	return GB_savestate2(gb, &state->core, true);
+	return GB_savestate2(gb, &state->core);
 }
 
 int GB_loadstate(struct GB_Core* gb, const struct GB_State* state) {
@@ -576,26 +576,34 @@ int GB_loadstate(struct GB_Core* gb, const struct GB_State* state) {
 	return GB_loadstate2(gb, &state->core);
 }
 
-int GB_savestate2(const struct GB_Core* gb, struct GB_CoreState* state, bool swap_endian) {
+int GB_savestate2(const struct GB_Core* gb, struct GB_CoreState* state) {
 	if (!gb || !state) {
 		GB_throw_error(gb, GB_ERROR_DATA_TYPE_NULL_PARAM, __func__);
 		return -1;
 	}
 
-	GB_UNUSED(swap_endian);
-
-	memcpy(state->io, gb->io, sizeof(state->io));
-	memcpy(state->hram, gb->hram, sizeof(state->hram));
-	memcpy(state->wram, gb->wram, sizeof(state->wram));
+	memcpy(&state->io, &gb->io, sizeof(state->io));
+	memcpy(&state->hram, &gb->hram, sizeof(state->hram));
+	memcpy(&state->wram, &gb->wram, sizeof(state->wram));
 	memcpy(&state->cpu, &gb->cpu, sizeof(state->cpu));
 	memcpy(&state->ppu, &gb->ppu, sizeof(state->ppu));
+	memcpy(&state->apu, &gb->apu, sizeof(state->apu));
 	memcpy(&state->timer, &gb->timer, sizeof(state->timer));
+	memcpy(&state->joypad, &gb->joypad, sizeof(state->joypad));
 
 	// todo: make this part of normal struct so that i can just memcpy
 	memcpy(&state->cart.rom_bank, &gb->cart.rom_bank, sizeof(state->cart.rom_bank));
 	memcpy(&state->cart.ram_bank, &gb->cart.ram_bank, sizeof(state->cart.ram_bank));
-	memcpy(state->cart.ram, gb->cart.ram, sizeof(state->cart.ram));
+	memcpy(&state->cart.ram, &gb->cart.ram, sizeof(state->cart.ram));
 	memcpy(&state->cart.rtc, &gb->cart.rtc, sizeof(state->cart.rtc));
+	
+	state->cart.rom_bank = gb->cart.rom_bank;
+	state->cart.rom_bank_lo = gb->cart.rom_bank_lo;
+	state->cart.rom_bank_hi = gb->cart.rom_bank_hi;
+	state->cart.ram_bank = gb->cart.ram_bank;
+	state->cart.rtc_mapped_reg = gb->cart.rtc_mapped_reg;
+	state->cart.rtc = gb->cart.rtc;
+	state->cart.internal_rtc_counter = gb->cart.internal_rtc_counter;
 	state->cart.bank_mode = gb->cart.bank_mode;
 	state->cart.ram_enabled = gb->cart.ram_enabled;
 	state->cart.in_ram = gb->cart.in_ram;
@@ -609,21 +617,31 @@ int GB_loadstate2(struct GB_Core* gb, const struct GB_CoreState* state) {
 		return -1;
 	}
 
-	memcpy(gb->io, state->io, sizeof(gb->io));
-	memcpy(gb->hram, state->hram, sizeof(gb->hram));
-	memcpy(gb->wram, state->wram, sizeof(gb->wram));
+	memcpy(&gb->io, &state->io, sizeof(gb->io));
+	memcpy(&gb->hram, &state->hram, sizeof(gb->hram));
+	memcpy(&gb->wram, &state->wram, sizeof(gb->wram));
 	memcpy(&gb->cpu, &state->cpu, sizeof(gb->cpu));
 	memcpy(&gb->ppu, &state->ppu, sizeof(gb->ppu));
+	memcpy(&gb->apu, &state->apu, sizeof(gb->apu));
 	memcpy(&gb->timer, &state->timer, sizeof(gb->timer));
+	memcpy(&gb->joypad, &state->joypad, sizeof(gb->joypad));
 
 	// setup cart
 	memcpy(&gb->cart.rom_bank, &state->cart.rom_bank, sizeof(state->cart.rom_bank));
 	memcpy(&gb->cart.ram_bank, &state->cart.ram_bank, sizeof(state->cart.ram_bank));
-	memcpy(gb->cart.ram, state->cart.ram, sizeof(state->cart.ram));
+	memcpy(&gb->cart.ram, &state->cart.ram, sizeof(state->cart.ram));
 	memcpy(&gb->cart.rtc, &state->cart.rtc, sizeof(state->cart.rtc));
+	gb->cart.rom_bank = state->cart.rom_bank;
+	gb->cart.rom_bank_lo = state->cart.rom_bank_lo;
+	gb->cart.rom_bank_hi = state->cart.rom_bank_hi;
+	gb->cart.ram_bank = state->cart.ram_bank;
+	gb->cart.rtc_mapped_reg = state->cart.rtc_mapped_reg;
+	gb->cart.rtc = state->cart.rtc;
+	gb->cart.internal_rtc_counter = state->cart.internal_rtc_counter;
 	gb->cart.bank_mode = state->cart.bank_mode;
 	gb->cart.ram_enabled = state->cart.ram_enabled;
 	gb->cart.in_ram = state->cart.in_ram;
+
 
 	// we need to reload mmaps
 	GB_setup_mmap(gb);

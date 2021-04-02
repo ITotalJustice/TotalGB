@@ -64,6 +64,9 @@ struct Instance {
     auto SaveGame(const std::string& path) -> void;
     auto LoadSave(const std::string& path) -> void;
 
+    auto SaveState() -> void;
+    auto LoadState() -> void;
+
     auto GetGB() -> GB_Core*;
 
     auto OnAudioCallback(struct GB_ApuCallbackData* data) -> void;

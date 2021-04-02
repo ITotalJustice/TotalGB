@@ -168,6 +168,36 @@ auto Instance::OnErrorCallback(struct GB_ErrorData* data) -> void {
     }
 }
 
+auto Instance::SaveState() -> void {
+    if (!this->HasRom()) {
+        return;
+    }
+
+    auto state_path = util::getStatePathFromString(this->rom_path);
+
+    io::Cfile file{state_path, "wb"};
+    if (file.good()) {
+        auto state = std::make_unique<struct GB_CoreState>();
+        GB_savestate2(this->GetGB(), state.get());
+        file.write((u8*)state.get(), sizeof(struct GB_CoreState));
+    }
+}
+
+auto Instance::LoadState() -> void {
+    if (!this->HasRom()) {
+        return;
+    }
+
+    auto state_path = util::getStatePathFromString(this->rom_path);
+
+    io::Cfile file{state_path, "rb"};
+    if (file.good()) {
+        auto state = std::make_unique<struct GB_CoreState>();
+        file.read((u8*)state.get(), sizeof(struct GB_CoreState));
+        GB_loadstate2(this->GetGB(), state.get());
+    }
+}
+
 auto Instance::LoadRom(const std::string& path) -> bool {
     // if we have a rom alread loaded, try and save the game
     // first before exiting...
