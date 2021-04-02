@@ -64,20 +64,31 @@ void clock_square1_vol(struct GB_Core* gb) {
     }
 }
 
+static uint16_t get_new_sweep_freq(const struct GB_Core* gb) {
+    const uint16_t new_freq = SQUARE1_CHANNEL.freq_shadow_register >> IO_NR10.shift;
+        
+    if (IO_NR10.negate) {
+        return SQUARE1_CHANNEL.freq_shadow_register - new_freq;
+    } else {
+        return SQUARE1_CHANNEL.freq_shadow_register + new_freq;
+    }
+}
+
 void do_freq_sweep_calc(struct GB_Core* gb) {
     if (SQUARE1_CHANNEL.internal_enable_flag && IO_NR10.sweep_period) {
-        uint16_t new_freq = SQUARE1_CHANNEL.freq_shadow_register >> IO_NR10.shift;
-        
-        if (IO_NR10.negate) {
-            new_freq = SQUARE1_CHANNEL.freq_shadow_register + -new_freq;
-        } else {
-            new_freq = SQUARE1_CHANNEL.freq_shadow_register + new_freq;
-        }
+        const uint16_t new_freq = get_new_sweep_freq(gb);
 
         if (new_freq <= 2047) {
             SQUARE1_CHANNEL.freq_shadow_register = new_freq;
             IO_NR13.freq_lsb = new_freq & 0xFF;
             IO_NR14.freq_msb = new_freq >> 8;
+
+            // for some reason, a second overflow check is performed...
+            if (get_new_sweep_freq(gb) > 2047) {
+                // overflow...
+                square1_disable(gb);
+            }
+
         } else { // overflow...
             square1_disable(gb);
         }
@@ -85,6 +96,11 @@ void do_freq_sweep_calc(struct GB_Core* gb) {
 }
 
 void on_square1_sweep(struct GB_Core* gb) {
+    // first check if sweep is enabled
+    if (!SQUARE1_CHANNEL.internal_enable_flag || !is_square1_enabled(gb)) {
+        return;
+    }
+
     // decrement the counter, reload after
     --SQUARE1_CHANNEL.sweep_timer;
 
