@@ -124,7 +124,7 @@ static void render_scanline_obj(struct GB_Core* gb) {
     uint16_t* pixels = gb->ppu.pixles[scanline];
 
     struct GB_Sprite sprites[40];
-    memcpy(sprites, gb->ppu.sprites, sizeof(struct GB_Sprite) * 40);
+    memcpy(sprites, gb->ppu.oam, sizeof(struct GB_Sprite) * 40);
     qsort(sprites, 40, sizeof(struct GB_Sprite), sprite_comp);
 
     for (uint8_t i = 0, sprite_total = 0; i < 40 && sprite_total < 10; ++i) {

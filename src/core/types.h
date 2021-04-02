@@ -415,22 +415,12 @@ struct GB_Cpu {
 struct GB_Ppu {
 	int16_t next_cycles;
 	uint16_t pixles[GB_SCREEN_HEIGHT][GB_SCREEN_WIDTH]; // h*w
-	union {
-		struct GB_BgAttributes bg_attributes[2][0x2000];
-		uint8_t vram[2][0x2000]; // 2 banks of 8kb
-	};
-	union {
-		struct GB_Sprite sprites[40]; // will remove if unions cause problems.
-		uint8_t oam[0xA0]; // sprite mem
-	};
-	union {
-		struct GB_Colour bg_colours_bgr555[8][4];
-    	uint16_t bg_colours[8][4]; // calculate the colours from the palette once.
-	};
-	union {
-		struct GB_Colour obj_colours_bgr555[8][4];
-    	uint16_t obj_colours[8][4];
-	};
+	
+	uint8_t vram[2][0x2000]; // 2 banks of 8kb
+	uint8_t oam[0xA0]; // sprite mem
+
+	uint16_t bg_colours[8][4]; // calculate the colours from the palette once.
+	uint16_t obj_colours[8][4];
 
 	// these are set when a hdma occurs (not a DMA or GDMA)
 	uint16_t hdma_src_addr;

@@ -193,7 +193,7 @@ static void render_scanline_bg(struct GB_Core* gb, struct PrioBuf* prio_buffer) 
 
     // array maps
     const uint8_t* vram_map = &gb->ppu.vram[0][(GB_get_bg_map_select(gb) + (tile_y << 5)) & 0x1FFF];
-    const struct GB_BgAttributes* attribute_map = &gb->ppu.bg_attributes[1][(GB_get_bg_map_select(gb) + (tile_y << 5)) & 0x1FFF];
+    const struct GB_BgAttributes* attribute_map = (struct GB_BgAttributes*)&gb->ppu.vram[1][(GB_get_bg_map_select(gb) + (tile_y << 5)) & 0x1FFF];
     uint16_t* pixels = gb->ppu.pixles[scanline];
 
     for (uint8_t tile_x = 0; tile_x <= 20; ++tile_x) {
@@ -245,7 +245,7 @@ static void render_scanline_win(struct GB_Core* gb, struct PrioBuf* prio_buffer)
     bool did_draw = false;
 
     const uint8_t *vram_map = &gb->ppu.vram[0][(GB_get_win_map_select(gb) + (tile_y << 5)) & 0x1FFF];
-    const struct GB_BgAttributes* attribute_map = &gb->ppu.bg_attributes[1][(GB_get_win_map_select(gb) + (tile_y << 5)) & 0x1FFF];
+    const struct GB_BgAttributes* attribute_map = (struct GB_BgAttributes*)&gb->ppu.vram[1][(GB_get_win_map_select(gb) + (tile_y << 5)) & 0x1FFF];
     uint16_t* pixels = gb->ppu.pixles[scanline];
 
     for (uint8_t tile_x = 0; tile_x <= base_tile_x; ++tile_x) {
@@ -291,8 +291,13 @@ static void render_scanline_win(struct GB_Core* gb, struct PrioBuf* prio_buffer)
 static void render_scanline_obj(struct GB_Core* gb, const struct PrioBuf* prio_buffer) {
     const uint8_t scanline = IO_LY;
     const uint8_t sprite_size = GB_get_sprite_size(gb);
+
+    // check if the bg always has prio over obj
     const bool bg_prio = (IO_LCDC & 0x1) > 0;
+
+    // 
     uint16_t* pixels = gb->ppu.pixles[scanline];
+    const struct GB_Sprite* sprites = (const struct GB_Sprite*)gb->ppu.oam;
 
     // gbc uses oam prio rather than x-pos
     // so we need to keep track if a obj has already
@@ -300,9 +305,8 @@ static void render_scanline_obj(struct GB_Core* gb, const struct PrioBuf* prio_b
     bool oam_priority[GB_SCREEN_WIDTH] = {0};
 
     for (uint8_t i = 0, sprite_total = 0; i < 40 && sprite_total < 10; ++i) {
-        const struct GB_Sprite sprite = gb->ppu.sprites[i];
-        const int16_t spy = (int16_t)sprite.y - 16;
-        const int16_t spx = (int16_t)sprite.x - 8;
+        const int16_t spy = (int16_t)sprites[i].y - 16;
+        const int16_t spx = (int16_t)sprites[i].x - 8;
 
         if (scanline >= spy && scanline < (spy + (sprite_size))) {
             ++sprite_total;
@@ -310,15 +314,15 @@ static void render_scanline_obj(struct GB_Core* gb, const struct PrioBuf* prio_b
                 continue;
             }
 
-            const uint8_t sprite_line = sprite.flag.yflip ? sprite_size - 1 - (scanline - spy) : scanline - spy;
+            const uint8_t sprite_line = sprites[i].flag.yflip ? sprite_size - 1 - (scanline - spy) : scanline - spy;
             // when in 8x16 size, bit-0 is ignored of the tile_index
-            const uint8_t tile_index = sprite_size == 16 ? sprite.num & 0xFE : sprite.num;
+            const uint8_t tile_index = sprite_size == 16 ? sprites[i].num & 0xFE : sprites[i].num;
             const uint16_t offset = (((sprite_line) << 1) + (tile_index << 4));
 
-            const uint8_t byte_a = GB_vram_read(gb, offset + 0, sprite.flag.bank);
-            const uint8_t byte_b = GB_vram_read(gb, offset + 1, sprite.flag.bank);
+            const uint8_t byte_a = GB_vram_read(gb, offset + 0, sprites[i].flag.bank);
+            const uint8_t byte_b = GB_vram_read(gb, offset + 1, sprites[i].flag.bank);
 
-            const uint8_t* bit = sprite.flag.xflip ? PIXEL_BIT_GROW : PIXEL_BIT_SHRINK;
+            const uint8_t* bit = sprites[i].flag.xflip ? PIXEL_BIT_GROW : PIXEL_BIT_SHRINK;
 
             for (uint8_t x = 0; x < 8; ++x) {
                 // check if this has already been written to
@@ -347,7 +351,7 @@ static void render_scanline_obj(struct GB_Core* gb, const struct PrioBuf* prio_b
 
                     // this tests if bg col 1-3 has priority,
                     // then checks if the col is non-zero, if yes, skip
-                    if (sprite.flag.priority && prio_buffer->pal[spx + x] != 0) {
+                    if (sprites[i].flag.priority && prio_buffer->pal[spx + x] != 0) {
                         continue;
                     }
                 }
@@ -357,7 +361,7 @@ static void render_scanline_obj(struct GB_Core* gb, const struct PrioBuf* prio_b
                 oam_priority[spx + x] = true;
 
                 // write the pixel (finally!)
-                pixels[spx + x] = gb->ppu.obj_colours[sprite.flag.pal_gbc][pixel];
+                pixels[spx + x] = gb->ppu.obj_colours[sprites[i].flag.pal_gbc][pixel];
             }
         }
     }
