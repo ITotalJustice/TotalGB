@@ -13,8 +13,10 @@
 // if it does, then it checks this buffer for a 1
 // at the same xpos, if its 1, rendering that pixel is skipped.
 struct PrioBuf {
-    bool d[GB_SCREEN_WIDTH];
-    uint8_t pal[GB_SCREEN_WIDTH];
+    // 1 = prio, 0 = no prio
+    bool prio[GB_SCREEN_WIDTH];
+    // 0-3
+    uint8_t colour_id[GB_SCREEN_WIDTH];
 };
 
 
@@ -225,8 +227,8 @@ static void render_scanline_bg(struct GB_Core* gb, struct PrioBuf* prio_buffer) 
             
             // set priority
             if (attributes.bank == 0) {
-                prio_buffer->d[pixel_x] = attributes.priority;
-                prio_buffer->pal[pixel_x] = pixel;
+                prio_buffer->prio[pixel_x] = attributes.priority;
+                prio_buffer->colour_id[pixel_x] = pixel;
             }
 
             pixels[pixel_x] = gb->ppu.bg_colours[attributes.pal][pixel];
@@ -277,8 +279,8 @@ static void render_scanline_win(struct GB_Core* gb, struct PrioBuf* prio_buffer)
             
             // set priority
             if (attributes.bank == 0) {
-                prio_buffer->d[pixel_x] = attributes.priority;
-                prio_buffer->pal[pixel_x] = pixel;
+                prio_buffer->prio[pixel_x] = attributes.priority;
+                prio_buffer->colour_id[pixel_x] = pixel;
             }
 
             pixels[pixel_x] = gb->ppu.bg_colours[attributes.pal][pixel];
@@ -345,13 +347,13 @@ static void render_scanline_obj(struct GB_Core* gb, const struct PrioBuf* prio_b
 
                 if (bg_prio == 1) {
                     // this tests if bg always has priority over obj
-                    if (prio_buffer->d[spx + x] && prio_buffer->pal[spx + x] != 0) {
+                    if (prio_buffer->prio[spx + x] && prio_buffer->colour_id[spx + x] != 0) {
                         continue;
                     }
 
                     // this tests if bg col 1-3 has priority,
                     // then checks if the col is non-zero, if yes, skip
-                    if (sprites[i].flag.priority && prio_buffer->pal[spx + x] != 0) {
+                    if (sprites[i].flag.priority && prio_buffer->colour_id[spx + x] != 0) {
                         continue;
                     }
                 }
