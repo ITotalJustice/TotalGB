@@ -14,6 +14,7 @@
 // at the same xpos, if its 1, rendering that pixel is skipped.
 struct PrioBuf {
     bool d[GB_SCREEN_WIDTH];
+    uint8_t pal[GB_SCREEN_WIDTH];
 };
 
 
@@ -225,6 +226,7 @@ static void render_scanline_bg(struct GB_Core* gb, struct PrioBuf* prio_buffer) 
             // set priority
             if (attributes.bank == 0) {
                 prio_buffer->d[pixel_x] = attributes.priority;
+                prio_buffer->pal[pixel_x] = pixel;
             }
 
             pixels[pixel_x] = gb->ppu.bg_colours[attributes.pal][pixel];
@@ -276,6 +278,7 @@ static void render_scanline_win(struct GB_Core* gb, struct PrioBuf* prio_buffer)
             // set priority
             if (attributes.bank == 0) {
                 prio_buffer->d[pixel_x] = attributes.priority;
+                prio_buffer->pal[pixel_x] = pixel;
             }
 
             pixels[pixel_x] = gb->ppu.bg_colours[attributes.pal][pixel];
@@ -289,7 +292,6 @@ static void render_scanline_obj(struct GB_Core* gb, const struct PrioBuf* prio_b
     const uint8_t scanline = IO_LY;
     const uint8_t sprite_size = GB_get_sprite_size(gb);
     const bool bg_prio = (IO_LCDC & 0x1) > 0;
-    const uint16_t bg_zero = gb->ppu.bg_colours[0][0];
     uint16_t* pixels = gb->ppu.pixles[scanline];
 
     // gbc uses oam prio rather than x-pos
@@ -339,13 +341,13 @@ static void render_scanline_obj(struct GB_Core* gb, const struct PrioBuf* prio_b
 
                 if (bg_prio == 1) {
                     // this tests if bg always has priority over obj
-                    if (prio_buffer->d[spx + x] == 1) {
+                    if (prio_buffer->d[spx + x] && prio_buffer->pal[spx + x] != 0) {
                         continue;
                     }
 
                     // this tests if bg col 1-3 has priority,
                     // then checks if the col is non-zero, if yes, skip
-                    if (sprite.flag.priority && bg_zero != pixels[spx + x]) {
+                    if (sprite.flag.priority && prio_buffer->pal[spx + x] != 0) {
                         continue;
                     }
                 }
