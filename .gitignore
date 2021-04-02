@@ -49,3 +49,8 @@ msvc/tempboy/Debug
 msvc/tempboy/x64
 *.tlog
 *.log
+
+# wasm
+output.html
+output.wasm
+output.js

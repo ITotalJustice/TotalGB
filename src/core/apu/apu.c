@@ -147,56 +147,61 @@ static void sample_channels(struct GB_Core* gb) {
 
 void GB_apu_run(struct GB_Core* gb, uint16_t cycles) {
     // todo: handle if the apu is disabled!
-    if (IO_NR52.power == 0) {
+    if (IO_NR52.power != 0) {
         // still tick samples but fill empty
         // nothing else should tick i dont think?
         // not sure if when apu is disabled, do all regs reset?
         // what happens when apu is re-enabled? do they all trigger?
-        return;
-    }
+        SQUARE1_CHANNEL.timer -= cycles;
+        while (SQUARE1_CHANNEL.timer <= 0) {
+            SQUARE1_CHANNEL.timer += get_square1_freq(gb);
+            ++SQUARE1_CHANNEL.duty_index;
+        }
 
-    SQUARE1_CHANNEL.timer -= cycles;
-    if (SQUARE1_CHANNEL.timer <= 0) {
-        SQUARE1_CHANNEL.timer += get_square1_freq(gb);
-        ++SQUARE1_CHANNEL.duty_index;
-    }
+        SQUARE2_CHANNEL.timer -= cycles;
+        while (SQUARE2_CHANNEL.timer <= 0) {
+            SQUARE2_CHANNEL.timer += get_square2_freq(gb);
+            ++SQUARE2_CHANNEL.duty_index;
+        }
 
-    SQUARE2_CHANNEL.timer -= cycles;
-    if (SQUARE2_CHANNEL.timer <= 0) {
-        SQUARE2_CHANNEL.timer += get_square2_freq(gb);
-        ++SQUARE2_CHANNEL.duty_index;
-    }
+        WAVE_CHANNEL.timer -= cycles;
+        while (WAVE_CHANNEL.timer <= 0) {
+            WAVE_CHANNEL.timer += get_wave_freq(gb);
+            advance_wave_position_counter(gb);
+        }
 
-    WAVE_CHANNEL.timer -= cycles;
-    if (WAVE_CHANNEL.timer <= 0) {
-        WAVE_CHANNEL.timer += get_wave_freq(gb);
-        advance_wave_position_counter(gb);
-    }
+        NOISE_CHANNEL.timer -= cycles;
+        while (NOISE_CHANNEL.timer <= 0) {
+            NOISE_CHANNEL.timer += get_noise_freq(gb);
+            step_noise_lfsr(gb);
+        }
 
-    NOISE_CHANNEL.timer -= cycles;
-    if (NOISE_CHANNEL.timer <= 0) {
-        NOISE_CHANNEL.timer += get_noise_freq(gb);
-        step_noise_lfsr(gb);
-    }
+        // check if we need to tick the frame sequencer!
+        gb->apu.next_frame_sequencer_cycles += cycles;
+        while (gb->apu.next_frame_sequencer_cycles >= FRAME_SEQUENCER_STEP_RATE) {
+            gb->apu.next_frame_sequencer_cycles -= FRAME_SEQUENCER_STEP_RATE;
+            step_frame_sequencer(gb);
+        }
 
-    // check if we need to tick the frame sequencer!
-    gb->apu.next_frame_sequencer_cycles += cycles;
-    if (gb->apu.next_frame_sequencer_cycles >= FRAME_SEQUENCER_STEP_RATE) {
-        gb->apu.next_frame_sequencer_cycles -= FRAME_SEQUENCER_STEP_RATE;
-        step_frame_sequencer(gb);
+        // see if it's time to create a new sample!
+        gb->apu.next_sample_cycles += cycles;
+        while (gb->apu.next_sample_cycles >= SAMPLE_RATE) {
+            gb->apu.next_sample_cycles -= SAMPLE_RATE;
+            sample_channels(gb);
+        }
     }
+    
+    else {
+        // we should still sample even if the apu is disabled
+        // in this case, the samples are filled with 0.
 
-#ifdef GB_SDL_AUDIO_CALLBACK_STREAM
-    // sample channels as fast as possible
-    for (int i = 0; i < cycles; i+= 4) {
-        sample_channels(gb);
+        // this can slightly optimised by just filling that sample with
+        // a fixed silence value, rather than fake-creating samples for
+        // no reason.
+        gb->apu.next_sample_cycles += cycles;
+        while (gb->apu.next_sample_cycles >= SAMPLE_RATE) {
+            gb->apu.next_sample_cycles -= SAMPLE_RATE;
+            sample_channels(gb);
+        }
     }
-#else
-    // see if it's time to create a new sample!
-    gb->apu.next_sample_cycles += cycles;
-    if (gb->apu.next_sample_cycles >= SAMPLE_RATE) {
-        gb->apu.next_sample_cycles -= SAMPLE_RATE;
-        sample_channels(gb);
-    }
-#endif // GB_SDL_AUDIO_CALLBACK_STREAM
 }

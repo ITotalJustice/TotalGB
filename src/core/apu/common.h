@@ -14,7 +14,11 @@ extern "C" {
 #define NOISE_CHANNEL gb->apu.noise
 #define CONTROL_CHANNEL gb->apu.control
 
+#ifdef GB_SDL_AUDIO_CALLBACK_STREAM
+#define SAMPLE_RATE 4
+#else
 #define SAMPLE_RATE (4213440 / 48000)
+#endif
 
 // clocked at 512hz
 #define FRAME_SEQUENCER_CLOCK 512
