@@ -71,8 +71,8 @@ void on_wave_trigger(struct GB_Core* gb) {
 
     // reset position counter
     WAVE_CHANNEL.position_counter = 0;
-    // i am not sure if the sample buffer is reset here...
-    // WAVE_CHANNEL.sample_buffer = IO_WAVE_TABLE[0];
+    // wave sample is NOT reloaded
+    // SOURCE: https://gbdev.gg8.se/wiki/articles/Gameboy_sound_hardware#Obscure_Behavior
 
     WAVE_CHANNEL.timer = get_wave_freq(gb);
     

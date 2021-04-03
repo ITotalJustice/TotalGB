@@ -120,10 +120,14 @@ void on_square1_trigger(struct GB_Core* gb) {
     
     SQUARE1_CHANNEL.disable_env = false;
     SQUARE1_CHANNEL.volume_timer = PERIOD_TABLE[IO_NR12.period];
+    
     // reload the volume
     SQUARE1_CHANNEL.volume = IO_NR12.starting_vol;
-    // reload the timer with freq
-    SQUARE1_CHANNEL.timer = get_square1_freq(gb);
+    
+    // when a square channel is triggered, it's lower 2-bits are not modified!
+    // SOURCE: https://gbdev.gg8.se/wiki/articles/Gameboy_sound_hardware#Obscure_Behavior
+    SQUARE1_CHANNEL.timer = (SQUARE1_CHANNEL.timer & 0x3) | (get_square1_freq(gb) & ~(0x3));
+
     // reload sweep timer with period
     SQUARE1_CHANNEL.sweep_timer = PERIOD_TABLE[IO_NR10.sweep_period];
     // the freq is loaded into the shadow_freq_reg

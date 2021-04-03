@@ -75,7 +75,10 @@ void on_square2_trigger(struct GB_Core* gb) {
     SQUARE2_CHANNEL.volume_timer = PERIOD_TABLE[IO_NR22.period];
     // reload the volume
     SQUARE2_CHANNEL.volume = IO_NR22.starting_vol;
-    SQUARE2_CHANNEL.timer = get_square2_freq(gb);
+
+    // when a square channel is triggered, it's lower 2-bits are not modified!
+    // SOURCE: https://gbdev.gg8.se/wiki/articles/Gameboy_sound_hardware#Obscure_Behavior
+    SQUARE2_CHANNEL.timer = (SQUARE2_CHANNEL.timer & 0x3) | (get_square2_freq(gb) & ~(0x3));
     
     if (is_square2_dac_enabled(gb) == false) {
         square2_disable(gb);
