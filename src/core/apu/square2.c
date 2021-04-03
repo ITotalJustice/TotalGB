@@ -68,7 +68,7 @@ void on_square2_trigger(struct GB_Core* gb) {
     square2_enable(gb);
 
     if (SQUARE2_CHANNEL.length_counter == 0) {
-        SQUARE2_CHANNEL.length_counter = 64;// - SQUARE2_CHANNEL.nr21.length_load;
+        SQUARE2_CHANNEL.length_counter = 64;
     }
 
     SQUARE2_CHANNEL.disable_env = false;

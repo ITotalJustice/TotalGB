@@ -170,10 +170,13 @@ void GB_apu_run(struct GB_Core* gb, uint16_t cycles) {
             advance_wave_position_counter(gb);
         }
 
-        NOISE_CHANNEL.timer -= cycles;
-        while (NOISE_CHANNEL.timer <= 0) {
-            NOISE_CHANNEL.timer += get_noise_freq(gb);
-            step_noise_lfsr(gb);
+        // NOTE: noise lfsr is ONLY clocked if clock shift is not 14 or 15
+        if (IO_NR43.clock_shift != 14 && IO_NR43.clock_shift != 15) {
+            NOISE_CHANNEL.timer -= cycles;
+            while (NOISE_CHANNEL.timer <= 0) {
+                NOISE_CHANNEL.timer += get_noise_freq(gb);
+                step_noise_lfsr(gb);
+            }
         }
 
         // check if we need to tick the frame sequencer!

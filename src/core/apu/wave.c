@@ -65,13 +65,14 @@ void advance_wave_position_counter(struct GB_Core* gb) {
 void on_wave_trigger(struct GB_Core* gb) {
     wave_enable(gb);
 
-    if (WAVE_CHANNEL.length_counter == 0 && WAVE_CHANNEL.nr34.length_enable) {
+    if (WAVE_CHANNEL.length_counter == 0) {
         WAVE_CHANNEL.length_counter = 256;
     }
 
     // reset position counter
     WAVE_CHANNEL.position_counter = 0;
-    WAVE_CHANNEL.sample_buffer = IO_WAVE_TABLE[0];
+    // i am not sure if the sample buffer is reset here...
+    // WAVE_CHANNEL.sample_buffer = IO_WAVE_TABLE[0];
 
     WAVE_CHANNEL.timer = get_wave_freq(gb);
     

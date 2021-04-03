@@ -78,7 +78,6 @@ void clock_noise_vol(struct GB_Core* gb) {
 }
 
 void step_noise_lfsr(struct GB_Core* gb) {
-    // this is explicit...
     const uint8_t bit0 = NOISE_CHANNEL.LFSR & 0x1;
     const uint8_t bit1 = (NOISE_CHANNEL.LFSR >> 1) & 0x1;
     const uint8_t result = bit1 ^ bit0;

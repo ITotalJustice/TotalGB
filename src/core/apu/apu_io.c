@@ -144,11 +144,7 @@ void GB_apu_iowrite(struct GB_Core* gb, const uint16_t addr, const uint8_t value
 
 		case 0x1B:
 			IO_NR31.length_load = value;
-            if (WAVE_CHANNEL.nr34.length_enable) {
-                WAVE_CHANNEL.length_counter = 256 - IO_NR31.length_load;
-            } else {
-                WAVE_CHANNEL.length_counter = 256;
-            }
+			WAVE_CHANNEL.length_counter = 256 - IO_NR31.length_load;
 			break;
 
 		case 0x1C:
