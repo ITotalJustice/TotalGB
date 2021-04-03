@@ -1,4 +1,5 @@
 #include "core/apu/common.h"
+#include "core/apu/apu.h"
 #include "core/internal.h"
 
 
@@ -100,11 +101,20 @@ void on_noise_trigger(struct GB_Core* gb) {
     noise_enable(gb);
 
     if (NOISE_CHANNEL.length_counter == 0) {
-        NOISE_CHANNEL.length_counter = 64;
+        if (IO_NR44.length_enable && is_next_frame_suqencer_step_not_len(gb)) {
+            NOISE_CHANNEL.length_counter = 63;
+        } else {
+            NOISE_CHANNEL.length_counter = 64;
+        }
     }
     
     NOISE_CHANNEL.disable_env = false;
+    
     NOISE_CHANNEL.volume_timer = PERIOD_TABLE[IO_NR42.period];
+    if (is_next_frame_suqencer_step_vol(gb)) {
+        NOISE_CHANNEL.volume_timer++;
+    }
+
     // reload the volume
     NOISE_CHANNEL.volume = IO_NR42.starting_vol;
     // set all bits of the lfsr to 1

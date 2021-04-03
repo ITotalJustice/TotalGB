@@ -36,6 +36,18 @@ static inline void clock_vol(struct GB_Core* gb) {
     clock_noise_vol(gb);
 }
 
+// this is used when a channel is triggered
+bool is_next_frame_suqencer_step_not_len(const struct GB_Core* gb) {
+    // check if the current counter is the len clock, the next one won't be!
+    return gb->apu.frame_sequencer_counter == 0 || gb->apu.frame_sequencer_counter == 2 || gb->apu.frame_sequencer_counter == 4 || gb->apu.frame_sequencer_counter == 6;
+}
+
+// this is used when channels 1,2,4 are triggered
+bool is_next_frame_suqencer_step_vol(const struct GB_Core* gb) {
+    // check if the current counter is the len clock, the next one won't be!
+    return gb->apu.frame_sequencer_counter == 6;
+}
+
 // this runs at 512hz
 static void step_frame_sequencer(struct GB_Core* gb) {
     switch (gb->apu.frame_sequencer_counter) {

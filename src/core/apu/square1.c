@@ -1,4 +1,5 @@
 #include "core/apu/common.h"
+#include "core/apu/apu.h"
 #include "core/internal.h"
 
 
@@ -115,11 +116,21 @@ void on_square1_trigger(struct GB_Core* gb) {
     square1_enable(gb);
 
     if (SQUARE1_CHANNEL.length_counter == 0) {
-        SQUARE1_CHANNEL.length_counter = 64;
+        if (IO_NR14.length_enable && is_next_frame_suqencer_step_not_len(gb)) {
+            SQUARE1_CHANNEL.length_counter = 63;
+        } else {
+            SQUARE1_CHANNEL.length_counter = 64;
+        }
     }
     
     SQUARE1_CHANNEL.disable_env = false;
+    
     SQUARE1_CHANNEL.volume_timer = PERIOD_TABLE[IO_NR12.period];
+    // if the next frame sequence clocks the vol, then
+    // the timer is reloaded + 1.
+    if (is_next_frame_suqencer_step_vol(gb)) {
+        SQUARE1_CHANNEL.volume_timer++;
+    }
     
     // reload the volume
     SQUARE1_CHANNEL.volume = IO_NR12.starting_vol;

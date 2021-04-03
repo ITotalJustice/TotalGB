@@ -1,4 +1,5 @@
 #include "core/apu/common.h"
+#include "core/apu/apu.h"
 #include "core/internal.h"
 
 
@@ -68,11 +69,20 @@ void on_square2_trigger(struct GB_Core* gb) {
     square2_enable(gb);
 
     if (SQUARE2_CHANNEL.length_counter == 0) {
-        SQUARE2_CHANNEL.length_counter = 64;
+        if (IO_NR24.length_enable && is_next_frame_suqencer_step_not_len(gb)) {
+            SQUARE2_CHANNEL.length_counter = 63;
+        } else {
+            SQUARE2_CHANNEL.length_counter = 64;
+        }
     }
 
     SQUARE2_CHANNEL.disable_env = false;
+
     SQUARE2_CHANNEL.volume_timer = PERIOD_TABLE[IO_NR22.period];
+    if (is_next_frame_suqencer_step_vol(gb)) {
+        SQUARE2_CHANNEL.volume_timer++;
+    }
+    
     // reload the volume
     SQUARE2_CHANNEL.volume = IO_NR22.starting_vol;
 

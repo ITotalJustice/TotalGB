@@ -1,4 +1,5 @@
 #include "core/apu/common.h"
+#include "core/apu/apu.h"
 #include "core/internal.h"
 
 
@@ -66,7 +67,11 @@ void on_wave_trigger(struct GB_Core* gb) {
     wave_enable(gb);
 
     if (WAVE_CHANNEL.length_counter == 0) {
-        WAVE_CHANNEL.length_counter = 256;
+        if (IO_NR34.length_enable && is_next_frame_suqencer_step_not_len(gb)) {
+            WAVE_CHANNEL.length_counter = 255;
+        } else {
+            WAVE_CHANNEL.length_counter = 256;
+        }
     }
 
     // reset position counter

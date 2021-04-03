@@ -84,6 +84,8 @@ void clock_noise_vol(struct GB_Core* gb);
 void step_noise_lfsr(struct GB_Core* gb);
 void on_noise_trigger(struct GB_Core* gb);
 
+bool is_next_frame_suqencer_step_not_len(const struct GB_Core* gb);
+bool is_next_frame_suqencer_step_vol(const struct GB_Core* gb);
 
 #ifdef __cplusplus
 }
