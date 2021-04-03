@@ -810,12 +810,14 @@ static inline uint16_t GB_POP(struct GB_Core* gb) {
 #define SCF() do { SET_FLAGS_CHN(true, false, false); } while (0)
 #define CCF() do { SET_FLAGS_CHN(FLAG_C ^ 1, false, false); } while(0)
 
-#define HALT() do { \
-	gb->cpu.halt = true; \
-	if (gb->halt_cb != NULL) { \
-		gb->halt_cb(gb, gb->halt_cb_user_data); \
-	} \
-} while(0)
+// TODO: add halt bug, thunderbirds relies on it...
+static void HALT(struct GB_Core* gb) {
+	gb->cpu.halt = true;
+
+	if (gb->halt_cb != NULL) {
+		gb->halt_cb(gb, gb->halt_cb_user_data);
+	}
+}
 
 static void STOP(struct GB_Core* gb) {
 	if (GB_is_system_gbc(gb)) {
@@ -998,7 +1000,7 @@ static void GB_execute(struct GB_Core* gb) {
 
 		case 0x70: case 0x71: case 0x72: case 0x73: case 0x74: case 0x75: case 0x77: LD_HLa_r(); break;
 
-		case 0x76: HALT(); break;
+		case 0x76: HALT(gb); break;
 		case 0x7E: LD_A_HLa(); break;
 
 		case 0x80: case 0x81: case 0x82: case 0x83: case 0x84: case 0x85: case 0x87: ADD_r(); break;

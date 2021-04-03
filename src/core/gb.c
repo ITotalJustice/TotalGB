@@ -86,10 +86,6 @@ void GB_reset(struct GB_Core* gb) {
 	gb->cpu.halt = 0;
 	gb->cpu.ime = 0;
 	// CPU
-	GB_cpu_set_register(gb, GB_CPU_REGISTER_F, 0xB0);
-	GB_cpu_set_register_pair(gb, GB_CPU_REGISTER_PAIR_BC, 0x0013);
-	GB_cpu_set_register_pair(gb, GB_CPU_REGISTER_PAIR_DE, 0x00D8);
-	GB_cpu_set_register_pair(gb, GB_CPU_REGISTER_PAIR_HL, 0x014D);
 	GB_cpu_set_register_pair(gb, GB_CPU_REGISTER_PAIR_SP, 0xFFFE);
 	GB_cpu_set_register_pair(gb, GB_CPU_REGISTER_PAIR_PC, 0x0100);
 	// IO
@@ -111,20 +107,15 @@ void GB_reset(struct GB_Core* gb) {
 	IO_WX = 0x00;
 	IO_IE = 0x00;
 
-	enum rega_start_values {
-		REGA_DMG = 0x01,
-		REGA_SGB = 0x01,
-		
-		REGA_SGB2 = 0xFF,
-		REGA_POCKET = 0xFF,
-
-		REGA_GBC = 0x11,
-		REGA_GBA = 0x11,
-	};
+	// cpu register initial values taken from TCAGBD.pdf
+	// SOURCE: https://github.com/AntonioND/giibiiadvance/blob/master/docs/TCAGBD.pdf
 
 	switch (GB_get_system_type(gb)) {
 		case GB_SYSTEM_TYPE_DMG:
-			GB_cpu_set_register(gb, GB_CPU_REGISTER_A, REGA_DMG);
+			GB_cpu_set_register_pair(gb, GB_CPU_REGISTER_PAIR_AF, 0x01B0);
+			GB_cpu_set_register_pair(gb, GB_CPU_REGISTER_PAIR_BC, 0x0013);
+			GB_cpu_set_register_pair(gb, GB_CPU_REGISTER_PAIR_DE, 0x00D8);
+			GB_cpu_set_register_pair(gb, GB_CPU_REGISTER_PAIR_HL, 0x014D);
 			IO_SVBK = 0x01;
 			IO_VBK = 0x00;
 			IO_BCPS = 0xFF;
@@ -133,7 +124,10 @@ void GB_reset(struct GB_Core* gb) {
 			break;
 
 		case GB_SYSTEM_TYPE_SGB:
-			GB_cpu_set_register(gb, GB_CPU_REGISTER_A, REGA_SGB);
+			GB_cpu_set_register_pair(gb, GB_CPU_REGISTER_PAIR_AF, 0x0100);
+			GB_cpu_set_register_pair(gb, GB_CPU_REGISTER_PAIR_BC, 0x0014);
+			GB_cpu_set_register_pair(gb, GB_CPU_REGISTER_PAIR_DE, 0x0000);
+			GB_cpu_set_register_pair(gb, GB_CPU_REGISTER_PAIR_HL, 0xC060);
 			IO_SVBK = 0x01;
 			IO_VBK = 0x00;
 			IO_BCPS = 0xFF;
@@ -142,7 +136,10 @@ void GB_reset(struct GB_Core* gb) {
 			break;
 
 		case GB_SYSTEM_TYPE_GBC:
-			GB_cpu_set_register(gb, GB_CPU_REGISTER_A, REGA_GBC);
+			GB_cpu_set_register_pair(gb, GB_CPU_REGISTER_PAIR_AF, 0x1180);
+			GB_cpu_set_register_pair(gb, GB_CPU_REGISTER_PAIR_BC, 0x0000);
+			GB_cpu_set_register_pair(gb, GB_CPU_REGISTER_PAIR_DE, 0xFF56);
+			GB_cpu_set_register_pair(gb, GB_CPU_REGISTER_PAIR_HL, 0x000D);
 			IO_SVBK = 0x01;
 			IO_VBK = 0x00;
 			IO_BCPS = 0x00;

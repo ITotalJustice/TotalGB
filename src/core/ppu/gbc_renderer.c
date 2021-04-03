@@ -223,15 +223,13 @@ static void render_scanline_bg(struct GB_Core* gb, struct PrioBuf* prio_buffer) 
                 continue;
             }
 
-            const uint8_t pixel = ((!!(byte_b & bit[x])) << 1) | (!!(byte_a & bit[x]));
+            const uint8_t colour_id = ((!!(byte_b & bit[x])) << 1) | (!!(byte_a & bit[x]));
             
             // set priority
-            if (attributes.bank == 0) {
-                prio_buffer->prio[pixel_x] = attributes.priority;
-                prio_buffer->colour_id[pixel_x] = pixel;
-            }
+            prio_buffer->prio[pixel_x] = attributes.priority;
+            prio_buffer->colour_id[pixel_x] = colour_id;
 
-            pixels[pixel_x] = gb->ppu.bg_colours[attributes.pal][pixel];
+            pixels[pixel_x] = gb->ppu.bg_colours[attributes.pal][colour_id];
         }
     }
 }
@@ -275,15 +273,13 @@ static void render_scanline_win(struct GB_Core* gb, struct PrioBuf* prio_buffer)
 
             did_draw |= 1;
 
-            const uint8_t pixel = ((!!(byte_b & bit[x])) << 1) | (!!(byte_a & bit[x]));
+            const uint8_t colour_id = ((!!(byte_b & bit[x])) << 1) | (!!(byte_a & bit[x]));
             
             // set priority
-            if (attributes.bank == 0) {
-                prio_buffer->prio[pixel_x] = attributes.priority;
-                prio_buffer->colour_id[pixel_x] = pixel;
-            }
+            prio_buffer->prio[pixel_x] = attributes.priority;
+            prio_buffer->colour_id[pixel_x] = colour_id;
 
-            pixels[pixel_x] = gb->ppu.bg_colours[attributes.pal][pixel];
+            pixels[pixel_x] = gb->ppu.bg_colours[attributes.pal][colour_id];
         }
     }
 
@@ -338,22 +334,22 @@ static void render_scanline_obj(struct GB_Core* gb, const struct PrioBuf* prio_b
                     continue;
                 }
 
-                const uint8_t pixel = ((!!(byte_b & bit[x])) << 1) | (!!(byte_a & bit[x]));
+                const uint8_t colour_id = ((!!(byte_b & bit[x])) << 1) | (!!(byte_a & bit[x]));
                 
                 // this tests if the obj is transparrent
-                if (pixel == 0) {
+                if (colour_id == 0) {
                     continue;
                 }
 
                 if (bg_prio == 1) {
                     // this tests if bg always has priority over obj
-                    if (prio_buffer->prio[spx + x] && prio_buffer->colour_id[spx + x] != 0) {
+                    if (prio_buffer->prio[spx + x] && prio_buffer->colour_id[spx + x]) {
                         continue;
                     }
 
                     // this tests if bg col 1-3 has priority,
                     // then checks if the col is non-zero, if yes, skip
-                    if (sprites[i].flag.priority && prio_buffer->colour_id[spx + x] != 0) {
+                    if (sprites[i].flag.priority && prio_buffer->colour_id[spx + x]) {
                         continue;
                     }
                 }
@@ -363,7 +359,7 @@ static void render_scanline_obj(struct GB_Core* gb, const struct PrioBuf* prio_b
                 oam_priority[spx + x] = true;
 
                 // write the pixel (finally!)
-                pixels[spx + x] = gb->ppu.obj_colours[sprites[i].flag.pal_gbc][pixel];
+                pixels[spx + x] = gb->ppu.obj_colours[sprites[i].flag.pal_gbc][colour_id];
             }
         }
     }

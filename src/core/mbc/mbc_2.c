@@ -22,7 +22,7 @@ void GB_mbc2_write(struct GB_Core* gb, uint16_t addr, uint8_t value) {
             if (!(gb->cart.flags & MBC_FLAGS_RAM) || !gb->cart.ram_enabled) {
                 return;
             }
-            // because of mbc2 being only 512kb and due to my mmap
+            // because of mbc2 being only 512-bytes and due to my mmap
             // pointer system, we must manually mirror all writes to
             // all addresses in range 0x0000 - 0x1FFFF.
             const uint8_t masked_value = (value & 0x0F) | 0xF0;
