@@ -3,6 +3,7 @@
 #include "core/tables/cycle_table.h"
 
 #include <assert.h>
+#include <stdio.h>
 
 
 enum FlagMasks {
@@ -842,6 +843,14 @@ static void STOP(struct GB_Core* gb) {
 		if (gb->stop_cb != NULL) {
 			gb->stop_cb(gb, gb->stop_cb_user_data);
 		}
+	}
+	
+	// STOP is a 2-byte instruction, 0x10 | 0x00
+	const uint8_t next_byte = read8(REG_PC++);
+	if (next_byte == 0x00) {
+		printf("[CPU-STOP] next byte is 0x00, this is valid!\n");
+	} else {
+		printf("[CPU-STOP] next byte is 0x%02X, this is NOT valid!\n", next_byte);
 	}
 	
 	gb->cpu.cycles += 2050;

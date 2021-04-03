@@ -420,9 +420,9 @@ int GB_loadrom_data(struct GB_Core* gb, uint8_t* data, uint32_t size) {
 			GB_throw_info(gb, "rom supports GBC mode, however falling back to SGB mode...");
 			GB_set_system_type(gb, GB_SYSTEM_TYPE_SGB);
 		} else {
-			// GB_set_system_type(gb, GB_SYSTEM_TYPE_GBC);
+			GB_set_system_type(gb, GB_SYSTEM_TYPE_GBC);
 			// GB_throw_info(gb, "rom supports GBC mode, however falling back to DMG mode...");
-			GB_set_system_type(gb, GB_SYSTEM_TYPE_DMG);
+			// GB_set_system_type(gb, GB_SYSTEM_TYPE_DMG);
 		}
 	}
 	else {
