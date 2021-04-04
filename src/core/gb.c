@@ -356,7 +356,7 @@ static void GB_setup_palette(struct GB_Core* gb, const struct GB_CartHeader* hea
 	}
 }
 
-int GB_loadrom_data(struct GB_Core* gb, uint8_t* data, uint32_t size) {
+int GB_loadrom_data(struct GB_Core* gb, const uint8_t* data, size_t size) {
 	if (!gb || !data || !size) {
 		GB_throw_error(gb, GB_ERROR_DATA_TYPE_NULL_PARAM, __func__);
 		return -1;
@@ -364,6 +364,11 @@ int GB_loadrom_data(struct GB_Core* gb, uint8_t* data, uint32_t size) {
 
 	if (size < GB_BOOTROM_SIZE + sizeof(struct GB_CartHeader)) {
 		GB_throw_error(gb, GB_ERROR_DATA_TYPE_ROM, "rom size is too small!");
+		return -1;
+	}
+
+	if (size > UINT32_MAX) {
+		GB_throw_error(gb, GB_ERROR_DATA_TYPE_ROM, "rom size is too big!");
 		return -1;
 	}
 

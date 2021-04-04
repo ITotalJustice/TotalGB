@@ -1,9 +1,18 @@
 #include "core/gb.h"
 #include "core/internal.h"
 #include "core/tables/cycle_table.h"
+#ifdef GB_DEBUG
+#include "core/tables/cycle_table_debug.h"
+#endif // GB_DEBUG
 
 #include <assert.h>
 #include <stdio.h>
+
+
+#ifdef GB_DEBUG
+static bool CPU_LOG = false;
+static size_t CPU_DEBUG_CYCLYES = 0;
+#endif // GB_DEBUG
 
 
 enum FlagMasks {
@@ -874,7 +883,7 @@ static void GB_interrupt_handler(struct GB_Core* gb) {
 		return;
 	}
 	
-	const uint8_t live_interrupts = IO_IF & IO_IE;
+	const uint8_t live_interrupts = IO_IF & IO_IE & 0x1F;
 	if (!live_interrupts) {
 		return;
 	}
@@ -890,22 +899,28 @@ static void GB_interrupt_handler(struct GB_Core* gb) {
 
 	const uint8_t ctz = __builtin_ctz(live_interrupts);
 	const uint8_t reset_vector = 64 | (ctz << 3);
+
 	RST(reset_vector);
+	
 	GB_disable_interrupt(gb, 1 << ctz);
 #else
 	if (live_interrupts & GB_INTERRUPT_VBLANK) {
 		RST(64);
 		GB_disable_interrupt(gb, GB_INTERRUPT_VBLANK);
-    } else if (live_interrupts & GB_INTERRUPT_LCD_STAT) {
+    }
+	else if (live_interrupts & GB_INTERRUPT_LCD_STAT) {
 		RST(72);
 		GB_disable_interrupt(gb, GB_INTERRUPT_LCD_STAT);
-    } else if (live_interrupts & GB_INTERRUPT_TIMER) {
+    }
+	else if (live_interrupts & GB_INTERRUPT_TIMER) {
 		RST(80);
 		GB_disable_interrupt(gb, GB_INTERRUPT_TIMER);
-    } else if (live_interrupts & GB_INTERRUPT_SERIAL) {
+    }
+	else if (live_interrupts & GB_INTERRUPT_SERIAL) {
 		RST(88);
 		GB_disable_interrupt(gb, GB_INTERRUPT_SERIAL);
-    } else if (live_interrupts & GB_INTERRUPT_JOYPAD) {
+    }
+	else if (live_interrupts & GB_INTERRUPT_JOYPAD) {
 		RST(96);
 		GB_disable_interrupt(gb, GB_INTERRUPT_JOYPAD);
     }
@@ -915,8 +930,31 @@ static void GB_interrupt_handler(struct GB_Core* gb) {
 	gb->cpu.cycles += 20;
 }
 
+void GB_cpu_enable_log(const bool enable) {
+	#ifdef GB_DEBUG
+		CPU_LOG = enable;
+		if (CPU_LOG) {
+			// reset the cycles
+			CPU_DEBUG_CYCLYES = 0;
+		}
+	#else
+		GB_UNUSED(enable);
+	#endif
+}
+
 static void GB_execute(struct GB_Core* gb) {
 	const uint8_t opcode = read8(REG_PC++);
+
+	#ifdef GB_DEBUG
+	if (CPU_LOG) {
+		const opcode_t debug_op = CYCLE_TABLE_DEBUG[opcode];
+		printf("[CPU] [OP_CODE 0x%02X] %s %s %s\n", opcode, debug_op.name, debug_op.group, debug_op.flags);
+		if (opcode == 0x20) {
+			putchar('\n');
+		}
+	}
+	#endif // GB_DEBUG
+
 
 	switch (opcode) {
 		case 0x00: break; // nop
@@ -1086,6 +1124,14 @@ static void GB_execute(struct GB_Core* gb) {
 static void GB_execute_cb(struct GB_Core* gb) {
 	const uint8_t opcode = read8(REG_PC++);
 
+	#ifdef GB_DEBUG
+	if (CPU_LOG) {
+		const opcode_t debug_op = CYCLE_TABLE_DEBUG[opcode];
+		printf("[CPU] [OP_CODE 0x%02X] %s %s %s\n", opcode, debug_op.name, debug_op.group, debug_op.flags);
+	}
+	#endif // GB_DEBUG
+
+
 	switch (opcode) {
 		case 0x00: case 0x01: case 0x02: case 0x03:
 		case 0x04: case 0x05: case 0x07:
@@ -1246,6 +1292,12 @@ uint16_t GB_cpu_run(struct GB_Core* gb, uint16_t cycles) {
 	}
 
 	GB_execute(gb);
+
+	#ifdef GB_DEBUG
+	if (CPU_LOG) {
+		++CPU_DEBUG_CYCLYES;
+	}
+	#endif // GB_DEBUG
 
 	assert(gb->cpu.cycles != 0);
 

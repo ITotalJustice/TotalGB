@@ -223,6 +223,14 @@ auto App::OnKeyEvent(const SDL_KeyboardEvent& e) -> void {
         case SDLK_F2:
             this->emu_instances[0].LoadState();
             break;
+
+    // these are for debugging
+        case SDLK_l: {
+            static bool cpu_log = false;
+            cpu_log = !cpu_log;
+            GB_cpu_enable_log(cpu_log);
+        } break;
+
     }
 }
 

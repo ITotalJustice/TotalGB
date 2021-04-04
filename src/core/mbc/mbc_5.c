@@ -37,7 +37,7 @@ void GB_mbc5_write(struct GB_Core* gb, uint16_t addr, uint8_t value) {
             break;
             
         case 0xA: case 0xB:
-            if (gb->cart.flags & MBC_FLAGS_RAM && gb->cart.ram_enabled) {
+            if ((gb->cart.flags & MBC_FLAGS_RAM) && gb->cart.ram_enabled) {
                 gb->cart.ram[(addr & 0x1FFF) + (0x2000 * gb->cart.ram_bank)] = value;
             }
             break;

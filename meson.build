@@ -1,4 +1,4 @@
-project('gb-emu', ['c', 'cpp'],
+project('TotalGB', ['c', 'cpp'],
     version: '0.0.1',
     default_options: [
         'buildtype=debug',
@@ -132,7 +132,7 @@ cflags = [
     '-Wdouble-promotion',
     '-Wframe-larger-than=300KB',
 
-    # '-DGB_DEBUG',
+    '-DGB_DEBUG',
 
     # 7zip
     '-D_7ZIP_ST',
@@ -155,6 +155,8 @@ cflags = [
     # '-DUSE_AUDIO_FLOAT = 1',
     # '-DDUMP_AUDIO=1',
     # '-DCHANNEL_8=1',
+
+    '-DSCALE=5',
 ]
 
 cppflags = [
@@ -172,7 +174,7 @@ linkflags = [
 subdir('res')
 
 executable(
-    'gb-emu',
+    'TotalGB',
     res, # set the icon
     [ source ],
     dependencies : [ dependencies ] ,

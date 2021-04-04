@@ -4,6 +4,7 @@
 #include <stdio.h>
 #include <assert.h>
 
+
 static inline void GB_iowrite_gbc(struct GB_Core* gb, uint16_t addr, uint8_t value) {
 	assert(GB_is_system_gbc(gb) == true);
 
@@ -95,8 +96,8 @@ uint8_t GB_ioread(struct GB_Core* gb, uint16_t addr) {
 			return 0xFF;
 			// return GB_serial_sb_read(gb);
 
-		case 0x02:
-			return 0xFF;
+		case 0x02: // SC
+			return 0x7C; // all zeros apart from unused bits
 
 		case 0x03:
 			return 0xFF;
@@ -137,6 +138,14 @@ uint8_t GB_ioread(struct GB_Core* gb, uint16_t addr) {
 		case 0x55: // (GBC) HDMA5
 			if (GB_is_system_gbc(gb) == true) {
 				return GB_hdma5_read(gb);
+			} else {
+				return 0xFF;
+			}
+
+		case 0x56:
+			if (GB_is_system_gbc(gb) == true) {
+				printf("reading from infrared port\n");
+				return 0x00;
 			} else {
 				return 0xFF;
 			}
@@ -222,7 +231,8 @@ void GB_iowrite(struct GB_Core* gb, uint16_t addr, uint8_t value) {
 			break;
 
 		case 0x41:
-			IO_STAT = (IO_STAT & 0x7) | (value & (120)) | 0x80;
+			IO_STAT = (IO_STAT & 0x7) | (value & 0x78) | 0x80;
+			GB_compare_LYC(gb);
 			break;
 
 		case 0x42:
@@ -307,16 +317,20 @@ uint8_t GB_read8(struct GB_Core* gb, const uint16_t addr) {
 
 		if (UNLIKELY(addr >= 0xA000 && addr <= 0xBFFF && GB_is_rtc_read(gb))) {
 			return GB_mbc3_rtc_read(gb);
-		} else {
+		}
+		else {
 			return gb->mmap[(addr >> 12)][addr & 0x0FFF];
 		}
 		#endif // GB_RTC_SPEEDHACK
 
-	} else if (addr <= 0xFE9F) {
+	}
+	else if (addr <= 0xFE9F) {
         return gb->ppu.oam[addr & 0xFF];
-    } else if (addr >= 0xFF00 && addr <= 0xFF7F) {
+    }
+	else if (addr >= 0xFF00 && addr <= 0xFF7F) {
         return GB_ioread(gb, addr);
-    } else if (addr >= 0xFF80) {
+    }
+	else if (addr >= 0xFF80) {
         return gb->hram[addr & 0x7F];
     }
 
@@ -324,7 +338,6 @@ uint8_t GB_read8(struct GB_Core* gb, const uint16_t addr) {
 	return 0xFF;
 }
 
-// static int isset = 0;
 void GB_write8(struct GB_Core* gb, uint16_t addr, uint8_t value) {
 	if (LIKELY(addr < 0xFE00)) {
 		switch ((addr >> 12) & 0xF) {
@@ -345,18 +358,22 @@ void GB_write8(struct GB_Core* gb, uint16_t addr, uint8_t value) {
 				gb->wram[IO_SVBK][addr & 0x0FFF] = value;
 				break;
 		}
-	} else if (addr <= 0xFE9F) {
+	}
+	else if (addr <= 0xFE9F) {
         gb->ppu.oam[addr & 0xFF] = value;
-    } else if (addr >= 0xFF00 && addr <= 0xFF7F) {
+    }
+	else if (addr >= 0xFF00 && addr <= 0xFF7F) {
         GB_iowrite(gb, addr, value);
-    } else if (addr >= 0xFF80) {
+    }
+	else if (addr >= 0xFF80) {
         gb->hram[addr & 0x7F] = value;
     }
 }
 
 uint16_t GB_read16(struct GB_Core* gb, uint16_t addr) {
-	const uint8_t lo = GB_read8(gb, addr);
+	const uint8_t lo = GB_read8(gb, addr + 0);
 	const uint8_t hi = GB_read8(gb, addr + 1);
+
 	return (hi << 8) | lo;
 }
 
@@ -368,6 +385,7 @@ void GB_write16(struct GB_Core* gb, uint16_t addr, uint16_t value) {
 void GB_update_rom_banks(struct GB_Core* gb) {
 	const uint8_t* rom_bank0 = gb->cart.get_rom_bank(gb, 0);
 	const uint8_t* rom_bankx = gb->cart.get_rom_bank(gb, 1);
+
 	gb->mmap[0x0] = rom_bank0 + 0x0000;
 	gb->mmap[0x1] = rom_bank0 + 0x1000;
 	gb->mmap[0x2] = rom_bank0 + 0x2000;
@@ -381,6 +399,7 @@ void GB_update_rom_banks(struct GB_Core* gb) {
 
 void GB_update_ram_banks(struct GB_Core* gb) {
 	const uint8_t* cart_ram = gb->cart.get_ram_bank(gb, 0);
+
 	gb->mmap[0xA] = cart_ram + 0x0000;
 	gb->mmap[0xB] = cart_ram + 0x1000;
 }
@@ -389,7 +408,8 @@ void GB_update_vram_banks(struct GB_Core* gb) {
 	if (GB_is_system_gbc(gb) == true) {
 		gb->mmap[0x8] = gb->ppu.vram[IO_VBK] + 0x0000;
 		gb->mmap[0x9] = gb->ppu.vram[IO_VBK] + 0x1000;
-	} else {
+	}
+	else {
 		gb->mmap[0x8] = gb->ppu.vram[0] + 0x0000;
 		gb->mmap[0x9] = gb->ppu.vram[0] + 0x1000;
 	}
@@ -402,7 +422,8 @@ void GB_update_wram_banks(struct GB_Core* gb) {
 	if (GB_is_system_gbc(gb) == true) {
 		gb->mmap[0xD] = gb->wram[IO_SVBK];
 		gb->mmap[0xF] = gb->wram[IO_SVBK];
-	} else {
+	}
+	else {
 		gb->mmap[0xD] = gb->wram[1];
 		gb->mmap[0xF] = gb->wram[1];
 	}

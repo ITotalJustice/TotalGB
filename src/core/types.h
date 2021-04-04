@@ -442,7 +442,7 @@ struct GB_Cart {
 	const uint8_t* (*get_rom_bank)(struct GB_Core* gb, uint8_t val);
 	const uint8_t* (*get_ram_bank)(struct GB_Core* gb, uint8_t val);
 
-	uint8_t* rom;
+	const uint8_t* rom;
 	uint8_t ram[0x10000];
 	uint32_t rom_size;
 	uint32_t ram_size;

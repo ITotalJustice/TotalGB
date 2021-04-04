@@ -16,7 +16,7 @@ void GB_reset(struct GB_Core* gb);
 // pass the fully loaded rom data.
 // this memory is NOT owned.
 // freeing the memory should still be handled by the caller!
-int GB_loadrom_data(struct GB_Core* gb, uint8_t* data, uint32_t size);
+int GB_loadrom_data(struct GB_Core* gb, const uint8_t* data, size_t size);
 
 bool GB_has_save(const struct GB_Core* gb);
 bool GB_has_rtc(const struct GB_Core* gb);
@@ -147,10 +147,13 @@ uint16_t GB_cpu_get_register_pair(const struct GB_Core* gb, enum GB_CpuRegisterP
 
 // this is a race condition, but should solve audio pops for now
 // until i have audio drive the entire core...
-
 #ifdef GB_SDL_AUDIO_CALLBACK
 void GB_SDL_audio_callback(struct GB_Core* gb, GB_S8* buf, int len);
 #endif // GB_SDL_AUDIO_CALLBACK
+
+// logs each cpu instruction to stdout
+// this only does something if built with GB_DEBUG=1.
+void GB_cpu_enable_log(const bool enable);
 
 #ifdef __cplusplus
 }
