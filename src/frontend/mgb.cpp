@@ -3,6 +3,7 @@
 #include "core/accessories/printer.h"
 #include "io/romloader.hpp"
 #include "io/ifile_cfile.hpp"
+#include "io/ifile_gzip.hpp"
 #include "util/util.hpp"
 #include "util/log.hpp"
 
@@ -175,7 +176,7 @@ auto Instance::SaveState() -> void {
 
     auto state_path = util::getStatePathFromString(this->rom_path);
 
-    io::Cfile file{state_path, "wb"};
+    io::Gzip file{state_path, "wb"};
     if (file.good()) {
         auto state = std::make_unique<struct GB_CoreState>();
         GB_savestate2(this->GetGB(), state.get());
@@ -190,7 +191,7 @@ auto Instance::LoadState() -> void {
 
     auto state_path = util::getStatePathFromString(this->rom_path);
 
-    io::Cfile file{state_path, "rb"};
+    io::Gzip file{state_path, "rb"};
     if (file.good()) {
         auto state = std::make_unique<struct GB_CoreState>();
         file.read((u8*)state.get(), sizeof(struct GB_CoreState));
