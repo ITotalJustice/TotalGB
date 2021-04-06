@@ -38,9 +38,7 @@ int8_t sample_wave(struct GB_Core* gb) {
     // which is *correct*, but still sounds very bad
     uint8_t sample = (WAVE_CHANNEL.position_counter & 1) ? WAVE_CHANNEL.sample_buffer & 0xF : WAVE_CHANNEL.sample_buffer >> 4;
 
-    uint8_t oof = (sample >> WAVE_SHIFT[IO_NR32.vol_code]);
-
-    return test_table[oof];
+    return test_table[(sample >> WAVE_SHIFT[IO_NR32.vol_code])] * 2;
 }
 
 void clock_wave_len(struct GB_Core* gb) {
@@ -49,7 +47,7 @@ void clock_wave_len(struct GB_Core* gb) {
         // disable channel if we hit zero...
         if (WAVE_CHANNEL.length_counter == 0) {
             wave_disable(gb);
-        }   
+        }
     }
 }
 

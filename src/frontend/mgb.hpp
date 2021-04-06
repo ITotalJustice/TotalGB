@@ -69,7 +69,7 @@ struct Instance {
 
     auto GetGB() -> GB_Core*;
 
-    auto OnAudioCallback(struct GB_ApuCallbackData* data) -> void;
+    auto OnAudioCallback(const struct GB_ApuCallbackData* data) -> void;
     auto OnVblankCallback() -> void;
     auto OnHblankCallback() -> void;
     auto OnDmaCallback() -> void;
@@ -82,11 +82,11 @@ struct Instance {
 private:
     auto CreateWindow() -> void;
     auto DestroyWindow() -> void;
-    
+
 private:
     std::unique_ptr<GB_Core> gameboy;
     std::unique_ptr<GB_Printer> printer;
-    
+
     // thread safe
     std::mutex gfx_mutex;
     u16 buffered_pixels[144][160];

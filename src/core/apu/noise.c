@@ -49,7 +49,7 @@ void clock_noise_len(struct GB_Core* gb) {
         // disable channel if we hit zero...
         if (NOISE_CHANNEL.length_counter == 0) {
             noise_disable(gb);
-        }   
+        }
     }
 }
 
@@ -107,9 +107,9 @@ void on_noise_trigger(struct GB_Core* gb) {
             NOISE_CHANNEL.length_counter = 64;
         }
     }
-    
+
     NOISE_CHANNEL.disable_env = false;
-    
+
     NOISE_CHANNEL.volume_timer = PERIOD_TABLE[IO_NR42.period];
     if (is_next_frame_suqencer_step_vol(gb)) {
         NOISE_CHANNEL.volume_timer++;
@@ -121,7 +121,7 @@ void on_noise_trigger(struct GB_Core* gb) {
     NOISE_CHANNEL.LFSR = 0x7FFF;
 
     NOISE_CHANNEL.timer = get_noise_freq(gb);
-    
+
     if (is_noise_dac_enabled(gb) == false) {
         noise_disable(gb);
     }

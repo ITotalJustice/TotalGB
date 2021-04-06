@@ -265,14 +265,43 @@ struct GB_ErrorData {
 	};
 };
 
+struct GB_MixerSampleData {
+	int8_t sample;
+	int8_t left;
+	int8_t right;
+};
+
+struct GB_MixerData {
+	struct GB_MixerSampleData square1;
+	struct GB_MixerSampleData square2;
+	struct GB_MixerSampleData wave;
+	struct GB_MixerSampleData noise;
+
+	int8_t left_master, right_master;
+};
+
+struct GB_MixerResult {
+	int8_t left, right;
+};
+
 // user-set callbacks
-typedef void(*GB_apu_callback_t)(struct GB_Core* gb, void* user, struct GB_ApuCallbackData* data);
+typedef void(*GB_apu_callback_t)(struct GB_Core* gb, void* user,
+	const struct GB_ApuCallbackData* data
+);
+
+typedef struct GB_MixerResult(*GB_mixer_callback_t)(struct GB_Core* gb, void* user,
+    const struct GB_MixerData* data
+);
+
+typedef void(*GB_error_callback_t)(struct GB_Core* gb, void* user,
+	struct GB_ErrorData* e
+);
+
 typedef void(*GB_vblank_callback_t)(struct GB_Core* gb, void* user);
 typedef void(*GB_hblank_callback_t)(struct GB_Core* gb, void* user);
 typedef void(*GB_dma_callback_t)(struct GB_Core* gb, void* user);
 typedef void(*GB_halt_callback_t)(struct GB_Core* gb, void* user);
 typedef void(*GB_stop_callback_t)(struct GB_Core* gb, void* user);
-typedef void(*GB_error_callback_t)(struct GB_Core* gb, void* user, struct GB_ErrorData* e);
 
 
 enum GB_LinkTransferType {
@@ -401,7 +430,7 @@ struct GB_Cpu {
 	uint16_t SP;
 	uint16_t PC;
 	uint8_t registers[8];
-	
+
 	bool c : 1;
 	bool h : 1;
 	bool n : 1;
@@ -415,7 +444,7 @@ struct GB_Cpu {
 struct GB_Ppu {
 	int16_t next_cycles;
 	uint16_t pixles[GB_SCREEN_HEIGHT][GB_SCREEN_WIDTH]; // h*w
-	
+
 	uint8_t vram[2][0x2000]; // 2 banks of 8kb
 	uint8_t oam[0xA0]; // sprite mem
 
@@ -446,7 +475,7 @@ struct GB_Cart {
 	uint8_t ram[0x10000];
 	uint32_t rom_size;
 	uint32_t ram_size;
-	
+
 	uint16_t rom_bank_max;
 	uint16_t rom_bank;
 	uint8_t rom_bank_lo;
@@ -639,11 +668,7 @@ struct GB_ApuControl {
 };
 
 struct GB_ApuCallbackData {
-#ifdef CHANNEL_8
-	int8_t samples[512 * 8];
-#else
 	int8_t samples[512 * 2];
-#endif
 };
 
 struct GB_Apu {
@@ -658,13 +683,7 @@ struct GB_Apu {
 
 	uint8_t frame_sequencer_counter : 3;
 
-	// stero samples built up (512 * 2)
-#ifdef CHANNEL_8
-	int8_t samples[512 * 8];
-#else
-	int8_t samples[512 * 2];
-#endif
-	// counter for how many samples we have
+	struct GB_ApuCallbackData samples;
 	uint16_t samples_count;
 };
 
@@ -688,6 +707,9 @@ struct GB_Core {
 
 	GB_apu_callback_t apu_cb;
 	void* apu_cb_user_data;
+
+	GB_mixer_callback_t mixer_cb;
+	void* mixer_cb_user_data;
 
 	GB_serial_transfer_t link_cable;
 	void* link_cable_user_data;

@@ -20,24 +20,17 @@ namespace mgb {
 static std::mutex MUTEX{};
 static SDL_AudioDeviceID AUDIO_DEVICE_ID = 0;
 static SDL_AudioStream* AUDIO_STREAM = NULL;
-static FILE* AUDIO_DUMP_FILE = NULL;
 
 
-static void AudioCallback(struct GB_Core*, void* user_data, struct GB_ApuCallbackData* data) {
+static void AudioCallback(struct GB_Core*, void* user_data, const struct GB_ApuCallbackData* data) {
     auto instance = static_cast<Instance*>(user_data);
     instance->OnAudioCallback(data);
 }
 
-auto Instance::OnAudioCallback(struct GB_ApuCallbackData* data) -> void {
+auto Instance::OnAudioCallback(const struct GB_ApuCallbackData* data) -> void {
     // https://wiki.libsdl.org/SDL_GetQueuedAudioSize
     // todo: use sdl stream api instead, this delay was a temp hack
     // for now that magically "works".
-    #ifdef DUMP_AUDIO
-        fwrite(data->samples, 1, sizeof(data->samples), AUDIO_DUMP_FILE);
-        // for (size_t i = 0; i < sizeof(data->samples); ++i) {
-        //     fprintf(AUDIO_DUMP_FILE, "%X");
-        // }
-    #endif
 
     while ((SDL_GetQueuedAudioSize(AUDIO_DEVICE_ID)) > (1024)) {
         SDL_Delay(1);
@@ -104,7 +97,7 @@ auto Instance::OnHaltCallback() -> void {
 
 }
 
-auto core_audio_cb(struct GB_Core*, void* user_data, struct GB_ApuCallbackData* data) -> void {
+auto core_audio_cb(struct GB_Core*, void* user_data, const struct GB_ApuCallbackData* data) -> void {
     // printf("ye\n");
     auto boolean = static_cast<bool*>(user_data);
     // this will stop the thread from running
@@ -128,7 +121,7 @@ static void audio_callback(void *user, uint8_t* buf, int len) {
     // for this to work
     auto instance = static_cast<Instance*>(user);
 
-    
+
     bool running = true;
     GB_set_apu_callback(instance->GetGB(), core_audio_cb, &running);
 
@@ -138,7 +131,7 @@ static void audio_callback(void *user, uint8_t* buf, int len) {
 
     // once we get here, this means that we have enough samples!
     // simply memcpy them over.
-    memcpy(buf, instance->GetGB()->apu.samples, len);
+    memcpy(buf, instance->GetGB()->apu.samples.samples, len);
 }
 
 auto Instance::OnStopCallback() -> void {
@@ -267,11 +260,7 @@ auto Instance::LoadRom(const std::string& path) -> bool {
         const SDL_AudioSpec wanted{
         /* .freq = */ 48000,
         /* .format = */ AUDIO_S8,
-#ifdef CHANNEL_8
-        /* .channels = */ 8,
-#else
         /* .channels = */ 2,
-#endif
         /* .silence = */ 0, // calculated
         /* .samples = */ 512, // 512 * 2 (because stereo)
         /* .padding = */ 0,
@@ -334,7 +323,7 @@ auto Instance::SaveGame(const std::string& path) -> void {
     if (GB_has_save(this->gameboy.get()) || GB_has_rtc(this->gameboy.get())) {
         struct GB_SaveData save_data;
         GB_savegame(this->gameboy.get(), &save_data);
-        
+
         // save sram
         if (save_data.size > 0) {
             const auto save_path = util::getSavePathFromString(path);
@@ -364,7 +353,7 @@ auto Instance::LoadSave(const std::string& path) -> void {
 
         const auto save_path = util::getSavePathFromString(path);
         const auto save_size = GB_calculate_savedata_size(this->gameboy.get());
-        
+
         io::Cfile file{save_path, "rb"};
 
         if (file.good() && file.size() == save_size) {
@@ -373,7 +362,7 @@ auto Instance::LoadSave(const std::string& path) -> void {
             save_data.size = save_size;
         }
     }
-    
+
     // load rtc
     if (GB_has_rtc(this->gameboy.get())) {
         const auto save_path = util::getRtcPathFromString(path);
@@ -422,10 +411,6 @@ auto Instance::GetGB() -> GB_Core* {
 }
 
 App::App() {
-    #ifdef DUMP_AUDIO
-    AUDIO_DUMP_FILE = fopen("audio_dump.raw", "wb");
-    #endif
-
     {
         SDL_version compiled;
         SDL_version linked;
@@ -443,10 +428,6 @@ App::App() {
 }
 
 App::~App() {
-    #ifdef DUMP_AUDIO
-    fclose(AUDIO_DUMP_FILE);
-    #endif
-
     for (auto& p : this->emu_instances) {
         // we want to close the window as well this time...
         p.CloseRom(true);
@@ -468,7 +449,7 @@ App::~App() {
         SDL_CloseAudioDevice(AUDIO_DEVICE_ID);
         AUDIO_DEVICE_ID = 0;
     }
-    
+
 	SDL_Quit();
 }
 

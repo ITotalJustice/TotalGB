@@ -80,79 +80,80 @@ static void step_frame_sequencer(struct GB_Core* gb) {
 
         case 7: // vol
             clock_vol(gb);
-            break;      
+            break;
     }
 
     ++gb->apu.frame_sequencer_counter;
 }
 
+static inline struct GB_MixerResult builtin_mixer(const struct GB_MixerData* data) {
+    return (struct GB_MixerResult){
+        .left = ((
+            (data->square1.sample * data->square1.left) +
+            (data->square2.sample * data->square2.left) +
+            (data->wave.sample * data->wave.left) +
+            (data->noise.sample * data->noise.left)
+        ) / 4) * data->left_master,
+
+        .right = ((
+            (data->square1.sample * data->square1.right) +
+            (data->square2.sample * data->square2.right) +
+            (data->wave.sample * data->wave.right) +
+            (data->noise.sample * data->noise.right)
+        ) / 4) * data->right_master,
+    };
+}
+
 static void sample_channels(struct GB_Core* gb) {
-    const int8_t square1_sample = sample_square1(gb) * is_square1_enabled(gb);
-    const int8_t square2_sample = sample_square2(gb) * is_square2_enabled(gb);
-    const int8_t wave_sample = sample_wave(gb) * is_wave_enabled(gb);
-    const int8_t noise_sample = sample_noise(gb) * is_noise_enabled(gb);
 
-#ifdef CHANNEL_8
-    gb->apu.samples[gb->apu.samples_count + 0] = square1_sample * IO_NR51.square1_left * CONTROL_CHANNEL.nr50.left_vol;
-    gb->apu.samples[gb->apu.samples_count + 1] = square1_sample * IO_NR51.square1_right * CONTROL_CHANNEL.nr50.right_vol;
+    // build up data for the mixer!
+    const struct GB_MixerData mixer_data = {
+        .square1 = {
+            .sample = sample_square1(gb) * is_square1_enabled(gb),
+            .left = IO_NR51.square1_left,
+            .right = IO_NR51.square1_right
+        },
+        .square2 = {
+            .sample = sample_square2(gb) * is_square2_enabled(gb),
+            .left = IO_NR51.square2_left,
+            .right = IO_NR51.square2_right
+        },
+        .wave = {
+            .sample = sample_wave(gb) * is_wave_enabled(gb),
+            .left = IO_NR51.wave_left,
+            .right = IO_NR51.wave_right
+        },
+        .noise = {
+            .sample = sample_noise(gb) * is_noise_enabled(gb),
+            .left = IO_NR51.noise_left,
+            .right = IO_NR51.noise_right
+        },
+        .left_master = CONTROL_CHANNEL.nr50.left_vol,
+        .right_master = CONTROL_CHANNEL.nr50.right_vol
+    };
 
-    gb->apu.samples[gb->apu.samples_count + 2] = square2_sample * IO_NR51.square2_left * CONTROL_CHANNEL.nr50.left_vol;
-    gb->apu.samples[gb->apu.samples_count + 3] = square2_sample * IO_NR51.square2_right * CONTROL_CHANNEL.nr50.right_vol;
+    if (gb->mixer_cb != NULL) {
+        const struct GB_MixerResult r = gb->mixer_cb(gb, gb->mixer_cb_user_data, &mixer_data);
+        gb->apu.samples.samples[gb->apu.samples_count + 0] = r.left;
+        gb->apu.samples.samples[gb->apu.samples_count + 1] = r.right;
+    }
 
-    gb->apu.samples[gb->apu.samples_count + 4] = wave_sample * IO_NR51.wave_left * CONTROL_CHANNEL.nr50.left_vol;
-    gb->apu.samples[gb->apu.samples_count + 5] = wave_sample * IO_NR51.wave_right * CONTROL_CHANNEL.nr50.right_vol;
-
-    gb->apu.samples[gb->apu.samples_count + 6] = noise_sample * IO_NR51.noise_left * CONTROL_CHANNEL.nr50.left_vol;
-    gb->apu.samples[gb->apu.samples_count + 7] = noise_sample * IO_NR51.noise_right * CONTROL_CHANNEL.nr50.right_vol;
-
-    gb->apu.samples_count += 8;
-#else
-
-// for testing, test all channels VS test everything but wave channel...
-#define MODE 0
-#if MODE == 0
-    const int8_t final_sample_left = (((square1_sample * IO_NR51.square1_left) + (square2_sample * IO_NR51.square2_left) + (wave_sample * IO_NR51.wave_left) + (noise_sample * IO_NR51.noise_left)) / 4) * CONTROL_CHANNEL.nr50.left_vol;
-    const int8_t final_sample_right = (((square1_sample * IO_NR51.square1_right) + (square2_sample * IO_NR51.square2_right) + (wave_sample * IO_NR51.wave_right) + (noise_sample * IO_NR51.noise_right)) / 4) * CONTROL_CHANNEL.nr50.right_vol;
-#elif MODE == 1
-    GB_UNUSED(wave_sample);
-    const int8_t final_sample_left = (((square1_sample * IO_NR51.square1_left) + (square2_sample * IO_NR51.square2_left) + (noise_sample * IO_NR51.noise_left)) / 3) * CONTROL_CHANNEL.nr50.left_vol;
-    const int8_t final_sample_right = (((square1_sample * IO_NR51.square1_right) + (square2_sample * IO_NR51.square2_right) + (noise_sample * IO_NR51.noise_right)) / 3) * CONTROL_CHANNEL.nr50.right_vol;
-#elif MODE == 2
-    GB_UNUSED(wave_sample);
-    GB_UNUSED(noise_sample);
-    const int8_t final_sample_left = (((square1_sample * IO_NR51.square1_left) + (square2_sample * IO_NR51.square2_left)) / 2) * CONTROL_CHANNEL.nr50.left_vol;
-    const int8_t final_sample_right = (((square1_sample * IO_NR51.square1_right) + (square2_sample * IO_NR51.square2_right)) / 2) * CONTROL_CHANNEL.nr50.right_vol;
-#elif MODE == 3
-    GB_UNUSED(square1_sample);
-    GB_UNUSED(square2_sample);
-    GB_UNUSED(noise_sample);
-    const int8_t final_sample_left = (wave_sample * IO_NR51.wave_left) * CONTROL_CHANNEL.nr50.left_vol;
-    const int8_t final_sample_right = (wave_sample * IO_NR51.wave_right) * CONTROL_CHANNEL.nr50.right_vol;
-#endif
-#undef MODE
-
-    // store the samples in the buffer, remember this is stereo!
-    gb->apu.samples[gb->apu.samples_count + 0] = final_sample_left;
-    gb->apu.samples[gb->apu.samples_count + 1] = final_sample_right;
+    else {
+        const struct GB_MixerResult r = builtin_mixer(&mixer_data);
+        gb->apu.samples.samples[gb->apu.samples_count + 0] = r.left;
+        gb->apu.samples.samples[gb->apu.samples_count + 1] = r.right;
+    }
 
     // we stored 2 samples (left and right for stereo)
     gb->apu.samples_count += 2;
 
-#endif // #ifdef CHANNEL_8
-
     // check if we filled the buffer
-    if (gb->apu.samples_count >= sizeof(gb->apu.samples)) {
-        gb->apu.samples_count =0;//-= sizeof(gb->apu.samples);
-        
+    if (gb->apu.samples_count >= sizeof(gb->apu.samples.samples)) {
+        gb->apu.samples_count = 0;
+
         // make sure the frontend did set a callback!
         if (gb->apu_cb != NULL) {
-
-            // send over the data!
-            struct GB_ApuCallbackData data;
-            // we don't really have to memcpy here
-            // can just pass a const pointer and size instead...
-            memcpy(data.samples, gb->apu.samples, sizeof(gb->apu.samples));
-            gb->apu_cb(gb, gb->apu_cb_user_data, &data);
+            gb->apu_cb(gb, gb->apu_cb_user_data, &gb->apu.samples);
         }
     }
 }
@@ -205,7 +206,7 @@ void GB_apu_run(struct GB_Core* gb, uint16_t cycles) {
             sample_channels(gb);
         }
     }
-    
+
     else {
         // we should still sample even if the apu is disabled
         // in this case, the samples are filled with 0.
