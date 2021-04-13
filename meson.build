@@ -1,7 +1,7 @@
 project('TotalGB', ['c', 'cpp'],
     version: '0.0.1',
     default_options: [
-        'buildtype=debug',
+        'buildtype=release',
     ],
 )
 
@@ -10,6 +10,8 @@ dependencies = [
     # but this is untested.
     # 2.0.5 is the oldest version that i tested...
     dependency('sdl2', version : '>=2.0.5'),
+    # this is needed for linux
+    dependency('gtk+-3.0'),
 ]
 
 source = files([
@@ -116,9 +118,9 @@ endif
 
 cflags = [
     # optimise
-    # '-Ofast',
-    # '-flto',
-    # '-DNDEBUG',
+    '-Ofast',
+    '-flto',
+    '-DNDEBUG',
 
     # warns
     '-Wall',
@@ -130,9 +132,9 @@ cflags = [
     '-Wshadow',
     '-Wfatal-errors',
     '-Wdouble-promotion',
-    '-Wframe-larger-than=300KB',
+    #'-Wframe-larger-than=300KB',
 
-    '-DGB_DEBUG',
+    # '-DGB_DEBUG',
 
     # 7zip
     '-D_7ZIP_ST',
@@ -154,7 +156,7 @@ cflags = [
 
     # '-DDUMP_AUDIO=1',
 
-    '-DSCALE=5',
+    '-DSCALE=3',
 ]
 
 cppflags = [
@@ -169,11 +171,11 @@ linkflags = [
     # '-s',
 ]
 
-subdir('res')
+#subdir('res')
 
 executable(
     'TotalGB',
-    res, # set the icon
+ #   res, # set the icon
     [ source ],
     dependencies : [ dependencies ] ,
     install: false,

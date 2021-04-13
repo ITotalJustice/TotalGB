@@ -5,6 +5,8 @@ extern "C" {
 #endif
 
 #include <stdint.h>
+#include <stddef.h>
+
 
 /* simple stream structs */
 struct PatchStreamR {

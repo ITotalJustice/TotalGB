@@ -32,7 +32,7 @@ auto Instance::OnAudioCallback(const struct GB_ApuCallbackData* data) -> void {
     // todo: use sdl stream api instead, this delay was a temp hack
     // for now that magically "works".
 
-    while ((SDL_GetQueuedAudioSize(AUDIO_DEVICE_ID)) > (1024)) {
+    while ((SDL_GetQueuedAudioSize(AUDIO_DEVICE_ID)) > (1024 * 3)) {
         SDL_Delay(1);
     }
 
@@ -262,7 +262,7 @@ auto Instance::LoadRom(const std::string& path) -> bool {
         /* .format = */ AUDIO_S8,
         /* .channels = */ 2,
         /* .silence = */ 0, // calculated
-        /* .samples = */ 512, // 512 * 2 (because stereo)
+        /* .samples = */ 1024, // 512 * 2 (because stereo)
         /* .padding = */ 0,
         /* .size = */ 0, // calculated
 #ifdef GB_SDL_AUDIO_CALLBACK_STREAM

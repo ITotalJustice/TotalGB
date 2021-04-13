@@ -5,6 +5,8 @@ extern "C" {
 #endif
 
 #include <stdint.h>
+#include <stddef.h>
+
 
 int ups_verify_header(const uint8_t* patch, size_t patch_size);
 

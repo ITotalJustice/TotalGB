@@ -91,7 +91,7 @@ bool GB_cpu_get_flag(const struct GB_Core* gb, enum GB_CpuFlags flag) {
 		case GB_CPU_FLAG_N: return FLAG_N;
 		case GB_CPU_FLAG_Z: return FLAG_Z;
 	}
-	
+
 	GB_UNREACHABLE(false);
 }
 
@@ -855,7 +855,7 @@ static void STOP(struct GB_Core* gb) {
 			gb->stop_cb(gb, gb->stop_cb_user_data);
 		}
 	}
-	
+
 	// STOP is a 2-byte instruction, 0x10 | 0x00
 	const uint8_t next_byte = read8(REG_PC++);
 	if (next_byte == 0x00) {
@@ -863,7 +863,7 @@ static void STOP(struct GB_Core* gb) {
 	} else {
 		printf("[CPU-STOP] next byte is 0x%02X, this is NOT valid!\n", next_byte);
 	}
-	
+
 	gb->cpu.cycles += 2050;
 }
 
@@ -874,7 +874,7 @@ static void UNK_OP(struct GB_Core* gb, uint8_t opcode, bool cb_prefix) {
 		data.unk_instruction.cb_prefix = cb_prefix;
 		data.unk_instruction.opcode = opcode;
 
-		gb->error_cb(gb, gb->error_cb_user_data, &data);	
+		gb->error_cb(gb, gb->error_cb_user_data, &data);
 	}
 }
 
@@ -882,28 +882,19 @@ static void GB_interrupt_handler(struct GB_Core* gb) {
 	if (!gb->cpu.ime && !gb->cpu.halt) {
 		return;
 	}
-	
+
 	const uint8_t live_interrupts = IO_IF & IO_IE & 0x1F;
 	if (!live_interrupts) {
 		return;
 	}
 
 	gb->cpu.halt = false;
-	
+
 	if (!gb->cpu.ime) {
 		return;
 	}
 	gb->cpu.ime = false;
 
-#if defined(__has_builtin) && __has_builtin(__builtin_ctz)
-
-	const uint8_t ctz = __builtin_ctz(live_interrupts);
-	const uint8_t reset_vector = 64 | (ctz << 3);
-
-	RST(reset_vector);
-	
-	GB_disable_interrupt(gb, 1 << ctz);
-#else
 	if (live_interrupts & GB_INTERRUPT_VBLANK) {
 		RST(64);
 		GB_disable_interrupt(gb, GB_INTERRUPT_VBLANK);
@@ -924,8 +915,6 @@ static void GB_interrupt_handler(struct GB_Core* gb) {
 		RST(96);
 		GB_disable_interrupt(gb, GB_INTERRUPT_JOYPAD);
     }
-
-#endif /* __has_builtin && __has_builtin(__builtin_ctz) */
 
 	gb->cpu.cycles += 20;
 }
