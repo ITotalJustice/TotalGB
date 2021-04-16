@@ -7,24 +7,12 @@
 #include <string.h>
 #include <assert.h>
 
-// this is extern in mbc/common.h
-// this is used when either the game has no ram or ram is disabled
-// and the game tries to read from the ram access area.
-// because of how my memory reads are setup, array pointers are
-// saved and index for a read.
-// checking for NULL would be too slow of each read.
-// because of this, this empty array is used as a saved pointer.
-// writes are manually checked for now, so this can stay const!
-
-// TODO: this can be const, however, i need to manually set the entire
-// array to 0xFF, atm im using memset but this can be set at compile-time!
-uint8_t MBC_NO_RAM[0x2000];
 
 struct GB_MbcInterface {
 	// function callbacks
 	void (*write)(struct GB_Core *gb, uint16_t addr, uint8_t value);
-	const uint8_t* (*get_rom_bank)(struct GB_Core *gb, uint8_t bank);
-	const uint8_t* (*get_ram_bank)(struct GB_Core *gb, uint8_t bank);
+	struct MBC_BankInfo (*get_rom_bank)(struct GB_Core* gb, uint8_t bank);
+	struct MBC_BankInfo (*get_ram_bank)(struct GB_Core* gb);
 	// all normal mbc's start we rombank == 1
 	// however, other mbcs (HUC1) seem to start at 0
 	uint8_t starting_rom_bank;
@@ -139,8 +127,6 @@ bool GB_get_cart_ram_size(uint8_t type, uint32_t* size) {
 }
 
 bool GB_setup_mbc(struct GB_Cart* mbc, const struct GB_CartHeader* header) {
-	memset(MBC_NO_RAM, 0xFF, sizeof(MBC_NO_RAM));
-
 	if (!mbc || !header) {
 		return false;
 	}

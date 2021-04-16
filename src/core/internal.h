@@ -132,11 +132,11 @@ void GB_throw_error(const struct GB_Core* gb, enum GB_ErrorDataType type, const 
 
 void GB_rtc_tick_frame(struct GB_Core* gb);
 
-uint8_t GB_ioread(struct GB_Core* gb, uint16_t addr);
+uint8_t GB_ioread(const struct GB_Core* gb, uint16_t addr);
 void GB_iowrite(struct GB_Core* gb, uint16_t addr, uint8_t value);
-uint8_t GB_read8(struct GB_Core* gb, const uint16_t addr);
+uint8_t GB_read8(const struct GB_Core* gb, const uint16_t addr);
 void GB_write8(struct GB_Core* gb, uint16_t addr, uint8_t value);
-uint16_t GB_read16(struct GB_Core* gb, uint16_t addr);
+uint16_t GB_read16(const struct GB_Core* gb, uint16_t addr);
 void GB_write16(struct GB_Core* gb, uint16_t addr, uint16_t value);
 
 void GB_on_lcdc_write(struct GB_Core* gb, const uint8_t value);
@@ -150,8 +150,8 @@ void GB_serial_sc_write(struct GB_Core* gb, const uint8_t data);
 void GB_bcpd_write(struct GB_Core* gb, uint8_t value);
 void GB_ocpd_write(struct GB_Core* gb, uint8_t value);
 
-uint8_t GBC_bcpd_read(struct GB_Core* gb);
-uint8_t GBC_ocpd_read(struct GB_Core* gb);
+uint8_t GBC_bcpd_read(const struct GB_Core* gb);
+uint8_t GBC_ocpd_read(const struct GB_Core* gb);
 
 uint8_t GB_hdma5_read(const struct GB_Core* gb);
 void GB_hdma5_write(struct GB_Core* gb, uint8_t value);

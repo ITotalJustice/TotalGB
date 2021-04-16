@@ -466,12 +466,20 @@ struct GB_Ppu {
     bool dirty_obj[8];
 };
 
+// todo: fix bad name
+struct MBC_BankInfo {
+	const uint8_t* ptr;
+	uint16_t mask;
+};
+
 struct GB_Cart {
 	void (*write)(struct GB_Core* gb, uint16_t addr, uint8_t val);
-	const uint8_t* (*get_rom_bank)(struct GB_Core* gb, uint8_t val);
-	const uint8_t* (*get_ram_bank)(struct GB_Core* gb, uint8_t val);
+	
+	struct MBC_BankInfo (*get_rom_bank)(struct GB_Core* gb, uint8_t bank);
+	struct MBC_BankInfo (*get_ram_bank)(struct GB_Core* gb);
 
 	const uint8_t* rom;
+
 	uint8_t ram[0x10000];
 	uint32_t rom_size;
 	uint32_t ram_size;
@@ -688,10 +696,24 @@ struct GB_Apu {
 };
 
 struct GB_Core {
-	const uint8_t* mmap[0x10];
-	uint8_t io[0x80]; // easier to have io as an array than individual bytes
-	uint8_t hram[0x80]; // 0x7F + IE reg
-	uint8_t wram[8][0x1000]; // extra 6 banks in gbc
+	// todo: explain this...
+	const uint8_t* map[6];
+
+	// todo: useful for disabled ram and rtc mapped regs
+	uint16_t mask[6];
+
+	// easier to have io as an array than individual bytes
+	uint8_t io[0x80];
+	// 0x7F + IE reg
+	uint8_t hram[0x80];
+	// extra 6 banks in gbc
+	uint8_t wram[8][0x1000];
+
+	// set to 0 in non-GBC mode, otherwise it's a mirror of VBK
+	uint8_t vram_bank;
+	// set to 1 in non-GBC mode, otherwise it's a mirror of SVBK
+	uint8_t wram_bank;
+	
 	struct GB_Cpu cpu;
 	struct GB_Ppu ppu;
 	struct GB_Apu apu;

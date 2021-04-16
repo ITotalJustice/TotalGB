@@ -12,6 +12,10 @@ dependencies = [
     dependency('sdl2', version : '>=2.0.5'),
     # this is needed for linux
     dependency('gtk+-3.0'),
+    # dyn link the rest
+    dependency('zlib'),
+    # dependency('minizip'),
+    # dependency('liblzma'),
 ]
 
 source = files([
@@ -71,23 +75,6 @@ source = files([
     'src/libs/minizip/unzip.c',
     'src/libs/minizip/ioapi.c',
 
-    # ZLIB
-    'src/libs/zlib/adler32.c',
-    'src/libs/zlib/compress.c',
-    'src/libs/zlib/crc32.c',
-    'src/libs/zlib/deflate.c',
-    'src/libs/zlib/gzclose.c',
-    'src/libs/zlib/gzlib.c',
-    'src/libs/zlib/gzread.c',
-    'src/libs/zlib/gzwrite.c',
-    'src/libs/zlib/infback.c',
-    'src/libs/zlib/inffast.c',
-    'src/libs/zlib/inflate.c',
-    'src/libs/zlib/inftrees.c',
-    'src/libs/zlib/trees.c',
-    'src/libs/zlib/uncompr.c',
-    'src/libs/zlib/zutil.c',
-
     # LZMA
     'src/libs/lzma/Alloc.c',
     'src/libs/lzma/LzFind.c',
@@ -118,23 +105,22 @@ endif
 
 cflags = [
     # optimise
-    '-Ofast',
-    '-flto',
-    '-DNDEBUG',
+    # '-Ofast',
+    # lto seems to break clang
+    # '-flto',
+    # '-DNDEBUG',
 
     # warns
     '-Wall',
     '-Wextra',
     '-Wpedantic',
     '-Wswitch-enum',
-    '-Wduplicated-branches',
-    '-Wduplicated-cond',
     '-Wshadow',
     '-Wfatal-errors',
     '-Wdouble-promotion',
     #'-Wframe-larger-than=300KB',
 
-    # '-DGB_DEBUG',
+    '-DGB_DEBUG',
 
     # 7zip
     '-D_7ZIP_ST',
@@ -142,9 +128,6 @@ cflags = [
     # minizip
     '-DNOUNCRYPT',
     '-DNOCRYPT',
-
-    # speedhacks
-    '-DGB_RTC_SPEEDHACK=1',
 
     '-DMGB_NO_LZ4',
     '-DMGB_NO_ZSTD',
@@ -160,15 +143,12 @@ cflags = [
 ]
 
 cppflags = [
-    '-std=gnu++17',
-    '-Wuseless-cast',
-    '-fdevirtualize-at-ltrans',
-    '-Wsuggest-final-types',
+    '-std=c++17',
 ]
 
 linkflags = [
     # '-Wl,-subsystem,windows',
-    # '-s',
+    '-s',
 ]
 
 #subdir('res')

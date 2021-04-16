@@ -44,19 +44,34 @@ void GB_mbc5_write(struct GB_Core* gb, uint16_t addr, uint8_t value) {
     }
 }
 
-const uint8_t* GB_mbc5_get_rom_bank(struct GB_Core* gb, uint8_t bank) {
+struct MBC_BankInfo GB_mbc5_get_rom_bank(struct GB_Core* gb, uint8_t bank) {
 	if (bank == 0) {
-		return gb->cart.rom;
-	}
-	
-	return gb->cart.rom + (gb->cart.rom_bank * 0x4000);
+        return (struct MBC_BankInfo) {
+            .ptr = gb->cart.rom,
+            .mask = 0x1FFF
+        };
+    }
+    else {
+        return (struct MBC_BankInfo) {
+            .ptr = gb->cart.rom + (gb->cart.rom_bank * 0x4000),
+            .mask = 0x1FFF
+        };
+    }
 }
 
-const uint8_t* GB_mbc5_get_ram_bank(struct GB_Core* gb, uint8_t bank) {
-	GB_UNUSED(bank);
-    
+struct MBC_BankInfo GB_mbc5_get_ram_bank(struct GB_Core* gb) {
 	if (!(gb->cart.flags & MBC_FLAGS_RAM) || !gb->cart.ram_enabled) {
-		return MBC_NO_RAM;
+		static const uint8_t MBC_NO_RAM[1] = { 0xFF };
+
+        return (struct MBC_BankInfo) {
+            .ptr = MBC_NO_RAM,
+            .mask = 0x1
+        };
 	}
-	return gb->cart.ram + (0x2000 * gb->cart.ram_bank);
+    else {
+        return (struct MBC_BankInfo) {
+            .ptr = gb->cart.ram + (0x2000 * gb->cart.ram_bank),
+            .mask = 0x1FFF
+        };
+    }
 }

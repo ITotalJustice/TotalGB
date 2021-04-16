@@ -63,12 +63,12 @@ void GB_bcpd_write(struct GB_Core* gb, uint8_t value) {
     bcps_increment(gb);
 }
 
-uint8_t GBC_bcpd_read(struct GB_Core* gb) {
+uint8_t GBC_bcpd_read(const struct GB_Core* gb) {
     const uint8_t index = get_bcps_index(gb);
     return gb->ppu.bg_palette[index];
 }
 
-uint8_t GBC_ocpd_read(struct GB_Core* gb) {
+uint8_t GBC_ocpd_read(const struct GB_Core* gb) {
     const uint8_t index = get_ocps_index(gb);
     return gb->ppu.obj_palette[index];
 }
@@ -89,7 +89,22 @@ bool GB_is_hdma_active(const struct GB_Core* gb) {
 }
 
 uint8_t hdma_read(const struct GB_Core* gb, const uint16_t addr) {
-    return gb->mmap[(addr >> 12)][addr & 0x0FFF];
+    // TODO: this can be optimised into a memcpy for
+    // gdma and hdma!
+    // return GB_read8(gb, addr);
+    if (addr <= 0xBFFF) {
+        return gb->map[addr >> 13][addr & gb->mask[addr >> 13]];
+    }
+    else if (addr >= 0xC000 && addr <= 0xCFFF) {
+        return gb->wram[0][addr & 0x0FFF];
+    }
+    else if (addr >= 0xD000 && addr <= 0xDFFF) {
+        return gb->wram[gb->wram_bank][addr & 0x0FFF];
+    }
+
+    assert(0);
+
+    return 0xFF;//gb->mmap[(addr >> 12)][addr & 0x0FFF];
 }
 
 void hdma_write(struct GB_Core* gb, const uint16_t addr, const uint8_t value) {

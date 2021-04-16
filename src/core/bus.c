@@ -87,7 +87,7 @@ static inline void GB_iowrite_gbc(struct GB_Core* gb, uint16_t addr, uint8_t val
 	}
 }
 
-uint8_t GB_ioread(struct GB_Core* gb, uint16_t addr) {
+uint8_t GB_ioread(const struct GB_Core* gb, uint16_t addr) {
 	switch (addr & 0x7F) {
 		case 0x00:
 			return GB_joypad_read(gb);
@@ -284,47 +284,20 @@ void GB_iowrite(struct GB_Core* gb, uint16_t addr, uint8_t value) {
 	}
 }
 
-static inline uint8_t GB_mbc3_rtc_read(const struct GB_Core* gb) {
-    switch (gb->cart.rtc_mapped_reg) {
-        case GB_RTC_MAPPED_REG_S: return gb->cart.rtc.S;
-        case GB_RTC_MAPPED_REG_M: return gb->cart.rtc.M;
-        case GB_RTC_MAPPED_REG_H: return gb->cart.rtc.H;
-        case GB_RTC_MAPPED_REG_DL: return gb->cart.rtc.DL;
-        case GB_RTC_MAPPED_REG_DH: return gb->cart.rtc.DH;
+uint8_t GB_read8(const struct GB_Core* gb, const uint16_t addr) {
+	// fast routine!
+    if (addr <= 0xBFFF) {
+        return gb->map[addr >> 13][addr & 0x1FFF];//gb->mask[addr >> 13]];
     }
 
-	assert(0);
-    GB_UNREACHABLE(0xFF);
-}
-
-static inline bool GB_is_rtc_read(const struct GB_Core* gb) {
-	return gb->cart.in_ram == false && GB_has_mbc_flags(gb, MBC_FLAGS_RTC);
-}
-
-uint8_t GB_read8(struct GB_Core* gb, const uint16_t addr) {
-	if (LIKELY(addr < 0xFE00)) {
-		#if GB_RTC_SPEEDHACK
-		#ifndef NDEBUG
-			if (UNLIKELY(addr >= 0xA000 && addr <= 0xBFFF && GB_is_rtc_read(gb))) {
-				if (UNLIKELY(addr != 0xA000)) {
-					printf("[FATAL] RTC unmapped read at 0x%04X\n", addr);
-					assert(addr == 0xA000);
-				}
-			}
-		#endif // NDEBUG
-			return gb->mmap[(addr >> 12)][addr & 0x0FFF];
-		#else // GB_RTC_SPEEDHACK
-
-		if (UNLIKELY(addr >= 0xA000 && addr <= 0xBFFF && GB_is_rtc_read(gb))) {
-			return GB_mbc3_rtc_read(gb);
-		}
-		else {
-			return gb->mmap[(addr >> 12)][addr & 0x0FFF];
-		}
-		#endif // GB_RTC_SPEEDHACK
-
-	}
-	else if (addr <= 0xFE9F) {
+    // slow
+    else if (addr >= 0xC000 && addr <= 0xCFFF) {
+    	return gb->wram[0][addr & 0x0FFF];
+    }
+    else if (addr >= 0xD000 && addr <= 0xDFFF) {
+    	return gb->wram[gb->wram_bank][addr & 0x0FFF];
+    }
+    else if (addr >= 0xFE00 && addr <= 0xFE9F) {
         return gb->ppu.oam[addr & 0xFF];
     }
 	else if (addr >= 0xFF00 && addr <= 0xFF7F) {
@@ -332,6 +305,17 @@ uint8_t GB_read8(struct GB_Core* gb, const uint16_t addr) {
     }
 	else if (addr >= 0xFF80) {
         return gb->hram[addr & 0x7F];
+    }
+
+    // this is echo ram area, almost never used, Nintendo
+    // even outlined this area as banned in the programming manual.
+    // however, this area is technically still valid, so, this area is
+    // added to the least common if else branch
+    else if (addr >= 0xE000 && addr <= 0xEFFF) {
+    	return gb->wram[0][addr & 0x0FFF];
+    }
+    else if (addr >= 0xF000 && addr <= 0xFDFF) {
+    	return gb->wram[gb->wram_bank][addr & 0x0FFF];
     }
 
 	// unused section in address area.
@@ -347,7 +331,7 @@ void GB_write8(struct GB_Core* gb, uint16_t addr, uint8_t value) {
 				break;
 			
 			case 0x8: case 0x9:
-				gb->ppu.vram[IO_VBK][addr & 0x1FFF] = value;
+				gb->ppu.vram[gb->vram_bank][addr & 0x1FFF] = value;
 				break;
 			
 			case 0xC: case 0xE:
@@ -355,7 +339,7 @@ void GB_write8(struct GB_Core* gb, uint16_t addr, uint8_t value) {
 				break;
 			
 			case 0xD: case 0xF:
-				gb->wram[IO_SVBK][addr & 0x0FFF] = value;
+				gb->wram[gb->wram_bank][addr & 0x0FFF] = value;
 				break;
 		}
 	}
@@ -370,7 +354,7 @@ void GB_write8(struct GB_Core* gb, uint16_t addr, uint8_t value) {
     }
 }
 
-uint16_t GB_read16(struct GB_Core* gb, uint16_t addr) {
+uint16_t GB_read16(const struct GB_Core* gb, uint16_t addr) {
 	const uint8_t lo = GB_read8(gb, addr + 0);
 	const uint8_t hi = GB_read8(gb, addr + 1);
 
@@ -383,49 +367,49 @@ void GB_write16(struct GB_Core* gb, uint16_t addr, uint16_t value) {
 }
 
 void GB_update_rom_banks(struct GB_Core* gb) {
-	const uint8_t* rom_bank0 = gb->cart.get_rom_bank(gb, 0);
-	const uint8_t* rom_bankx = gb->cart.get_rom_bank(gb, 1);
+	const struct MBC_BankInfo rom_bank0 = gb->cart.get_rom_bank(gb, 0);
+	const struct MBC_BankInfo rom_bankx = gb->cart.get_rom_bank(gb, 1);
 
-	gb->mmap[0x0] = rom_bank0 + 0x0000;
-	gb->mmap[0x1] = rom_bank0 + 0x1000;
-	gb->mmap[0x2] = rom_bank0 + 0x2000;
-	gb->mmap[0x3] = rom_bank0 + 0x3000;
+	gb->map[0x0] = rom_bank0.ptr + 0x0000;
+	gb->map[0x1] = rom_bank0.ptr + 0x2000;
+	gb->map[0x2] = rom_bankx.ptr + 0x0000;
+	gb->map[0x3] = rom_bankx.ptr + 0x2000;
 
-	gb->mmap[0x4] = rom_bankx + 0x0000;
-	gb->mmap[0x5] = rom_bankx + 0x1000;
-	gb->mmap[0x6] = rom_bankx + 0x2000;
-	gb->mmap[0x7] = rom_bankx + 0x3000;
+	gb->mask[0x0] = rom_bank0.mask;
+	gb->mask[0x1] = rom_bank0.mask;
+	gb->mask[0x2] = rom_bankx.mask;
+	gb->mask[0x3] = rom_bankx.mask;
 }
 
 void GB_update_ram_banks(struct GB_Core* gb) {
-	const uint8_t* cart_ram = gb->cart.get_ram_bank(gb, 0);
+	const struct MBC_BankInfo info = gb->cart.get_ram_bank(gb);
 
-	gb->mmap[0xA] = cart_ram + 0x0000;
-	gb->mmap[0xB] = cart_ram + 0x1000;
+	gb->map[0x5] = info.ptr;
+	gb->mask[0x5] = info.mask;
 }
 
 void GB_update_vram_banks(struct GB_Core* gb) {
+	gb->mask[0x4] = 0x1FFF;
+	gb->vram_bank = 0;
+
 	if (GB_is_system_gbc(gb) == true) {
-		gb->mmap[0x8] = gb->ppu.vram[IO_VBK] + 0x0000;
-		gb->mmap[0x9] = gb->ppu.vram[IO_VBK] + 0x1000;
+		gb->map[0x4] = gb->ppu.vram[IO_VBK];
+		gb->vram_bank = IO_VBK;
 	}
 	else {
-		gb->mmap[0x8] = gb->ppu.vram[0] + 0x0000;
-		gb->mmap[0x9] = gb->ppu.vram[0] + 0x1000;
+		gb->map[0x4] = gb->ppu.vram[0];
+		gb->vram_bank = 0;
 	}
 }
 
 void GB_update_wram_banks(struct GB_Core* gb) {
-	gb->mmap[0xC] = gb->wram[0];
-	gb->mmap[0xE] = gb->wram[0];
-
 	if (GB_is_system_gbc(gb) == true) {
-		gb->mmap[0xD] = gb->wram[IO_SVBK];
-		gb->mmap[0xF] = gb->wram[IO_SVBK];
+		gb->wram_bank = 1;
+		gb->wram_bank = IO_SVBK;
 	}
 	else {
-		gb->mmap[0xD] = gb->wram[1];
-		gb->mmap[0xF] = gb->wram[1];
+		// fixed to 1 on non-GBC mode
+		gb->wram_bank = 1;
 	}
 }
 

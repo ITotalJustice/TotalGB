@@ -22,7 +22,7 @@ public:
 private:
     std::vector<std::uint8_t> data{};
     std::uint32_t pos{0};
-    std::uint32_t getFileSize(void);
+    std::uint32_t getFileSize(void) override;
 };
 
 } // namespace mgb::io

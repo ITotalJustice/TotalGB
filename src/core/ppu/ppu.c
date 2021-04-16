@@ -225,9 +225,29 @@ void GB_ppu_run(struct GB_Core* gb, uint16_t cycles) {
 }
 
 void GB_DMA(struct GB_Core* gb) {
-    assert(IO_DMA <= 0xF1);
+    assert(IO_DMA <= 0xDF);
 
-    memcpy(gb->ppu.oam, gb->mmap[IO_DMA >> 4] + ((IO_DMA & 0xF) << 8), sizeof(gb->ppu.oam));
+    // setup range for memcpy!
+    const uint16_t src_addr = (IO_DMA) << 8;
+
+    for (int i = 0; i < 0xA0; i++) {
+        gb->ppu.oam[i] = GB_read8(gb, src_addr + 1);
+    }
+
+    // const uint8_t* src = NULL; // this will never be NULL
+
+    // if (src_addr <= 0xBFFF) {
+    //     src = gb->map[src_addr >> 13];
+    // }
+    // else if (src_addr >= 0xC000 && src_addr <= 0xCFFF) {
+    //     src = gb->wram[0];
+    // }
+    // else if (src_addr >= 0xD000 && src_addr <= 0xDFFF) {
+    //     src = gb->wram[gb->wram_bank];
+    // }
+
+    // assert(src != NULL);
+    // memcpy(gb->ppu.oam, src, sizeof(gb->ppu.oam));
 	
     // because i am peforming the dma at once, i am also adding the cycles
     // at once as well.
