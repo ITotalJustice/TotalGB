@@ -225,7 +225,7 @@ void GB_ppu_run(struct GB_Core* gb, uint16_t cycles) {
 }
 
 void GB_DMA(struct GB_Core* gb) {
-    assert(IO_DMA <= 0xF1);
+    assert(IO_DMA <= 0xDF);
 
     memcpy(gb->ppu.oam, gb->mmap[IO_DMA >> 4] + ((IO_DMA & 0xF) << 8), sizeof(gb->ppu.oam));
 	

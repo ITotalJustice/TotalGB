@@ -119,7 +119,7 @@ endif
 cflags = [
     # optimise
     '-Ofast',
-    '-flto',
+    # '-flto',
     '-DNDEBUG',
 
     # warns
@@ -127,8 +127,6 @@ cflags = [
     '-Wextra',
     '-Wpedantic',
     '-Wswitch-enum',
-    '-Wduplicated-branches',
-    '-Wduplicated-cond',
     '-Wshadow',
     '-Wfatal-errors',
     '-Wdouble-promotion',
@@ -161,9 +159,6 @@ cflags = [
 
 cppflags = [
     '-std=gnu++17',
-    '-Wuseless-cast',
-    '-fdevirtualize-at-ltrans',
-    '-Wsuggest-final-types',
 ]
 
 linkflags = [

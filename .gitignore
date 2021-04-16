@@ -55,3 +55,6 @@ msvc/tempboy/x64
 output.html
 output.wasm
 output.js
+
+#
+.cache
