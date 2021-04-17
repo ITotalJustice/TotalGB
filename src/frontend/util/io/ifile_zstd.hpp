@@ -2,7 +2,8 @@
 
 #ifndef MGB_NO_ZSTD
 
-#include "ifile_base.hpp"
+#include "frontend/util/io/ifile_base.hpp"
+
 
 namespace mgb::io {
 

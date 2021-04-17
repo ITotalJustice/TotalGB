@@ -1,29 +1,30 @@
-#include "romloader.hpp"
+#include "frontend/util/io/romloader.hpp"
 
 #ifndef MGB_NO_7ZIP
-#include "ifile_7z.hpp"
+#include "frontend/util/io/ifile_7z.hpp"
 #endif
 #ifndef MGB_NO_CFILE
-#include "ifile_cfile.hpp"
+#include "frontend/util/io/ifile_cfile.hpp"
 #endif
 #ifndef MGB_NO_GZIP
-#include "ifile_gzip.hpp"
+#include "frontend/util/io/ifile_gzip.hpp"
 #endif
-#include "ifile_mem.hpp"
+#include "frontend/util/io/ifile_mem.hpp"
 #ifndef MGB_NO_RAR
-#include "ifile_rar.hpp"
+#include "frontend/util/io/ifile_rar.hpp"
 #endif
 #ifndef MGB_NO_ZIP
-#include "ifile_zip.hpp"
+#include "frontend/util/io/ifile_zip.hpp"
 #endif
 #ifndef MGB_NO_ZSTD
-#include "ifile_zstd.hpp"
+#include "frontend/util/io/ifile_zstd.hpp"
 #endif
 
-#include "../util/util.hpp"
+#include "frontend/util/util.hpp"
 
 #include <cstring>
 #include <array>
+
 
 namespace mgb::io {
 

@@ -1,6 +1,6 @@
 #pragma once
 
-#include "ifile_base.hpp"
+#include "frontend/util/io/ifile_base.hpp"
 
 namespace mgb::io {
 

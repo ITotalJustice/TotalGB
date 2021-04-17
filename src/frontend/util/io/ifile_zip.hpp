@@ -1,19 +1,21 @@
 #pragma once
 
-#ifndef MGB_NO_GZIP
+#ifndef MGB_NO_ZIP
 
-#include "ifile_base.hpp"
+#include "frontend/util/io/ifile_base.hpp"
 
-#include <zlib/zlib.h>
-#include <string>
+#include <minizip/unzip.h>
+#include <cstdint>
+#include <vector>
+
 
 namespace mgb::io {
 
-class Gzip final : public IFile {
+
+class Zip final : public IFile {
 public:
-    Gzip(const char* path, const char* mode);
-    Gzip(const std::string& path, const std::string& mode);
-    ~Gzip();
+    Zip(const char* path, const char* mode);
+    ~Zip();
     
     auto is_open(void) const -> bool override;
     auto good(void) const -> bool override;
@@ -23,11 +25,14 @@ public:
     auto seek(std::uint32_t len, std::uint32_t ed) -> bool override;
     auto tell(void) -> std::uint32_t override;
 
+    auto readAll(void) -> std::vector<std::uint8_t>;
+
 private:
-    gzFile file{nullptr};
+    unzFile file{nullptr};
+    unz_file_info file_info{};
     std::uint32_t getFileSize(void) override;
 };
 
 } // namespace mgb::io
 
-#endif // #ifndef MGB_NO_GZIP
+#endif // #ifndef MGB_NO_ZIP

@@ -62,18 +62,25 @@ source = files([
 
     # frontend mgb++
     'src/frontend/main.cpp',
+
     'src/frontend/mgb.cpp',
-    'src/frontend/events.cpp',
+    
+    'src/frontend/platforms/video/sdl2/sdl2_events.cpp',
+    'src/frontend/platforms/video/sdl2/sdl2_video.cpp',
+
+    'src/frontend/platforms/audio/sdl2/sdl2_audio.cpp',
+
     'src/frontend/util/mem.cpp',
     'src/frontend/util/util.cpp',
-    'src/frontend/io/ifile_7z.cpp',
-    'src/frontend/io/ifile_cfile.cpp',
-    'src/frontend/io/ifile_gzip.cpp',
-    'src/frontend/io/ifile_mem.cpp',
-    'src/frontend/io/ifile_rar.cpp',
-    'src/frontend/io/ifile_zip.cpp',
-    'src/frontend/io/ifile_zstd.cpp',
-    'src/frontend/io/romloader.cpp',
+    
+    'src/frontend/util/io/ifile_7z.cpp',
+    'src/frontend/util/io/ifile_cfile.cpp',
+    'src/frontend/util/io/ifile_gzip.cpp',
+    'src/frontend/util/io/ifile_mem.cpp',
+    'src/frontend/util/io/ifile_rar.cpp',
+    'src/frontend/util/io/ifile_zip.cpp',
+    'src/frontend/util/io/ifile_zstd.cpp',
+    'src/frontend/util/io/romloader.cpp',
 
     # MINIZIP
     'src/libs/minizip/unzip.c',
@@ -152,7 +159,7 @@ cflags = [
 ]
 
 cppflags = [
-    
+    '-std=c++20',
 ]
 
 linkflags = [
@@ -170,7 +177,7 @@ exe = executable(
     c_std: 'c11',
 
     cpp_args: [ cppflags, cflags ],
-    cpp_std: 'c++17',
+    cpp_std: 'c++20',
     cpp_rtti: false,
     
     link_args: [ linkflags ],

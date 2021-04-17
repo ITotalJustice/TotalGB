@@ -1,16 +1,16 @@
-#include "mgb.hpp"
-#include "../core/gb.h"
-#include "util/util.hpp"
-#include "util/log.hpp"
+#include "frontend/platforms/video/sdl2/sdl2_video.hpp"
+#include "core/gb.h"
 
 #include <cassert>
 #include <array>
 
-namespace mgb {
+
+namespace mgb::platform::video::sdl2 {
+
 
 struct KeyMapEntry {
     int key;
-    enum GB_Button button;
+    GB_Button button;
 };
 
 constexpr std::array<KeyMapEntry, 8> key_map{{
@@ -24,8 +24,33 @@ constexpr std::array<KeyMapEntry, 8> key_map{{
     {SDLK_RIGHT, GB_BUTTON_RIGHT},
 }};
 
-auto App::Events() -> void {
+auto SDL2::HasController(int which) const -> bool {
+    for (auto &p : this->controllers) {
+        if (p.id == which) {
+            return true;
+        }
+    }
+    return false;
+}
+
+auto SDL2::AddController(int index) -> bool {
+    auto controller = SDL_GameControllerOpen(index);
+    if (!controller) {
+        printf("Failed to open controller from index %d\n", index);
+        return false;
+    }
+
+    ControllerCtx ctx;
+    ctx.ptr = controller;
+    ctx.id = SDL_JoystickInstanceID(SDL_GameControllerGetJoystick(controller));
+    this->controllers.push_back(std::move(ctx));
+
+    return true;
+}
+
+auto SDL2::PollEvents() -> void {
     SDL_Event e;
+
     while (SDL_PollEvent(&e)) {
         switch (e.type) {
             case SDL_QUIT:
@@ -89,17 +114,16 @@ auto App::Events() -> void {
     }
 }
 
-auto App::OnQuitEvent(const SDL_QuitEvent& e) -> void {
-    log::log("quit request at %u\n", e.timestamp);
+auto SDL2::OnQuitEvent(const SDL_QuitEvent& e) -> void {
     printf("quit request at %u\n", e.timestamp);
-    this->running = false;
+    this->callback.OnQuit();
 }
 
-auto App::OnDropEvent(SDL_DropEvent& e) -> void {
+auto SDL2::OnDropEvent(SDL_DropEvent& e) -> void {
     switch (e.type) {
         case SDL_DROPFILE:
             if (e.file != NULL) {
-                this->LoadRom(e.file);
+                this->callback.LoadRom(e.file);
                 SDL_free(e.file);
             }
             break;
@@ -115,22 +139,22 @@ auto App::OnDropEvent(SDL_DropEvent& e) -> void {
     }
 }
 
-auto App::OnAudioEvent(const SDL_AudioDeviceEvent&) -> void {
+auto SDL2::OnAudioEvent(const SDL_AudioDeviceEvent&) -> void {
 
 }
 
-auto App::OnWindowEvent(const SDL_WindowEvent& e) -> void {
+auto SDL2::OnWindowEvent(const SDL_WindowEvent& e) -> void {
     switch (e.event) {
         case SDL_WINDOWEVENT_EXPOSED:
-            this->ResizeScreen();
+            // this->ResizeScreen();
             break;
 
         case SDL_WINDOWEVENT_RESIZED:
-            this->ResizeScreen();
+            // this->ResizeScreen();
             break;
 
         case SDL_WINDOWEVENT_RESTORED:
-            this->ResizeScreen();
+            // this->ResizeScreen();
             break;
 
         case SDL_WINDOWEVENT_CLOSE:
@@ -139,7 +163,7 @@ auto App::OnWindowEvent(const SDL_WindowEvent& e) -> void {
 }
 
 #if SDL_VERSION_ATLEAST(2, 0, 9)
-auto App::OnDisplayEvent(const SDL_DisplayEvent& e) -> void {
+auto SDL2::OnDisplayEvent(const SDL_DisplayEvent& e) -> void {
    switch (e.event) {
        case SDL_DISPLAYEVENT_NONE:
            break;
@@ -150,13 +174,13 @@ auto App::OnDisplayEvent(const SDL_DisplayEvent& e) -> void {
 }
 #endif
 
-auto App::OnKeyEvent(const SDL_KeyboardEvent& e) -> void {
+auto SDL2::OnKeyEvent(const SDL_KeyboardEvent& e) -> void {
     const auto kdown = e.type == SDL_KEYDOWN;
 
     // first check if any of the mapped keys were pressed...
     for (auto [key, button] : key_map) {
         if (key == e.keysym.sym) {
-            GB_set_buttons(this->instance.GetGB(), button, kdown);
+            GB_set_buttons(this->callback.GetCore(), button, kdown);
             return;
         }
     }
@@ -169,34 +193,34 @@ auto App::OnKeyEvent(const SDL_KeyboardEvent& e) -> void {
     // otherwise, check if its a valid key
     switch (e.keysym.sym) {
         case SDLK_o:
-            this->FilePicker();
+            this->callback.FilePicker();
             break;
 
     // these are hotkeys to toggle layers of the gb core
     // such as bg, win, obj...
         case SDLK_0:
-            GB_set_render_palette_layer_config(this->instance.GetGB(), GB_RENDER_LAYER_CONFIG_ALL);
+            GB_set_render_palette_layer_config(this->callback.GetCore(), GB_RENDER_LAYER_CONFIG_ALL);
             break;
 
         case SDLK_1:
-            GB_set_render_palette_layer_config(this->instance.GetGB(), GB_RENDER_LAYER_CONFIG_BG);
+            GB_set_render_palette_layer_config(this->callback.GetCore(), GB_RENDER_LAYER_CONFIG_BG);
             break;
 
         case SDLK_2:
-            GB_set_render_palette_layer_config(this->instance.GetGB(), GB_RENDER_LAYER_CONFIG_WIN);
+            GB_set_render_palette_layer_config(this->callback.GetCore(), GB_RENDER_LAYER_CONFIG_WIN);
             break;
 
         case SDLK_3:
-            GB_set_render_palette_layer_config(this->instance.GetGB(), GB_RENDER_LAYER_CONFIG_OBJ);
+            GB_set_render_palette_layer_config(this->callback.GetCore(), GB_RENDER_LAYER_CONFIG_OBJ);
             break;
 
     // these are for savestates
         case SDLK_F1:
-            this->instance.SaveState();
+            this->callback.SaveState();
             break;
 
         case SDLK_F2:
-            this->instance.LoadState();
+            this->callback.LoadState();
             break;
 
     // these are for debugging
@@ -209,62 +233,62 @@ auto App::OnKeyEvent(const SDL_KeyboardEvent& e) -> void {
     }
 }
 
-auto App::OnJoypadAxisEvent(const SDL_JoyAxisEvent&) -> void {
+auto SDL2::OnJoypadAxisEvent(const SDL_JoyAxisEvent&) -> void {
 
 }
 
-auto App::OnJoypadButtonEvent(const SDL_JoyButtonEvent&) -> void {
+auto SDL2::OnJoypadButtonEvent(const SDL_JoyButtonEvent&) -> void {
 
 }
 
-auto App::OnJoypadHatEvent(const SDL_JoyHatEvent&) -> void {
+auto SDL2::OnJoypadHatEvent(const SDL_JoyHatEvent&) -> void {
 
 }
 
-auto App::OnJoypadDeviceEvent(const SDL_JoyDeviceEvent&) -> void {
+auto SDL2::OnJoypadDeviceEvent(const SDL_JoyDeviceEvent&) -> void {
 
 }
 
-auto App::OnControllerAxisEvent(const SDL_ControllerAxisEvent&) -> void {
+auto SDL2::OnControllerAxisEvent(const SDL_ControllerAxisEvent&) -> void {
 
 }
 
-auto App::OnControllerButtonEvent(const SDL_ControllerButtonEvent& e) -> void {
+auto SDL2::OnControllerButtonEvent(const SDL_ControllerButtonEvent& e) -> void {
     assert(e.type == SDL_CONTROLLERBUTTONDOWN || e.type == SDL_CONTROLLERBUTTONUP);
     
     if (!this->HasController(e.which)) {
-        log::log("unkown controller unkown cbutton" + std::to_string(e.button));
+        // log::log("unkown controller unkown cbutton" + std::to_string(e.button));
         return;
     }
 
     const bool down = e.type == SDL_CONTROLLERBUTTONDOWN;
 
     switch (e.button) {
-        case SDL_CONTROLLER_BUTTON_A: GB_set_buttons(this->instance.GetGB(), GB_BUTTON_B, down); break;
-        case SDL_CONTROLLER_BUTTON_Y: GB_set_buttons(this->instance.GetGB(), GB_BUTTON_B, down); break;
-        case SDL_CONTROLLER_BUTTON_B: GB_set_buttons(this->instance.GetGB(), GB_BUTTON_A, down); break;
-        case SDL_CONTROLLER_BUTTON_X: GB_set_buttons(this->instance.GetGB(), GB_BUTTON_A, down); break;
-        case SDL_CONTROLLER_BUTTON_BACK: GB_set_buttons(this->instance.GetGB(), GB_BUTTON_SELECT, down); break;
-        case SDL_CONTROLLER_BUTTON_START: GB_set_buttons(this->instance.GetGB(), GB_BUTTON_START, down); break;
-        case SDL_CONTROLLER_BUTTON_DPAD_UP: GB_set_buttons(this->instance.GetGB(), GB_BUTTON_UP, down); break;
-        case SDL_CONTROLLER_BUTTON_DPAD_DOWN: GB_set_buttons(this->instance.GetGB(), GB_BUTTON_DOWN, down); break;
-        case SDL_CONTROLLER_BUTTON_DPAD_LEFT: GB_set_buttons(this->instance.GetGB(), GB_BUTTON_LEFT, down); break;
-        case SDL_CONTROLLER_BUTTON_DPAD_RIGHT: GB_set_buttons(this->instance.GetGB(), GB_BUTTON_RIGHT, down); break;
+        case SDL_CONTROLLER_BUTTON_A: GB_set_buttons(this->callback.GetCore(), GB_BUTTON_B, down); break;
+        case SDL_CONTROLLER_BUTTON_Y: GB_set_buttons(this->callback.GetCore(), GB_BUTTON_B, down); break;
+        case SDL_CONTROLLER_BUTTON_B: GB_set_buttons(this->callback.GetCore(), GB_BUTTON_A, down); break;
+        case SDL_CONTROLLER_BUTTON_X: GB_set_buttons(this->callback.GetCore(), GB_BUTTON_A, down); break;
+        case SDL_CONTROLLER_BUTTON_BACK: GB_set_buttons(this->callback.GetCore(), GB_BUTTON_SELECT, down); break;
+        case SDL_CONTROLLER_BUTTON_START: GB_set_buttons(this->callback.GetCore(), GB_BUTTON_START, down); break;
+        case SDL_CONTROLLER_BUTTON_DPAD_UP: GB_set_buttons(this->callback.GetCore(), GB_BUTTON_UP, down); break;
+        case SDL_CONTROLLER_BUTTON_DPAD_DOWN: GB_set_buttons(this->callback.GetCore(), GB_BUTTON_DOWN, down); break;
+        case SDL_CONTROLLER_BUTTON_DPAD_LEFT: GB_set_buttons(this->callback.GetCore(), GB_BUTTON_LEFT, down); break;
+        case SDL_CONTROLLER_BUTTON_DPAD_RIGHT: GB_set_buttons(this->callback.GetCore(), GB_BUTTON_RIGHT, down); break;
         case SDL_CONTROLLER_BUTTON_LEFTSTICK: break;
         case SDL_CONTROLLER_BUTTON_RIGHTSTICK: break;
         case SDL_CONTROLLER_BUTTON_GUIDE: break; // home
         default:
-            log::log("unkown cbutton %u\n", e.button);
+            printf("unkown cbutton %u\n", e.button);
             break;
     }
 }
 
-auto App::OnControllerDeviceEvent(const SDL_ControllerDeviceEvent& e) -> void {
+auto SDL2::OnControllerDeviceEvent(const SDL_ControllerDeviceEvent& e) -> void {
     if (e.type == SDL_CONTROLLERDEVICEADDED) {
-        log::log("CONTROLLER ADDED");
+        printf("CONTROLLER ADDED");
         this->AddController(e.which);
     } else if (e.type == SDL_CONTROLLERDEVICEREMOVED) {
-        log::log("CONTROLLER REMOVED");
+        printf("CONTROLLER REMOVED");
         int i = 0;
         for (auto& p : this->controllers) {
             if (p.id == e.which) {
@@ -278,12 +302,12 @@ auto App::OnControllerDeviceEvent(const SDL_ControllerDeviceEvent& e) -> void {
     }
 }
 
-auto App::OnTouchEvent(const SDL_TouchFingerEvent&) -> void {
+auto SDL2::OnTouchEvent(const SDL_TouchFingerEvent&) -> void {
 
 }
 
-auto App::OnUserEvent(SDL_UserEvent&) -> void {
+auto SDL2::OnUserEvent(SDL_UserEvent&) -> void {
 
 }
 
-} // namespace mgb
+} // namespace mgb::platform::video::sdl2 {

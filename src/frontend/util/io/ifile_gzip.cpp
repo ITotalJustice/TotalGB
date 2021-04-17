@@ -1,8 +1,9 @@
-#include "ifile_gzip.hpp"
+#include "frontend/util/io/ifile_gzip.hpp"
 
 #ifndef MGB_NO_GZIP
 
 namespace mgb::io {
+
 
 Gzip::Gzip(const char* path, const char* mode) {
     this->file = gzopen(path, mode);

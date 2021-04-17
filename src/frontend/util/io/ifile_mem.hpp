@@ -1,18 +1,18 @@
 #pragma once
 
-#include "ifile_base.hpp"
+#include "frontend/util/io/ifile_base.hpp"
 
-#include <string>
-#include <memory>
+#include <cstdint>
+#include <vector>
+
 
 namespace mgb::io {
 
-class RomLoader final : public IFile {
-public:
-    explicit RomLoader(const char* path);
-    explicit RomLoader(const std::string& path);
-    ~RomLoader() = default;
 
+class MemFile final : public IFile {
+public:
+    MemFile(std::vector<std::uint8_t>&& _data);
+    
     auto is_open(void) const -> bool override;
     auto good(void) const -> bool override;
     auto flush(void) -> bool override;
@@ -22,8 +22,9 @@ public:
     auto tell(void) -> std::uint32_t override;
 
 private:
-    std::unique_ptr<IFile> file{nullptr};
-    auto getFileSize(void) -> std::uint32_t override;
+    std::vector<std::uint8_t> data{};
+    std::uint32_t pos{0};
+    std::uint32_t getFileSize(void) override;
 };
 
 } // namespace mgb::io
