@@ -9,10 +9,6 @@
 #define ROM_SIZE_MULT 0x8000
 
 void GB_throw_info(const struct GB_Core* gb, const char* message) {
-	#if 0
-	printf("[INFO] %s\n", message);
-	#endif
-
 	if (gb->error_cb != NULL) {
 		struct GB_ErrorData data = {0};
 		data.type = GB_ERROR_TYPE_INFO;
@@ -23,10 +19,6 @@ void GB_throw_info(const struct GB_Core* gb, const char* message) {
 }
 
 void GB_throw_warn(const struct GB_Core* gb, const char* message) {
-	#if 0
-	printf("[WARN] %s\n", message);
-	#endif
-
 	if (gb->error_cb != NULL) {
 		struct GB_ErrorData data = {0};
 		data.type = GB_ERROR_TYPE_WARN;
@@ -37,10 +29,6 @@ void GB_throw_warn(const struct GB_Core* gb, const char* message) {
 }
 
 void GB_throw_error(const struct GB_Core* gb, enum GB_ErrorDataType type, const char* message) {
-	#if 0
-	printf("[ERROR] %s\n", message);
-	#endif
-
 	if (gb->error_cb != NULL) {
 		struct GB_ErrorData data = {0};
 		data.type = GB_ERROR_TYPE_ERROR;
@@ -64,6 +52,7 @@ bool GB_init(struct GB_Core* gb) {
 
 void GB_quit(struct GB_Core* gb) {
 	assert(gb);
+	GB_UNUSED(gb);
 }
 
 void GB_reset(struct GB_Core* gb) {
@@ -78,16 +67,20 @@ void GB_reset(struct GB_Core* gb) {
 	memset(gb->ppu.obj_colours, 0, sizeof(gb->ppu.obj_colours));
 	memset(gb->ppu.dirty_bg, 0, sizeof(gb->ppu.dirty_bg));
 	memset(gb->ppu.dirty_obj, 0, sizeof(gb->ppu.dirty_obj));
+	
 	GB_update_all_colours_gb(gb);
+	
 	gb->joypad.var = 0xFF;
 	gb->ppu.next_cycles = 0;
 	gb->timer.next_cycles = 0;
 	gb->cpu.cycles = 0;
 	gb->cpu.halt = 0;
 	gb->cpu.ime = 0;
+	
 	// CPU
 	GB_cpu_set_register_pair(gb, GB_CPU_REGISTER_PAIR_SP, 0xFFFE);
 	GB_cpu_set_register_pair(gb, GB_CPU_REGISTER_PAIR_PC, 0x0100);
+	
 	// IO
 	IO_TIMA = 0x00;
 	IO_TMA = 0x00;
@@ -183,19 +176,19 @@ static void cart_header_print(const struct GB_CartHeader* header) {
 	struct GB_CartName cart_name;
 	GB_get_rom_name_from_header(header, &cart_name);
 
-    printf("TITLE: %s\n", cart_name.name);
-    printf("NEW LICENSEE CODE: 0x%02X\n", header->new_licensee_code);
-    printf("SGB FLAG: 0x%02X\n", header->sgb_flag);
-    printf("CART TYPE: %s\n", cart_type_str(header->cart_type));
-    printf("CART TYPE VALUE: 0x%02X\n", header->cart_type);
-    printf("ROM SIZE: 0x%02X\n", header->rom_size);
-    printf("RAM SIZE: 0x%02X\n", header->ram_size);
-	printf("HEADER CHECKSUM: 0x%02X\n", header->header_checksum);
-	printf("GLOBAL CHECKSUM: 0x%04X\n", header->global_checksum);
+    printf("\tTITLE: %s\n", cart_name.name);
+    printf("\tNEW LICENSEE CODE: 0x%02X\n", header->new_licensee_code);
+    printf("\tSGB FLAG: 0x%02X\n", header->sgb_flag);
+    printf("\tCART TYPE: %s\n", cart_type_str(header->cart_type));
+    printf("\tCART TYPE VALUE: 0x%02X\n", header->cart_type);
+    printf("\tROM SIZE: 0x%02X\n", header->rom_size);
+    printf("\tRAM SIZE: 0x%02X\n", header->ram_size);
+	printf("\tHEADER CHECKSUM: 0x%02X\n", header->header_checksum);
+	printf("\tGLOBAL CHECKSUM: 0x%04X\n", header->global_checksum);
 	
-	uint8_t hash, forth;
+	uint8_t hash = 0, forth = 0;
 	GB_get_rom_palette_hash_from_header(header, &hash, &forth);
-	printf("HASH: 0x%02X, 0x%02X\n", hash, forth);
+	printf("\tHASH: 0x%02X, 0x%02X\n", hash, forth);
     putchar('\n');
 }
 

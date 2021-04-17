@@ -3,7 +3,6 @@
 #include "core/apu/apu.h"
 #include "core/apu/common.h"
 
-#include <stdio.h>
 #include <string.h>
 
 
@@ -87,7 +86,7 @@ static void step_frame_sequencer(struct GB_Core* gb) {
 }
 
 static inline struct GB_MixerResult builtin_mixer(const struct GB_MixerData* data) {
-    return (struct GB_MixerResult){
+    struct GB_MixerResult result = {
         .left = ((
             (data->square1.sample * data->square1.left) +
             (data->square2.sample * data->square2.left) +
@@ -102,6 +101,12 @@ static inline struct GB_MixerResult builtin_mixer(const struct GB_MixerData* dat
             (data->noise.sample * data->noise.right)
         ) / 4) * data->right_master,
     };
+
+    // this is for testing with sdl2, as the vol is loud!
+    if (result.left != 0) result.left /= 2; 
+    if (result.right != 0) result.right /= 2; 
+
+    return result;
 }
 
 static void sample_channels(struct GB_Core* gb) {

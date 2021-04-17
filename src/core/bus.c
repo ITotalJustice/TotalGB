@@ -1,7 +1,6 @@
 #include "core/gb.h"
 #include "core/internal.h"
 
-#include <stdio.h>
 #include <assert.h>
 
 
@@ -11,7 +10,7 @@ static inline void GB_iowrite_gbc(struct GB_Core* gb, uint16_t addr, uint8_t val
 	switch (addr & 0x7F) {
 		case 0x4D:
 			IO_KEY1 |= value & 0x1;
-			printf("writing to key1 0x%02X\n", value);
+			GB_log("writing to key1 0x%02X\n", value);
 			break;
 
 		case 0x4F: // (VBK)
@@ -61,7 +60,7 @@ static inline void GB_iowrite_gbc(struct GB_Core* gb, uint16_t addr, uint8_t val
 		case 0x6C: // OPRI
 			assert(0&&"opri");
 			IO_OPRI = value & 1;
-			printf("[INFO] IO_OPRI %u\n", value & 1);
+			GB_log("[INFO] IO_OPRI %u\n", value & 1);
 			break;
 
 		case 0x70: // (SVBK) always set between 1-7
@@ -121,7 +120,6 @@ uint8_t GB_ioread(struct GB_Core* gb, uint16_t addr) {
 
 		case 0x4D:
 			if (GB_is_system_gbc(gb) == true) {
-				printf("reading key1 0x%02X\n", IO_KEY1);
 				return 0x7E | IO_KEY1;
 			} else {
 				return 0xFF;
@@ -144,7 +142,7 @@ uint8_t GB_ioread(struct GB_Core* gb, uint16_t addr) {
 
 		case 0x56:
 			if (GB_is_system_gbc(gb) == true) {
-				printf("reading from infrared port\n");
+				GB_log("reading from infrared port\n");
 				return 0x00;
 			} else {
 				return 0xFF;
@@ -355,7 +353,7 @@ void GB_update_rom_banks(struct GB_Core* gb) {
 	gb->mmap[0x1] = rom_bank0.entries[1];
 	gb->mmap[0x2] = rom_bank0.entries[2];
 	gb->mmap[0x3] = rom_bank0.entries[3];
-	
+
 	gb->mmap[0x4] = rom_bankx.entries[0];
 	gb->mmap[0x5] = rom_bankx.entries[1];
 	gb->mmap[0x6] = rom_bankx.entries[2];

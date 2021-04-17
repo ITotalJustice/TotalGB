@@ -133,33 +133,8 @@ auto App::OnWindowEvent(const SDL_WindowEvent& e) -> void {
             this->ResizeScreen();
             break;
 
-        /*
-        so when theres multiple windows (in sdl2) open, sdl quit will no longer
-        trigger once a window is selected to be closed...which makes sense. 
-
-        instead a window event is sent, with type close. note however that
-        this event is sent even when theres only 1 window, so this event will
-        trigger along with sdl_quit if its the last window
-        */
-        case SDL_WINDOWEVENT_CLOSE: {
-            // if we close the main window, close the whole frontend
-            // obviously, this isn't ideal, but its good enough for me for now!
-            if (auto id = SDL_GetWindowID(this->emu_instances[0].window); id == e.windowID) {
-                this->running = false;
-            } else { // otherwise, close the second window...
-                if (this->emu_instances[1].HasWindow()) {
-                    id = SDL_GetWindowID(this->emu_instances[1].window);
-                    // make sure...
-                    assert(id == e.windowID);
-                    // close with window!
-                    this->emu_instances[1].CloseRom(true);
-                    // we won't be in dual mode anymore
-                    this->run_state = EmuRunState::SINGLE;
-                    // disconnect link cable also from gb0
-                    GB_connect_link_cable(this->emu_instances[0].GetGB(), NULL, NULL);
-                }
-            }
-        } break;
+        case SDL_WINDOWEVENT_CLOSE:
+            break;
     }
 }
 
@@ -181,7 +156,7 @@ auto App::OnKeyEvent(const SDL_KeyboardEvent& e) -> void {
     // first check if any of the mapped keys were pressed...
     for (auto [key, button] : key_map) {
         if (key == e.keysym.sym) {
-            GB_set_buttons(this->emu_instances[0].GetGB(), button, kdown);
+            GB_set_buttons(this->instance.GetGB(), button, kdown);
             return;
         }
     }
@@ -200,28 +175,28 @@ auto App::OnKeyEvent(const SDL_KeyboardEvent& e) -> void {
     // these are hotkeys to toggle layers of the gb core
     // such as bg, win, obj...
         case SDLK_0:
-            GB_set_render_palette_layer_config(this->emu_instances[0].GetGB(), GB_RENDER_LAYER_CONFIG_ALL);
+            GB_set_render_palette_layer_config(this->instance.GetGB(), GB_RENDER_LAYER_CONFIG_ALL);
             break;
 
         case SDLK_1:
-            GB_set_render_palette_layer_config(this->emu_instances[0].GetGB(), GB_RENDER_LAYER_CONFIG_BG);
+            GB_set_render_palette_layer_config(this->instance.GetGB(), GB_RENDER_LAYER_CONFIG_BG);
             break;
 
         case SDLK_2:
-            GB_set_render_palette_layer_config(this->emu_instances[0].GetGB(), GB_RENDER_LAYER_CONFIG_WIN);
+            GB_set_render_palette_layer_config(this->instance.GetGB(), GB_RENDER_LAYER_CONFIG_WIN);
             break;
 
         case SDLK_3:
-            GB_set_render_palette_layer_config(this->emu_instances[0].GetGB(), GB_RENDER_LAYER_CONFIG_OBJ);
+            GB_set_render_palette_layer_config(this->instance.GetGB(), GB_RENDER_LAYER_CONFIG_OBJ);
             break;
 
     // these are for savestates
         case SDLK_F1:
-            this->emu_instances[0].SaveState();
+            this->instance.SaveState();
             break;
 
         case SDLK_F2:
-            this->emu_instances[0].LoadState();
+            this->instance.LoadState();
             break;
 
     // these are for debugging
@@ -264,28 +239,17 @@ auto App::OnControllerButtonEvent(const SDL_ControllerButtonEvent& e) -> void {
 
     const bool down = e.type == SDL_CONTROLLERBUTTONDOWN;
 
-    // the controller is used for the first window by default
-    auto* gb = this->emu_instances[0].GetGB();
-
-    // however, if 2 instances are open, the controller becomes the selected
-    // input for p2!
-    if (this->emu_instances[1].HasRom()) {
-        gb = this->emu_instances[1].GetGB();
-    }
-
-    assert(gb != nullptr);
-
     switch (e.button) {
-        case SDL_CONTROLLER_BUTTON_A: GB_set_buttons(gb, GB_BUTTON_B, down); break;
-        case SDL_CONTROLLER_BUTTON_Y: GB_set_buttons(gb, GB_BUTTON_B, down); break;
-        case SDL_CONTROLLER_BUTTON_B: GB_set_buttons(gb, GB_BUTTON_A, down); break;
-        case SDL_CONTROLLER_BUTTON_X: GB_set_buttons(gb, GB_BUTTON_A, down); break;
-        case SDL_CONTROLLER_BUTTON_BACK: GB_set_buttons(gb, GB_BUTTON_SELECT, down); break;
-        case SDL_CONTROLLER_BUTTON_START: GB_set_buttons(gb, GB_BUTTON_START, down); break;
-        case SDL_CONTROLLER_BUTTON_DPAD_UP: GB_set_buttons(gb, GB_BUTTON_UP, down); break;
-        case SDL_CONTROLLER_BUTTON_DPAD_DOWN: GB_set_buttons(gb, GB_BUTTON_DOWN, down); break;
-        case SDL_CONTROLLER_BUTTON_DPAD_LEFT: GB_set_buttons(gb, GB_BUTTON_LEFT, down); break;
-        case SDL_CONTROLLER_BUTTON_DPAD_RIGHT: GB_set_buttons(gb, GB_BUTTON_RIGHT, down); break;
+        case SDL_CONTROLLER_BUTTON_A: GB_set_buttons(this->instance.GetGB(), GB_BUTTON_B, down); break;
+        case SDL_CONTROLLER_BUTTON_Y: GB_set_buttons(this->instance.GetGB(), GB_BUTTON_B, down); break;
+        case SDL_CONTROLLER_BUTTON_B: GB_set_buttons(this->instance.GetGB(), GB_BUTTON_A, down); break;
+        case SDL_CONTROLLER_BUTTON_X: GB_set_buttons(this->instance.GetGB(), GB_BUTTON_A, down); break;
+        case SDL_CONTROLLER_BUTTON_BACK: GB_set_buttons(this->instance.GetGB(), GB_BUTTON_SELECT, down); break;
+        case SDL_CONTROLLER_BUTTON_START: GB_set_buttons(this->instance.GetGB(), GB_BUTTON_START, down); break;
+        case SDL_CONTROLLER_BUTTON_DPAD_UP: GB_set_buttons(this->instance.GetGB(), GB_BUTTON_UP, down); break;
+        case SDL_CONTROLLER_BUTTON_DPAD_DOWN: GB_set_buttons(this->instance.GetGB(), GB_BUTTON_DOWN, down); break;
+        case SDL_CONTROLLER_BUTTON_DPAD_LEFT: GB_set_buttons(this->instance.GetGB(), GB_BUTTON_LEFT, down); break;
+        case SDL_CONTROLLER_BUTTON_DPAD_RIGHT: GB_set_buttons(this->instance.GetGB(), GB_BUTTON_RIGHT, down); break;
         case SDL_CONTROLLER_BUTTON_LEFTSTICK: break;
         case SDL_CONTROLLER_BUTTON_RIGHTSTICK: break;
         case SDL_CONTROLLER_BUTTON_GUIDE: break; // home

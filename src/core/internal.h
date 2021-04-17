@@ -41,6 +41,15 @@ extern "C" {
 // ONLY use this for C-arrays, not pointers, not structs
 #define GB_ARR_SIZE(array) (sizeof(array) / sizeof(array[0]))
 
+#ifdef GB_DEBUG
+#include <stdio.h>
+#define GB_log(...) fprintf(stdout, __VA_ARGS__)
+#define GB_log_err(...) fprintf(stderr, __VA_ARGS__)
+#else
+#define GB_log(...)
+#define GB_log_err(...)
+#endif // NES_DEBUG
+
 // 4-mhz
 #define DMG_CPU_CLOCK 4194304
 // 8-mhz

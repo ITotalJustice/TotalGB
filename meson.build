@@ -1,7 +1,15 @@
 project('TotalGB', ['c', 'cpp'],
     version: '0.0.1',
     default_options: [
+        # core options
         'buildtype=release',
+        'debug=false',
+        'warning_level=3',
+        'optimization=3',
+        'strip=true',
+
+        # base options
+        'b_ndebug=if-release'
     ],
 )
 
@@ -117,11 +125,6 @@ elif host_machine.system() == 'darwin'
 endif
 
 cflags = [
-    # optimise
-    '-Ofast',
-    # '-flto',
-    '-DNDEBUG',
-
     # warns
     '-Wall',
     '-Wextra',
@@ -130,7 +133,6 @@ cflags = [
     '-Wshadow',
     '-Wfatal-errors',
     '-Wdouble-promotion',
-    #'-Wframe-larger-than=300KB',
 
     # '-DGB_DEBUG',
 
@@ -141,41 +143,37 @@ cflags = [
     '-DNOUNCRYPT',
     '-DNOCRYPT',
 
-    # speedhacks
-    '-DGB_RTC_SPEEDHACK=1',
-
     '-DMGB_NO_LZ4',
     '-DMGB_NO_ZSTD',
 
-    # sdl_thread audio (race condition!)
-    # '-DGB_SDL_AUDIO_CALLBACK=1',
-
-    # '-DGB_SDL_AUDIO_CALLBACK_STREAM=1',
-
     # '-DDUMP_AUDIO=1',
 
-    '-DSCALE=3',
+    '-DSCALE=4',
 ]
 
 cppflags = [
-    '-std=gnu++17',
+    
 ]
 
 linkflags = [
-    # '-Wl,-subsystem,windows',
-    # '-s',
+    '-s',
 ]
 
-#subdir('res')
-
-executable(
+exe = executable(
     'TotalGB',
- #   res, # set the icon
     [ source ],
     dependencies : [ dependencies ] ,
-    install: false,
+    install: true,
     include_directories: [ includes ],
+    
     c_args: [ cflags ],
+    c_std: 'c11',
+
     cpp_args: [ cppflags, cflags ],
-    link_args: [ linkflags ]
+    cpp_std: 'c++17',
+    cpp_rtti: false,
+    
+    link_args: [ linkflags ],
 )
+
+test('basic', exe)

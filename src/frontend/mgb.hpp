@@ -33,7 +33,6 @@ using s32 = std::int32_t;
 enum class EmuRunState {
     NONE,
     SINGLE,
-    DUAL
 };
 
 struct JoystickCtx {
@@ -87,8 +86,6 @@ private:
     std::unique_ptr<GB_Core> gameboy;
     std::unique_ptr<GB_Printer> printer;
 
-    // thread safe
-    std::mutex gfx_mutex;
     u16 buffered_pixels[144][160];
 };
 
@@ -97,7 +94,7 @@ public:
     App();
     ~App();
 
-    auto LoadRom(const std::string& path, bool dual = false) -> bool;
+    auto LoadRom(const std::string& path) -> bool;
     auto Loop() -> void;
 
 private:
@@ -131,7 +128,7 @@ private:
     auto OnUserEvent(SDL_UserEvent& e) -> void; // might need to free.
 
 private:
-    std::array<Instance, 2> emu_instances;
+    Instance instance;
 
     std::vector<ControllerCtx> controllers{};
     std::vector<JoystickCtx> joysticks{};

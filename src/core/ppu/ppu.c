@@ -3,7 +3,6 @@
 #include "core/ppu/ppu.h"
 #include "core/tables/palette_table.h"
 
-#include <stdio.h>
 #include <string.h>
 #include <assert.h>
 
@@ -152,12 +151,12 @@ void GB_on_lcdc_write(struct GB_Core* gb, const uint8_t value) {
     // this *should* only happen in vblank!
     if (GB_is_lcd_enabled(gb) && (value & 0x80) == 0) {
         if (GB_get_status_mode(gb) != STATUS_MODE_VBLANK) {
-            printf("[PPU-WARN] game is disabling lcd outside vblank: 0x%0X\n", GB_get_status_mode(gb));
+            GB_log("[PPU-WARN] game is disabling lcd outside vblank: 0x%0X\n", GB_get_status_mode(gb));
         }
 
         IO_LY = 0;
         IO_STAT &= ~(0x3);
-        printf("disabling ppu...\n");
+        GB_log("disabling ppu...\n");
     }
 
     // check if the game wants to re-enable the lcd
@@ -166,7 +165,7 @@ void GB_on_lcdc_write(struct GB_Core* gb, const uint8_t value) {
         IO_STAT |= 0x1;
         // i'm not sure on this...
         GB_compare_LYC(gb);
-        printf("enabling ppu!\n");
+        GB_log("enabling ppu!\n");
     }
 
     IO_LCDC = value;

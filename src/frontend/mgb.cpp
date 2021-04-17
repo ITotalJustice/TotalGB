@@ -1,4 +1,5 @@
 #include "mgb.hpp"
+#include "SDL.h"
 #include "core/gb.h"
 #include "core/accessories/printer.h"
 #include "io/romloader.hpp"
@@ -10,6 +11,7 @@
 #include "nativefiledialog/nfd.hpp"
 
 
+#include <cstdio>
 #include <cstring>
 #include <cassert>
 #include <fstream>
@@ -17,9 +19,7 @@
 namespace mgb {
 
 // global
-static std::mutex MUTEX{};
 static SDL_AudioDeviceID AUDIO_DEVICE_ID = 0;
-static SDL_AudioStream* AUDIO_STREAM = NULL;
 
 
 static void AudioCallback(struct GB_Core*, void* user_data, const struct GB_ApuCallbackData* data) {
@@ -32,7 +32,7 @@ auto Instance::OnAudioCallback(const struct GB_ApuCallbackData* data) -> void {
     // todo: use sdl stream api instead, this delay was a temp hack
     // for now that magically "works".
 
-    while ((SDL_GetQueuedAudioSize(AUDIO_DEVICE_ID)) > (1024 * 3)) {
+    while (SDL_GetQueuedAudioSize(AUDIO_DEVICE_ID) > (1024 * 4)) {
         SDL_Delay(1);
     }
 
@@ -81,7 +81,6 @@ auto ErrorCallback(GB_Core*, void* user, struct GB_ErrorData* data) -> void {
 }
 
 auto Instance::OnVblankCallback() -> void {
-    std::scoped_lock lock{this->gfx_mutex};
     std::memcpy(this->buffered_pixels, gameboy->ppu.pixles, sizeof(gameboy->ppu.pixles));
 }
 
@@ -95,43 +94,6 @@ auto Instance::OnDmaCallback() -> void {
 
 auto Instance::OnHaltCallback() -> void {
 
-}
-
-auto core_audio_cb(struct GB_Core*, void* user_data, const struct GB_ApuCallbackData* data) -> void {
-    // printf("ye\n");
-    auto boolean = static_cast<bool*>(user_data);
-    // this will stop the thread from running
-    *boolean = false;
-}
-
-#ifdef GB_SDL_AUDIO_CALLBACK_STREAM
-static void core_sdl_stream_callback(struct GB_Core*gb, void*, GB_ApuCallbackData *data) {
-    std::scoped_lock lock{MUTEX};
-    SDL_AudioStreamPut(AUDIO_STREAM, data->samples, sizeof(data->samples));
-}
-
-static void audio_stream_callback(void *user, uint8_t* buf, int len) {
-    std::scoped_lock lock{MUTEX};
-    SDL_AudioStreamGet(AUDIO_STREAM, buf, len);
-}
-#endif GB_SDL_AUDIO_CALLBACK_STREAM
-
-static void audio_callback(void *user, uint8_t* buf, int len) {
-    // the idea is that this callback drives the amu core
-    // for this to work
-    auto instance = static_cast<Instance*>(user);
-
-
-    bool running = true;
-    GB_set_apu_callback(instance->GetGB(), core_audio_cb, &running);
-
-    while (running == true) {
-        GB_run_step(instance->GetGB());
-    }
-
-    // once we get here, this means that we have enough samples!
-    // simply memcpy them over.
-    memcpy(buf, instance->GetGB()->apu.samples.samples, len);
 }
 
 auto Instance::OnStopCallback() -> void {
@@ -257,52 +219,6 @@ auto Instance::LoadRom(const std::string& path) -> bool {
     // try and load a savefile (if any...)
     this->LoadSave(this->rom_path);
 
-        const SDL_AudioSpec wanted{
-        /* .freq = */ 48000,
-        /* .format = */ AUDIO_S8,
-        /* .channels = */ 2,
-        /* .silence = */ 0, // calculated
-        /* .samples = */ 1024, // 512 * 2 (because stereo)
-        /* .padding = */ 0,
-        /* .size = */ 0, // calculated
-#ifdef GB_SDL_AUDIO_CALLBACK_STREAM
-        /* .callback = */ audio_stream_callback,
-        /* .userdata = */ this
-#elif GB_SDL_AUDIO_CALLBACK
-        /* .callback = */ audio_callback,
-        /* .userdata = */ this
-#else
-        /* .callback = */ NULL,
-        /* .userdata = */ NULL
-#endif // GB_SDL_AUDIO_CALLBACK
-    };
-    SDL_AudioSpec obtained{};
-
-#ifdef GB_SDL_AUDIO_CALLBACK_STREAM
-    AUDIO_STREAM = SDL_NewAudioStream(
-        AUDIO_S8, 2, 4213440/4,
-        AUDIO_S8, 2, 48000
-    );
-#endif
-
-
-    AUDIO_DEVICE_ID = SDL_OpenAudioDevice(NULL, 0, &wanted, &obtained, 0);
-    // check if an audio device was failed to be found...
-    if (AUDIO_DEVICE_ID == 0) {
-        printf("failed to find valid audio device\n");
-    } else {
-        printf("\nSDL_AudioSpec:\n");
-        printf("\tfreq: %d\n", obtained.freq);
-        printf("\tformat: %d\n", obtained.format);
-        printf("\tchannels: %u\n", obtained.channels);
-        printf("\tsilence: %u\n", obtained.silence);
-        printf("\tsamples: %u\n", obtained.samples);
-        printf("\tpadding: %u\n", obtained.padding);
-        printf("\tsize: %u\n", obtained.size);
-
-        SDL_PauseAudioDevice(AUDIO_DEVICE_ID, 0);
-    }
-
     return true;
 }
 
@@ -383,9 +299,61 @@ auto Instance::CreateWindow() -> void {
     #endif
 
     this->window = SDL_CreateWindow("gb-emu", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 160 * SCALE, 144 * SCALE, SDL_WINDOW_SHOWN);
-    this->renderer = SDL_CreateRenderer(this->window, -1, SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC);
+    this->renderer = SDL_CreateRenderer(this->window, -1, SDL_RENDERER_SOFTWARE);
     this->texture = SDL_CreateTexture(this->renderer, SDL_PIXELFORMAT_BGR555, SDL_TEXTUREACCESS_STREAMING, 160, 144);
     SDL_SetWindowMinimumSize(this->window, 160, 144);
+
+    SDL_RendererInfo info;
+    SDL_GetRendererInfo(this->renderer, &info);
+    printf("\nRENDERER-INFO\n");
+    printf("\tname: %s\n", info.name);
+    printf("\tflags: 0x%X\n", info.flags);
+    printf("\tnum textures: %u\n", info.num_texture_formats);
+    for (uint32_t i = 0; i < info.num_texture_formats; ++i) {
+        printf("\t\ttexture_format %u: 0x%X\n", i, info.texture_formats[i]);
+    }
+
+    printf("\nAUDIO_DEVICE_NAMES\n");
+    for (int i = 0; i <  SDL_GetNumAudioDevices(0); i++) {
+        printf("\tname: %s\n", SDL_GetAudioDeviceName(i, 0));
+    }
+
+    printf("\nAUDIO_DRIVER_NAMES\n");
+    for (int i = 0; i < SDL_GetNumAudioDrivers(); ++i) {
+        const char* driver_name = SDL_GetAudioDriver(i);
+        printf("\tname: %s\n", driver_name);
+    }
+
+    const SDL_AudioSpec wanted{
+        /* .freq = */ 48000,
+        /* .format = */ AUDIO_S8,
+        /* .channels = */ 2,
+        /* .silence = */ 0, // calculated
+        /* .samples = */ 512, // 512 * 2 (because stereo)
+        /* .padding = */ 0,
+        /* .size = */ 0, // calculated
+        /* .callback = */ NULL,
+        /* .userdata = */ NULL
+    };
+
+    SDL_AudioSpec obtained{};
+
+    AUDIO_DEVICE_ID = SDL_OpenAudioDevice(NULL, 0, &wanted, &obtained, 0);
+    // check if an audio device was failed to be found...
+    if (AUDIO_DEVICE_ID == 0) {
+        printf("failed to find valid audio device\n");
+    } else {
+        printf("\nSDL_AudioSpec:\n");
+        printf("\tfreq: %d\n", obtained.freq);
+        printf("\tformat: %d\n", obtained.format);
+        printf("\tchannels: %u\n", obtained.channels);
+        printf("\tsilence: %u\n", obtained.silence);
+        printf("\tsamples: %u\n", obtained.samples);
+        printf("\tpadding: %u\n", obtained.padding);
+        printf("\tsize: %u\n", obtained.size);
+
+        SDL_PauseAudioDevice(AUDIO_DEVICE_ID, 0);
+    }
 }
 
 auto Instance::DestroyWindow() -> void {
@@ -423,15 +391,14 @@ App::App() {
             linked.major, linked.minor, linked.patch);
     }
 
+    SDL_setenv("SDL_AUDIODRIVER", "sndio", 1);
+
     SDL_Init(SDL_INIT_AUDIO | SDL_INIT_VIDEO | SDL_INIT_EVENTS | SDL_INIT_JOYSTICK | SDL_INIT_HAPTIC | SDL_INIT_GAMECONTROLLER);
     SDL_GameControllerAddMappingsFromFile("res/mappings/gamecontrollerdb.txt");
 }
 
 App::~App() {
-    for (auto& p : this->emu_instances) {
-        // we want to close the window as well this time...
-        p.CloseRom(true);
-    }
+    this->instance.CloseRom(true);
 
     // cleanup joysticks and controllers
     for (auto &p : this->joysticks) {
@@ -453,21 +420,10 @@ App::~App() {
 	SDL_Quit();
 }
 
-auto App::LoadRom(const std::string& path, bool dual) -> bool {
-    // load the game in slot 1
-    if (dual == false) {
-        if (this->emu_instances[0].LoadRom(path)) {
-            this->run_state = EmuRunState::SINGLE;
-            return true;
-        }
-    } else { // else slot 2
-        if (this->emu_instances[1].LoadRom(path)) {
-            this->run_state = EmuRunState::DUAL;
-            // connect both games via link cable
-            GB_connect_link_cable_builtin(this->emu_instances[0].GetGB(), this->emu_instances[1].GetGB());
-            GB_connect_link_cable_builtin(this->emu_instances[1].GetGB(), this->emu_instances[0].GetGB());
-            return true;
-        }
+auto App::LoadRom(const std::string& path) -> bool {
+    if (this->instance.LoadRom(path)) {
+        this->run_state = EmuRunState::SINGLE;
+        return true;
     }
 
     this->run_state = EmuRunState::NONE;
@@ -529,46 +485,12 @@ auto App::ResizeScreen() -> void {
 
 }
 
-void GB_run_frames(struct GB_Core* gb1, struct GB_Core* gb2) {
-	u32 cycles_elapsed1 = 0;
-    u32 cycles_elapsed2 = 0;
-
-    while (cycles_elapsed1 < GB_FRAME_CPU_CYCLES || cycles_elapsed2 < GB_FRAME_CPU_CYCLES) {
-        if (cycles_elapsed1 < GB_FRAME_CPU_CYCLES) {
-            cycles_elapsed1 += GB_run_step(gb1);
-        }
-        if (cycles_elapsed2 < GB_FRAME_CPU_CYCLES) {
-            cycles_elapsed2 += GB_run_step(gb2);
-        }
-    }
-}
-
 auto App::Loop() -> void {
     while (this->running) {
         // handle sdl2 events
         this->Events();
 
-#ifndef GB_SDL_AUDIO_CALLBACK
-        switch (this->run_state) {
-            case EmuRunState::NONE:
-                break;
-
-            case EmuRunState::SINGLE:
-                GB_run_frame(this->emu_instances[0].GetGB());
-                // GB_run_frame(this->emu_instances[0].GetGB());
-                // GB_run_frame(this->emu_instances[0].GetGB());
-                break;
-
-            case EmuRunState::DUAL:
-                GB_run_frame(this->emu_instances[0].GetGB());
-                GB_run_frame(this->emu_instances[1].GetGB());
-                // GB_run_frames(
-                //     this->emu_instances[0].GetGB(),
-                //     this->emu_instances[1].GetGB()
-                // );
-                break;
-        }
-#endif // GB_SDL_AUDIO_CALLBACK
+        GB_run_frame(this->instance.GetGB());
 
         // render the screen
         this->Draw();
@@ -582,10 +504,7 @@ auto Instance::Draw() -> void {
 
     void* pixles; int pitch;
     SDL_LockTexture(texture, NULL, &pixles, &pitch);
-    {
-        std::scoped_lock lock{this->gfx_mutex};
-        std::memcpy(pixles, this->buffered_pixels, sizeof(this->buffered_pixels));
-    }
+    std::memcpy(pixles, this->buffered_pixels, sizeof(this->buffered_pixels));
     SDL_UnlockTexture(texture);
 
     SDL_RenderClear(this->renderer);
@@ -594,9 +513,7 @@ auto Instance::Draw() -> void {
 }
 
 auto App::Draw() -> void {
-    for (auto& p : this->emu_instances) {
-        p.Draw();
-    }
+    this->instance.Draw();
 }
 
 } // namespace mgb
