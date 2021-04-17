@@ -113,7 +113,8 @@ App::App() {
         }
     );
 
-    this->audio_platform = std::make_unique<platform::audio::sdl2::SDL2>();
+    // this->audio_platform = std::make_unique<platform::audio::sdl2::SDL2>();
+    this->audio_platform = std::make_unique<platform::audio::allegro5::Allegro5>();
 
     this->audio_platform->SetupAudio();
 }
