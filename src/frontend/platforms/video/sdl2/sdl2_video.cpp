@@ -8,64 +8,22 @@ namespace mgb::platform::video::sdl2 {
 
 SDL2::~SDL2() {
     if (SDL_WasInit(SDL_INIT_VIDEO)) {
-    	if (this->texture) { SDL_DestroyTexture(this->texture); }
-		if (this->renderer) { SDL_DestroyRenderer(this->renderer); }
-		if (this->window) { SDL_DestroyWindow(this->window); }
+    	if (this->texture){
+    		SDL_DestroyTexture(this->texture);
+    	}
 
-    	SDL_QuitSubSystem(SDL_INIT_VIDEO);
-    }
-    
-    if (SDL_WasInit(SDL_INIT_JOYSTICK)) {
-    	for (auto &p : this->joysticks) {
-	        SDL_JoystickClose(p.ptr);
-	        p.ptr = nullptr;
-	    }
-
-    	SDL_QuitSubSystem(SDL_INIT_JOYSTICK);
+		if (this->renderer) {
+			SDL_DestroyRenderer(this->renderer);
+		}
     }
 
-    if (SDL_WasInit(SDL_INIT_GAMECONTROLLER)) {
-	    for (auto &p : this->controllers) {
-	        SDL_GameControllerClose(p.ptr);
-	        p.ptr = nullptr;
-	    }
-
-    	SDL_QuitSubSystem(SDL_INIT_GAMECONTROLLER);
-    }
+    this->DeinitSDL2();
 }
 
 auto SDL2::SetupVideo(VideoInfo vid_info, GameTextureInfo game_info) -> bool {
-	if (SDL_InitSubSystem(SDL_INIT_VIDEO)) {
-		printf("\n[SDL_VIDEO_ERROR] %s\n\n", SDL_GetError());
+	if (!this->SetupSDL2(vid_info, game_info, SDL_WINDOW_SHOWN)) {
 		return false;
 	}
-
-	if (SDL_InitSubSystem(SDL_INIT_JOYSTICK)) {
-		printf("\n[SDL_JOYSTICK_ERROR] %s\n\n", SDL_GetError());
-		return false;
-	}
-
-	if (SDL_InitSubSystem(SDL_INIT_GAMECONTROLLER)) {
-		printf("\n[SDL_GAMECONTROLLER_ERROR] %s\n\n", SDL_GetError());
-		return false;
-	}
-
-	// SDL_RendererInfo info;
- //    SDL_GetRendererInfo(this->renderer, &info);
-
- //    printf("\nRENDERER-INFO\n");
- //    printf("\tname: %s\n", info.name);
- //    printf("\tflags: 0x%X\n", info.flags);
- //    printf("\tnum textures: %u\n", info.num_texture_formats);
- //    for (uint32_t i = 0; i < info.num_texture_formats; ++i) {
- //        printf("\t\ttexture_format %u: 0x%X\n", i, info.texture_formats[i]);
- //    }
-
-	this->window = SDL_CreateWindow(
-		vid_info.name.c_str(),
-		SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
-		vid_info.w, vid_info.h, SDL_WINDOW_SHOWN
-	);
 
 	const uint32_t renderer_flags = [&vid_info]() -> uint32_t {
 		switch (vid_info.render_type) {
@@ -84,26 +42,25 @@ auto SDL2::SetupVideo(VideoInfo vid_info, GameTextureInfo game_info) -> bool {
     	this->window, -1, renderer_flags
     );
 
+    if (!this->renderer) {
+		printf("[SDL2] failed to create renderer %s\n", SDL_GetError());
+		return false;
+	}
+
     this->texture = SDL_CreateTexture(
     	this->renderer,
     	SDL_PIXELFORMAT_BGR555, SDL_TEXTUREACCESS_STREAMING,
     	game_info.w, game_info.h
     );
-    
-    // set the size of the buffered pixels
-    this->game_pixels.resize(game_info.w * game_info.h);
 
-    // SDL_SetWindowMinimumSize(this->window, 160, 144);
+    if (!this->texture) {
+		printf("[SDL2] failed to create texture %s\n", SDL_GetError());
+		return false;
+	}
+
+    SDL_SetWindowMinimumSize(this->window, 160, 144);
 
     return true;
-}
-
-auto SDL2::UpdateGameTexture(GameTextureData data) -> void {
-	std::memcpy(
-		this->game_pixels.data(),
-		data.pixels,
-		data.w * data.h * sizeof(uint16_t)
-	);
 }
 
 auto SDL2::RenderDisplay() -> void {

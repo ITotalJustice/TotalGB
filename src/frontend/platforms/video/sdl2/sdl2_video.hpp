@@ -22,24 +22,23 @@ struct ControllerCtx {
     SDL_JoystickID id;
 };
 
-class SDL2 final : public Interface {
+class BaseSDL2 : public Interface {
 public:
-	using Interface::Interface;
-	~SDL2();
+    using Interface::Interface;
+    virtual ~BaseSDL2();
 
-	auto SetupVideo(VideoInfo vid_info, GameTextureInfo game_info) -> bool override;
+    auto PollEvents() -> void override;
 
-	auto UpdateGameTexture(GameTextureData data) -> void override;
-
-	auto RenderDisplay() -> void override;
-
-	auto PollEvents() -> void override;
+    auto UpdateGameTexture(GameTextureData data) -> void override;
 
 protected:
+    auto SetupSDL2(const VideoInfo& vid_info, const GameTextureInfo& game_info, uint32_t win_flags) -> bool;
+    auto DeinitSDL2() -> void;
+
+protected:
+    SDL_Window* window{nullptr};
 
 private:
-	auto ResizeScreen() -> void;
-
     auto HasController(int which) const -> bool;
     auto AddController(int index) -> bool;
 
@@ -62,13 +61,23 @@ private:
     auto OnUserEvent(SDL_UserEvent& e) -> void; // might need to free.
 
 private:
-    SDL_Window* window{nullptr};
-    SDL_Renderer* renderer{nullptr};
-    SDL_Texture* texture{nullptr};
-
     std::vector<ControllerCtx> controllers{};
     std::vector<JoystickCtx> joysticks{};
     std::vector<SDL_Haptic*> rumble_controllers{nullptr};
 };
 
-} // namespace mgb::platform::video::sdl2 {
+class SDL2 final : public BaseSDL2 {
+public:
+	using BaseSDL2::BaseSDL2;
+	~SDL2();
+
+	auto SetupVideo(VideoInfo vid_info, GameTextureInfo game_info) -> bool override;
+
+	auto RenderDisplay() -> void override;
+
+private:
+    SDL_Renderer* renderer{nullptr};
+    SDL_Texture* texture{nullptr};
+};
+
+} // namespace mgb::platform::video::sdl2

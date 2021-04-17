@@ -16,7 +16,7 @@
 #include <cstdio>
 #include <cstring>
 #include <cassert>
-#include <fstream>
+
 
 namespace mgb {
 
@@ -27,7 +27,6 @@ static void AudioCallback(struct GB_Core*, void* user_data, const struct GB_ApuC
 }
 
 auto App::OnAudioCallback(const struct GB_ApuCallbackData* data) -> void {
-    // todo: send to audio platform here!
     this->audio_platform->PushSamples(data);
 }
 
@@ -73,44 +72,53 @@ auto ErrorCallback(GB_Core*, void* user, struct GB_ErrorData* data) -> void {
 }
 
 App::App() {
-    this->video_platform = std::make_unique<platform::video::sdl2::SDL2>(
-        platform::video::Callbacks{
-            .GetCore = [this](){
-                return this->GetGB();
-            },
-            .LoadRom = [this](std::string path){
-                return this->LoadRom(path);
-            },
-            .SaveState = [this](){
-                return this->SaveState();
-            },
-            .LoadState = [this](){
-                return this->LoadState();
-            },
-            .FilePicker = [this](){
-                this->FilePicker();
-            },
-            .OnQuit = [this](){
-                this->running = false;
-            }
+    const platform::video::Callbacks callbacks{
+        .GetCore = [this](){
+            return this->GetGB();
+        },
+        .LoadRom = [this](std::string path){
+            return this->LoadRom(path);
+        },
+        .SaveState = [this](){
+            return this->SaveState();
+        },
+        .LoadState = [this](){
+            return this->LoadState();
+        },
+        .FilePicker = [this](){
+            this->FilePicker();
+        },
+        .OnQuit = [this](){
+            this->running = false;
         }
+    };
+
+    const platform::video::VideoInfo vid_info{
+        .name = "TotalGB",
+        .render_type = platform::video::RenderType::SOFTWARE,
+        .x = 0,
+        .y = 0,
+        .w = 160 * SCALE,
+        .h = 144 * SCALE,
+    };
+
+    const platform::video::GameTextureInfo game_info{
+        .x = 0,
+        .y = 0,
+        .w = 160,
+        .h = 144
+    };
+
+    this->video_platform = std::make_unique<platform::video::sdl2::SDL2>(
+        callbacks
     );
 
+    // this->video_platform = std::make_unique<platform::video::sdl2::SDL2_GL>(
+    //     callbacks
+    // );
+
     this->video_platform->SetupVideo(
-        platform::video::VideoInfo{
-            .name = "TotalGB",
-            .render_type = platform::video::RenderType::SOFTWARE,
-            .x = 0,
-            .y = 0,
-            .w = 160 * SCALE,
-            .h = 144 * SCALE,
-        },
-        platform::video::GameTextureInfo{
-            .x = 0,
-            .y = 0,
-            .w = 160,
-            .h = 144
-        }
+        vid_info, game_info
     );
 
     this->audio_platform = std::make_unique<platform::audio::sdl1::SDL1>();
@@ -395,7 +403,6 @@ auto App::Events() -> void {
 }
 
 auto App::Draw() -> void {
-    // todo: call platform draw here
     this->video_platform->RenderDisplay();
 }
 

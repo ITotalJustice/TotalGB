@@ -16,6 +16,8 @@ project('TotalGB', ['c', 'cpp'],
 dependencies = [
     dependency('sdl2', version : '>=2.0.5'),
 
+    dependency('glew'),
+
     dependency('sdl'),
 
     dependency('allegro-5'),
@@ -70,8 +72,9 @@ source = files([
     'src/frontend/mgb.cpp',
     
     # [Video Backends]
-    'src/frontend/platforms/video/sdl2/sdl2_events.cpp',
+    'src/frontend/platforms/video/sdl2/sdl2_base.cpp',
     'src/frontend/platforms/video/sdl2/sdl2_video.cpp',
+    'src/frontend/platforms/video/sdl2-opengl/sdl2_opengl.cpp',
 
     # [Audio Backends]
     'src/frontend/platforms/audio/sdl1/sdl1_audio.cpp',
