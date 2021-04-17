@@ -2,14 +2,7 @@
 
 
 #include "frontend/platforms/audio/interface.hpp"
-
-#ifdef _MSC_VER
-#include <SDL.h>
-#include <SDL_audio.h>
-#else
-#include <SDL2/SDL.h>
-#include <SDL2/SDL_audio.h>
-#endif // _MSC_VER
+#include <cstdint>
 
 
 namespace mgb::platform::audio::sdl2 {
@@ -27,6 +20,8 @@ protected:
 
 
 private:
+	using SDL_AudioDeviceID = uint32_t;
+
 	SDL_AudioDeviceID device_id = 0;
 
 };

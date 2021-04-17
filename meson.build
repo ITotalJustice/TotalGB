@@ -14,15 +14,13 @@ project('TotalGB', ['c', 'cpp'],
 )
 
 dependencies = [
-    # this probably works fine with older sdl2 versions
-    # but this is untested.
-    # 2.0.5 is the oldest version that i tested...
     dependency('sdl2', version : '>=2.0.5'),
+
+    dependency('sdl'),
 
     dependency('allegro-5'),
     dependency('allegro_audio-5'),
     dependency('allegro_primitives-5'),
-
 
     # this is needed for linux
     dependency('gtk+-3.0'),
@@ -76,6 +74,7 @@ source = files([
     'src/frontend/platforms/video/sdl2/sdl2_video.cpp',
 
     # [Audio Backends]
+    'src/frontend/platforms/audio/sdl1/sdl1_audio.cpp',
     'src/frontend/platforms/audio/sdl2/sdl2_audio.cpp',
     'src/frontend/platforms/audio/allegro5/allegro5_audio.cpp',
 

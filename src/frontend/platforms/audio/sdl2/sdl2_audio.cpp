@@ -1,6 +1,14 @@
 #include "frontend/platforms/audio/sdl2/sdl2_audio.hpp"
 #include "core/types.h"
 
+#ifdef _MSC_VER
+#include <SDL.h>
+#include <SDL_audio.h>
+#else
+#include <SDL2/SDL.h>
+#include <SDL2/SDL_audio.h>
+#endif // _MSC_VER
+
 #include <cstring>
 
 
