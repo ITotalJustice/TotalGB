@@ -284,45 +284,10 @@ void GB_iowrite(struct GB_Core* gb, uint16_t addr, uint8_t value) {
 	}
 }
 
-static inline uint8_t GB_mbc3_rtc_read(const struct GB_Core* gb) {
-    switch (gb->cart.rtc_mapped_reg) {
-        case GB_RTC_MAPPED_REG_S: return gb->cart.rtc.S;
-        case GB_RTC_MAPPED_REG_M: return gb->cart.rtc.M;
-        case GB_RTC_MAPPED_REG_H: return gb->cart.rtc.H;
-        case GB_RTC_MAPPED_REG_DL: return gb->cart.rtc.DL;
-        case GB_RTC_MAPPED_REG_DH: return gb->cart.rtc.DH;
-    }
-
-	assert(0);
-    GB_UNREACHABLE(0xFF);
-}
-
-static inline bool GB_is_rtc_read(const struct GB_Core* gb) {
-	return gb->cart.in_ram == false && GB_has_mbc_flags(gb, MBC_FLAGS_RTC);
-}
-
 uint8_t GB_read8(struct GB_Core* gb, const uint16_t addr) {
 	if (LIKELY(addr < 0xFE00)) {
-		#if GB_RTC_SPEEDHACK
-		#ifndef NDEBUG
-			if (UNLIKELY(addr >= 0xA000 && addr <= 0xBFFF && GB_is_rtc_read(gb))) {
-				if (UNLIKELY(addr != 0xA000)) {
-					printf("[FATAL] RTC unmapped read at 0x%04X\n", addr);
-					assert(addr == 0xA000);
-				}
-			}
-		#endif // NDEBUG
-			return gb->mmap[(addr >> 12)][addr & 0x0FFF];
-		#else // GB_RTC_SPEEDHACK
-
-		if (UNLIKELY(addr >= 0xA000 && addr <= 0xBFFF && GB_is_rtc_read(gb))) {
-			return GB_mbc3_rtc_read(gb);
-		}
-		else {
-			return gb->mmap[(addr >> 12)][addr & 0x0FFF];
-		}
-		#endif // GB_RTC_SPEEDHACK
-
+		const struct GB_MemMapEntry entry = gb->mmap[(addr >> 12)];
+		return entry.ptr[addr & entry.mask];
 	}
 	else if (addr <= 0xFE9F) {
         return gb->ppu.oam[addr & 0xFF];
@@ -383,49 +348,57 @@ void GB_write16(struct GB_Core* gb, uint16_t addr, uint16_t value) {
 }
 
 void GB_update_rom_banks(struct GB_Core* gb) {
-	const uint8_t* rom_bank0 = gb->cart.get_rom_bank(gb, 0);
-	const uint8_t* rom_bankx = gb->cart.get_rom_bank(gb, 1);
+	const struct MBC_RomBankInfo rom_bank0 = gb->cart.get_rom_bank(gb, 0);
+	const struct MBC_RomBankInfo rom_bankx = gb->cart.get_rom_bank(gb, 1);
 
-	gb->mmap[0x0] = rom_bank0 + 0x0000;
-	gb->mmap[0x1] = rom_bank0 + 0x1000;
-	gb->mmap[0x2] = rom_bank0 + 0x2000;
-	gb->mmap[0x3] = rom_bank0 + 0x3000;
-
-	gb->mmap[0x4] = rom_bankx + 0x0000;
-	gb->mmap[0x5] = rom_bankx + 0x1000;
-	gb->mmap[0x6] = rom_bankx + 0x2000;
-	gb->mmap[0x7] = rom_bankx + 0x3000;
+	gb->mmap[0x0] = rom_bank0.entries[0];
+	gb->mmap[0x1] = rom_bank0.entries[1];
+	gb->mmap[0x2] = rom_bank0.entries[2];
+	gb->mmap[0x3] = rom_bank0.entries[3];
+	
+	gb->mmap[0x4] = rom_bankx.entries[0];
+	gb->mmap[0x5] = rom_bankx.entries[1];
+	gb->mmap[0x6] = rom_bankx.entries[2];
+	gb->mmap[0x7] = rom_bankx.entries[3];
 }
 
 void GB_update_ram_banks(struct GB_Core* gb) {
-	const uint8_t* cart_ram = gb->cart.get_ram_bank(gb, 0);
+	const struct MBC_RamBankInfo ram = gb->cart.get_ram_bank(gb);
 
-	gb->mmap[0xA] = cart_ram + 0x0000;
-	gb->mmap[0xB] = cart_ram + 0x1000;
+	gb->mmap[0xA] = ram.entries[0];
+	gb->mmap[0xB] = ram.entries[1];
 }
 
 void GB_update_vram_banks(struct GB_Core* gb) {
+	gb->mmap[0x8].mask = 0x0FFF;
+	gb->mmap[0x9].mask = 0x0FFF;
+
 	if (GB_is_system_gbc(gb) == true) {
-		gb->mmap[0x8] = gb->ppu.vram[IO_VBK] + 0x0000;
-		gb->mmap[0x9] = gb->ppu.vram[IO_VBK] + 0x1000;
+		gb->mmap[0x8].ptr = gb->ppu.vram[IO_VBK] + 0x0000;
+		gb->mmap[0x9].ptr = gb->ppu.vram[IO_VBK] + 0x1000;
 	}
 	else {
-		gb->mmap[0x8] = gb->ppu.vram[0] + 0x0000;
-		gb->mmap[0x9] = gb->ppu.vram[0] + 0x1000;
+		gb->mmap[0x8].ptr = gb->ppu.vram[0] + 0x0000;
+		gb->mmap[0x9].ptr = gb->ppu.vram[0] + 0x1000;
 	}
 }
 
 void GB_update_wram_banks(struct GB_Core* gb) {
-	gb->mmap[0xC] = gb->wram[0];
-	gb->mmap[0xE] = gb->wram[0];
+	gb->mmap[0xC].mask = 0x0FFF;
+	gb->mmap[0xD].mask = 0x0FFF;
+	gb->mmap[0xE].mask = 0x0FFF;
+	gb->mmap[0xF].mask = 0x0FFF;
+
+	gb->mmap[0xC].ptr = gb->wram[0];
+	gb->mmap[0xE].ptr = gb->wram[0];
 
 	if (GB_is_system_gbc(gb) == true) {
-		gb->mmap[0xD] = gb->wram[IO_SVBK];
-		gb->mmap[0xF] = gb->wram[IO_SVBK];
+		gb->mmap[0xD].ptr = gb->wram[IO_SVBK];
+		gb->mmap[0xF].ptr = gb->wram[IO_SVBK];
 	}
 	else {
-		gb->mmap[0xD] = gb->wram[1];
-		gb->mmap[0xF] = gb->wram[1];
+		gb->mmap[0xD].ptr = gb->wram[1];
+		gb->mmap[0xF].ptr = gb->wram[1];
 	}
 }
 

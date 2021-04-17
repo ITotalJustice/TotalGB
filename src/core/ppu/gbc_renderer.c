@@ -89,7 +89,8 @@ bool GB_is_hdma_active(const struct GB_Core* gb) {
 }
 
 uint8_t hdma_read(const struct GB_Core* gb, const uint16_t addr) {
-    return gb->mmap[(addr >> 12)][addr & 0x0FFF];
+    const struct GB_MemMapEntry entry = gb->mmap[(addr >> 12)];
+    return entry.ptr[addr & entry.mask];
 }
 
 void hdma_write(struct GB_Core* gb, const uint16_t addr, const uint8_t value) {

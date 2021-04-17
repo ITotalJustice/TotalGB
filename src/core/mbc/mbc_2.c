@@ -1,4 +1,5 @@
-#include "core/mbc/common.h"
+#include "core/mbc/mbc.h"
+#include "core/internal.h"
 
 
 void GB_mbc2_write(struct GB_Core* gb, uint16_t addr, uint8_t value) {
@@ -22,46 +23,47 @@ void GB_mbc2_write(struct GB_Core* gb, uint16_t addr, uint8_t value) {
             if (!(gb->cart.flags & MBC_FLAGS_RAM) || !gb->cart.ram_enabled) {
                 return;
             }
-            // because of mbc2 being only 512-bytes and due to my mmap
-            // pointer system, we must manually mirror all writes to
-            // all addresses in range 0x0000 - 0x1FFFF.
+
             const uint8_t masked_value = (value & 0x0F) | 0xF0;
             const uint16_t masked_addr = addr & 0x1FF;
 
-            gb->cart.ram[0x0000 + masked_addr] = masked_value;
-            gb->cart.ram[0x0200 + masked_addr] = masked_value;
-            gb->cart.ram[0x0400 + masked_addr] = masked_value;
-            gb->cart.ram[0x0600 + masked_addr] = masked_value;
-            gb->cart.ram[0x0800 + masked_addr] = masked_value;
-            gb->cart.ram[0x0A00 + masked_addr] = masked_value;
-            gb->cart.ram[0x0C00 + masked_addr] = masked_value;
-            gb->cart.ram[0x0E00 + masked_addr] = masked_value;
-            gb->cart.ram[0x1000 + masked_addr] = masked_value;
-            gb->cart.ram[0x1200 + masked_addr] = masked_value;
-            gb->cart.ram[0x1400 + masked_addr] = masked_value;
-            gb->cart.ram[0x1600 + masked_addr] = masked_value;
-            gb->cart.ram[0x1800 + masked_addr] = masked_value;
-            gb->cart.ram[0x1A00 + masked_addr] = masked_value;
-            gb->cart.ram[0x1C00 + masked_addr] = masked_value;
-            gb->cart.ram[0x1E00 + masked_addr] = masked_value;
+            gb->cart.ram[masked_addr] = masked_value;
         } break;
 	}
 }
 
-const uint8_t* GB_mbc2_get_rom_bank(struct GB_Core* gb, uint8_t bank) {
-	if (bank == 0) {
-		return gb->cart.rom;
-	}
-	
-	return gb->cart.rom + (gb->cart.rom_bank * 0x4000);
+struct MBC_RomBankInfo GB_mbc2_get_rom_bank(struct GB_Core* gb, uint8_t bank) {
+	struct MBC_RomBankInfo info = {0};
+    const uint8_t* ptr = NULL;
+
+    if (bank == 0) {
+        ptr = gb->cart.rom;
+    }
+    else {
+        ptr = gb->cart.rom + (gb->cart.rom_bank * 0x4000);
+    }
+
+    for (size_t i = 0; i < GB_ARR_SIZE(info.entries); ++i) {
+        info.entries[i].ptr = ptr + (0x1000 * i);
+        info.entries[i].mask = 0x0FFF;
+    }
+
+    return info;
 }
 
-const uint8_t* GB_mbc2_get_ram_bank(struct GB_Core* gb, uint8_t bank) {
-	GB_UNUSED(bank);
-    
+struct MBC_RamBankInfo GB_mbc2_get_ram_bank(struct GB_Core* gb) {
 	if (!(gb->cart.flags & MBC_FLAGS_RAM) || !gb->cart.ram_enabled) {
-		return MBC_NO_RAM;
+		return mbc_setup_empty_ram();
 	}
 
-	return gb->cart.ram;
+	struct MBC_RamBankInfo info = {0};
+    
+    const uint8_t* ptr = gb->cart.ram + (0x2000 * gb->cart.ram_bank);
+
+    for (size_t i = 0; i < GB_ARR_SIZE(info.entries); ++i) {
+        info.entries[i].ptr = ptr;
+        info.entries[i].mask = 0x01FF;
+    }
+
+    return info;
 }

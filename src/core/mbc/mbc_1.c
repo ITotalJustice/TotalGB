@@ -1,6 +1,5 @@
-#include "core/mbc/common.h"
-
-#include <stdio.h>
+#include "core/mbc/mbc.h"
+#include "core/internal.h"
 
 
 void GB_mbc1_write(struct GB_Core* gb, uint16_t addr, uint8_t value) {
@@ -16,14 +15,7 @@ void GB_mbc1_write(struct GB_Core* gb, uint16_t addr, uint8_t value) {
         case 0x2: case 0x3: {
             // check only 5-bits, cannot be 0
             gb->cart.rom_bank_lo = (value & 0x1F) | ((value & 0x1F) == 0);
-
-            // TODO: idk what to do here...
-            // if (gb->cart.bank_mode) {
-                gb->cart.rom_bank = ((gb->cart.rom_bank_hi << 5) | (gb->cart.rom_bank_lo)) % gb->cart.rom_bank_max;
-            // } else {
-                // gb->cart.rom_bank = gb->cart.rom_bank_lo % gb->cart.rom_bank_max;
-            // }
-            
+            gb->cart.rom_bank = ((gb->cart.rom_bank_hi << 5) | (gb->cart.rom_bank_lo)) % gb->cart.rom_bank_max;
             GB_update_rom_banks(gb);
         } break;
 
@@ -65,30 +57,47 @@ void GB_mbc1_write(struct GB_Core* gb, uint16_t addr, uint8_t value) {
 	}
 }
 
-const uint8_t* GB_mbc1_get_rom_bank(struct GB_Core* gb, uint8_t bank) {
-	if (bank == 0) {
+struct MBC_RomBankInfo GB_mbc1_get_rom_bank(struct GB_Core* gb, uint8_t bank) {
+	struct MBC_RomBankInfo info = {0};
+    const uint8_t* ptr = NULL;
+
+    if (bank == 0) {
         if (gb->cart.rom_bank_max > 18 && gb->cart.bank_mode == 1) {
             uint16_t b = (gb->cart.rom_bank_hi << 5);
             if (b > gb->cart.rom_bank_max) {
                 b %= gb->cart.rom_bank_max;
             }
-            return gb->cart.rom + (b * 0x4000);
-	    } else {
-		    return gb->cart.rom;
+            ptr = gb->cart.rom + (b * 0x4000);
+        } else {
+            ptr = gb->cart.rom;
         }
     }
+    else {
+        ptr = gb->cart.rom + (gb->cart.rom_bank * 0x4000);
+    }
 	
-    // in mode 0, always read from bank 0
-	return gb->cart.rom + (gb->cart.rom_bank * 0x4000);
+    for (size_t i = 0; i < GB_ARR_SIZE(info.entries); ++i) {
+        info.entries[i].ptr = ptr + (0x1000 * i);
+        info.entries[i].mask = 0x0FFF;
+    }
+
+    return info;
 }
 
-const uint8_t* GB_mbc1_get_ram_bank(struct GB_Core* gb, uint8_t bank) {
-	GB_UNUSED(bank);
-    
+struct MBC_RamBankInfo GB_mbc1_get_ram_bank(struct GB_Core* gb) {
 	if (!(gb->cart.flags & MBC_FLAGS_RAM) || !gb->cart.ram_enabled) {
-		return MBC_NO_RAM;
+		return mbc_setup_empty_ram();
 	}
 
+    struct MBC_RamBankInfo info = {0};
+    
     // in mode 0, always read from bank 0
-    return gb->cart.ram + (0x2000 * (gb->cart.bank_mode == 1 ? gb->cart.ram_bank : 0));
+    const uint8_t* ptr = gb->cart.ram + (0x2000 * (gb->cart.bank_mode == 1 ? gb->cart.ram_bank : 0));
+
+    for (size_t i = 0; i < GB_ARR_SIZE(info.entries); ++i) {
+        info.entries[i].ptr = ptr + (0x1000 * i);
+        info.entries[i].mask = 0x0FFF;
+    }
+
+    return info;
 }    

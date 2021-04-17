@@ -1,8 +1,6 @@
-#include "core/mbc/common.h"
+#include "core/mbc/mbc.h"
+#include "core/internal.h"
 #include "core/gb.h" // for has flags functions
-
-
-#include <stdio.h>
 
 /*
  08h  RTC S   Seconds   0-59 (0-3Bh)
@@ -69,19 +67,8 @@ void GB_rtc_tick_frame(struct GB_Core* gb) {
     }
 }
 
-// const char* GB_mbc3_rtc_type(const struct GB_Core* gb) {
-//     switch (gb->cart.rtc_mapped_reg) {
-//         case GB_RTC_MAPPED_REG_S: return "GB_RTC_MAPPED_REG_S";
-//         case GB_RTC_MAPPED_REG_M: return "GB_RTC_MAPPED_REG_M";
-//         case GB_RTC_MAPPED_REG_H: return "GB_RTC_MAPPED_REG_H";
-//         case GB_RTC_MAPPED_REG_DL: return "GB_RTC_MAPPED_REG_DL";
-//         case GB_RTC_MAPPED_REG_DH: return "GB_RTC_MAPPED_REG_DH";
-//     }
-
-//     GB_UNREACHABLE(0xFF);
-// }
-
 static inline void GB_mbc3_rtc_write(struct GB_Core* gb, uint8_t value) {
+    // TODO: cap the values so they aren't invalid!
     switch (gb->cart.rtc_mapped_reg) {
         case GB_RTC_MAPPED_REG_S: gb->cart.rtc.S = value; break;
         case GB_RTC_MAPPED_REG_M: gb->cart.rtc.M = value; break;
@@ -91,17 +78,22 @@ static inline void GB_mbc3_rtc_write(struct GB_Core* gb, uint8_t value) {
     }
 }
 
-#if GB_RTC_SPEEDHACK
 static inline void GB_speed_hack_map_rtc_reg(struct GB_Core* gb) {
+    uint8_t* ptr = NULL;
+
     switch (gb->cart.rtc_mapped_reg) {
-        case GB_RTC_MAPPED_REG_S: gb->mmap[0xA] = &gb->cart.rtc.S; break;
-        case GB_RTC_MAPPED_REG_M: gb->mmap[0xA] = &gb->cart.rtc.M; break;
-        case GB_RTC_MAPPED_REG_H: gb->mmap[0xA] = &gb->cart.rtc.H; break;
-        case GB_RTC_MAPPED_REG_DL: gb->mmap[0xA] = &gb->cart.rtc.DL; break;
-        case GB_RTC_MAPPED_REG_DH: gb->mmap[0xA] = &gb->cart.rtc.DH; break;
+        case GB_RTC_MAPPED_REG_S: ptr = &gb->cart.rtc.S; break;
+        case GB_RTC_MAPPED_REG_M: ptr = &gb->cart.rtc.M; break;
+        case GB_RTC_MAPPED_REG_H: ptr = &gb->cart.rtc.H; break;
+        case GB_RTC_MAPPED_REG_DL: ptr = &gb->cart.rtc.DL; break;
+        case GB_RTC_MAPPED_REG_DH: ptr = &gb->cart.rtc.DH; break;
     }
+
+    gb->mmap[0xA].ptr = ptr;
+    gb->mmap[0xA].mask = 0;
+    gb->mmap[0xB].ptr = ptr;
+    gb->mmap[0xB].mask = 0;
 }
-#endif // GB_RTC_SPEEDHACK
 
 void GB_mbc3_write(struct GB_Core* gb, uint16_t addr, uint8_t value) { 
     switch ((addr >> 12) & 0xF) {
@@ -130,10 +122,7 @@ void GB_mbc3_write(struct GB_Core* gb, uint16_t addr, uint8_t value) {
             else if (GB_has_mbc_flags(gb, MBC_FLAGS_RTC) && value >= 0x08 && value <= 0x0C) {
                 gb->cart.rtc_mapped_reg = value - 0x08;
                 gb->cart.in_ram = false;
-            
-            #if GB_RTC_SPEEDHACK
                 GB_speed_hack_map_rtc_reg(gb);
-            #endif // #if GB_RTC_SPEEDHACK
             }
             break;
 
@@ -147,7 +136,6 @@ void GB_mbc3_write(struct GB_Core* gb, uint16_t addr, uint8_t value) {
                     gb->cart.ram[(addr & 0x1FFF) + (0x2000 * gb->cart.ram_bank)] = value;
                 }
                 else if (GB_has_mbc_flags(gb, MBC_FLAGS_RTC)) {
-                    // printf("writing to rtc reg: %s\n", GB_mbc3_rtc_type(gb));
                     GB_mbc3_rtc_write(gb, value);
                 }
             }
@@ -155,21 +143,38 @@ void GB_mbc3_write(struct GB_Core* gb, uint16_t addr, uint8_t value) {
     }
 }
 
-const uint8_t* GB_mbc3_get_rom_bank(struct GB_Core* gb, uint8_t bank) {
-	if (bank == 0) {
-		return gb->cart.rom;
-	}
-	
-	return gb->cart.rom + (gb->cart.rom_bank * 0x4000);
+struct MBC_RomBankInfo GB_mbc3_get_rom_bank(struct GB_Core* gb, uint8_t bank) {
+	struct MBC_RomBankInfo info = {0};
+    const uint8_t* ptr = NULL;
+
+    if (bank == 0) {
+        ptr = gb->cart.rom;
+    }
+    else {
+        ptr = gb->cart.rom + (gb->cart.rom_bank * 0x4000);
+    }
+
+    for (size_t i = 0; i < GB_ARR_SIZE(info.entries); ++i) {
+        info.entries[i].ptr = ptr + (0x1000 * i);
+        info.entries[i].mask = 0x0FFF;
+    }
+
+    return info;
 }
 
-// todo: rtc support
-const uint8_t* GB_mbc3_get_ram_bank(struct GB_Core* gb, uint8_t bank) {
-	GB_UNUSED(bank);
-    
+struct MBC_RamBankInfo GB_mbc3_get_ram_bank(struct GB_Core* gb) {
 	if (!(gb->cart.flags & MBC_FLAGS_RAM) || !gb->cart.ram_enabled || !gb->cart.in_ram) {
-		return MBC_NO_RAM;
+		return mbc_setup_empty_ram();
 	}
 
-	return gb->cart.ram + (0x2000 * gb->cart.ram_bank);
+	struct MBC_RamBankInfo info = {0};
+    
+    const uint8_t* ptr = gb->cart.ram + (0x2000 * gb->cart.ram_bank);
+
+    for (size_t i = 0; i < GB_ARR_SIZE(info.entries); ++i) {
+        info.entries[i].ptr = ptr + (0x1000 * i);
+        info.entries[i].mask = 0x0FFF;
+    }
+
+    return info;
 }

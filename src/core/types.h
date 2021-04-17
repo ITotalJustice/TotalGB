@@ -466,12 +466,28 @@ struct GB_Ppu {
     bool dirty_obj[8];
 };
 
+// todo: fix bad name
+struct GB_MemMapEntry {
+	const uint8_t* ptr;
+	uint16_t mask;
+};
+
+struct MBC_RomBankInfo {
+	struct GB_MemMapEntry entries[4];
+};
+
+struct MBC_RamBankInfo {
+	struct GB_MemMapEntry entries[2];
+};
+
 struct GB_Cart {
 	void (*write)(struct GB_Core* gb, uint16_t addr, uint8_t val);
-	const uint8_t* (*get_rom_bank)(struct GB_Core* gb, uint8_t val);
-	const uint8_t* (*get_ram_bank)(struct GB_Core* gb, uint8_t val);
+	
+	struct MBC_RomBankInfo (*get_rom_bank)(struct GB_Core* gb, uint8_t bank);
+	struct MBC_RamBankInfo (*get_ram_bank)(struct GB_Core* gb);
 
 	const uint8_t* rom;
+
 	uint8_t ram[0x10000];
 	uint32_t rom_size;
 	uint32_t ram_size;
@@ -688,10 +704,12 @@ struct GB_Apu {
 };
 
 struct GB_Core {
-	const uint8_t* mmap[0x10];
+	struct GB_MemMapEntry mmap[0x10];
+
 	uint8_t io[0x80]; // easier to have io as an array than individual bytes
 	uint8_t hram[0x80]; // 0x7F + IE reg
 	uint8_t wram[8][0x1000]; // extra 6 banks in gbc
+
 	struct GB_Cpu cpu;
 	struct GB_Ppu ppu;
 	struct GB_Apu apu;

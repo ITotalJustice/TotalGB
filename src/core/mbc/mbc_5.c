@@ -1,4 +1,5 @@
-#include "core/mbc/common.h"
+#include "core/mbc/mbc.h"
+#include "core/internal.h"
 
 
 void GB_mbc5_write(struct GB_Core* gb, uint16_t addr, uint8_t value) { 
@@ -44,19 +45,38 @@ void GB_mbc5_write(struct GB_Core* gb, uint16_t addr, uint8_t value) {
     }
 }
 
-const uint8_t* GB_mbc5_get_rom_bank(struct GB_Core* gb, uint8_t bank) {
-	if (bank == 0) {
-		return gb->cart.rom;
-	}
-	
-	return gb->cart.rom + (gb->cart.rom_bank * 0x4000);
+struct MBC_RomBankInfo GB_mbc5_get_rom_bank(struct GB_Core* gb, uint8_t bank) {
+	struct MBC_RomBankInfo info = {0};
+    const uint8_t* ptr = NULL;
+
+    if (bank == 0) {
+        ptr = gb->cart.rom;
+    }
+    else {
+        ptr = gb->cart.rom + (gb->cart.rom_bank * 0x4000);
+    }
+
+    for (size_t i = 0; i < GB_ARR_SIZE(info.entries); ++i) {
+        info.entries[i].ptr = ptr + (0x1000 * i);
+        info.entries[i].mask = 0x0FFF;
+    }
+
+    return info;
 }
 
-const uint8_t* GB_mbc5_get_ram_bank(struct GB_Core* gb, uint8_t bank) {
-	GB_UNUSED(bank);
-    
+struct MBC_RamBankInfo GB_mbc5_get_ram_bank(struct GB_Core* gb) {
 	if (!(gb->cart.flags & MBC_FLAGS_RAM) || !gb->cart.ram_enabled) {
-		return MBC_NO_RAM;
+		return mbc_setup_empty_ram();
 	}
-	return gb->cart.ram + (0x2000 * gb->cart.ram_bank);
+
+    struct MBC_RamBankInfo info = {0};
+    
+    const uint8_t* ptr = gb->cart.ram + (0x2000 * gb->cart.ram_bank);
+
+    for (size_t i = 0; i < GB_ARR_SIZE(info.entries); ++i) {
+        info.entries[i].ptr = ptr + (0x1000 * i);
+        info.entries[i].mask = 0x0FFF;
+    }
+
+    return info;
 }

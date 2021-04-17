@@ -227,7 +227,21 @@ void GB_ppu_run(struct GB_Core* gb, uint16_t cycles) {
 void GB_DMA(struct GB_Core* gb) {
     assert(IO_DMA <= 0xDF);
 
-    memcpy(gb->ppu.oam, gb->mmap[IO_DMA >> 4] + ((IO_DMA & 0xF) << 8), sizeof(gb->ppu.oam));
+    // because it's possible for the index to be
+    // cart ram, which may be invalid or RTC reg,
+    // this first checks that the mask is zero,
+    // if it is, then just memset the entire area
+    // else, a normal copy happens.
+    const struct GB_MemMapEntry entry = gb->mmap[IO_DMA >> 4];
+
+    if (entry.mask == 0) {
+        memset(gb->ppu.oam, entry.ptr[0], sizeof(gb->ppu.oam));
+    }
+    else {
+        // TODO: check the math to see if this can go OOB for
+        // mbc2-ram!!!
+        memcpy(gb->ppu.oam, entry.ptr + ((IO_DMA & 0xF) << 8), sizeof(gb->ppu.oam));
+    }
 	
     // because i am peforming the dma at once, i am also adding the cycles
     // at once as well.
