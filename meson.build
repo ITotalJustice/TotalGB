@@ -16,14 +16,14 @@ project('TotalGB', ['c', 'cpp'],
 dependencies = [
     dependency('sdl2', version : '>=2.0.5'),
 
-    dependency('glew'),
+    # dependency('glew'),
 
-    dependency('sdl'),
+    # dependency('sdl'),
 
-    dependency('allegro-5'),
-    dependency('allegro_audio-5'),
-    dependency('allegro_primitives-5'),
-    dependency('allegro_image-5'),
+    # dependency('allegro-5'),
+    # dependency('allegro_audio-5'),
+    # dependency('allegro_primitives-5'),
+    # dependency('allegro_image-5'),
 
     # this is needed for linux
     dependency('gtk+-3.0'),
@@ -173,6 +173,9 @@ cflags = [
 
 cppflags = [
     '-std=c++20',
+
+    '-DMGB_SDL2_AUDIO',
+    '-DMGB_SDL2_VIDEO',
 ]
 
 linkflags = [

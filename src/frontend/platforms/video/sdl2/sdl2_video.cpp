@@ -1,7 +1,8 @@
 #include "frontend/platforms/video/sdl2/sdl2_video.hpp"
 
-#include <cstring>
+#ifdef MGB_SDL2_VIDEO
 
+#include <cstring>
 
 namespace mgb::platform::video::sdl2 {
 
@@ -81,3 +82,6 @@ auto SDL2::RenderDisplay() -> void {
 
 
 } // namespace mgb::platform::video::sdl2
+
+
+#endif // MGB_SDL2_VIDEO

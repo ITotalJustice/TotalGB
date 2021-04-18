@@ -1,6 +1,8 @@
 #include "frontend/platforms/video/allegro5/allegro5_video.hpp"
 #include "core/gb.h"
 
+#ifdef MGB_ALLEGRO5_VIDEO
+
 #include <allegro5/allegro.h>
 #include <allegro5/allegro_image.h>
 #include <allegro5/keycodes.h>
@@ -358,3 +360,4 @@ auto Allegro5::PollEvents() -> void {
 
 } // namespace mgb::platform::video::allegro5
 
+#endif // MGB_ALLEGRO5_VIDEO

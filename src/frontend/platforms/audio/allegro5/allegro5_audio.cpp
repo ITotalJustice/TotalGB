@@ -1,6 +1,8 @@
 #include "frontend/platforms/audio/allegro5/allegro5_audio.hpp"
 #include "core/types.h"
 
+#ifdef MGB_ALLEGRO5_AUDIO
+
 #include <allegro5/allegro_audio.h>
 #include <cstring>
 
@@ -87,3 +89,5 @@ auto Allegro5::PushSamples(const struct GB_ApuCallbackData* data) -> void {
 }
 
 }
+
+#endif // MGB_ALLEGRO5_AUDIO

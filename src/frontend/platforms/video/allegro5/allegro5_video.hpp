@@ -1,5 +1,7 @@
 #pragma once
 
+#ifdef MGB_ALLEGRO5_VIDEO
+
 #include "frontend/platforms/video/interface.hpp"
 
 #include <allegro5/allegro.h>
@@ -32,3 +34,5 @@ private:
 
 
 } // namespace mgb::platform::video::allegro5
+
+#endif // MGB_ALLEGRO5_VIDEO

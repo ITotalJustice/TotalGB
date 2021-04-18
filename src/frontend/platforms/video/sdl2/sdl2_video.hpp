@@ -1,5 +1,6 @@
 #pragma once
 
+#ifdef MGB_SDL2_VIDEO
 
 #include "frontend/platforms/video/interface.hpp"
 
@@ -81,3 +82,6 @@ private:
 };
 
 } // namespace mgb::platform::video::sdl2
+
+
+#endif // MGB_SDL2_VIDEO

@@ -1,6 +1,8 @@
 #include "frontend/platforms/video/sdl2/sdl2_video.hpp"
 #include "core/gb.h"
 
+#ifdef MGB_SDL2_VIDEO
+
 #include <cassert>
 #include <cstring>
 #include <array>
@@ -385,3 +387,6 @@ auto BaseSDL2::OnUserEvent(SDL_UserEvent&) -> void {
 }
 
 } // namespace mgb::platform::video::sdl2 {
+
+#endif // MGB_SDL2_VIDEO
+

@@ -3,6 +3,8 @@
 
 #include "frontend/platforms/audio/interface.hpp"
 
+#ifdef MGB_ALLEGRO5_AUDIO
+
 #include <allegro5/allegro5.h>
 #include <allegro5/allegro_audio.h>
 
@@ -42,3 +44,4 @@ private:
 
 }
 
+#endif // MGB_ALLEGRO5_AUDIO

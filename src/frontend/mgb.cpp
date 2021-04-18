@@ -109,25 +109,28 @@ App::App() {
         .h = 144
     };
 
-    // this->video_platform = std::make_unique<platform::video::allegro5::Allegro5>(
-    //     callbacks
-    // );
+#ifdef MGB_SDL2_VIDEO
+    using VideoPlatform = platform::video::sdl2::SDL2;
+#elif MGB_SDL2GL_VIDEO
+    using VideoPlatform = platform::video::sdl2::SDL2_GL
+#elif MGB_ALLEGRO5_VIDEO
+    using VideoPlatform = platform::video::allegro5::Allegro5;
+#endif
 
-    this->video_platform = std::make_unique<platform::video::sdl2::SDL2>(
-        callbacks
-    );
+#ifdef MGB_SDL2_AUDIO
+    using AudioPlatform = platform::audio::sdl2::SDL2;
+#elif MGB_SDL1_AUDIO
+    using AudioPlatform = platform::audio::sdl1::SDL1;
+#elif MGB_ALLEGRO5_AUDIO
+    using AudioPlatform = platform::audio::allegro5::Allegro5;
+#endif
 
-    // this->video_platform = std::make_unique<platform::video::sdl2::SDL2_GL>(
-    //     callbacks
-    // );
-
+    this->video_platform = std::make_unique<VideoPlatform>(callbacks);
+    this->audio_platform = std::make_unique<AudioPlatform>();
+    
     this->video_platform->SetupVideo(
         vid_info, game_info
     );
-
-    // this->audio_platform = std::make_unique<platform::audio::sdl1::SDL1>();
-    this->audio_platform = std::make_unique<platform::audio::sdl2::SDL2>();
-    // this->audio_platform = std::make_unique<platform::audio::allegro5::Allegro5>();
 
     this->audio_platform->SetupAudio();
 

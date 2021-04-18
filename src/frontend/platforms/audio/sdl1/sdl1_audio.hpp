@@ -1,6 +1,8 @@
 #pragma once
 
 
+#ifdef MGB_SDL1_AUDIO
+
 #include "frontend/platforms/audio/interface.hpp"
 
 #include <mutex>
@@ -43,3 +45,4 @@ private:
 
 } // namespace mgb::platform::audio::sdl2
 
+#endif // MGB_SDL1_AUDIO

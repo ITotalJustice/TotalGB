@@ -1,6 +1,8 @@
 #include "frontend/platforms/audio/sdl1/sdl1_audio.hpp"
 #include "core/types.h"
 
+#ifdef MGB_SDL1_AUDIO
+
 #include <SDL/SDL.h>
 #include <SDL/SDL_audio.h>
 #include <cstring>
@@ -107,3 +109,5 @@ auto SDL1::PushSamples(const struct GB_ApuCallbackData* data) -> void {
 }
 
 } // namespace mgb::platform::audio::sdl1
+
+#endif // MGB_SDL1_AUDIO

@@ -1,5 +1,6 @@
 #include "frontend/platforms/video/sdl2-opengl/sdl2_opengl.hpp"
-#include "SDL_video.h"
+
+#ifdef MGB_SDL2GL_VIDEO
 
 #include <GL/glew.h>
 #include <SDL2/SDL_opengl.h>
@@ -95,3 +96,5 @@ auto SDL2_GL::RenderDisplay() -> void {
 }
 
 } // namespace mgb::platform::video::sdl2
+
+#endif // MGB_SDL2GL_VIDEO
