@@ -23,6 +23,7 @@ dependencies = [
     dependency('allegro-5'),
     dependency('allegro_audio-5'),
     dependency('allegro_primitives-5'),
+    dependency('allegro_image-5'),
 
     # this is needed for linux
     dependency('gtk+-3.0'),
@@ -75,6 +76,7 @@ source = files([
     'src/frontend/platforms/video/sdl2/sdl2_base.cpp',
     'src/frontend/platforms/video/sdl2/sdl2_video.cpp',
     'src/frontend/platforms/video/sdl2-opengl/sdl2_opengl.cpp',
+    'src/frontend/platforms/video/allegro5/allegro5_video.cpp',
 
     # [Audio Backends]
     'src/frontend/platforms/audio/sdl1/sdl1_audio.cpp',

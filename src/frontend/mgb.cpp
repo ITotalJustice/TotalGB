@@ -109,6 +109,10 @@ App::App() {
         .h = 144
     };
 
+    // this->video_platform = std::make_unique<platform::video::allegro5::Allegro5>(
+    //     callbacks
+    // );
+
     this->video_platform = std::make_unique<platform::video::sdl2::SDL2>(
         callbacks
     );
@@ -121,11 +125,13 @@ App::App() {
         vid_info, game_info
     );
 
-    this->audio_platform = std::make_unique<platform::audio::sdl1::SDL1>();
-    // this->audio_platform = std::make_unique<platform::audio::sdl2::SDL2>();
+    // this->audio_platform = std::make_unique<platform::audio::sdl1::SDL1>();
+    this->audio_platform = std::make_unique<platform::audio::sdl2::SDL2>();
     // this->audio_platform = std::make_unique<platform::audio::allegro5::Allegro5>();
 
     this->audio_platform->SetupAudio();
+
+    printf("done!\n");
 }
 
 App::~App() {

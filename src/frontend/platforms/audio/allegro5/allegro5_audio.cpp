@@ -26,6 +26,8 @@ auto Allegro5::SetupAudio() -> bool {
     	return false;
     }
 
+    // al_set_config_value(al_get_system_config(), "audio", "driver", "sndio");
+
     if (!al_install_audio()) {
     	printf("[AL_AUDIO] failed to install audio\n");
     	return false;
