@@ -4,15 +4,11 @@
  */
 
 #include "gzguts.h"
-#ifdef __SWITCH__
+
+#ifndef _MSC_VER
 #include <unistd.h>
-#endif
-#ifdef __VITA__
-#include <unistd.h>
-#endif
-#ifdef __3DS__
-#include <unistd.h>
-#endif
+#endif // _MSC_VER
+
 
 #if defined(_WIN32) && !defined(__BORLANDC__) && !defined(__MINGW32__)
 #  define LSEEK _lseeki64

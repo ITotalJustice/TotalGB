@@ -573,6 +573,7 @@ nfdresult_t NFD_PathSet_GetPathN(const nfdpathset_t *pathSet, nfdpathsetsize_t i
 
 void NFD_PathSet_FreePathN(const nfdnchar_t* filePath) {
     assert(filePath);
+    (void)filePath;
     // no-op, because NFD_PathSet_Free does the freeing for us
 }
 

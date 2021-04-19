@@ -16,11 +16,20 @@
 #ifndef _ZLIBIOAPI64_H
 #define _ZLIBIOAPI64_H
 
+
+// this shouldn't really be needed i don't think,
+// but ftello / fseeko are not defined otherwise...
+#ifndef __USE_LARGEFILE
+#define __USE_LARGEFILE 1
 #include <stdio.h>
+#undef __USE_LARGEFILE
+#endif
+
 #include <stdlib.h>
 #include <stdint.h>
 
-#include "../zlib/zlib.h"
+#include <zlib/zlib.h>
+
 
 #ifdef __GNUC__
 #  define ZIP_UNUSED __attribute__((__unused__))

@@ -2,17 +2,17 @@
 #include "core/internal.h"
 
 
-static inline bool GB_is_directional(const struct GB_Core* gb) {
-    return !!(IO_JYP & 0x10);
-}
+// static inline bool GB_is_directional(const struct GB_Core* gb) {
+//     return !!(IO_JYP & 0x10);
+// }
 
 static inline bool GB_is_button(const struct GB_Core* gb) {
     return !!(IO_JYP & 0x20);
 }
 
-static inline uint8_t GB_joypad_get_internal(const struct GB_Core* gb) {
-    return ((gb->joypad.var >> (GB_is_button(gb) << 2)) & 0xF);
-}
+// static inline uint8_t GB_joypad_get_internal(const struct GB_Core* gb) {
+//     return ((gb->joypad.var >> (GB_is_button(gb) << 2)) & 0xF);
+// }
 
 // [API]
 void GB_set_buttons(struct GB_Core* gb, uint8_t buttons, bool is_down) {

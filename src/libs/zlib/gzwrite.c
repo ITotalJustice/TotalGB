@@ -4,15 +4,11 @@
  */
 
 #include "gzguts.h"
-#ifdef __SWITCH__
+
+#ifndef _MSC_VER
 #include <unistd.h>
-#endif
-#ifdef __VITA__
-#include <unistd.h>
-#endif
-#ifdef __3DS__
-#include <unistd.h>
-#endif
+#endif // _MSC_VER
+
 
 /* Local functions */
 local int gz_init OF((gz_statep));

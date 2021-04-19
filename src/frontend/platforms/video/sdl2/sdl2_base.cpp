@@ -290,6 +290,15 @@ auto BaseSDL2::OnKeyEvent(const SDL_KeyboardEvent& e) -> void {
             GB_set_render_palette_layer_config(this->callback.GetCore(), GB_RENDER_LAYER_CONFIG_OBJ);
             break;
 
+        case SDLK_f:
+            if (auto flags = SDL_GetWindowFlags(this->window); flags & (SDL_WINDOW_FULLSCREEN | SDL_WINDOW_FULLSCREEN_DESKTOP)) {
+                SDL_SetWindowFullscreen(this->window, 0);
+            }
+            else {
+                SDL_SetWindowFullscreen(this->window, SDL_WINDOW_FULLSCREEN);
+            }
+            break;
+
     // these are for savestates
         case SDLK_F1:
             this->callback.SaveState();

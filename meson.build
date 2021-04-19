@@ -9,7 +9,11 @@ project('TotalGB', ['c', 'cpp'],
         'strip=true',
 
         # base options
-        'b_ndebug=if-release'
+        'b_ndebug=if-release',
+
+        'c_std=c11',
+        'cpp_std=c++2a',
+        'cpp_rtti=false',
     ],
 )
 
@@ -172,14 +176,12 @@ cflags = [
 ]
 
 cppflags = [
-    '-std=c++20',
-
     '-DMGB_SDL2_AUDIO',
     '-DMGB_SDL2_VIDEO',
 ]
 
 linkflags = [
-    '-s',
+    
 ]
 
 exe = executable(
@@ -190,13 +192,26 @@ exe = executable(
     include_directories: [ includes ],
     
     c_args: [ cflags ],
-    c_std: 'c11',
-
     cpp_args: [ cppflags, cflags ],
-    cpp_std: 'c++20',
-    cpp_rtti: false,
-    
     link_args: [ linkflags ],
 )
 
-test('basic', exe)
+test(
+    'rom load test',
+    exe,
+    args : ['pokemon.zip']
+)
+
+#test(
+#    'cpu_instr.gb',
+#    exe,
+#    args : ['first', 'second']
+#)
+
+#test(
+#    'instr_timing.gb',
+#    exe,
+#    args : ['first', 'second']
+#)
+
+
