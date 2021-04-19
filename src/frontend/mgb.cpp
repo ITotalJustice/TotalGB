@@ -98,8 +98,8 @@ App::App() {
         .render_type = platform::video::RenderType::SOFTWARE,
         .x = 0,
         .y = 0,
-        .w = 160 * SCALE,
-        .h = 144 * SCALE,
+        .w = 160 * (int)this->options.GetScale(),
+        .h = 144 * (int)this->options.GetScale(),
     };
 
     const platform::video::GameTextureInfo game_info{
@@ -133,8 +133,6 @@ App::App() {
     );
 
     this->audio_platform->SetupAudio();
-
-    printf("done!\n");
 }
 
 App::~App() {
@@ -373,8 +371,9 @@ auto App::FilePicker() -> void {
     NFD::UniquePath outPath;
 
     // prepare filters for the dialog
-    const nfdfilteritem_t filterItem[2] = {
-        { "Roms", "gb,gbc" },
+    const nfdfilteritem_t filterItem[] = {
+        { "Valid", "gb,gbc,sgb,zip,gzip" },
+        { "Roms", "gb,gbc,sgb" },
         { "Zip", "zip,gzip" },
     };
 
@@ -400,7 +399,9 @@ auto App::Loop() -> void {
     while (this->running) {
         this->Events();
 
-        GB_run_frame(this->GetGB());
+        if (this->HasRom()) {
+            GB_run_frame(this->GetGB());
+        }
 
         // render the screen
         this->Draw();

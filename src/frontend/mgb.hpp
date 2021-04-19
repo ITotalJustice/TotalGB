@@ -34,6 +34,21 @@ enum class EmuRunState {
 };
 
 
+class Options final {
+public:
+    auto SetScale(size_t new_scale) {
+        // cannot be zero...
+        this->scale = new_scale + (new_scale == 0);
+    }
+
+    auto GetScale() const {
+        return this->scale;
+    }
+
+private:
+    size_t scale = 1;
+};
+
 class App final {
 public:
     App();
@@ -79,6 +94,8 @@ private:
     std::vector<u8> rom_data;
     std::string rom_path;
 
+    Options options;
+    
     EmuRunState run_state{EmuRunState::NONE};
 
     bool running{true};

@@ -12,7 +12,7 @@ project('TotalGB', ['c', 'cpp'],
         'b_ndebug=if-release',
 
         'c_std=c11',
-        'cpp_std=c++2a',
+        'cpp_std=c++17',
         'cpp_rtti=false',
     ],
 )
@@ -171,8 +171,6 @@ cflags = [
     '-DMGB_NO_ZSTD',
 
     # '-DDUMP_AUDIO=1',
-
-    '-DSCALE=4',
 ]
 
 cppflags = [
