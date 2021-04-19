@@ -435,7 +435,7 @@ auto App::OnGameAction(Action action, bool down) -> void {
         buttons[action],
         down
     );
-};
+}
 
 auto App::OnUIAction(Action action, bool down) -> void {
     // for now, only handle when keys are then released...
