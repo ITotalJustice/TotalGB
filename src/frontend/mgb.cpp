@@ -16,6 +16,7 @@
 #include <cstdio>
 #include <cstring>
 #include <cassert>
+#include <map>
 
 
 namespace mgb {
@@ -73,40 +74,31 @@ auto ErrorCallback(GB_Core*, void* user, struct GB_ErrorData* data) -> void {
 
 App::App() {
     const platform::video::Callbacks callbacks{
-        .GetCore = [this](){
-            return this->GetGB();
-        },
-        .LoadRom = [this](std::string path){
+        /*.OnFileDrop =*/ [this](auto path){
             return this->LoadRom(path);
         },
-        .SaveState = [this](){
-            return this->SaveState();
+        /*.OnAction =*/ [this](Action action, bool down){
+            this->OnAction(action, down);
         },
-        .LoadState = [this](){
-            return this->LoadState();
-        },
-        .FilePicker = [this](){
-            this->FilePicker();
-        },
-        .OnQuit = [this](){
+        /*.OnQuit =*/ [this](){
             this->running = false;
         }
     };
 
     const platform::video::VideoInfo vid_info{
-        .name = "TotalGB",
-        .render_type = platform::video::RenderType::SOFTWARE,
-        .x = 0,
-        .y = 0,
-        .w = 160 * (int)this->options.GetScale(),
-        .h = 144 * (int)this->options.GetScale(),
+        /*.name =*/ "TotalGB",
+        /*.render_type =*/ platform::video::RenderType::SOFTWARE,
+        /*.x =*/ 0,
+        /*.y =*/ 0,
+        /*.w =*/ 160 * (int)this->options.GetScale(),
+        /*.h =*/ 144 * (int)this->options.GetScale(),
     };
 
     const platform::video::GameTextureInfo game_info{
-        .x = 0,
-        .y = 0,
-        .w = 160,
-        .h = 144
+        /*.x =*/ 0,
+        /*.y =*/ 0,
+        /*.w =*/ 160,
+        /*.h =*/ 144
     };
 
 #ifdef MGB_SDL2_VIDEO
@@ -143,9 +135,9 @@ auto App::OnVblankCallback() -> void {
     // todo: send to video platform here!
     this->video_platform->UpdateGameTexture(
         platform::video::GameTextureData{
-            .pixels = (uint16_t*)gameboy->ppu.pixles,
-            .w = 160,
-            .h = 144
+            /*.pixels =*/ (uint16_t*)gameboy->ppu.pixles,
+            /*.w =*/ 160,
+            /*.h =*/ 144
         }
     );
 }
@@ -200,7 +192,7 @@ auto App::SaveState() -> void {
     io::Gzip file{state_path, "wb"};
     if (file.good()) {
         auto state = std::make_unique<struct GB_CoreState>();
-        GB_savestate2(this->GetGB(), state.get());
+        GB_savestate2(this->GetCore(), state.get());
         file.write((u8*)state.get(), sizeof(struct GB_CoreState));
     }
 }
@@ -216,7 +208,7 @@ auto App::LoadState() -> void {
     if (file.good()) {
         auto state = std::make_unique<struct GB_CoreState>();
         file.read((u8*)state.get(), sizeof(struct GB_CoreState));
-        GB_loadstate2(this->GetGB(), state.get());
+        GB_loadstate2(this->GetCore(), state.get());
     }
 }
 
@@ -227,17 +219,17 @@ auto App::LoadRomInternal(const std::string& path) -> bool {
         this->SaveGame(this->rom_path);
     } else {
         this->gameboy = std::make_unique<GB_Core>();
-        GB_init(this->GetGB());
+        GB_init(this->GetCore());
 
-        GB_set_rtc_update_config(this->GetGB(), GB_RTC_UPDATE_CONFIG_USE_LOCAL_TIME);
+        GB_set_rtc_update_config(this->GetCore(), GB_RTC_UPDATE_CONFIG_USE_LOCAL_TIME);
 
-        GB_set_apu_callback(this->GetGB(), AudioCallback, this);
-        GB_set_vblank_callback(this->GetGB(), VblankCallback, this);
-        GB_set_hblank_callback(this->GetGB(), HblankCallback, this);
-        GB_set_dma_callback(this->GetGB(), DmaCallback, this);
-        GB_set_halt_callback(this->GetGB(), HaltCallback, this);
-        GB_set_stop_callback(this->GetGB(), StopCallback, this);
-        GB_set_error_callback(this->GetGB(), ErrorCallback, this);
+        GB_set_apu_callback(this->GetCore(), AudioCallback, this);
+        GB_set_vblank_callback(this->GetCore(), VblankCallback, this);
+        GB_set_hblank_callback(this->GetCore(), HblankCallback, this);
+        GB_set_dma_callback(this->GetCore(), DmaCallback, this);
+        GB_set_halt_callback(this->GetCore(), HaltCallback, this);
+        GB_set_stop_callback(this->GetCore(), StopCallback, this);
+        GB_set_error_callback(this->GetCore(), ErrorCallback, this);
     }
 
     io::RomLoader romloader{path};
@@ -265,13 +257,13 @@ auto App::LoadRomInternal(const std::string& path) -> bool {
     // save the path and set that the rom had loaded!
     this->rom_path = path;
 
-    // // try and set the rom name in window title
-    // {
-    //     struct GB_CartName cart_name;
-    //     if (0 == GB_get_rom_name(this->gameboy.get(), &cart_name)) {
-    //         SDL_SetWindowTitle(this->window, cart_name.name);
-    //     }
-    // }
+    // try and set the rom name in window title
+    {
+        struct GB_CartName cart_name;
+        if (!GB_get_rom_name(this->gameboy.get(), &cart_name)) {
+            this->video_platform->SetWindowName(cart_name.name);
+        }
+    }
 
     // try and load a savefile (if any...)
     this->LoadSave(this->rom_path);
@@ -283,6 +275,8 @@ auto App::CloseRom() -> bool {
     if (this->HasRom()) {
         this->SaveGame(this->rom_path);
     }
+
+    this->rom_loaded = false;
 
     return true;
 }
@@ -346,20 +340,20 @@ auto App::LoadSave(const std::string& path) -> void {
 }
 
 auto App::HasRom() const -> bool {
-    return this->gameboy != nullptr;
+    return this->rom_loaded;
 }
 
-auto App::GetGB() -> GB_Core* {
+auto App::GetCore() -> GB_Core* {
     return this->gameboy.get();
 }
 
 auto App::LoadRom(const std::string& path) -> bool {
     if (this->LoadRomInternal(path)) {
-        this->run_state = EmuRunState::SINGLE;
+        this->rom_loaded = true;
         return true;
     }
 
-    this->run_state = EmuRunState::NONE;
+    this->rom_loaded = false;
     return false;
 }
 
@@ -400,7 +394,7 @@ auto App::Loop() -> void {
         this->Events();
 
         if (this->HasRom()) {
-            GB_run_frame(this->GetGB());
+            GB_run_frame(this->GetCore());
         }
 
         // render the screen
@@ -414,6 +408,137 @@ auto App::Events() -> void {
 
 auto App::Draw() -> void {
     this->video_platform->RenderDisplay();
+}
+
+auto App::OnGameAction(Action action, bool down) -> void {
+    static std::unordered_map<Action, GB_Button> buttons{
+        { Action::GAME_A, GB_BUTTON_A },
+        { Action::GAME_B, GB_BUTTON_B },
+        { Action::GAME_START, GB_BUTTON_START },
+        { Action::GAME_SELECT, GB_BUTTON_SELECT },
+        { Action::GAME_DOWN, GB_BUTTON_DOWN },
+        { Action::GAME_UP, GB_BUTTON_UP },
+        { Action::GAME_LEFT, GB_BUTTON_LEFT },
+        { Action::GAME_RIGHT, GB_BUTTON_RIGHT },
+    };
+
+    // only handle inputs if we have a rom loaded!
+    if (!this->HasRom()) {
+        return;
+    }
+
+    // TODO: we should also only handle inputs depending on what
+    // mode we are in, ie, if in UI menu or in-game!
+
+    GB_set_buttons(
+        this->GetCore(),
+        buttons[action],
+        down
+    );
+};
+
+auto App::OnUIAction(Action action, bool down) -> void {
+    // for now, only handle when keys are then released...
+    if (down) {
+        return;
+    }
+
+    enum class UI_Button {
+        UP = (int)Action::UI_UP,
+        DOWN = (int)Action::UI_DOWN,
+        LEFT = (int)Action::UI_LEFT,
+        RIGHT = (int)Action::UI_RIGHT,
+        SELECT = (int)Action::UI_SELECT,
+        BACK = (int)Action::UI_BACK,
+    };
+
+    switch (static_cast<UI_Button>(action)) {
+        case UI_Button::UP:
+            break;
+
+        case UI_Button::DOWN:
+            break;
+
+        case UI_Button::LEFT:
+            break;
+
+        case UI_Button::RIGHT:
+            break;
+
+        case UI_Button::SELECT:
+            break;
+
+        case UI_Button::BACK:
+            break;
+    }
+}
+
+auto App::OnSCAction(Action action, bool down) -> void {
+    // for now, only handle when keys are then released...
+    if (down) {
+        return;
+    }
+
+    enum class Shortcut {
+        EXIT = (int)Action::SC_EXIT,
+        FILE_PICKER = (int)Action::SC_FILE_PICKER,
+        SAVESTATE = (int)Action::SC_SAVESTATE,
+        LOADSTATE = (int)Action::SC_LOADSTATE,
+        FULLSCREEN = (int)Action::SC_FULLSCREEN,
+    };
+
+    switch (static_cast<Shortcut>(action)) {
+        case Shortcut::EXIT:
+            break;
+
+        case Shortcut::FILE_PICKER:
+            this->FilePicker();
+            break;
+
+        case Shortcut::SAVESTATE:
+            this->SaveState();
+            break;
+
+        case Shortcut::LOADSTATE:
+            this->LoadState();
+            break;
+        
+        case Shortcut::FULLSCREEN:
+            this->video_platform->ToggleFullscreen();
+            break;
+    }
+}
+
+auto App::OnAction(Action action, bool down) -> void {
+    switch (action) {
+        case Action::GAME_A:
+        case Action::GAME_B:
+        case Action::GAME_UP:
+        case Action::GAME_DOWN:
+        case Action::GAME_LEFT:
+        case Action::GAME_RIGHT:
+        case Action::GAME_START:
+        case Action::GAME_SELECT:
+            this->OnGameAction(action, down);
+            break;
+
+        case Action::UI_UP:
+        case Action::UI_DOWN:
+        case Action::UI_LEFT:
+        case Action::UI_RIGHT:
+        case Action::UI_SELECT:
+        case Action::UI_BACK:
+            this->OnUIAction(action, down);
+            break;
+
+        case Action::SC_EXIT:
+        case Action::SC_FILE_PICKER:
+        case Action::SC_SAVESTATE:
+        case Action::SC_LOADSTATE:
+        case Action::SC_FULLSCREEN:
+            this->OnSCAction(action, down);
+            break;
+    }
 }
 
 } // namespace mgb

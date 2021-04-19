@@ -1,16 +1,11 @@
 #pragma once
 
-#include <cstddef>
-#include <cstdint>
+#include "frontend/types.hpp"
+
 #include <string>
 #include <vector>
 #include <functional>
 
-
-extern "C" {
-struct GB_Core;
-struct GB_ErrorData;
-}
 
 
 namespace mgb::platform::video {
@@ -42,11 +37,24 @@ struct GameTextureData {
 };
 
 struct Callbacks {
-	std::function<struct GB_Core*()> GetCore;
-	std::function<bool(std::string path)> LoadRom;
-	std::function<void()> SaveState;
-	std::function<void()> LoadState;
-	std::function<void()> FilePicker;
+	// checks to see if all functions are set!
+	auto Validate() const {
+		if (!this->OnFileDrop) {
+			return false;
+		}
+		if (!this->OnAction) {
+			return false;
+		}
+		if (!this->OnQuit) {
+			return false;
+		}
+		return true;
+	}
+
+	// this is called when a file is dragged onto the
+	// display window.
+	std::function<bool(std::string path)> OnFileDrop;
+	std::function<void(Action action, bool down)> OnAction;
 	std::function<void()> OnQuit;
 };
 
@@ -62,6 +70,9 @@ public:
 	virtual auto RenderDisplay() -> void = 0;
 
 	virtual auto PollEvents() -> void = 0;
+
+	virtual auto ToggleFullscreen() -> void = 0;
+	virtual auto SetWindowName(const std::string& name) -> void = 0;
 
 protected:
 	Callbacks callback;

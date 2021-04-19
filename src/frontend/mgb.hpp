@@ -1,37 +1,14 @@
-#include <cstdint>
+#include "frontend/types.hpp"
+#include "frontend/platforms/video/interface.hpp"
+#include "frontend/platforms/audio/interface.hpp"
+
 #include <array>
 #include <memory>
 #include <vector>
 #include <string>
 
 
-#include "frontend/platforms/video/interface.hpp"
-#include "frontend/platforms/audio/interface.hpp"
-
-
-extern "C" {
-struct GB_Core;
-struct GB_ErrorData;
-struct GB_Printer;
-struct GB_ApuCallbackData;
-}
-
-
 namespace mgb {
-
-
-using u8 = std::uint8_t;
-using s8 = std::int8_t;
-using u16 = std::uint16_t;
-using s16 = std::int16_t;
-using u32 = std::uint32_t;
-using s32 = std::int32_t;
-
-
-enum class EmuRunState {
-    NONE,
-    SINGLE,
-};
 
 
 class Options final {
@@ -83,7 +60,13 @@ private:
     auto SaveState() -> void;
     auto LoadState() -> void;
 
-    auto GetGB() -> GB_Core*;
+    auto GetCore() -> GB_Core*;
+
+    auto OnGameAction(Action action, bool down) -> void;
+    auto OnUIAction(Action action, bool down) -> void;
+    auto OnSCAction(Action action, bool down) -> void;
+
+    auto OnAction(Action key, bool down) -> void;
 
 private:
     std::unique_ptr<GB_Core> gameboy;
@@ -95,9 +78,8 @@ private:
     std::string rom_path;
 
     Options options;
-    
-    EmuRunState run_state{EmuRunState::NONE};
 
+    bool rom_loaded{false};
     bool running{true};
 };
 

@@ -1,37 +1,20 @@
-#include "frontend/platforms/video/sdl2/sdl2_video.hpp"
-#include "core/gb.h"
+#include "frontend/platforms/video/sdl2/sdl2_base.hpp"
 
 #ifdef MGB_SDL2_VIDEO
 
 #include <cassert>
 #include <cstring>
 #include <array>
+#include <map>
 
 
-namespace mgb::platform::video::sdl2 {
+namespace mgb::platform::video::sdl2::base {
 
 
-struct KeyMapEntry {
-    int key;
-    GB_Button button;
-};
-
-constexpr std::array<KeyMapEntry, 8> key_map{{
-    {SDLK_x, GB_BUTTON_A},
-    {SDLK_z, GB_BUTTON_B},
-    {SDLK_RETURN, GB_BUTTON_START},
-    {SDLK_SPACE, GB_BUTTON_SELECT},
-    {SDLK_DOWN, GB_BUTTON_DOWN},
-    {SDLK_UP, GB_BUTTON_UP},
-    {SDLK_LEFT, GB_BUTTON_LEFT},
-    {SDLK_RIGHT, GB_BUTTON_RIGHT},
-}};
-
-
-BaseSDL2::~BaseSDL2() {
+SDL2::~SDL2() {
 }
 
-auto BaseSDL2::SetupSDL2(const VideoInfo& vid_info, const GameTextureInfo& game_info, uint32_t win_flags) -> bool {
+auto SDL2::SetupSDL2(const VideoInfo& vid_info, const GameTextureInfo& game_info, uint32_t win_flags) -> bool {
     if (SDL_InitSubSystem(SDL_INIT_VIDEO)) {
         printf("\n[SDL_VIDEO_ERROR] %s\n\n", SDL_GetError());
         return false;
@@ -61,10 +44,49 @@ auto BaseSDL2::SetupSDL2(const VideoInfo& vid_info, const GameTextureInfo& game_
     // set the size of the buffered pixels
     this->game_pixels.resize(game_info.w * game_info.h);
 
+    // setup keymap
+    this->key_action_map = std::multimap<int, Action>{
+        { SDLK_x, Action::GAME_A },
+        { SDLK_z, Action::GAME_B },
+        { SDLK_RETURN, Action::GAME_START },
+        { SDLK_SPACE, Action::GAME_SELECT },
+        { SDLK_DOWN, Action::GAME_DOWN },
+        { SDLK_UP, Action::GAME_UP },
+        { SDLK_LEFT, Action::GAME_LEFT },
+        { SDLK_RIGHT, Action::GAME_RIGHT },
+
+        { SDLK_SPACE, Action::UI_SELECT },
+        { SDLK_RETURN, Action::UI_BACK },
+        { SDLK_DOWN, Action::UI_DOWN },
+        { SDLK_UP, Action::UI_UP },
+        { SDLK_LEFT, Action::UI_LEFT },
+        { SDLK_RIGHT, Action::UI_RIGHT },
+
+        { SDLK_o, Action::SC_FILE_PICKER },
+        { SDLK_f, Action::SC_FULLSCREEN },
+    };
+
+    this->controller_action_map = std::multimap<SDL_GameControllerButton, Action>{
+        { SDL_CONTROLLER_BUTTON_A, Action::GAME_A },
+        { SDL_CONTROLLER_BUTTON_B, Action::GAME_B },
+        // { SDL_CONTROLLER_BUTTON_Y, },
+        // { SDL_CONTROLLER_BUTTON_X, },
+        { SDL_CONTROLLER_BUTTON_BACK, Action::GAME_SELECT },
+        { SDL_CONTROLLER_BUTTON_START, Action::GAME_START },
+        { SDL_CONTROLLER_BUTTON_DPAD_UP, Action::GAME_UP },
+        { SDL_CONTROLLER_BUTTON_DPAD_DOWN, Action::GAME_DOWN },
+        { SDL_CONTROLLER_BUTTON_DPAD_LEFT, Action::GAME_LEFT },
+        { SDL_CONTROLLER_BUTTON_DPAD_RIGHT, Action::GAME_RIGHT },
+        // { SDL_CONTROLLER_BUTTON_LEFTSTICK, },
+        // { SDL_CONTROLLER_BUTTON_RIGHTSTICK, },
+
+        // { SDL_CONTROLLER_BUTTON_GUIDE, },
+    };
+
     return true;
 }
 
-auto BaseSDL2::DeinitSDL2() -> void {
+auto SDL2::DeinitSDL2() -> void {
     if (SDL_WasInit(SDL_INIT_JOYSTICK)) {
         for (auto &p : this->joysticks) {
             SDL_JoystickClose(p.ptr);
@@ -92,7 +114,7 @@ auto BaseSDL2::DeinitSDL2() -> void {
     }
 }
 
-auto BaseSDL2::UpdateGameTexture(GameTextureData data) -> void {
+auto SDL2::UpdateGameTexture(GameTextureData data) -> void {
     std::memcpy(
         this->game_pixels.data(),
         data.pixels,
@@ -100,7 +122,20 @@ auto BaseSDL2::UpdateGameTexture(GameTextureData data) -> void {
     );
 }
 
-auto BaseSDL2::HasController(int which) const -> bool {
+auto SDL2::ToggleFullscreen() -> void {
+    if (auto flags = SDL_GetWindowFlags(this->window); flags & (SDL_WINDOW_FULLSCREEN | SDL_WINDOW_FULLSCREEN_DESKTOP)) {
+        SDL_SetWindowFullscreen(this->window, 0);
+    }
+    else {
+        SDL_SetWindowFullscreen(this->window, SDL_WINDOW_FULLSCREEN);
+    }
+}
+
+auto SDL2::SetWindowName(const std::string& name) -> void {
+    SDL_SetWindowTitle(this->window, name.c_str());
+}
+
+auto SDL2::HasController(int which) const -> bool {
     for (auto &p : this->controllers) {
         if (p.id == which) {
             return true;
@@ -109,7 +144,7 @@ auto BaseSDL2::HasController(int which) const -> bool {
     return false;
 }
 
-auto BaseSDL2::AddController(int index) -> bool {
+auto SDL2::AddController(int index) -> bool {
     auto controller = SDL_GameControllerOpen(index);
     if (!controller) {
         printf("Failed to open controller from index %d\n", index);
@@ -124,7 +159,7 @@ auto BaseSDL2::AddController(int index) -> bool {
     return true;
 }
 
-auto BaseSDL2::PollEvents() -> void {
+auto SDL2::PollEvents() -> void {
     SDL_Event e;
 
     while (SDL_PollEvent(&e)) {
@@ -190,16 +225,16 @@ auto BaseSDL2::PollEvents() -> void {
     }
 }
 
-auto BaseSDL2::OnQuitEvent(const SDL_QuitEvent& e) -> void {
+auto SDL2::OnQuitEvent(const SDL_QuitEvent& e) -> void {
     printf("quit request at %u\n", e.timestamp);
     this->callback.OnQuit();
 }
 
-auto BaseSDL2::OnDropEvent(SDL_DropEvent& e) -> void {
+auto SDL2::OnDropEvent(SDL_DropEvent& e) -> void {
     switch (e.type) {
         case SDL_DROPFILE:
             if (e.file != NULL) {
-                this->callback.LoadRom(e.file);
+                this->callback.OnFileDrop(e.file);
                 SDL_free(e.file);
             }
             break;
@@ -215,11 +250,11 @@ auto BaseSDL2::OnDropEvent(SDL_DropEvent& e) -> void {
     }
 }
 
-auto BaseSDL2::OnAudioEvent(const SDL_AudioDeviceEvent&) -> void {
+auto SDL2::OnAudioEvent(const SDL_AudioDeviceEvent&) -> void {
 
 }
 
-auto BaseSDL2::OnWindowEvent(const SDL_WindowEvent& e) -> void {
+auto SDL2::OnWindowEvent(const SDL_WindowEvent& e) -> void {
     switch (e.event) {
         case SDL_WINDOWEVENT_EXPOSED:
             // this->ResizeScreen();
@@ -239,7 +274,7 @@ auto BaseSDL2::OnWindowEvent(const SDL_WindowEvent& e) -> void {
 }
 
 #if SDL_VERSION_ATLEAST(2, 0, 9)
-auto BaseSDL2::OnDisplayEvent(const SDL_DisplayEvent& e) -> void {
+auto SDL2::OnDisplayEvent(const SDL_DisplayEvent& e) -> void {
    switch (e.event) {
        case SDL_DISPLAYEVENT_NONE:
            break;
@@ -250,95 +285,42 @@ auto BaseSDL2::OnDisplayEvent(const SDL_DisplayEvent& e) -> void {
 }
 #endif
 
-auto BaseSDL2::OnKeyEvent(const SDL_KeyboardEvent& e) -> void {
+auto SDL2::OnKeyEvent(const SDL_KeyboardEvent& e) -> void {
     const auto kdown = e.type == SDL_KEYDOWN;
 
-    // first check if any of the mapped keys were pressed...
-    for (auto [key, button] : key_map) {
-        if (key == e.keysym.sym) {
-            GB_set_buttons(this->callback.GetCore(), button, kdown);
-            return;
-        }
-    }
-
-    // usually best to respond once the key is released
-    if (kdown) {
+    const auto range = this->key_action_map.equal_range(e.keysym.sym);
+    
+    // nothing found...
+    if (!std::distance(range.first, range.second)) {
         return;
     }
 
-    // otherwise, check if its a valid key
-    switch (e.keysym.sym) {
-        case SDLK_o:
-            this->callback.FilePicker();
-            break;
-
-    // these are hotkeys to toggle layers of the gb core
-    // such as bg, win, obj...
-        case SDLK_0:
-            GB_set_render_palette_layer_config(this->callback.GetCore(), GB_RENDER_LAYER_CONFIG_ALL);
-            break;
-
-        case SDLK_1:
-            GB_set_render_palette_layer_config(this->callback.GetCore(), GB_RENDER_LAYER_CONFIG_BG);
-            break;
-
-        case SDLK_2:
-            GB_set_render_palette_layer_config(this->callback.GetCore(), GB_RENDER_LAYER_CONFIG_WIN);
-            break;
-
-        case SDLK_3:
-            GB_set_render_palette_layer_config(this->callback.GetCore(), GB_RENDER_LAYER_CONFIG_OBJ);
-            break;
-
-        case SDLK_f:
-            if (auto flags = SDL_GetWindowFlags(this->window); flags & (SDL_WINDOW_FULLSCREEN | SDL_WINDOW_FULLSCREEN_DESKTOP)) {
-                SDL_SetWindowFullscreen(this->window, 0);
-            }
-            else {
-                SDL_SetWindowFullscreen(this->window, SDL_WINDOW_FULLSCREEN);
-            }
-            break;
-
-    // these are for savestates
-        case SDLK_F1:
-            this->callback.SaveState();
-            break;
-
-        case SDLK_F2:
-            this->callback.LoadState();
-            break;
-
-    // these are for debugging
-        case SDLK_l: {
-            static bool cpu_log = false;
-            cpu_log = !cpu_log;
-            GB_cpu_enable_log(cpu_log);
-        } break;
-
+    for (auto it = range.first; it != range.second; ++it) {
+        this->callback.OnAction(it->second, kdown);
     }
 }
 
-auto BaseSDL2::OnJoypadAxisEvent(const SDL_JoyAxisEvent&) -> void {
+auto SDL2::OnJoypadAxisEvent(const SDL_JoyAxisEvent&) -> void {
 
 }
 
-auto BaseSDL2::OnJoypadButtonEvent(const SDL_JoyButtonEvent&) -> void {
+auto SDL2::OnJoypadButtonEvent(const SDL_JoyButtonEvent&) -> void {
 
 }
 
-auto BaseSDL2::OnJoypadHatEvent(const SDL_JoyHatEvent&) -> void {
+auto SDL2::OnJoypadHatEvent(const SDL_JoyHatEvent&) -> void {
 
 }
 
-auto BaseSDL2::OnJoypadDeviceEvent(const SDL_JoyDeviceEvent&) -> void {
+auto SDL2::OnJoypadDeviceEvent(const SDL_JoyDeviceEvent&) -> void {
 
 }
 
-auto BaseSDL2::OnControllerAxisEvent(const SDL_ControllerAxisEvent&) -> void {
+auto SDL2::OnControllerAxisEvent(const SDL_ControllerAxisEvent&) -> void {
 
 }
 
-auto BaseSDL2::OnControllerButtonEvent(const SDL_ControllerButtonEvent& e) -> void {
+auto SDL2::OnControllerButtonEvent(const SDL_ControllerButtonEvent& e) -> void {
     assert(e.type == SDL_CONTROLLERBUTTONDOWN || e.type == SDL_CONTROLLERBUTTONUP);
     
     if (!this->HasController(e.which)) {
@@ -346,29 +328,24 @@ auto BaseSDL2::OnControllerButtonEvent(const SDL_ControllerButtonEvent& e) -> vo
         return;
     }
 
-    const bool down = e.type == SDL_CONTROLLERBUTTONDOWN;
+    const auto kdown = e.type == SDL_KEYDOWN;
 
-    switch (e.button) {
-        case SDL_CONTROLLER_BUTTON_A: GB_set_buttons(this->callback.GetCore(), GB_BUTTON_B, down); break;
-        case SDL_CONTROLLER_BUTTON_Y: GB_set_buttons(this->callback.GetCore(), GB_BUTTON_B, down); break;
-        case SDL_CONTROLLER_BUTTON_B: GB_set_buttons(this->callback.GetCore(), GB_BUTTON_A, down); break;
-        case SDL_CONTROLLER_BUTTON_X: GB_set_buttons(this->callback.GetCore(), GB_BUTTON_A, down); break;
-        case SDL_CONTROLLER_BUTTON_BACK: GB_set_buttons(this->callback.GetCore(), GB_BUTTON_SELECT, down); break;
-        case SDL_CONTROLLER_BUTTON_START: GB_set_buttons(this->callback.GetCore(), GB_BUTTON_START, down); break;
-        case SDL_CONTROLLER_BUTTON_DPAD_UP: GB_set_buttons(this->callback.GetCore(), GB_BUTTON_UP, down); break;
-        case SDL_CONTROLLER_BUTTON_DPAD_DOWN: GB_set_buttons(this->callback.GetCore(), GB_BUTTON_DOWN, down); break;
-        case SDL_CONTROLLER_BUTTON_DPAD_LEFT: GB_set_buttons(this->callback.GetCore(), GB_BUTTON_LEFT, down); break;
-        case SDL_CONTROLLER_BUTTON_DPAD_RIGHT: GB_set_buttons(this->callback.GetCore(), GB_BUTTON_RIGHT, down); break;
-        case SDL_CONTROLLER_BUTTON_LEFTSTICK: break;
-        case SDL_CONTROLLER_BUTTON_RIGHTSTICK: break;
-        case SDL_CONTROLLER_BUTTON_GUIDE: break; // home
-        default:
-            printf("unkown cbutton %u\n", e.button);
-            break;
+    // sdl2 has the entry as a u8, so i cast it here.
+    const auto button = static_cast<SDL_GameControllerButton>(e.button);
+    
+    const auto range = this->controller_action_map.equal_range(button);
+    
+    // nothing found...
+    if (!std::distance(range.first, range.second)) {
+        return;
+    }
+
+    for (auto it = range.first; it != range.second; ++it) {
+        this->callback.OnAction(it->second, kdown);
     }
 }
 
-auto BaseSDL2::OnControllerDeviceEvent(const SDL_ControllerDeviceEvent& e) -> void {
+auto SDL2::OnControllerDeviceEvent(const SDL_ControllerDeviceEvent& e) -> void {
     if (e.type == SDL_CONTROLLERDEVICEADDED) {
         printf("CONTROLLER ADDED");
         this->AddController(e.which);
@@ -387,15 +364,15 @@ auto BaseSDL2::OnControllerDeviceEvent(const SDL_ControllerDeviceEvent& e) -> vo
     }
 }
 
-auto BaseSDL2::OnTouchEvent(const SDL_TouchFingerEvent&) -> void {
+auto SDL2::OnTouchEvent(const SDL_TouchFingerEvent&) -> void {
 
 }
 
-auto BaseSDL2::OnUserEvent(SDL_UserEvent&) -> void {
+auto SDL2::OnUserEvent(SDL_UserEvent&) -> void {
 
 }
 
-} // namespace mgb::platform::video::sdl2 {
+} // namespace mgb::platform::video::sdl2::base {
 
 #endif // MGB_SDL2_VIDEO
 
