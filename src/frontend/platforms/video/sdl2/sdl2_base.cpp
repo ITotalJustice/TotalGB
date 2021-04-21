@@ -83,6 +83,19 @@ auto SDL2::SetupSDL2(const VideoInfo& vid_info, const GameTextureInfo& game_info
         // { SDL_CONTROLLER_BUTTON_GUIDE, },
     };
 
+    constexpr auto mapping_path = "res/mappings/gamecontrollerdb.txt";
+
+    // try and load the controller config, doesn't matter much
+    // if this fails currently, though warn if it does!
+    if (auto r = SDL_GameControllerAddMappingsFromFile(mapping_path); r == -1) {
+        printf("\n[SDL2] failed to load mapping file: %s\n", mapping_path);
+    } else {
+        printf("\n[SDL2] loaded to load mapping file: %d\n", r);
+    }
+
+    // todo: scan for controllers here as sdl doesn't seem
+    // to pick them up if they are already connected before init...
+
     return true;
 }
 
@@ -313,7 +326,7 @@ auto SDL2::OnJoypadHatEvent(const SDL_JoyHatEvent&) -> void {
 }
 
 auto SDL2::OnJoypadDeviceEvent(const SDL_JoyDeviceEvent&) -> void {
-
+    printf("[SDL2] joypad device event!\n");
 }
 
 auto SDL2::OnControllerAxisEvent(const SDL_ControllerAxisEvent&) -> void {
@@ -347,10 +360,10 @@ auto SDL2::OnControllerButtonEvent(const SDL_ControllerButtonEvent& e) -> void {
 
 auto SDL2::OnControllerDeviceEvent(const SDL_ControllerDeviceEvent& e) -> void {
     if (e.type == SDL_CONTROLLERDEVICEADDED) {
-        printf("CONTROLLER ADDED");
+        printf("[SDL2] CONTROLLER ADDED");
         this->AddController(e.which);
     } else if (e.type == SDL_CONTROLLERDEVICEREMOVED) {
-        printf("CONTROLLER REMOVED");
+        printf("[SDL2] CONTROLLER REMOVED");
         int i = 0;
         for (auto& p : this->controllers) {
             if (p.id == e.which) {
@@ -365,11 +378,11 @@ auto SDL2::OnControllerDeviceEvent(const SDL_ControllerDeviceEvent& e) -> void {
 }
 
 auto SDL2::OnTouchEvent(const SDL_TouchFingerEvent&) -> void {
-
+    printf("[SDL2] touch event!\n");
 }
 
 auto SDL2::OnUserEvent(SDL_UserEvent&) -> void {
-
+    printf("[SDL2] user event!\n");
 }
 
 } // namespace mgb::platform::video::sdl2::base {

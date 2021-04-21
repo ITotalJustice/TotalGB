@@ -119,7 +119,7 @@ App::App() {
 
     this->video_platform = std::make_unique<VideoPlatform>(callbacks);
     this->audio_platform = std::make_unique<AudioPlatform>();
-    
+
     this->video_platform->SetupVideo(
         vid_info, game_info
     );
@@ -502,7 +502,7 @@ auto App::OnSCAction(Action action, bool down) -> void {
         case Shortcut::LOADSTATE:
             this->LoadState();
             break;
-        
+
         case Shortcut::FULLSCREEN:
             this->video_platform->ToggleFullscreen();
             break;

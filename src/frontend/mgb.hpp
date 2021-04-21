@@ -23,7 +23,7 @@ public:
     }
 
 private:
-    size_t scale = 1;
+    size_t scale = 4;
 };
 
 class App final {
