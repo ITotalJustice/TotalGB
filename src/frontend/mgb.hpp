@@ -44,6 +44,8 @@ public:
     auto OnErrorCallback(struct GB_ErrorData* data) -> void;
 
 private:
+    auto LogToDisplay(const std::string& text) -> void;
+    
     auto LoadRomInternal(const std::string& path) -> bool;
     auto FilePicker() -> void;
 

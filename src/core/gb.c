@@ -328,7 +328,7 @@ static void GB_setup_palette(struct GB_Core* gb, const struct GB_CartHeader* hea
 	}
 	else if ((gb->config.palette_config & GB_PALETTE_CONFIG_USE_BUILTIN) == GB_PALETTE_CONFIG_USE_BUILTIN) {
 		// attempt to fill set the palatte from the builtins...
-		uint8_t hash, forth;
+		uint8_t hash = 0, forth = 0;
 		// this will never fail...
 		GB_get_rom_palette_hash_from_header(header, &hash, &forth);
 		struct GB_PaletteEntry palette;

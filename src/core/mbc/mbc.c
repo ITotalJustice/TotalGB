@@ -62,29 +62,8 @@ struct MBC_RamBankInfo mbc_setup_empty_ram(void) {
 }
 
 static bool is_ascii_char_valid(const char c) {
-	// always uppercase
-	if (c >= 'A' && c <= 'Z') {
-		return true;
-	}
-
-	if (c >= '0' && c <= '9') {
-		return true;
-	}
-
-	// vaid symbols
-	static const char symbols[] = {
-		'?', '!', '-', '_', ' ',
-	};
-
-	// check against the symbol table
-	for (size_t i = 0; i < GB_ARR_SIZE(symbols); ++i) {
-		// try and find 1 valid match
-		if (c == symbols[i]) {
-			return true;
-		}
-	}
-
-	return false;
+	// always upper case! ignore lower case ascii
+	return c >= ' ' && c <= '_';
 }
 
 int GB_get_rom_name_from_header(const struct GB_CartHeader* header, struct GB_CartName* name) {

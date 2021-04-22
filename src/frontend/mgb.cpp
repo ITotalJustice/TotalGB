@@ -131,6 +131,12 @@ App::~App() {
     this->CloseRom();
 }
 
+auto App::LogToDisplay(const std::string& text) -> void {
+    if (this->video_platform) {
+        this->video_platform->PushTextPopup(text);
+    }
+}
+
 auto App::OnVblankCallback() -> void {
     // todo: send to video platform here!
     this->video_platform->UpdateGameTexture(
@@ -191,9 +197,14 @@ auto App::SaveState() -> void {
 
     io::Gzip file{state_path, "wb"};
     if (file.good()) {
+        this->LogToDisplay("Saving state...");
+
         auto state = std::make_unique<struct GB_CoreState>();
         GB_savestate2(this->GetCore(), state.get());
         file.write((u8*)state.get(), sizeof(struct GB_CoreState));
+    }
+    else {
+        this->LogToDisplay("Failed to open state file!");
     }
 }
 
@@ -206,9 +217,14 @@ auto App::LoadState() -> void {
 
     io::Gzip file{state_path, "rb"};
     if (file.good()) {
+        this->LogToDisplay("Loading state...");
+
         auto state = std::make_unique<struct GB_CoreState>();
         file.read((u8*)state.get(), sizeof(struct GB_CoreState));
         GB_loadstate2(this->GetCore(), state.get());
+    }
+    else {
+        this->LogToDisplay("Failed to open state file!");
     }
 }
 
@@ -234,6 +250,7 @@ auto App::LoadRomInternal(const std::string& path) -> bool {
 
     io::RomLoader romloader{path};
     if (!romloader.good()) {
+        this->LogToDisplay("Failed to open rom: " + path);
         return false;
     }
 
@@ -267,6 +284,8 @@ auto App::LoadRomInternal(const std::string& path) -> bool {
 
     // try and load a savefile (if any...)
     this->LoadSave(this->rom_path);
+
+    this->LogToDisplay("Loaded rom: " + path);
 
     return true;
 }
@@ -390,7 +409,7 @@ auto App::FilePicker() -> void {
 }
 
 auto App::Loop() -> void {
-    while (this->running) {
+    while (this->running) {      
         this->Events();
 
         if (this->HasRom()) {

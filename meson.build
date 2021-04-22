@@ -77,7 +77,9 @@ source = files([
     'src/frontend/mgb.cpp',
     
     # [Video Backends]
+    'src/frontend/platforms/video/interface.cpp',
     'src/frontend/platforms/video/sdl2/sdl2_base.cpp',
+    'src/frontend/platforms/video/sdl2/sdl2_ttf.cpp',
     'src/frontend/platforms/video/sdl2/sdl2_video.cpp',
     'src/frontend/platforms/video/sdl2-opengl/sdl2_opengl.cpp',
     'src/frontend/platforms/video/allegro5/allegro5_video.cpp',
@@ -126,6 +128,10 @@ source = files([
     'src/libs/lzma/LzmaDec.c',
     'src/libs/lzma/LzmaEnc.c',
     'src/libs/lzma/LzmaLib.c',
+
+    # stb
+    'src/libs/stb/stb_rect_pack.c',
+    'src/libs/stb/stb_truetype.c',
 ])
 
 includes = include_directories([

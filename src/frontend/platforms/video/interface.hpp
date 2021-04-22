@@ -4,6 +4,7 @@
 
 #include <string>
 #include <vector>
+#include <deque>
 #include <functional>
 
 
@@ -62,23 +63,53 @@ class Interface {
 public:
 	Interface(Callbacks _cb) : callback{_cb} {}
 	virtual ~Interface() = default;
-
-	virtual auto SetupVideo(VideoInfo vid_info, GameTextureInfo game_info) -> bool = 0;
+	
+	auto RenderDisplay() -> void;
+	
+	auto SetupVideo(VideoInfo vid_info, GameTextureInfo game_info) -> bool;
 
 	virtual auto UpdateGameTexture(GameTextureData data) -> void = 0;
-
-	virtual auto RenderDisplay() -> void = 0;
 
 	virtual auto PollEvents() -> void = 0;
 
 	virtual auto ToggleFullscreen() -> void = 0;
+	
 	virtual auto SetWindowName(const std::string& name) -> void = 0;
+
+	auto PushTextPopup(const std::string& text) -> void;
+
+	auto ClearTextPopups() -> void;
+
+	auto GetTextPopupCount() const -> std::size_t;
+
+protected:
+	class TextPopup final {
+	public:
+		enum class TickResult { OK, POPME };
+
+	public:
+		TextPopup(std::string _text);
+		auto GetText() const -> const std::string&;
+		auto Tick() -> TickResult;
+
+	private:
+		static constexpr auto COUNTER_MAX = 60 * 4; // 4 seconds
+
+		std::string text;
+		size_t counter = 0; // ticked until COUNTER_MAX
+	};
+
+protected:
+	virtual auto RenderDisplayInternal() -> void = 0;
+	virtual auto SetupVideoInternal(VideoInfo vid_info, GameTextureInfo game_info) -> bool = 0;
 
 protected:
 	Callbacks callback;
 
 	std::vector<std::uint16_t> game_pixels;
 	
+	std::deque<TextPopup> text_popups;
+
 	bool is_video_setup = false;
 
 private:

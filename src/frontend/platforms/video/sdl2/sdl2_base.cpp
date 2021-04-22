@@ -15,6 +15,11 @@ SDL2::~SDL2() {
 }
 
 auto SDL2::SetupSDL2(const VideoInfo& vid_info, const GameTextureInfo& game_info, uint32_t win_flags) -> bool {
+#ifndef NDEBUG
+    // enable trace logging of sdl
+    SDL_LogSetPriority(SDL_LOG_CATEGORY_APPLICATION, SDL_LOG_PRIORITY_INFO);
+#endif // NDEBUG
+
     if (SDL_InitSubSystem(SDL_INIT_VIDEO)) {
         printf("\n[SDL_VIDEO_ERROR] %s\n\n", SDL_GetError());
         return false;
@@ -40,6 +45,8 @@ auto SDL2::SetupSDL2(const VideoInfo& vid_info, const GameTextureInfo& game_info
         printf("[SDL2] failed to create window %s\n", SDL_GetError());
         return false;
     }
+
+    SDL_SetWindowMinimumSize(this->window, 160, 144);
 
     // set the size of the buffered pixels
     this->game_pixels.resize(game_info.w * game_info.h);
@@ -95,6 +102,14 @@ auto SDL2::SetupSDL2(const VideoInfo& vid_info, const GameTextureInfo& game_info
 
     // todo: scan for controllers here as sdl doesn't seem
     // to pick them up if they are already connected before init...
+    int num_joy, i;
+    num_joy = SDL_NumJoysticks();
+    printf("%d joysticks found\n", num_joy);
+    for(i = 0; i < num_joy; i++)
+    {
+      SDL_Joystick *joystick = SDL_JoystickOpen(i);
+      printf("%s\n", SDL_JoystickName(joystick));
+    }
 
     return true;
 }

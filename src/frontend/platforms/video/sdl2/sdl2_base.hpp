@@ -31,9 +31,7 @@ public:
     virtual ~SDL2();
 
     auto PollEvents() -> void override;
-
     auto UpdateGameTexture(GameTextureData data) -> void override;
-
     auto ToggleFullscreen() -> void override;
 	auto SetWindowName(const std::string& name) -> void override;
 

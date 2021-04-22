@@ -70,12 +70,12 @@ enum GB_ColourMode {
 };
 
 enum GB_SaveSizes {
-	GB_SAVE_SIZE_NONE = 0,
-	GB_SAVE_SIZE_1 = 0x800,
-	GB_SAVE_SIZE_2 = 0x2000,
-	GB_SAVE_SIZE_3 = 0x8000,
-	GB_SAVE_SIZE_4 = 0x20000,
-	GB_SAVE_SIZE_5 = 0x10000,
+	GB_SAVE_SIZE_NONE	= 0,
+	GB_SAVE_SIZE_1		= 0x800,
+	GB_SAVE_SIZE_2		= 0x2000,
+	GB_SAVE_SIZE_3		= 0x8000,
+	GB_SAVE_SIZE_4		= 0x20000,
+	GB_SAVE_SIZE_5		= 0x10000,
 
 	GB_SAVE_SIZE_MAX = GB_SAVE_SIZE_5,
 };
@@ -151,10 +151,10 @@ enum GB_StatusModes {
 };
 
 enum GB_StatIntModes {
-    STAT_INT_MODE_0 = 0x08,
-    STAT_INT_MODE_1 = 0x10,
-    STAT_INT_MODE_2 = 0x20,
-    STAT_INT_MODE_COINCIDENCE = 0x40
+    STAT_INT_MODE_0				= 0x08,
+    STAT_INT_MODE_1				= 0x10,
+    STAT_INT_MODE_2				= 0x20,
+    STAT_INT_MODE_COINCIDENCE	= 0x40
 };
 
 // the system type is set based on the game that is loaded
@@ -174,13 +174,13 @@ enum GB_SystemType {
 // GBC games set their own colour palette and cannot be customised!
 enum GB_PaletteConfig {
 	// uses the default palette
-	GB_PALETTE_CONFIG_NONE = 0,
+	GB_PALETTE_CONFIG_NONE			= 0,
 	// these can be OR'd together to set an additional option.
 	// if both are OR'd, first, the game will try to use a builtin palette.
 	// if a builtin palette cannot be found, then it will fallback to the
 	// custom palette instead.
-	GB_PALETTE_CONFIG_USE_CUSTOM = 1 << 0,
-	GB_PALETTE_CONFIG_USE_BUILTIN = 1 << 1,
+	GB_PALETTE_CONFIG_USE_CUSTOM	= 1 << 0,
+	GB_PALETTE_CONFIG_USE_BUILTIN	= 1 << 1,
 };
 
 enum GB_SystemTypeConfig {
@@ -193,12 +193,12 @@ enum GB_SystemTypeConfig {
 };
 
 enum GB_RenderLayerConfig {
-	GB_RENDER_LAYER_CONFIG_ALL = 0,
+	GB_RENDER_LAYER_CONFIG_ALL	= 0,
 	// only render part of the screen.
 	// bitwise OR these together to enable multiple
-	GB_RENDER_LAYER_CONFIG_BG = 1 << 0,
-	GB_RENDER_LAYER_CONFIG_WIN = 1 << 1,
-	GB_RENDER_LAYER_CONFIG_OBJ = 1 << 2,
+	GB_RENDER_LAYER_CONFIG_BG	= 1 << 0,
+	GB_RENDER_LAYER_CONFIG_WIN	= 1 << 1,
+	GB_RENDER_LAYER_CONFIG_OBJ	= 1 << 2,
 };
 
 enum GB_RtcUpdateConfig {
@@ -231,7 +231,7 @@ enum GB_ErrorType {
 
 struct GB_UnkownInstructionTypeData {
 	uint8_t opcode;
-	bool cb_prefix : 1;
+	bool cb_prefix;
 };
 
 enum GB_ErrorDataType {
@@ -283,6 +283,44 @@ struct GB_MixerData {
 struct GB_MixerResult {
 	int8_t left, right;
 };
+
+// TODO: add button recording
+// // saves the buttons each frame, as well as the frame count.
+// // this is useful for TAS recording.
+// struct GB_ButtonRecord {
+// 	uint8_t buttons; // bitfield buttons
+// 	uint8_t frame; // 0-59
+// };
+
+// // Run-Time-Length encoded button record
+// // the resulting file is usually extreamly small.
+// // however, this type of recording is not suitible for
+// // manually editing, for that, use [GB_ButtonRecord]
+// struct GB_ButtonRecordRLE {
+// 	// how many times this same buttons value is kept
+
+// 	// NOTE: there's further size optimisations to be made here
+// 	// for example, be sacrifising MSB (now 0-128), MSB can represent if the
+// 	// next byte uses the same buttons value, thus, not needing a len for the next
+	
+// 	// however, this is likely not worth it. in games, it is common for a button
+// 	// to be pressed at least once every 256 frames, unless a cutscene is
+// 	// happening, or the user is idle, or game is paused.
+// 	uint8_t len;
+// 	uint8_t buttons;
+// };
+
+// struct GB_ButtonRecordRLEResult {
+// 	// button config changed
+// 	bool new_struct_wanted;
+// };
+
+// struct GB_InternalButtonRecordRLE {
+// 	// button rle is updated 
+// 	bool already_set_this_frame;
+// };
+
+// typedef void(*GB_button_record_rle_callback_t)(struct GB_Core* gb, void* user);
 
 // user-set callbacks
 typedef void(*GB_apu_callback_t)(struct GB_Core* gb, void* user,
@@ -431,14 +469,14 @@ struct GB_Cpu {
 	uint16_t PC;
 	uint8_t registers[8];
 
-	bool c : 1;
-	bool h : 1;
-	bool n : 1;
-	bool z : 1;
+	bool c;
+	bool h;
+	bool n;
+	bool z;
 
-	bool ime : 1;
-	bool halt : 1;
-	bool double_speed : 1;
+	bool ime;
+	bool halt;
+	bool double_speed;
 };
 
 struct GB_Ppu {
@@ -480,6 +518,7 @@ struct MBC_RamBankInfo {
 	struct GB_MemMapEntry entries[2];
 };
 
+// todo: remove all bitfields, there's no reason to be using them!
 struct GB_Cart {
 	void (*write)(struct GB_Core* gb, uint16_t addr, uint8_t val);
 	
@@ -504,9 +543,9 @@ struct GB_Cart {
 	struct GB_Rtc rtc;
 	uint8_t internal_rtc_counter;
 
-	bool bank_mode : 1;
-	bool ram_enabled : 1;
-	bool in_ram : 1;
+	bool bank_mode;
+	bool ram_enabled;
+	bool in_ram;
 
 	uint8_t flags;
 	enum GB_MbcType mbc_type;
@@ -703,6 +742,10 @@ struct GB_Apu {
 	uint16_t samples_count;
 };
 
+// todo: this struct needs to be re-organised.
+// atm, i've just been dumping vars in here as one big container,
+// which works fine, though, it's starting to get messy, and could be
+// *slightly* optimised by putting common accessed vars next to each other.
 struct GB_Core {
 	struct GB_MemMapEntry mmap[0x10];
 
@@ -716,6 +759,10 @@ struct GB_Core {
 	struct GB_Cart cart;
 	struct GB_Timer timer;
 	struct GB_Joypad joypad;
+
+	// internal frame counter, range 0-59, then resets.
+	// mostly unused currently.
+	uint8_t frame_counter;
 
 	struct GB_PaletteEntry palette; /* default */
 
@@ -731,7 +778,7 @@ struct GB_Core {
 
 	GB_serial_transfer_t link_cable;
 	void* link_cable_user_data;
-	bool is_master : 1;
+	bool is_master;
 
 	// callbacks + user_data
 	GB_vblank_callback_t vblank_cb;
@@ -772,9 +819,9 @@ struct GB_CartState {
 	struct GB_Rtc rtc;
 	uint8_t internal_rtc_counter;
 
-	bool bank_mode : 1;
-	bool ram_enabled : 1;
-	bool in_ram : 1;
+	bool bank_mode;
+	bool ram_enabled;
+	bool in_ram;
 };
 
 struct GB_CoreState {
