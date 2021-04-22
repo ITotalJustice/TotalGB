@@ -40,7 +40,7 @@ static void bcps_increment(struct GB_Core* gb) {
     if (is_bcps_auto_increment(gb) == true) {
         // only increment the lower 5 bits.
         // set back the increment bit after.
-        IO_BCPS = ((IO_BCPS + 1) & 0x3F) | (0x80);
+        IO_BCPS = ((IO_BCPS + 1) & 0x3F) | (0xC0);
     }
 }
 
@@ -48,7 +48,7 @@ static void ocps_increment(struct GB_Core* gb) {
     if (is_ocps_auto_increment(gb) == true) {
         // only increment the lower 5 bits.
         // set back the increment bit after.
-        IO_OCPS = ((IO_OCPS + 1) & 0x3F) | (0x80);
+        IO_OCPS = ((IO_OCPS + 1) & 0x3F) | (0xC0);
     }
 }
 
@@ -65,12 +65,12 @@ void GB_bcpd_write(struct GB_Core* gb, uint8_t value) {
 
 uint8_t GBC_bcpd_read(struct GB_Core* gb) {
     const uint8_t index = get_bcps_index(gb);
-    return gb->ppu.bg_palette[index];
+    return gb->ppu.bg_palette[index] | 0xC0;
 }
 
 uint8_t GBC_ocpd_read(struct GB_Core* gb) {
     const uint8_t index = get_ocps_index(gb);
-    return gb->ppu.obj_palette[index];
+    return gb->ppu.obj_palette[index] | 0xC0;
 }
 
 void GB_ocpd_write(struct GB_Core* gb, uint8_t value) {

@@ -42,7 +42,7 @@ static inline void GB_iowrite_gbc(struct GB_Core* gb, uint16_t addr, uint8_t val
 			break;
 
 		case 0x68: // BCPS
-			IO_BCPS = value;
+			IO_BCPS = value | 0x40;
 			break;
 
 		case 0x69: // BCPD
@@ -50,7 +50,7 @@ static inline void GB_iowrite_gbc(struct GB_Core* gb, uint16_t addr, uint8_t val
 			break;
 
 		case 0x6A: // OCPS
-			IO_OCPS = value;
+			IO_OCPS = value | 0x40;
 			break;
 
 		case 0x6B: // OCPD
@@ -147,6 +147,12 @@ uint8_t GB_ioread(struct GB_Core* gb, uint16_t addr) {
 			} else {
 				return 0xFF;
 			}
+
+		case 0x68: // BCPS
+			return IO_BCPS;
+
+		case 0x6A: // OCPS
+			return IO_OCPS;
 
 		case 0x69:
 			if (GB_is_system_gbc(gb) == true) {

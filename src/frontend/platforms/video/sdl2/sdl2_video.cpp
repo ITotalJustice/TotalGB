@@ -10,8 +10,10 @@ namespace mgb::platform::video::sdl2 {
 SDL2::~SDL2() {
     this->font.CloseFont();
 
-    if (this->texture){
-        SDL_DestroyTexture(this->texture);
+    this->DestroyButtonTextures();
+
+    if (this->core_texture){
+        SDL_DestroyTexture(this->core_texture);
     }
 
     if (this->renderer) {
@@ -19,6 +21,69 @@ SDL2::~SDL2() {
     }
 
     this->DeinitSDL2();
+}
+
+auto SDL2::LoadButtonTextures() -> bool {
+    struct ButtonInfo {
+        const char* path;
+        SDL2::TouchButton::Type type;
+        int x, y;
+    };
+
+    // todo: set the button x,y to fit inside [160x144] then scale it with the
+    // the screen size.
+    constexpr std::array<ButtonInfo, 9> paths = {{
+        { "res/sprites/controls/transparentDark34.bmp",  SDL2::TouchButton::Type::A, 400, 470 },
+        { "res/sprites/controls/transparentDark35.bmp",  SDL2::TouchButton::Type::B, 500, 470 },
+        { "res/sprites/controls/transparentDark40.bmp",  SDL2::TouchButton::Type::START, 200, 20 },
+        { "res/sprites/controls/transparentDark41.bmp",  SDL2::TouchButton::Type::SELECT, 320, 20 },
+        { "res/sprites/controls/transparentDark01.bmp",  SDL2::TouchButton::Type::UP, 80, 410 },
+        { "res/sprites/controls/transparentDark08.bmp",  SDL2::TouchButton::Type::DOWN, 80, 490 },
+        { "res/sprites/controls/transparentDark03.bmp",  SDL2::TouchButton::Type::LEFT, 25, 460 },
+        { "res/sprites/controls/transparentDark04.bmp",  SDL2::TouchButton::Type::RIGHT, 120, 460 },
+        { "res/sprites/controls/transparentDark20.bmp",  SDL2::TouchButton::Type::OPTIONS, -100, -100 },
+    }};
+
+    for (std::size_t i = 0; i < paths.size(); ++i) {
+        const auto [path, type, x, y] = paths[i];
+
+        auto surface = SDL_LoadBMP(path);
+
+        if (surface != NULL) {
+            auto texture = SDL_CreateTextureFromSurface(this->renderer, surface);
+            
+            if (texture) {
+                printf("\tw: %d h: %d path: %s\n", surface->w, surface->h, path);
+                this->button_textures[i].texture = texture;
+                this->button_textures[i].w = surface->w;
+                this->button_textures[i].h = surface->h;
+
+                this->touch_buttons[i].type = type;
+                this->touch_buttons[i].x = x;
+                this->touch_buttons[i].y = y;
+                this->touch_buttons[i].w = surface->w;
+                this->touch_buttons[i].h = surface->h;
+            }
+
+            SDL_FreeSurface(surface);
+        }
+        else {
+            return false;
+        }
+    }
+
+    return true;
+}
+
+auto SDL2::DestroyButtonTextures() -> void {
+    for (std::size_t i = 0; i < this->button_textures.size(); ++i) {
+        if (this->button_textures[i].texture) {
+            SDL_DestroyTexture(this->button_textures[i].texture);
+
+            this->button_textures[i].texture = nullptr;
+            this->touch_buttons[i].Reset();
+        }
+    }
 }
 
 auto SDL2::SetupVideoInternal(VideoInfo vid_info, GameTextureInfo game_info) -> bool {
@@ -53,16 +118,21 @@ auto SDL2::SetupVideoInternal(VideoInfo vid_info, GameTextureInfo game_info) -> 
         printf("[SDL2] failed to enable blending: %s\n", SDL_GetError());
     }
 
-    this->texture = SDL_CreateTexture(
+    this->core_texture = SDL_CreateTexture(
     	this->renderer,
     	SDL_PIXELFORMAT_BGR555, SDL_TEXTUREACCESS_STREAMING,
     	game_info.w, game_info.h
     );
 
-    if (!this->texture) {
-		printf("[SDL2] failed to create texture: %s\n", SDL_GetError());
+    if (!this->core_texture) {
+        printf("[SDL2] failed to create texture: %s\n", SDL_GetError());
 		return false;
 	}
+
+    if (!this->LoadButtonTextures()) {
+        // fail if on mobile / webasm
+        printf("[SDL2] failed to load button textures\n");
+    }
 
     constexpr auto font_path = "res/fonts/Retro Gaming.ttf";
     constexpr auto font_size = 24.f;
@@ -82,15 +152,15 @@ auto SDL2::SetupVideoInternal(VideoInfo vid_info, GameTextureInfo game_info) -> 
 auto SDL2::RenderCore() -> void {
     void* pixles; int pitch;
 
-    SDL_LockTexture(texture, NULL, &pixles, &pitch);
+    SDL_LockTexture(this->core_texture, NULL, &pixles, &pitch);
         std::memcpy(
             pixles,
             this->game_pixels.data(),
             this->game_pixels.size() * sizeof(uint16_t)
         );
-    SDL_UnlockTexture(texture);
+    SDL_UnlockTexture(this->core_texture);
 
-    SDL_RenderCopy(this->renderer, this->texture, NULL, NULL);
+    SDL_RenderCopy(this->renderer, this->core_texture, NULL, NULL);
 }
 
 auto SDL2::RenderDisplayInternal() -> void {
@@ -98,7 +168,7 @@ auto SDL2::RenderDisplayInternal() -> void {
 
     this->RenderCore();
 
-    const auto box_col = ttf::Colour{0, 0, 0, 150};
+    const auto box_col = ttf::Colour{ 0, 0, 0, 150 };
 
     {
         const auto inc_y = this->font.GetHeight() + (5 * 2);
@@ -116,6 +186,17 @@ auto SDL2::RenderDisplayInternal() -> void {
             );
 
             y += inc_y;
+        }
+    }
+
+    for (std::size_t i = 0; i < this->button_textures.size(); ++i) {
+        if (this->button_textures[i].texture) {
+            const auto rect = this->touch_buttons[i].ToRect();
+
+            SDL_RenderCopy(
+                this->renderer, this->button_textures[i].texture,
+                NULL, &rect
+            );
         }
     }
 

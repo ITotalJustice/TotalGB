@@ -6,10 +6,19 @@
 #include <cstring>
 #include <array>
 #include <map>
+#include <optional>
 
 
 namespace mgb::platform::video::sdl2::base {
 
+
+auto SDL2::TouchButton::Reset() -> void {
+    this->x = this->y = this->w = this->h = -1;
+}
+
+auto SDL2::TouchButton::ToRect() const -> SDL_Rect {
+    return { x, y, w, h };
+}
 
 SDL2::~SDL2() {
 }
@@ -44,6 +53,20 @@ auto SDL2::SetupSDL2(const VideoInfo& vid_info, const GameTextureInfo& game_info
     if (!this->window) {
         printf("[SDL2] failed to create window %s\n", SDL_GetError());
         return false;
+    }
+
+    // try and load window icon, it's okay if it fails
+    {
+        constexpr auto icon_path = "res/icon.bmp";
+        auto surface = SDL_LoadBMP(icon_path);
+
+        if (surface) {
+            SDL_SetWindowIcon(this->window, surface);
+            SDL_FreeSurface(surface);
+        }
+        else {
+            printf("[SDL2] failed to load window icon %s\n", SDL_GetError());
+        }
     }
 
     SDL_SetWindowMinimumSize(this->window, 160, 144);
@@ -96,19 +119,19 @@ auto SDL2::SetupSDL2(const VideoInfo& vid_info, const GameTextureInfo& game_info
     // if this fails currently, though warn if it does!
     if (auto r = SDL_GameControllerAddMappingsFromFile(mapping_path); r == -1) {
         printf("\n[SDL2] failed to load mapping file: %s\n", mapping_path);
-    } else {
+    }
+    else {
         printf("\n[SDL2] loaded to load mapping file: %d\n", r);
     }
 
     // todo: scan for controllers here as sdl doesn't seem
     // to pick them up if they are already connected before init...
-    int num_joy, i;
-    num_joy = SDL_NumJoysticks();
-    printf("%d joysticks found\n", num_joy);
-    for(i = 0; i < num_joy; i++)
-    {
-      SDL_Joystick *joystick = SDL_JoystickOpen(i);
-      printf("%s\n", SDL_JoystickName(joystick));
+    auto num_joy = SDL_NumJoysticks();
+    printf("[SDL2] joysticks found: %d\n", num_joy);
+    
+    for(auto i = 0; i < num_joy; i++) {
+        auto joystick = SDL_JoystickOpen(i);
+        printf("\t%s\n", SDL_JoystickName(joystick));
     }
 
     return true;
@@ -210,6 +233,24 @@ auto SDL2::PollEvents() -> void {
                 this->OnWindowEvent(e.window);
                 break;
 
+#if SDL_VERSION_ATLEAST(2, 0, 4)
+            case SDL_AUDIODEVICEADDED: case SDL_AUDIODEVICEREMOVED:
+                this->OnAudioDeviceEvent(e.adevice);
+                break;
+#endif // SDL_VERSION_ATLEAST(2, 0, 4)
+
+            case SDL_MOUSEBUTTONDOWN: case SDL_MOUSEBUTTONUP:
+                this->OnMouseButtonEvent(e.button);
+                break;
+
+            case SDL_MOUSEMOTION:
+                this->OnMouseMotionEvent(e.motion);
+                break;
+
+            case SDL_MOUSEWHEEL:
+                this->OnMouseWheelEvent(e.wheel);
+                break;
+
             case SDL_KEYDOWN: case SDL_KEYUP:
                 this->OnKeyEvent(e.key);
                 break;
@@ -245,7 +286,19 @@ auto SDL2::PollEvents() -> void {
             case SDL_FINGERDOWN: case SDL_FINGERUP:
                 this->OnTouchEvent(e.tfinger);
                 break;
-            
+
+            case SDL_TEXTEDITING:
+                this->OnTextEditEvent(e.edit);
+                break;
+
+            case SDL_TEXTINPUT:
+                this->OnTextInputEvent(e.text);
+                break;
+
+            case SDL_SYSWMEVENT:
+                this->OnSysWMEvent(e.syswm);
+                break;
+
             case SDL_USEREVENT:
                 this->OnUserEvent(e.user);
                 break;
@@ -278,9 +331,11 @@ auto SDL2::OnDropEvent(SDL_DropEvent& e) -> void {
     }
 }
 
-auto SDL2::OnAudioEvent(const SDL_AudioDeviceEvent&) -> void {
-
+#if SDL_VERSION_ATLEAST(2, 0, 4)
+auto SDL2::OnAudioDeviceEvent(const SDL_AudioDeviceEvent&) -> void {
+    printf("[SDL2] SDL_AudioDeviceEvent!\n");
 }
+#endif // SDL_VERSION_ATLEAST(2, 0, 4)
 
 auto SDL2::OnWindowEvent(const SDL_WindowEvent& e) -> void {
     switch (e.event) {
@@ -312,6 +367,65 @@ auto SDL2::OnDisplayEvent(const SDL_DisplayEvent& e) -> void {
    }
 }
 #endif
+
+auto SDL2::OnMouseButtonEvent(const SDL_MouseButtonEvent& e) -> void {
+    printf("[SDL2] SDL_MouseButtonEvent! x: %d y: %d\n", e.x, e.y);
+
+    const auto kdown = e.type == SDL_MOUSEBUTTONDOWN;
+
+    // find out if its in range...
+    const auto is_in_range = [this](int x, int y) -> std::optional<TouchButton::Type> {
+        for (auto& button : this->touch_buttons) {
+            if (x >= button.x && x <= (button.x + button.w)) {
+                if (y >= button.y && y <= (button.y + button.h)) {
+                    return button.type;
+                }
+            }
+        }
+
+        return {};
+    };
+
+    static const auto touch_action_map = std::multimap<TouchButton::Type, Action> {
+        { TouchButton::Type::A, Action::GAME_A },
+        { TouchButton::Type::B, Action::GAME_B },
+        { TouchButton::Type::START, Action::GAME_START },
+        { TouchButton::Type::SELECT, Action::GAME_SELECT },
+        { TouchButton::Type::UP, Action::GAME_UP },
+        { TouchButton::Type::DOWN, Action::GAME_DOWN },
+        { TouchButton::Type::LEFT, Action::GAME_LEFT },
+        { TouchButton::Type::RIGHT, Action::GAME_RIGHT },
+        // { TouchButton::Type::OPTIONS, Action::OPTIONS },
+    };
+
+    // check that the button press maps to a texture coord
+    const auto type_optional = is_in_range(e.x, e.y);
+    if (!type_optional) {
+        return;
+    }
+
+    printf("button found!\n");
+
+    const auto range = touch_action_map.equal_range(type_optional.value());
+    
+    // nothing found...
+    if (!std::distance(range.first, range.second)) {
+        return;
+    }
+
+    for (auto it = range.first; it != range.second; ++it) {
+        this->callback.OnAction(it->second, kdown);
+    }
+}
+
+auto SDL2::OnMouseMotionEvent(const SDL_MouseMotionEvent&) -> void {
+    // this gets noisy
+    // printf("[SDL2] SDL_MouseMotionEvent!\n");
+}
+
+auto SDL2::OnMouseWheelEvent(const SDL_MouseWheelEvent&) -> void {
+    printf("[SDL2] SDL_MouseWheelEvent!\n");
+}
 
 auto SDL2::OnKeyEvent(const SDL_KeyboardEvent& e) -> void {
     const auto kdown = e.type == SDL_KEYDOWN;
@@ -377,7 +491,8 @@ auto SDL2::OnControllerDeviceEvent(const SDL_ControllerDeviceEvent& e) -> void {
     if (e.type == SDL_CONTROLLERDEVICEADDED) {
         printf("[SDL2] CONTROLLER ADDED");
         this->AddController(e.which);
-    } else if (e.type == SDL_CONTROLLERDEVICEREMOVED) {
+    }
+    else if (e.type == SDL_CONTROLLERDEVICEREMOVED) {
         printf("[SDL2] CONTROLLER REMOVED");
         int i = 0;
         for (auto& p : this->controllers) {
@@ -394,6 +509,26 @@ auto SDL2::OnControllerDeviceEvent(const SDL_ControllerDeviceEvent& e) -> void {
 
 auto SDL2::OnTouchEvent(const SDL_TouchFingerEvent&) -> void {
     printf("[SDL2] touch event!\n");
+}
+
+auto SDL2::OnMultiGestureEvent(const SDL_MultiGestureEvent&) -> void {
+    printf("[SDL2] SDL_MultiGestureEvent!\n");
+}
+
+auto SDL2::OnDollarGestureEvent(const SDL_DollarGestureEvent&) -> void {
+    printf("[SDL2] SDL_DollarGestureEvent!\n");
+}
+
+auto SDL2::OnTextEditEvent(const SDL_TextEditingEvent&) -> void {
+    printf("[SDL2] SDL_TextEditingEvent!\n");
+}
+
+auto SDL2::OnTextInputEvent(const SDL_TextInputEvent&) -> void {
+    printf("[SDL2] SDL_TextInputEvent!\n");
+}
+
+auto SDL2::OnSysWMEvent(const SDL_SysWMEvent&) -> void {
+    printf("[SDL2] SDL_SysWMEvent!\n");
 }
 
 auto SDL2::OnUserEvent(SDL_UserEvent&) -> void {

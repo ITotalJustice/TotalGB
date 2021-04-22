@@ -11,6 +11,7 @@
 #include <SDL2/SDL.h>
 #endif // _MSC_VER
 
+#include <array>
 
 namespace mgb::platform::video::sdl2 {
 
@@ -24,11 +25,22 @@ private:
 	auto SetupVideoInternal(VideoInfo vid_info, GameTextureInfo game_info) -> bool override;
 	auto RenderDisplayInternal() -> void override;
 
+	auto LoadButtonTextures() -> bool;
+	auto DestroyButtonTextures() -> void;
 	auto RenderCore() -> void;
 
 private:
+	struct ButtonTexture {
+		SDL_Texture* texture{};
+		int w{};
+		int h{};
+	};
+
+private:
     SDL_Renderer* renderer{nullptr};
-    SDL_Texture* texture{nullptr};
+    SDL_Texture* core_texture{nullptr};
+    std::array<ButtonTexture, 9> button_textures{};
+
     ttf::Font font;
 };
 
