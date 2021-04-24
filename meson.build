@@ -177,9 +177,9 @@ elif host_machine.system() == 'darwin'
     dependencies += dependency('sdl2', version : '>=2.0.5')
 
 elif host_machine.system() == 'emscripten'
-    cflags += ['-s', 'USE_SDL=2', '-s', 'ASYNCIFY']
-    cppflags += ['-s', 'USE_SDL=2', '-s', 'ASYNCIFY']
-    linkflags += ['-s', 'USE_SDL=2', '-s', 'ASYNCIFY']
+    cflags += ['-s', 'USE_SDL=2']
+    cppflags += ['-s', 'USE_SDL=2']
+    linkflags += ['-s', 'USE_SDL=2']
 
     # only enable if using async stuff else it'll bloat the code
     # cflags += ['-s', 'ASYNCIFY']
