@@ -33,7 +33,7 @@ auto OnTouchUp(const CB& callbacks, BC& button_cache, ID Id) {
 template <typename CB, typename TB, typename BC, typename ID>
 auto OnTouchDown(const CB& callbacks, const TB& touch_buttons, BC& button_cache, ID Id, int x, int y) {
     // find out if its in range...
-    const auto is_in_range = [&touch_buttons](int x, int y) -> std::optional<SDL2::TouchButton::Type> {
+    const auto is_in_range = [&touch_buttons, x, y]() -> std::optional<SDL2::TouchButton::Type> {
         for (auto& button : touch_buttons) {
             if (x >= button.x && x <= (button.x + button.w)) {
                 if (y >= button.y && y <= (button.y + button.h)) {
@@ -67,7 +67,7 @@ auto OnTouchDown(const CB& callbacks, const TB& touch_buttons, BC& button_cache,
     };
 
     // check that the button press maps to a texture coord
-    const auto type_optional = is_in_range(x, y);
+    const auto type_optional = is_in_range();
     if (!type_optional) {
         return;
     }
@@ -86,7 +86,7 @@ auto OnTouchDown(const CB& callbacks, const TB& touch_buttons, BC& button_cache,
 }
 
 auto SDL2::TouchButton::Reset() -> void {
-    this->x = this->y = this->w = this->h = -1;
+    this->x = this->y = this->w = this->h = -8000;
 }
 
 auto SDL2::TouchButton::ToRect() const -> SDL_Rect {
@@ -529,19 +529,17 @@ auto SDL2::OnJoypadDeviceEvent(const SDL_JoyDeviceEvent&) -> void {
 auto SDL2::OnControllerAxisEvent(const SDL_ControllerAxisEvent& e) -> void {
     constexpr auto deadzone = 8000;
 
-    constexpr auto left = -deadzone;
-    constexpr auto right = +deadzone;
-    constexpr auto up = -deadzone;
-    constexpr auto down = +deadzone;
+    constexpr auto left     = -deadzone;
+    constexpr auto right    = +deadzone;
+    constexpr auto up       = -deadzone;
+    constexpr auto down     = +deadzone;
 
     switch (e.axis) {
         case SDL_CONTROLLER_AXIS_LEFTX: case SDL_CONTROLLER_AXIS_RIGHTX:
             if (e.value < left) {
                 this->callback.OnAction(Action::GAME_LEFT, true);
-                this->callback.OnAction(Action::GAME_RIGHT, false);
             }
             else if (e.value > right) {
-                this->callback.OnAction(Action::GAME_LEFT, false);
                 this->callback.OnAction(Action::GAME_RIGHT, true);
             }
             else {
@@ -553,11 +551,9 @@ auto SDL2::OnControllerAxisEvent(const SDL_ControllerAxisEvent& e) -> void {
         case SDL_CONTROLLER_AXIS_LEFTY: case SDL_CONTROLLER_AXIS_RIGHTY:
             if (e.value < up) {
                 this->callback.OnAction(Action::GAME_UP, true);
-                this->callback.OnAction(Action::GAME_DOWN, false);
             }
             else if (e.value > down) {
                 this->callback.OnAction(Action::GAME_UP, false);
-                this->callback.OnAction(Action::GAME_DOWN, true);
             }
             else {
                 this->callback.OnAction(Action::GAME_UP, false);

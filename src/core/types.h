@@ -132,7 +132,12 @@ enum GB_Button {
     GB_BUTTON_RIGHT		= 1 << 4,
     GB_BUTTON_LEFT		= 1 << 5,
     GB_BUTTON_UP		= 1 << 6,
-    GB_BUTTON_DOWN		= 1 << 7
+    GB_BUTTON_DOWN		= 1 << 7,
+
+    // helpers
+    GB_BUTTON_XAXIS = GB_BUTTON_RIGHT | GB_BUTTON_LEFT,
+    GB_BUTTON_YAXIS = GB_BUTTON_UP | GB_BUTTON_DOWN,
+    GB_BUTTON_DIRECTIONAL = GB_BUTTON_XAXIS | GB_BUTTON_YAXIS,
 };
 
 enum GB_Interrupts {

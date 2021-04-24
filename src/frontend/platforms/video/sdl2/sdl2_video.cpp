@@ -138,10 +138,12 @@ auto SDL2::SetupVideoInternal(VideoInfo vid_info, GameTextureInfo game_info) -> 
 		return false;
 	}
 
+#ifdef ON_SCREEN_BUTTONS
     if (!this->LoadButtonTextures()) {
         // fail if on mobile / webasm
         printf("[SDL2] failed to load button textures\n");
     }
+#endif // ON_SCREEN_BUTTONS
 
     constexpr auto font_path = "res/fonts/Retro Gaming.ttf";
     constexpr auto font_size = 24.f;

@@ -16,7 +16,36 @@ static inline bool GB_is_button(const struct GB_Core* gb) {
 
 // [API]
 void GB_set_buttons(struct GB_Core* gb, uint8_t buttons, bool is_down) {
-    gb->joypad.var = !is_down ? gb->joypad.var | buttons : gb->joypad.var & (~buttons);
+    // the pins go LO when pressed!
+    if (is_down) {
+        gb->joypad.var &= ~buttons;
+    }
+    else {
+        gb->joypad.var |= buttons;
+    }
+
+    // the direction keys were made so that the opposite key could not
+    // be pressed at the same time, ie, left and right cannot both be pressed.
+    // allowing this probably doesnt break any games, but does cause strange
+    // effects in some games, such as zelda, pressing up and down will cause
+    // link to walk in-place whilst holding a shield, even if link doesn't
+    // yet have the shield...
+
+    // this can be better optimised at some point
+    if (is_down && (buttons & GB_BUTTON_DIRECTIONAL)) {
+        if (buttons & GB_BUTTON_RIGHT) {
+            gb->joypad.var |= GB_BUTTON_LEFT;
+        }
+        if (buttons & GB_BUTTON_LEFT) {
+            gb->joypad.var |= GB_BUTTON_RIGHT;   
+        }
+        if (buttons & GB_BUTTON_UP) {
+            gb->joypad.var |= GB_BUTTON_DOWN;
+        }
+        if (buttons & GB_BUTTON_DOWN) {
+            gb->joypad.var |= GB_BUTTON_UP;
+        }
+    }
 }
 
 uint8_t GB_get_buttons(const struct GB_Core* gb) {

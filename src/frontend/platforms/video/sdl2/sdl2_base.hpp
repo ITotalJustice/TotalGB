@@ -51,7 +51,7 @@ public:
 
         // have the buttons be offscreen by default so that
         // they don't trigger if touch is not supported
-        int x{-1}, y{-1}, w{-1}, h{-1};
+        int x{-8000}, y{-8000}, w{-8000}, h{-8000};
     };
     
 public:

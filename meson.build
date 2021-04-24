@@ -185,6 +185,8 @@ elif host_machine.system() == 'emscripten'
     # cflags += ['-s', 'ASYNCIFY']
     # cppflags += ['-s', 'ASYNCIFY']
     # linkflags += ['-s', 'ASYNCIFY']
+
+    cppflags += '-DON_SCREEN_BUTTONS=1'
 endif
 
 
