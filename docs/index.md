@@ -1,10 +1,4 @@
-# TotalGB
-
-Simple, fast, very inaccurate GB/GBC emulator!
-
-----
-
-## Links
+# Links
 
 [Try the emulator in your browser!](emu)
 
