@@ -29,15 +29,6 @@ struct ControllerCtx {
 
 class SDL2 : public Interface {
 public:
-    using Interface::Interface;
-    virtual ~SDL2();
-
-    auto PollEvents() -> void override;
-    auto UpdateGameTexture(GameTextureData data) -> void override;
-    auto ToggleFullscreen() -> void override;
-	auto SetWindowName(const std::string& name) -> void override;
-
-protected:
     struct TouchButton {
         enum class Type {
             A,
@@ -62,6 +53,15 @@ protected:
         // they don't trigger if touch is not supported
         int x{-1}, y{-1}, w{-1}, h{-1};
     };
+    
+public:
+    using Interface::Interface;
+    virtual ~SDL2();
+
+    auto PollEvents() -> void override;
+    auto UpdateGameTexture(GameTextureData data) -> void override;
+    auto ToggleFullscreen() -> void override;
+	auto SetWindowName(const std::string& name) -> void override;
 
 protected:
     auto SetupSDL2(const VideoInfo& vid_info, const GameTextureInfo& game_info, uint32_t win_flags) -> bool;
@@ -108,7 +108,16 @@ private:
     std::vector<JoystickCtx> joysticks{};
     std::vector<SDL_Haptic*> rumble_controllers{nullptr};
 
+    // these save the instance of a button / mouse click successfully
+    // pressing a button.
+    // as the mouse / finger can be dragged away from button after press
+    // it is impossible to then release the action.
+    // so we need to keep track of the button pressed, using it's matching ID
+    std::multimap<std::uint32_t, Action> mouse_down_buttons;
+    std::multimap<SDL_FingerID, Action> touch_down_buttons;
+
 	std::multimap<int, Action> key_action_map;
+    std::multimap<int, Action> touch_action_map;
 	// this should be a vector as multiple controllers
 	// can be connected at once!
 	std::multimap<SDL_GameControllerButton, Action> controller_action_map;

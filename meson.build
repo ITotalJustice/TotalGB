@@ -9,6 +9,7 @@ project('TotalGB', ['c', 'cpp'],
         'strip=true',
 
         # base options
+        # 'b_lto=true',
         'b_ndebug=if-release',
 
         'c_std=c11',
@@ -17,21 +18,7 @@ project('TotalGB', ['c', 'cpp'],
     ],
 )
 
-dependencies = [
-    dependency('sdl2', version : '>=2.0.5'),
-
-    # dependency('glew'),
-
-    # dependency('sdl'),
-
-    # dependency('allegro-5'),
-    # dependency('allegro_audio-5'),
-    # dependency('allegro_primitives-5'),
-    # dependency('allegro_image-5'),
-
-    # this is needed for linux
-    dependency('gtk+-3.0'),
-]
+dependencies = []
 
 source = files([
     # core
@@ -73,22 +60,8 @@ source = files([
 
     # frontend mgb++
     'src/frontend/main.cpp',
-
     'src/frontend/mgb.cpp',
     
-    # [Video Backends]
-    'src/frontend/platforms/video/interface.cpp',
-    'src/frontend/platforms/video/sdl2/sdl2_base.cpp',
-    'src/frontend/platforms/video/sdl2/sdl2_ttf.cpp',
-    'src/frontend/platforms/video/sdl2/sdl2_video.cpp',
-    'src/frontend/platforms/video/sdl2-opengl/sdl2_opengl.cpp',
-    'src/frontend/platforms/video/allegro5/allegro5_video.cpp',
-
-    # [Audio Backends]
-    'src/frontend/platforms/audio/sdl1/sdl1_audio.cpp',
-    'src/frontend/platforms/audio/sdl2/sdl2_audio.cpp',
-    'src/frontend/platforms/audio/allegro5/allegro5_audio.cpp',
-
     'src/frontend/util/mem.cpp',
     'src/frontend/util/util.cpp',
     
@@ -100,6 +73,19 @@ source = files([
     'src/frontend/util/io/ifile_zip.cpp',
     'src/frontend/util/io/ifile_zstd.cpp',
     'src/frontend/util/io/romloader.cpp',
+    
+    # [Video Backends]
+    'src/frontend/platforms/video/interface.cpp',
+    'src/frontend/platforms/video/sdl2/sdl2_base.cpp',
+    'src/frontend/platforms/video/sdl2/sdl2_ttf.cpp',
+    'src/frontend/platforms/video/sdl2/sdl2_video.cpp',
+    # 'src/frontend/platforms/video/sdl2-opengl/sdl2_opengl.cpp',
+    # 'src/frontend/platforms/video/allegro5/allegro5_video.cpp',
+
+    # [Audio Backends]
+    # 'src/frontend/platforms/audio/sdl1/sdl1_audio.cpp',
+    'src/frontend/platforms/audio/sdl2/sdl2_audio.cpp',
+    # 'src/frontend/platforms/audio/allegro5/allegro5_audio.cpp',
 
     # MINIZIP
     'src/libs/minizip/unzip.c',
@@ -139,21 +125,6 @@ includes = include_directories([
     'src/libs/',
 ])
 
-# https://github.com/mesonbuild/meson/blob/master/docs/markdown/Reference-manual.md#build_machine-object
-# https://github.com/mesonbuild/meson/blob/master/docs/markdown/Reference-tables.md#operating-system-names
-
-# this is probably not the sane way to do it, but eh it works :)
-if host_machine.system() == 'windows' or host_machine.system() == 'cygwin'
-    # nativefiledialog
-    source += 'src/libs/nativefiledialog/nfd_win.cpp'
-elif host_machine.system() == 'linux'
-    # # nativefiledialog
-    source += 'src/libs/nativefiledialog/nfd_gtk.cpp'
-elif host_machine.system() == 'darwin'
-    # # nativefiledialog
-    source += 'src/libs/nativefiledialog/nfd_cocoa.m'
-endif
-
 cflags = [
     # warns
     '-Wall',
@@ -175,8 +146,6 @@ cflags = [
 
     '-DMGB_NO_LZ4',
     '-DMGB_NO_ZSTD',
-
-    # '-DDUMP_AUDIO=1',
 ]
 
 cppflags = [
@@ -184,14 +153,45 @@ cppflags = [
     '-DMGB_SDL2_VIDEO',
 ]
 
-linkflags = [
-    
-]
+linkflags = []
+
+
+# https://github.com/mesonbuild/meson/blob/master/docs/markdown/Reference-manual.md#build_machine-object
+# https://github.com/mesonbuild/meson/blob/master/docs/markdown/Reference-tables.md#operating-system-names
+# this is probably not the sane way to do it, but eh it works :)
+
+if host_machine.system() == 'windows' or host_machine.system() == 'cygwin'
+    source += 'src/libs/nativefiledialog/nfd_win.cpp'
+
+    dependencies += dependency('sdl2', version : '>=2.0.5')
+
+elif host_machine.system() == 'linux'
+    source += 'src/libs/nativefiledialog/nfd_gtk.cpp'
+
+    dependencies += dependency('sdl2', version : '>=2.0.5')
+    dependencies += dependency('gtk+-3.0')
+
+elif host_machine.system() == 'darwin'
+    source += 'src/libs/nativefiledialog/nfd_cocoa.m'
+
+    dependencies += dependency('sdl2', version : '>=2.0.5')
+
+elif host_machine.system() == 'emscripten'
+    cflags += ['-s', 'USE_SDL=2', '-s', 'ASYNCIFY']
+    cppflags += ['-s', 'USE_SDL=2', '-s', 'ASYNCIFY']
+    linkflags += ['-s', 'USE_SDL=2', '-s', 'ASYNCIFY']
+
+    # only enable if using async stuff else it'll bloat the code
+    # cflags += ['-s', 'ASYNCIFY']
+    # cppflags += ['-s', 'ASYNCIFY']
+    # linkflags += ['-s', 'ASYNCIFY']
+endif
+
 
 exe = executable(
     'TotalGB',
     [ source ],
-    dependencies : [ dependencies ] ,
+    dependencies : [ dependencies ],
     install: true,
     include_directories: [ includes ],
     
@@ -199,23 +199,3 @@ exe = executable(
     cpp_args: [ cppflags, cflags ],
     link_args: [ linkflags ],
 )
-
-test(
-    'rom load test',
-    exe,
-    args : ['pokemon.zip']
-)
-
-#test(
-#    'cpu_instr.gb',
-#    exe,
-#    args : ['first', 'second']
-#)
-
-#test(
-#    'instr_timing.gb',
-#    exe,
-#    args : ['first', 'second']
-#)
-
-

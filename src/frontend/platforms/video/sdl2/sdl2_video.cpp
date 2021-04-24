@@ -33,8 +33,8 @@ auto SDL2::LoadButtonTextures() -> bool {
     // todo: set the button x,y to fit inside [160x144] then scale it with the
     // the screen size.
     constexpr std::array<ButtonInfo, 9> paths = {{
-        { "res/sprites/controls/transparentDark34.bmp",  SDL2::TouchButton::Type::A, 400, 470 },
-        { "res/sprites/controls/transparentDark35.bmp",  SDL2::TouchButton::Type::B, 500, 470 },
+        { "res/sprites/controls/transparentDark34.bmp",  SDL2::TouchButton::Type::A, 440, 470 },
+        { "res/sprites/controls/transparentDark35.bmp",  SDL2::TouchButton::Type::B, 540, 470 },
         { "res/sprites/controls/transparentDark40.bmp",  SDL2::TouchButton::Type::START, 200, 20 },
         { "res/sprites/controls/transparentDark41.bmp",  SDL2::TouchButton::Type::SELECT, 320, 20 },
         { "res/sprites/controls/transparentDark01.bmp",  SDL2::TouchButton::Type::UP, 80, 410 },
@@ -51,23 +51,32 @@ auto SDL2::LoadButtonTextures() -> bool {
 
         if (surface != NULL) {
             auto texture = SDL_CreateTextureFromSurface(this->renderer, surface);
-            
+            const auto w = surface->w;
+            const auto h = surface->h;
+
+            // we don't need this anymore
+            SDL_FreeSurface(surface);
+
             if (texture) {
                 printf("\tw: %d h: %d path: %s\n", surface->w, surface->h, path);
                 this->button_textures[i].texture = texture;
-                this->button_textures[i].w = surface->w;
-                this->button_textures[i].h = surface->h;
+                this->button_textures[i].w = w;
+                this->button_textures[i].h = h;
 
                 this->touch_buttons[i].type = type;
                 this->touch_buttons[i].x = x;
                 this->touch_buttons[i].y = y;
-                this->touch_buttons[i].w = surface->w;
-                this->touch_buttons[i].h = surface->h;
+                this->touch_buttons[i].w = w;
+                this->touch_buttons[i].h = h;
+            }
+            else {
+                printf("[SDL2] failed to convert surface to texture %s\n", SDL_GetError());
+                return false;
             }
 
-            SDL_FreeSurface(surface);
         }
         else {
+            printf("[SDL2] failed to load button bmp %s\n", SDL_GetError());
             return false;
         }
     }

@@ -37,6 +37,18 @@ struct GameTextureData {
 	int w, h;
 };
 
+struct Vec2 {
+	constexpr Vec2() = default;
+	constexpr Vec2(int _x, int _y) : x{_x}, y{_y} {}
+	int x{}, y{};
+};
+
+struct Vec4 {
+	constexpr Vec4() = default;
+	constexpr Vec4(int _x, int _y, int _w, int _h) : x{_x}, y{_y}, w{_w}, h{_h} {}
+	int x{}, y{}, w{}, h{};
+};
+
 struct Callbacks {
 	// checks to see if all functions are set!
 	auto Validate() const {
@@ -109,6 +121,9 @@ protected:
 	std::vector<std::uint16_t> game_pixels;
 	
 	std::deque<TextPopup> text_popups;
+
+	Vec4 window_vec{};
+	Vec4 game_vec{};
 
 	bool is_video_setup = false;
 

@@ -4,6 +4,7 @@
 
 #include <cassert>
 #include <cstring>
+#include <cmath>
 #include <array>
 #include <map>
 #include <optional>
@@ -11,6 +12,78 @@
 
 namespace mgb::platform::video::sdl2::base {
 
+// todo: replace these templates with auto once using c++20!
+template <typename CB, typename BC, typename ID>
+auto OnTouchUp(const CB& callbacks, BC& button_cache, ID Id) {
+    // check if we have this Id
+    const auto range = button_cache.equal_range(Id);
+    
+    // nothing found...
+    if (!std::distance(range.first, range.second)) {
+        return;
+    }
+
+    for (auto it = range.first; it != range.second; ++it) {
+        callbacks.OnAction(it->second, false);
+    }
+
+    button_cache.erase(Id);
+}
+
+template <typename CB, typename TB, typename BC, typename ID>
+auto OnTouchDown(const CB& callbacks, const TB& touch_buttons, BC& button_cache, ID Id, int x, int y) {
+    // find out if its in range...
+    const auto is_in_range = [&touch_buttons](int x, int y) -> std::optional<SDL2::TouchButton::Type> {
+        for (auto& button : touch_buttons) {
+            if (x >= button.x && x <= (button.x + button.w)) {
+                if (y >= button.y && y <= (button.y + button.h)) {
+                    return button.type;
+                }
+            }
+        }
+
+        return {};
+    };
+
+    static const auto touch_action_map = std::multimap<SDL2::TouchButton::Type, Action> {
+        { SDL2::TouchButton::Type::A, Action::GAME_A },
+        { SDL2::TouchButton::Type::B, Action::GAME_B },
+        { SDL2::TouchButton::Type::START, Action::GAME_START },
+        { SDL2::TouchButton::Type::SELECT, Action::GAME_SELECT },
+        { SDL2::TouchButton::Type::UP, Action::GAME_UP },
+        { SDL2::TouchButton::Type::DOWN, Action::GAME_DOWN },
+        { SDL2::TouchButton::Type::LEFT, Action::GAME_LEFT },
+        { SDL2::TouchButton::Type::RIGHT, Action::GAME_RIGHT },
+
+        { SDL2::TouchButton::Type::A, Action::UI_SELECT },
+        { SDL2::TouchButton::Type::B, Action::UI_BACK },
+        { SDL2::TouchButton::Type::START, Action::UI_SELECT },
+        { SDL2::TouchButton::Type::UP, Action::UI_UP },
+        { SDL2::TouchButton::Type::DOWN, Action::UI_DOWN },
+        { SDL2::TouchButton::Type::LEFT, Action::UI_LEFT },
+        { SDL2::TouchButton::Type::RIGHT, Action::UI_RIGHT },
+        
+        // { SDL2::TouchButton::Type::OPTIONS, Action::OPTIONS },
+    };
+
+    // check that the button press maps to a texture coord
+    const auto type_optional = is_in_range(x, y);
+    if (!type_optional) {
+        return;
+    }
+
+    const auto range = touch_action_map.equal_range(type_optional.value());
+    
+    // nothing found...
+    if (!std::distance(range.first, range.second)) {
+        return;
+    }
+
+    for (auto it = range.first; it != range.second; ++it) {
+        button_cache.insert({Id, it->second});
+        callbacks.OnAction(it->second, true);
+    }
+}
 
 auto SDL2::TouchButton::Reset() -> void {
     this->x = this->y = this->w = this->h = -1;
@@ -368,53 +441,47 @@ auto SDL2::OnDisplayEvent(const SDL_DisplayEvent& e) -> void {
 }
 #endif
 
+
 auto SDL2::OnMouseButtonEvent(const SDL_MouseButtonEvent& e) -> void {
-    printf("[SDL2] SDL_MouseButtonEvent! x: %d y: %d\n", e.x, e.y);
-
-    const auto kdown = e.type == SDL_MOUSEBUTTONDOWN;
-
-    // find out if its in range...
-    const auto is_in_range = [this](int x, int y) -> std::optional<TouchButton::Type> {
-        for (auto& button : this->touch_buttons) {
-            if (x >= button.x && x <= (button.x + button.w)) {
-                if (y >= button.y && y <= (button.y + button.h)) {
-                    return button.type;
-                }
-            }
-        }
-
-        return {};
-    };
-
-    static const auto touch_action_map = std::multimap<TouchButton::Type, Action> {
-        { TouchButton::Type::A, Action::GAME_A },
-        { TouchButton::Type::B, Action::GAME_B },
-        { TouchButton::Type::START, Action::GAME_START },
-        { TouchButton::Type::SELECT, Action::GAME_SELECT },
-        { TouchButton::Type::UP, Action::GAME_UP },
-        { TouchButton::Type::DOWN, Action::GAME_DOWN },
-        { TouchButton::Type::LEFT, Action::GAME_LEFT },
-        { TouchButton::Type::RIGHT, Action::GAME_RIGHT },
-        // { TouchButton::Type::OPTIONS, Action::OPTIONS },
-    };
-
-    // check that the button press maps to a texture coord
-    const auto type_optional = is_in_range(e.x, e.y);
-    if (!type_optional) {
+    // we already handle touch events...
+    if (e.which == SDL_TOUCH_MOUSEID) {
         return;
     }
 
-    printf("button found!\n");
+    // TODO: currently, touchpad tap is broken because it goes down
+    // and up on the same frame, so no button press actually happens.
+    // this is actually a bug with all inputs as well, but only
+    // noticable with touchpad.
 
-    const auto range = touch_action_map.equal_range(type_optional.value());
-    
-    // nothing found...
-    if (!std::distance(range.first, range.second)) {
-        return;
+    // to fix this, i could check if the button state has already changed this
+    // frame, and if so, ignore further updates.
+    // however, the further updates need to be saved for next frame and then handled
+    // because if a button is say, released, and we ignored it, then the button will
+    // be forever held until it is pressed and released again!
+
+    // another issue this will cause is that if on the next frame, theres a
+    // new button event fired, that already has a buffered event from the last frame
+    // i think the old event should be ignored, and only the new one should be handled.
+
+    // an alternitive way to fix this is to poll inputs more frequent than once
+    // per frame.
+    // this is probably the most ideal fix, though, this messes up the event system
+    // as we dont want to poll events that often as they can be
+    // costly or drastically change a setting that is expected to be called
+    // at the end of a frame...
+    // 
+    if (e.type == SDL_MOUSEBUTTONUP) {
+        OnTouchUp(
+            this->callback, this->mouse_down_buttons,
+            e.which
+        );
     }
 
-    for (auto it = range.first; it != range.second; ++it) {
-        this->callback.OnAction(it->second, kdown);
+    else if (e.type == SDL_MOUSEBUTTONDOWN) {
+        OnTouchDown(
+            this->callback, this->touch_buttons, this->mouse_down_buttons,
+            e.which, e.x, e.y
+        );
     }
 }
 
@@ -424,7 +491,8 @@ auto SDL2::OnMouseMotionEvent(const SDL_MouseMotionEvent&) -> void {
 }
 
 auto SDL2::OnMouseWheelEvent(const SDL_MouseWheelEvent&) -> void {
-    printf("[SDL2] SDL_MouseWheelEvent!\n");
+    // this gets noisy
+    // printf("[SDL2] SDL_MouseWheelEvent!\n");
 }
 
 auto SDL2::OnKeyEvent(const SDL_KeyboardEvent& e) -> void {
@@ -458,19 +526,56 @@ auto SDL2::OnJoypadDeviceEvent(const SDL_JoyDeviceEvent&) -> void {
     printf("[SDL2] joypad device event!\n");
 }
 
-auto SDL2::OnControllerAxisEvent(const SDL_ControllerAxisEvent&) -> void {
+auto SDL2::OnControllerAxisEvent(const SDL_ControllerAxisEvent& e) -> void {
+    constexpr auto deadzone = 8000;
 
+    constexpr auto left = -deadzone;
+    constexpr auto right = +deadzone;
+    constexpr auto up = -deadzone;
+    constexpr auto down = +deadzone;
+
+    switch (e.axis) {
+        case SDL_CONTROLLER_AXIS_LEFTX: case SDL_CONTROLLER_AXIS_RIGHTX:
+            if (e.value < left) {
+                this->callback.OnAction(Action::GAME_LEFT, true);
+                this->callback.OnAction(Action::GAME_RIGHT, false);
+            }
+            else if (e.value > right) {
+                this->callback.OnAction(Action::GAME_LEFT, false);
+                this->callback.OnAction(Action::GAME_RIGHT, true);
+            }
+            else {
+                this->callback.OnAction(Action::GAME_LEFT, false);
+                this->callback.OnAction(Action::GAME_RIGHT, false);
+            }
+            break;
+
+        case SDL_CONTROLLER_AXIS_LEFTY: case SDL_CONTROLLER_AXIS_RIGHTY:
+            if (e.value < up) {
+                this->callback.OnAction(Action::GAME_UP, true);
+                this->callback.OnAction(Action::GAME_DOWN, false);
+            }
+            else if (e.value > down) {
+                this->callback.OnAction(Action::GAME_UP, false);
+                this->callback.OnAction(Action::GAME_DOWN, true);
+            }
+            else {
+                this->callback.OnAction(Action::GAME_UP, false);
+                this->callback.OnAction(Action::GAME_DOWN, false);
+            }
+            break;
+    }
 }
 
 auto SDL2::OnControllerButtonEvent(const SDL_ControllerButtonEvent& e) -> void {
     assert(e.type == SDL_CONTROLLERBUTTONDOWN || e.type == SDL_CONTROLLERBUTTONUP);
     
     if (!this->HasController(e.which)) {
-        // log::log("unkown controller unkown cbutton" + std::to_string(e.button));
+        std::printf("[SDL2] unknown controller unkown cbutton %d\n", e.button);
         return;
     }
 
-    const auto kdown = e.type == SDL_KEYDOWN;
+    const auto kdown = e.type == SDL_CONTROLLERBUTTONDOWN;
 
     // sdl2 has the entry as a u8, so i cast it here.
     const auto button = static_cast<SDL_GameControllerButton>(e.button);
@@ -507,8 +612,24 @@ auto SDL2::OnControllerDeviceEvent(const SDL_ControllerDeviceEvent& e) -> void {
     }
 }
 
-auto SDL2::OnTouchEvent(const SDL_TouchFingerEvent&) -> void {
-    printf("[SDL2] touch event!\n");
+auto SDL2::OnTouchEvent(const SDL_TouchFingerEvent& e) -> void {
+    if (e.type == SDL_FINGERUP) {
+        OnTouchUp(
+            this->callback, this->touch_down_buttons,
+            e.fingerId
+        );
+    }
+
+    else if (e.type == SDL_FINGERDOWN) {
+        // we need to un-normalise x, y
+        const int x = e.x * 640;
+        const int y = e.y * 576;
+
+        OnTouchDown(
+            this->callback, this->touch_buttons, this->touch_down_buttons,
+            e.fingerId, x, y
+        );
+    }
 }
 
 auto SDL2::OnMultiGestureEvent(const SDL_MultiGestureEvent&) -> void {
@@ -524,7 +645,8 @@ auto SDL2::OnTextEditEvent(const SDL_TextEditingEvent&) -> void {
 }
 
 auto SDL2::OnTextInputEvent(const SDL_TextInputEvent&) -> void {
-    printf("[SDL2] SDL_TextInputEvent!\n");
+    // this gets noisy
+    // printf("[SDL2] SDL_TextInputEvent!\n");
 }
 
 auto SDL2::OnSysWMEvent(const SDL_SysWMEvent&) -> void {

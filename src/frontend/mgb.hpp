@@ -32,7 +32,9 @@ public:
     ~App();
 
     auto LoadRom(const std::string& path) -> bool;
+    
     auto Loop() -> void;
+    auto LoopStep() -> void;
 
 public:
     auto OnAudioCallback(const struct GB_ApuCallbackData* data) -> void;

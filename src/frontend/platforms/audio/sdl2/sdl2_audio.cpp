@@ -12,6 +12,11 @@
 #include <SDL2/SDL_audio.h>
 #endif // _MSC_VER
 
+#ifdef __EMSCRIPTEN__
+#include <emscripten.h>
+#endif
+
+#include <cstdio>
 #include <cstring>
 
 
@@ -31,7 +36,9 @@ SDL2::~SDL2() {
 auto SDL2::SetupAudio() -> bool {
 	// this is to fix very high cpu usage on my chromebook
 	// when using pulseaudio (30%!).
+#ifndef __EMSCRIPTEN__
 	SDL_setenv("SDL_AUDIODRIVER", "sndio", 1);
+#endif // __EMSCRIPTEN__
 
 	if (SDL_InitSubSystem(SDL_INIT_AUDIO)) {
 		printf("\n[SDL_AUDIO_ERROR] %s\n\n", SDL_GetError());
@@ -87,13 +94,31 @@ auto SDL2::SetupAudio() -> bool {
 }
 
 auto SDL2::PushSamples(const struct GB_ApuCallbackData* data) -> void {
-	while (SDL_GetQueuedAudioSize(this->device_id) > (sizeof(data->samples) * 4)) {
+#ifndef __EMSCRIPTEN__
+    while (SDL_GetQueuedAudioSize(this->device_id) > (sizeof(data->samples) * 4)) {
         SDL_Delay(1);
     }
+#else
+    #if 0
+    while (SDL_GetQueuedAudioSize(this->device_id) > (sizeof(data->samples) * 4)) {
+        emscripten_sleep(1);
+    }
+    #endif
+#endif // __EMSCRIPTEN__
 
-    SDL_QueueAudio(
-    	this->device_id, data->samples, sizeof(data->samples)
-    );
+    switch (SDL_GetAudioDeviceStatus(this->device_id)) {
+        case SDL_AUDIO_STOPPED:
+            // std::printf("[SDL2-AUDIO] stopped\n");
+            break;
+
+        case SDL_AUDIO_PAUSED:
+            // std::printf("[SDL2-AUDIO] paused\n");
+            break;
+
+        case SDL_AUDIO_PLAYING:
+            SDL_QueueAudio(this->device_id, data->samples, sizeof(data->samples));
+            break;
+    }
 }
 
 } // namespace mgb::platform::audio::sdl2

@@ -9,7 +9,9 @@
 #include "frontend/platforms/video.hpp"
 #include "frontend/platforms/audio.hpp"
 
+#ifndef __EMSCRIPTEN__
 #include "nativefiledialog/nfd.hpp"
+#endif // __EMSCRIPTEN__
 
 #include "core/gb.h"
 
@@ -18,6 +20,9 @@
 #include <cassert>
 #include <map>
 
+#ifdef __EMSCRIPTEN__
+#include <emscripten.h>
+#endif // __EMSCRIPTEN__
 
 namespace mgb {
 
@@ -376,7 +381,10 @@ auto App::LoadRom(const std::string& path) -> bool {
     return false;
 }
 
+// todo: make this platform thing, for example, for wasm, use js filepicker
+// and call it from extern "C".
 auto App::FilePicker() -> void {
+#ifndef __EMSCRIPTEN__
     // initialize NFD
     NFD::Guard nfdGuard;
 
@@ -406,18 +414,23 @@ auto App::FilePicker() -> void {
             this->LoadRom(outPath.get());
             break;
     }
+#endif // __EMSCRIPTEN__
+}
+
+auto App::LoopStep() -> void {
+    this->Events();
+
+    if (this->HasRom()) {
+        GB_run_frame(this->GetCore());
+    }
+
+    // render the screen
+    this->Draw();
 }
 
 auto App::Loop() -> void {
-    while (this->running) {      
-        this->Events();
-
-        if (this->HasRom()) {
-            GB_run_frame(this->GetCore());
-        }
-
-        // render the screen
-        this->Draw();
+    while (this->running) {
+        this->LoopStep();
     }
 }
 
@@ -430,7 +443,7 @@ auto App::Draw() -> void {
 }
 
 auto App::OnGameAction(Action action, bool down) -> void {
-    static std::unordered_map<Action, GB_Button> buttons{
+    static std::map<Action, GB_Button> buttons{
         { Action::GAME_A, GB_BUTTON_A },
         { Action::GAME_B, GB_BUTTON_B },
         { Action::GAME_START, GB_BUTTON_START },

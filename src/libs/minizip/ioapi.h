@@ -17,14 +17,7 @@
 #define _ZLIBIOAPI64_H
 
 
-// this shouldn't really be needed i don't think,
-// but ftello / fseeko are not defined otherwise...
-#ifndef __USE_LARGEFILE
-#define __USE_LARGEFILE 1
 #include <stdio.h>
-#undef __USE_LARGEFILE
-#endif
-
 #include <stdlib.h>
 #include <stdint.h>
 
@@ -37,26 +30,39 @@
 #  define ZIP_UNUSED
 #endif
 
-#if defined(USE_FILE32API)
-#  define fopen64 fopen
-#  define ftello64 ftell
-#  define fseeko64 fseek
-#else
-#  if defined(_MSC_VER)
-#    define fopen64 fopen
-#    if (_MSC_VER >= 1400) && (!(defined(NO_MSCVER_FILE64_FUNC)))
-#      define ftello64 _ftelli64
-#      define fseeko64 _fseeki64
-#    else /* old MSC */
-#      define ftello64 ftell
-#      define fseeko64 fseek
-#    endif
-#  else
-#    define fopen64 fopen
-#    define ftello64 ftello
-#    define fseeko64 fseeko
-#  endif
+// this seems to break on linux and emcc, so for now
+// just use old api, it works fine for the small file
+// sizes that i'll be using.
+#ifndef fopen64
+#define fopen64 fopen
 #endif
+#ifndef ftello64
+#define ftello64 ftell
+#endif
+#ifndef fseeko64
+#define fseeko64 fseek
+#endif
+
+// #if defined(USE_FILE32API)
+// #  define fopen64 fopen
+// #  define ftello64 ftell
+// #  define fseeko64 fseek
+// #else
+// #  if defined(_MSC_VER)
+// #    define fopen64 fopen
+// #    if (_MSC_VER >= 1400) && (!(defined(NO_MSCVER_FILE64_FUNC)))
+// #      define ftello64 _ftelli64
+// #      define fseeko64 _fseeki64
+// #    else /* old MSC */
+// #      define ftello64 ftell
+// #      define fseeko64 fseek
+// #    endif
+// #  else
+// #    define fopen64 fopen
+// #    define ftello64 ftello
+// #    define fseeko64 fseeko
+// #  endif
+// #endif
 
 #ifdef __cplusplus
 extern "C" {
