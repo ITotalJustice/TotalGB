@@ -10,4 +10,4 @@ explenations as how the stuff works.
 
 ## Links
 
-[0 - Planning](0_planning.md)
+[0 - Planning](0_planning)
