@@ -1,10 +1,20 @@
 <!doctype html>
 <html lang="en-us">
-  <head>
-    <meta charset="utf-8">
-    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
-    <title>TotalGB</title>
-    <link rel="shortcut icon" type="image/jpg" href="https://github.com/ITotalJustice/TotalGB/raw/old-boy/res/icon.ico"/>
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+  <title>TotalGB</title>
+  <link rel="apple-touch-icon" sizes="180x180" href="https://github.com/ITotalJustice/TotalGB/raw/old-boy/res/icons/apple-touch-icon.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="https://github.com/ITotalJustice/TotalGB/raw/old-boy/res/icons/favicon-32x32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="https://github.com/ITotalJustice/TotalGB/raw/old-boy/res/icons/favicon-16x16.png">
+  <link rel="manifest" href="https://github.com/ITotalJustice/TotalGB/raw/old-boy/res/icons/site.webmanifest">
+  <link rel="mask-icon" href="https://github.com/ITotalJustice/TotalGB/raw/old-boy/res/icons/safari-pinned-tab.svg" color="#5bbad5">
+  <link rel="shortcut icon" href="https://github.com/ITotalJustice/TotalGB/raw/old-boy/res/icons/favicon.ico">
+  <meta name="apple-mobile-web-app-title" content="TotalGB">
+  <meta name="application-name" content="TotalGB">
+  <meta name="msapplication-TileColor" content="#2b5797">
+  <meta name="msapplication-config" content="https://github.com/ITotalJustice/TotalGB/raw/old-boy/res/icons/browserconfig.xml">
+  <meta name="theme-color" content="#ffffff">
     <style>
       .emscripten { padding-right: 0; margin-left: auto; margin-right: auto; display: block; }
       textarea.emscripten { font-family: monospace; width: 80%; }
@@ -84,6 +94,7 @@
                             FS.close(stream);
                             resolve(bytes);
                         });
+                        
                         reader.readAsArrayBuffer(input.files[0]);
                     }
                 });
@@ -93,7 +104,7 @@
 
         const el = document.getElementById("html-rom-loader");
         el.addEventListener("click",
-            () => readToEmscriptenFileSystem("rom.bin", ".gb, .gbc, .sgb").then(
+            () => readToEmscriptenFileSystem("rom.bin", ".gb, .gbc, .sgb, .zip").then(
                 () => Module.ccall('emscripten_load_rom')));
     </script>
     </body> 

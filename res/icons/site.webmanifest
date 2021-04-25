@@ -3,12 +3,12 @@
     "short_name": "TotalGB",
     "icons": [
         {
-            "src": "https://github.com/ITotalJustice/TotalGB/raw/old-boy/res/android-chrome-192x192.png",
+            "src": "https://github.com/ITotalJustice/TotalGB/raw/old-boy/res/icons/android-chrome-192x192.png",
             "sizes": "192x192",
             "type": "image/png"
         },
         {
-            "src": "https://github.com/ITotalJustice/TotalGB/raw/old-boy/res/android-chrome-256x256.png",
+            "src": "https://github.com/ITotalJustice/TotalGB/raw/old-boy/res/icons/android-chrome-256x256.png",
             "sizes": "256x256",
             "type": "image/png"
         }
