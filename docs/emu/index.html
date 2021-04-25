@@ -91,7 +91,8 @@
             });
         };
 
-        document.getElementById("html-rom-loader").addEventListener("click",
+        const el = document.getElementById("html-rom-loader");
+        el.addEventListener("click",
             () => readToEmscriptenFileSystem("rom.bin", ".gb, .gbc, .sgb").then(
                 () => Module.ccall('emscripten_load_rom')));
     </script>

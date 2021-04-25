@@ -84,6 +84,7 @@
                             FS.close(stream);
                             resolve(bytes);
                         });
+                        
                         reader.readAsArrayBuffer(input.files[0]);
                     }
                 });
@@ -91,8 +92,9 @@
             });
         };
 
-        document.getElementById("html-rom-loader").addEventListener("click",
-            () => readToEmscriptenFileSystem("rom.bin", ".gb, .gbc, .sgb").then(
+        const el = document.getElementById("html-rom-loader");
+        el.addEventListener("click",
+            () => readToEmscriptenFileSystem("rom.bin", ".gb, .gbc, .sgb, .zip").then(
                 () => Module.ccall('emscripten_load_rom')));
     </script>
     </body> 
