@@ -5,21 +5,50 @@
 #ifdef __EMSCRIPTEN__
 #include <emscripten.h>
 
-// we make this global so that C functions can use it
-static mgb::App app;
-
-// these are the emscripten functions that will be called by JS
-extern "C" {
 
 #define SAVE_PATH "/saves"
 #define STATE_PATH "/states"
 #define CONFIG_PATH "/config"
 
 
+// we make this global so that C functions can use it
+static mgb::App app;
+
+#include <string>
+#include <filesystem>
+
+auto write_save_file(const std::string& path, const uint8_t* data, std::size_t len) {
+    const auto fullpath = "/saves/" + std::filesystem::path{path}.filename().string();
+    printf("full path is: %s size: %lu\n", fullpath.c_str(), len);
+
+    auto f = fopen(fullpath.c_str(), "wb");
+    if (!f) {
+        printf("failed to open save for writing\n");
+        return false;
+    }
+
+    auto r = fwrite(data, len, 1, f);
+
+    printf("fwrite result is %lu\n", r);
+    fclose(f);
+
+    return true;
+}
+
+// these are the emscripten functions that will be called by JS
+extern "C" {
+
+
 EMSCRIPTEN_KEEPALIVE
 void em_load_rom_data(const char* name, const uint8_t* data, int len) {
     printf("[EM] loading rom! name: %s len: %d\n", name, len);
     app.LoadRomData(name, data, static_cast<size_t>(len));
+}
+
+EMSCRIPTEN_KEEPALIVE
+void em_upload_save(const char* name, const uint8_t* data, int len) {
+    printf("[EM] stroing save! name: %s len: %d\n", name, len);
+    write_save_file(name, data, static_cast<size_t>(len));
 }
 
 EMSCRIPTEN_KEEPALIVE

@@ -1,0 +1,16 @@
+.button {
+  background-color: #e7e7e7; /* Grey */
+  border: none;
+  color: white;
+  padding: 10px 10px;
+  text-align: center;
+  text-decoration: none;
+  display: inline-block;
+  font-size: 18px;
+  margin: 8px 8px;
+  cursor: pointer;
+}
+
+label {
+    font: 1rem 'Fira Sans', sans-serif;
+}

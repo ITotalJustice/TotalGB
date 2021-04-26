@@ -257,7 +257,8 @@ auto App::GetSavePath() -> std::string {
         return util::getSavePathFromString(this->rom_path);
     }
     else {
-        return this->custom_save_path + std::filesystem::path{this->rom_path}.filename().string();
+        const auto filename = std::filesystem::path{this->rom_path}.filename().string();
+        return this->custom_save_path + util::getSavePathFromString(filename);
     }
 }
 
@@ -266,20 +267,26 @@ auto App::GetRtcPath() -> std::string {
         return util::getRtcPathFromString(this->rom_path);
     }
     else {
-        return this->custom_rtc_path + std::filesystem::path{this->rom_path}.filename().string();
+        const auto filename = std::filesystem::path{this->rom_path}.filename().string();
+        return this->custom_rtc_path + util::getRtcPathFromString(filename);
     }
 }
 
 auto App::GetStatePath() -> std::string {
     if (this->custom_state_path.empty()) {
-        return util::getSavePathFromString(this->rom_path);
+        return util::getStatePathFromString(this->rom_path);
     }
     else {
-        return this->custom_state_path + std::filesystem::path{this->rom_path}.filename().string();
+        const auto filename = std::filesystem::path{this->rom_path}.filename().string();
+        return this->custom_state_path + util::getStatePathFromString(filename);
     }
 }
 
 auto App::SaveGame() -> void {
+    if (!this->HasRom()) {
+        return;
+    }
+
     if (GB_has_save(this->gameboy.get()) || GB_has_rtc(this->gameboy.get())) {
         struct GB_SaveData save_data;
         GB_savegame(this->gameboy.get(), &save_data);
@@ -326,11 +333,20 @@ auto App::LoadSave() -> void {
 
         io::Cfile file{save_path, "rb"};
 
-        if (file.good() && file.size() == save_size) {
-            printf("trying to read... %u\n", save_size);
-            file.read(save_data.data, save_size);
-            save_data.size = save_size;
+        if (file.good()) {
+            if (file.size() == save_size) {
+                printf("trying to read... %u\n", save_size);
+                file.read(save_data.data, save_size);
+                save_data.size = save_size;
+            }
+            else {
+                printf("[MGB-ERROR] wrong save file size, got: %u want: %u\n", file.size(), save_size);
+            }
         }
+        else {
+            printf("[MGB-ERROR] failed to open save file: %s\n", save_path.c_str());
+        }
+
     }
 
     // load rtc
