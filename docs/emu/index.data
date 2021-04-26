@@ -1,11 +1,4 @@
-# SOURCE:
-# https://github.com/mesonbuild/meson/tree/master/test%20cases/windows/14%20resources%20with%20custom%20target%20depend_files
-
-win = import('windows')
-
-res = win.compile_resources('myres.rc')#include<windows.h>
-
-1 ICON "icon.ico"Simple DirectMedia Layer
+Simple DirectMedia Layer
 Copyright (C) 1997-2020 Sam Lantinga <slouken@libsdl.org>
   
 This software is provided 'as-is', without any express or implied
@@ -1413,12 +1406,12 @@ fill="#000000" stroke="none">
     "short_name": "TotalGB",
     "icons": [
         {
-            "src": "https://github.com/ITotalJustice/TotalGB/raw/old-boy/res/android-chrome-192x192.png",
+            "src": "https://github.com/ITotalJustice/TotalGB/raw/old-boy/res/icons/android-chrome-192x192.png",
             "sizes": "192x192",
             "type": "image/png"
         },
         {
-            "src": "https://github.com/ITotalJustice/TotalGB/raw/old-boy/res/android-chrome-256x256.png",
+            "src": "https://github.com/ITotalJustice/TotalGB/raw/old-boy/res/icons/android-chrome-256x256.png",
             "sizes": "256x256",
             "type": "image/png"
         }

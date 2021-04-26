@@ -19,6 +19,7 @@
 #include <cstring>
 #include <cassert>
 #include <map>
+#include <filesystem>
 
 #ifdef __EMSCRIPTEN__
 #include <emscripten.h>
@@ -193,12 +194,16 @@ auto App::OnErrorCallback(struct GB_ErrorData* data) -> void {
     }
 }
 
+auto App::FlushSave() -> void {
+    this->SaveGame();
+}
+
 auto App::SaveState() -> void {
     if (!this->HasRom()) {
         return;
     }
 
-    auto state_path = util::getStatePathFromString(this->rom_path);
+    const auto state_path = this->GetStatePath();
 
     io::Gzip file{state_path, "wb"};
     if (file.good()) {
@@ -207,6 +212,10 @@ auto App::SaveState() -> void {
         auto state = std::make_unique<struct GB_CoreState>();
         GB_savestate2(this->GetCore(), state.get());
         file.write((u8*)state.get(), sizeof(struct GB_CoreState));
+
+        if (this->on_state_write_cb) {
+            this->on_state_write_cb();
+        }   
     }
     else {
         this->LogToDisplay("Failed to open state file!");
@@ -218,7 +227,7 @@ auto App::LoadState() -> void {
         return;
     }
 
-    auto state_path = util::getStatePathFromString(this->rom_path);
+    const auto state_path = this->GetStatePath();
 
     io::Gzip file{state_path, "rb"};
     if (file.good()) {
@@ -233,71 +242,9 @@ auto App::LoadState() -> void {
     }
 }
 
-auto App::LoadRomInternal(const std::string& path) -> bool {
-    // if we have a rom alread loaded, try and save the game
-    // first before exiting...
-    if (this->HasRom()) {
-        this->SaveGame(this->rom_path);
-    } else {
-        this->gameboy = std::make_unique<GB_Core>();
-        GB_init(this->GetCore());
-
-        GB_set_rtc_update_config(this->GetCore(), GB_RTC_UPDATE_CONFIG_USE_LOCAL_TIME);
-
-        GB_set_apu_callback(this->GetCore(), AudioCallback, this);
-        GB_set_vblank_callback(this->GetCore(), VblankCallback, this);
-        GB_set_hblank_callback(this->GetCore(), HblankCallback, this);
-        GB_set_dma_callback(this->GetCore(), DmaCallback, this);
-        GB_set_halt_callback(this->GetCore(), HaltCallback, this);
-        GB_set_stop_callback(this->GetCore(), StopCallback, this);
-        GB_set_error_callback(this->GetCore(), ErrorCallback, this);
-    }
-
-    io::RomLoader romloader{path};
-    if (!romloader.good()) {
-        this->LogToDisplay("Failed to open rom: " + path);
-        return false;
-    }
-
-    // get the size
-    const auto file_size = romloader.size();
-
-    // resize vector
-    this->rom_data.resize(file_size);
-
-    // read entire file...
-    romloader.read(this->rom_data.data(), this->rom_data.size());
-
-    if (-1 == GB_loadrom_data(
-        this->gameboy.get(),
-        this->rom_data.data(), this->rom_data.size())
-    ) {
-        printf("failed to load rom...\n");
-        return false;
-    }
-
-    // save the path and set that the rom had loaded!
-    this->rom_path = path;
-
-    // try and set the rom name in window title
-    {
-        struct GB_CartName cart_name;
-        if (!GB_get_rom_name(this->gameboy.get(), &cart_name)) {
-            this->video_platform->SetWindowName(cart_name.name);
-        }
-    }
-
-    // try and load a savefile (if any...)
-    this->LoadSave(this->rom_path);
-
-    this->LogToDisplay("Loaded rom: " + path);
-
-    return true;
-}
-
 auto App::CloseRom() -> bool {
     if (this->HasRom()) {
-        this->SaveGame(this->rom_path);
+        this->SaveGame();
     }
 
     this->rom_loaded = false;
@@ -305,39 +252,76 @@ auto App::CloseRom() -> bool {
     return true;
 }
 
-auto App::SaveGame(const std::string& path) -> void {
+auto App::GetSavePath() -> std::string {
+    if (this->custom_save_path.empty()) {
+        return util::getSavePathFromString(this->rom_path);
+    }
+    else {
+        return this->custom_save_path + std::filesystem::path{this->rom_path}.filename().string();
+    }
+}
+
+auto App::GetRtcPath() -> std::string {
+    if (this->custom_rtc_path.empty()) {
+        return util::getRtcPathFromString(this->rom_path);
+    }
+    else {
+        return this->custom_rtc_path + std::filesystem::path{this->rom_path}.filename().string();
+    }
+}
+
+auto App::GetStatePath() -> std::string {
+    if (this->custom_state_path.empty()) {
+        return util::getSavePathFromString(this->rom_path);
+    }
+    else {
+        return this->custom_state_path + std::filesystem::path{this->rom_path}.filename().string();
+    }
+}
+
+auto App::SaveGame() -> void {
     if (GB_has_save(this->gameboy.get()) || GB_has_rtc(this->gameboy.get())) {
         struct GB_SaveData save_data;
         GB_savegame(this->gameboy.get(), &save_data);
 
+        auto wrote_save = false;
+
         // save sram
         if (save_data.size > 0) {
-            const auto save_path = util::getSavePathFromString(path);
+            const auto save_path = this->GetSavePath();
             io::Cfile file{save_path, "wb"};
             if (file.good()) {
                 file.write(save_data.data, save_data.size);
+                wrote_save = true;
             }
         }
 
         // save rtc
         if (save_data.has_rtc == true) {
-            const auto save_path = util::getRtcPathFromString(path);
+            const auto save_path = this->GetRtcPath();
             io::Cfile file{save_path, "wb"};
             if (file.good()) {
                 file.write((u8*)&save_data.rtc, sizeof(save_data.rtc));
+                wrote_save = true;
+            }
+        }
+
+        if (wrote_save == true) {
+            if (this->on_save_write_cb) {
+                this->on_save_write_cb();
             }
         }
     }
 }
 
-auto App::LoadSave(const std::string& path) -> void {
+auto App::LoadSave() -> void {
     struct GB_SaveData save_data{};
 
     // load sram
     if (GB_has_save(this->gameboy.get())) {
         printf("has save!\n");
 
-        const auto save_path = util::getSavePathFromString(path);
+        const auto save_path = this->GetSavePath();
         const auto save_size = GB_calculate_savedata_size(this->gameboy.get());
 
         io::Cfile file{save_path, "rb"};
@@ -351,7 +335,7 @@ auto App::LoadSave(const std::string& path) -> void {
 
     // load rtc
     if (GB_has_rtc(this->gameboy.get())) {
-        const auto save_path = util::getRtcPathFromString(path);
+        const auto save_path = this->GetRtcPath();
         io::Cfile file{save_path, "rb"};
 
         if (file.good() && file.size() == sizeof(save_data.rtc)) {
@@ -371,14 +355,96 @@ auto App::GetCore() -> GB_Core* {
     return this->gameboy.get();
 }
 
-auto App::LoadRom(const std::string& path) -> bool {
-    if (this->LoadRomInternal(path)) {
-        this->rom_loaded = true;
-        return true;
+auto App::LoadRomInternal(LoadRomInfo&& info) -> bool {
+    // if we have a rom alread loaded, try and save the game
+    // first before exiting...
+    if (this->HasRom()) {
+        this->SaveGame();
+    }
+    else {
+        this->gameboy = std::make_unique<GB_Core>();
+        GB_init(this->GetCore());
+
+        GB_set_rtc_update_config(this->GetCore(), GB_RTC_UPDATE_CONFIG_USE_LOCAL_TIME);
+
+        GB_set_apu_callback(this->GetCore(), AudioCallback, this);
+        GB_set_vblank_callback(this->GetCore(), VblankCallback, this);
+        GB_set_hblank_callback(this->GetCore(), HblankCallback, this);
+        GB_set_dma_callback(this->GetCore(), DmaCallback, this);
+        GB_set_halt_callback(this->GetCore(), HaltCallback, this);
+        GB_set_stop_callback(this->GetCore(), StopCallback, this);
+        GB_set_error_callback(this->GetCore(), ErrorCallback, this);
     }
 
-    this->rom_loaded = false;
-    return false;
+    auto romloader = [&info]() -> std::unique_ptr<io::RomLoader> {
+        switch (info.type) {
+            case LoadRomInfo::Type::FILE:
+                return std::make_unique<io::RomLoader>(info.path);
+
+            case LoadRomInfo::Type::MEM:
+                return std::make_unique<io::RomLoader>(info.path, info.data, info.size);
+        }
+
+        return nullptr;
+    }();
+
+    if (!romloader) {
+        return this->rom_loaded = false;
+    }
+
+    if (!romloader->good()) {
+        this->LogToDisplay("Failed to open rom: " + info.path);
+        return this->rom_loaded = false;
+    }
+
+    // get the size
+    const auto file_size = romloader->size();
+    if (file_size > 0x400000) { // 4MiB
+        this->LogToDisplay("Rom too big!: " + std::to_string(file_size));
+        return this->rom_loaded = false;
+    }
+
+    // resize vector
+    this->rom_data.resize(file_size);
+
+    // read entire file...
+    romloader->read(this->rom_data.data(), this->rom_data.size());
+
+    if (-1 == GB_loadrom_data(
+        this->gameboy.get(),
+        this->rom_data.data(), this->rom_data.size())
+    ) {
+        printf("failed to load rom...\n");
+        return false;
+    }
+
+    // save the path and set that the rom had loaded!
+    this->rom_path = info.path;
+
+    // try and set the rom name in window title
+    {
+        struct GB_CartName cart_name;
+        if (!GB_get_rom_name(this->gameboy.get(), &cart_name)) {
+            this->video_platform->SetWindowName(cart_name.name);
+        }
+    }
+
+    // try and load a savefile (if any...)
+    this->LoadSave();
+
+    this->LogToDisplay("Loaded rom: " + this->rom_path);
+
+    return this->rom_loaded = true;
+}
+
+auto App::LoadRomData(const std::string& path, const std::uint8_t* data, std::size_t size) -> bool {
+    printf("[APP] calling loadromdata. path: %s, size: %lu\n", path.c_str(), size);
+
+    return this->LoadRomInternal(LoadRomInfo{path, data, size});
+}
+
+auto App::LoadRom(const std::string& path) -> bool {
+    return this->LoadRomInternal(LoadRomInfo{path});
 }
 
 // todo: make this platform thing, for example, for wasm, use js filepicker

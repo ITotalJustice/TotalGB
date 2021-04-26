@@ -21,6 +21,7 @@
 #endif
 
 #include "frontend/util/util.hpp"
+#include "frontend/util/mem.hpp"
 
 #include <cstring>
 #include <array>
@@ -28,26 +29,48 @@
 
 namespace mgb::io {
 
-RomLoader::RomLoader(const char* path) {
+
+RomLoader::RomLoader(const std::string& path) {
     const auto type = util::getExtType(path);
 
-    if (type == util::ExtType::ZIP) {
 #ifndef MGB_NO_ZIP
-        Zip zip(path, "rb");
+    if (type == util::ExtType::ZIP) {
+        Zip zip(path.c_str(), "rb");
         if (zip.is_open()) {
             this->file = std::make_unique<MemFile>(zip.readAll());   
         }
+    }
 #endif
-    } else if (type == util::ExtType::GZIP) {
+    
 #ifndef MGB_NO_GZIP
-        this->file = std::make_unique<Gzip>(path, "rb");
+    if (type == util::ExtType::GZIP) {
+        this->file = std::make_unique<Gzip>(path.c_str(), "rb");
+    }
 #endif
-    } else if (type == util::ExtType::ROM) {
-        this->file = std::make_unique<Cfile>(path, "rb");
+
+    if (type == util::ExtType::ROM) {
+        this->file = std::make_unique<Cfile>(path.c_str(), "rb");
     }
 }
 
-RomLoader::RomLoader(const std::string& path) : RomLoader(path.c_str()) { }
+RomLoader::RomLoader(const std::string& path, const std::uint8_t* data, std::size_t size) {
+    const auto type = util::getExtType(path);
+
+#ifndef MGB_NO_ZIP
+    if (type == util::ExtType::ZIP) {
+        Zip zip(data, size);
+        if (zip.is_open()) {
+            this->file = std::make_unique<MemFile>(zip.readAll());   
+        }
+    }
+#endif
+
+    if (type == util::ExtType::ROM) {
+        std::vector<std::uint8_t> buf(size);
+        std::memcpy(buf.data(), data, size);
+        this->file = std::make_unique<MemFile>(std::move(buf));  
+    }
+}
 
 bool RomLoader::read(std::uint8_t* data, std::uint32_t len) {
     return this->is_open() && this->file->read(data, len);

@@ -4,25 +4,67 @@
 
 #ifdef __EMSCRIPTEN__
 #include <emscripten.h>
-#endif
+
+// we make this global so that C functions can use it
+static mgb::App app;
+
+// these are the emscripten functions that will be called by JS
+extern "C" {
+
+#define SAVE_PATH "/saves"
+#define STATE_PATH "/states"
+#define CONFIG_PATH "/config"
 
 
-auto main(int argc, char** argv) -> int {  
-    mgb::App app;
+EMSCRIPTEN_KEEPALIVE
+void em_load_rom_data(const char* name, const uint8_t* data, int len) {
+    printf("[EM] loading rom! name: %s len: %d\n", name, len);
+    app.LoadRomData(name, data, static_cast<size_t>(len));
+}
 
-#ifdef __EMSCRIPTEN__
-    // silence warnings
+EMSCRIPTEN_KEEPALIVE
+void em_flush_save() {
+    app.FlushSave();
+}
+
+EMSCRIPTEN_KEEPALIVE
+void em_write_save_cb() {
+    EM_ASM(
+        FS.syncfs(function (err) {
+            if (err) {
+                // todo: handle
+            }
+        });
+    );
+}
+
+EMSCRIPTEN_KEEPALIVE
+void em_loop(void* user) {
+    static_cast<mgb::App*>(user)->LoopStep();
+}
+
+EMSCRIPTEN_KEEPALIVE
+int main(int argc, char** argv) {
     (void)argc; (void)argv;
 
-    constexpr auto rom_path = "roms/POWA! DEMO.zip";
-    if (!app.LoadRom(rom_path)) {
-    	std::printf("failed to load rom %s\n", rom_path);
-    }
+    EM_ASM(
+        FS.mkdir("/saves"); FS.mount(IDBFS, {}, "/saves");
+        FS.mkdir("/states"); FS.mount(IDBFS, {}, "/states");
+        FS.mkdir("/config"); FS.mount(IDBFS, {}, "/config");
 
-    // helper func that calls LoopStep().
-    const auto func = [](void* user) -> void {
-    	static_cast<mgb::App*>(user)->LoopStep();
-    };
+        FS.syncfs(true, function (err) {
+            if (err) {
+                // todo: handle
+            }
+        });
+    );
+
+    app.SetSavePath("/saves/");
+    app.SetRtcPath("/saves/");
+    app.SetStatePath("/states/");
+
+    app.SetWriteSaveCB(em_write_save_cb);
+    app.SetWriteStateCB(em_write_save_cb);
 
     // setting 60fps seems to cause many issues in firefox.
     // <= 0 will cause it to *try* to sync to the display refresh rate
@@ -35,13 +77,22 @@ auto main(int argc, char** argv) -> int {
     // control over the emu core.
     // this same control is needed for 144hz displays when using vsync anyway
     // with SDL or opengl etc...
-    const auto fps = -1;
+    const int fps = -1;
     // run forever...
-    const auto infiniate_loop = 1;
+    const int infiniate_loop = 1;
 
-    emscripten_set_main_loop_arg(func, &app, fps, infiniate_loop);
+    emscripten_set_main_loop_arg(em_loop, &app, fps, infiniate_loop);
 
-#else // __EMSCRIPTEN__
+    return 0;
+}
+
+} // extern "C"
+
+#else
+
+auto main(int argc, char** argv) -> int {  
+    mgb::App app;
+
     if (argc > 1) {
         if (!app.LoadRom(argv[1])) {
             return -1;
@@ -49,9 +100,10 @@ auto main(int argc, char** argv) -> int {
     }
 
     app.Loop();
-#endif // __EMSCRIPTEN__
 
     std::printf("exiting...\n");
 
     return 0;
 }
+
+#endif

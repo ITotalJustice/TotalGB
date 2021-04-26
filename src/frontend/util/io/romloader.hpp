@@ -11,8 +11,8 @@ namespace mgb::io {
 
 class RomLoader final : public IFile {
 public:
-    explicit RomLoader(const char* path);
-    explicit RomLoader(const std::string& path);
+    RomLoader(const std::string& path);
+    RomLoader(const std::string& path, const std::uint8_t* data, std::size_t size);
     ~RomLoader() = default;
 
     auto is_open(void) const -> bool override;

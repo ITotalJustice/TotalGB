@@ -12,7 +12,6 @@ project('TotalGB', ['c', 'cpp'],
         # 'b_lto=true',
         'b_ndebug=if-release',
 
-        'c_std=c11',
         'cpp_std=c++17',
         'cpp_rtti=false',
     ],
@@ -90,6 +89,7 @@ source = files([
     # MINIZIP
     'src/libs/minizip/unzip.c',
     'src/libs/minizip/ioapi.c',
+    'src/libs/minizip/ioapi_mem.c',
 
     # ZLIB
     'src/libs/zlib/adler32.c',
@@ -177,9 +177,29 @@ elif host_machine.system() == 'darwin'
     dependencies += dependency('sdl2', version : '>=2.0.5')
 
 elif host_machine.system() == 'emscripten'
-    cflags += ['-s', 'USE_SDL=2']
-    cppflags += ['-s', 'USE_SDL=2']
-    linkflags += ['-s', 'USE_SDL=2']
+    cflags += ['-s', 'USE_SDL=2', '-s', 'FORCE_FILESYSTEM=1']
+    cppflags += ['-s', 'USE_SDL=2', '-s', 'FORCE_FILESYSTEM=1']
+    linkflags += ['-s', 'USE_SDL=2', '-s', 'FORCE_FILESYSTEM=1', '-lidbfs.js']
+
+    # we don't want to grow dynamically, but we need bigger buffers!
+    # if i decide to implement rewind, the dynamic mem will be needed!
+    # we also need to protect against mallicious .zip files, by capping
+    # the max accepted size, currently, i do not do this...
+    cflags += ['-s', 'TOTAL_MEMORY=32MB']
+    cppflags += ['-s', 'TOTAL_MEMORY=32MB']
+    linkflags += ['-s', 'TOTAL_MEMORY=32MB']
+
+    cflags += ['-s', 'EXTRA_EXPORTED_RUNTIME_METHODS=ccall']
+    cppflags += ['-s', 'EXTRA_EXPORTED_RUNTIME_METHODS=ccall']
+    linkflags += ['-s', 'EXTRA_EXPORTED_RUNTIME_METHODS=ccall']
+
+    cflags += ['-s', 'EXPORTED_FUNCTIONS=_main, _malloc, _free']
+    cppflags += ['-s', 'EXPORTED_FUNCTIONS=_main, _malloc, _free']
+    linkflags += ['-s', 'EXPORTED_FUNCTIONS=_main, _malloc, _free']
+
+    # this warns because of EM_ASM, it's safe to ignore the warn
+    cflags += ['-Wno-gnu-zero-variadic-macro-arguments']
+    cppflags += ['-Wno-gnu-zero-variadic-macro-arguments']
 
     # only enable if using async stuff else it'll bloat the code
     # cflags += ['-s', 'ASYNCIFY']

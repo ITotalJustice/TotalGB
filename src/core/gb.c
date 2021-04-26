@@ -352,16 +352,19 @@ static void GB_setup_palette(struct GB_Core* gb, const struct GB_CartHeader* hea
 int GB_loadrom_data(struct GB_Core* gb, const uint8_t* data, size_t size) {
 	if (!gb || !data || !size) {
 		GB_throw_error(gb, GB_ERROR_DATA_TYPE_NULL_PARAM, __func__);
+		printf("null param! size %lu\n", size);
 		return -1;
 	}
 
 	if (size < GB_BOOTROM_SIZE + sizeof(struct GB_CartHeader)) {
 		GB_throw_error(gb, GB_ERROR_DATA_TYPE_ROM, "rom size is too small!");
+		printf("small\n");
 		return -1;
 	}
 
 	if (size > UINT32_MAX) {
 		GB_throw_error(gb, GB_ERROR_DATA_TYPE_ROM, "rom size is too big!");
+		printf("too beeeg\n");
 		return -1;
 	}
 
@@ -370,6 +373,7 @@ int GB_loadrom_data(struct GB_Core* gb, const uint8_t* data, size_t size) {
 
 	gb->cart.rom_size = ROM_SIZE_MULT << header->rom_size;
 	if (gb->cart.rom_size > size) {
+		GB_throw_error(gb, GB_ERROR_DATA_TYPE_ROM, "rom size is too small!");
 		return -1;
 	}
 
@@ -446,6 +450,7 @@ int GB_loadrom_data(struct GB_Core* gb, const uint8_t* data, size_t size) {
 	// try and setup the mbc, this also implicitly sets up
 	// gbc mode
 	if (!GB_setup_mbc(&gb->cart, header)) {
+		printf("failed to setup mbc!\n");
 		return -1;
 	}
 

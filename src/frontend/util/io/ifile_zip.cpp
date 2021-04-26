@@ -2,15 +2,17 @@
 
 #include "frontend/util/io/ifile_zip.hpp"
 #include "frontend/util/util.hpp"
+#include "minizip/ioapi_mem.h"
+
+#include <cstring>
 
 
 namespace mgb::io {
 
 
-Zip::Zip(const char* path, const char*) {
-    this->file = unzOpen(path);
+auto Zip::SetupFromFile() -> bool {
     if (!this->file) {
-        return;
+        return false;
     }
 
     auto result = unzGoToFirstFile(this->file);
@@ -19,6 +21,7 @@ Zip::Zip(const char* path, const char*) {
     while (result == UNZ_OK) {
         char file_name[1024]{0};
         unz_file_info info;
+
         if (unzGetCurrentFileInfo(this->file, &info, file_name, sizeof(file_name),
             nullptr, 0, nullptr, 0) != UNZ_OK) {
             break;
@@ -27,7 +30,7 @@ Zip::Zip(const char* path, const char*) {
         if (util::isExtType(file_name, util::ExtType::ROM)) {
             if (unzOpenCurrentFile(this->file) == UNZ_OK) {
                 this->file_info = info;
-                return;
+                return true;
             }
         }
 
@@ -37,6 +40,31 @@ Zip::Zip(const char* path, const char*) {
     // we failed, so close the file early and null it
     unzClose(this->file);
     this->file = nullptr;
+
+    return false;
+}
+
+Zip::Zip(const char* path, const char*) {
+    this->file = unzOpen(path);
+    this->SetupFromFile();    
+}
+
+Zip::Zip(const uint8_t* buf, std::size_t size) {
+    zlib_filefunc_def filefunc32{};
+    this->ourmemory = std::make_unique<ourmemory_t>();
+
+    this->ourmemory->size = size;
+    this->ourmemory->base = (char*)buf;
+
+    fill_memory_filefunc(&filefunc32, this->ourmemory.get());
+
+    // this copied the func ptrs to the returned file struct
+    // however, the [ourmemory_t] is a ptr, that is also copied
+    // because of this, we cannot allocate this on the stack
+    // so it must be on the heap, which is why a unique_ptr
+    // is used.
+    this->file = unzOpen2("__notused__", &filefunc32);
+    this->SetupFromFile();
 }
 
 Zip::~Zip() {

@@ -2,6 +2,8 @@
 
 #ifdef MGB_SDL2_VIDEO
 
+#include <SDL2/SDL_hints.h>
+
 #include <cassert>
 #include <cstring>
 #include <cmath>
@@ -97,23 +99,44 @@ SDL2::~SDL2() {
 }
 
 auto SDL2::SetupSDL2(const VideoInfo& vid_info, const GameTextureInfo& game_info, uint32_t win_flags) -> bool {
+    {
+        SDL_version compiled;
+        SDL_version linked;
+    
+        SDL_VERSION(&compiled);
+        SDL_GetVersion(&linked);
+        std::printf("[SDL2] We compiled against SDL version %d.%d.%d ...\n",
+               compiled.major, compiled.minor, compiled.patch);
+        std::printf("[SDL2] But we are linking against SDL version %d.%d.%d.\n",
+               linked.major, linked.minor, linked.patch);
+    }
+
+    // this doesn't seem to be defined in my sdl header for some reason...
+    #ifndef SDL_HINT_RENDER_BATCHING
+    #define SDL_HINT_RENDER_BATCHING  "SDL_RENDER_BATCHING"
+    #endif
+
+    if (!SDL_SetHint(SDL_HINT_RENDER_BATCHING, "1")) {
+        std::printf("[SDL2] failed to set batching: %s\n", SDL_GetError());
+    }
+
 #ifndef NDEBUG
     // enable trace logging of sdl
     SDL_LogSetPriority(SDL_LOG_CATEGORY_APPLICATION, SDL_LOG_PRIORITY_INFO);
 #endif // NDEBUG
 
     if (SDL_InitSubSystem(SDL_INIT_VIDEO)) {
-        printf("\n[SDL_VIDEO_ERROR] %s\n\n", SDL_GetError());
+        std::printf("\n[SDL_VIDEO_ERROR] %s\n\n", SDL_GetError());
         return false;
     }
 
     if (SDL_InitSubSystem(SDL_INIT_JOYSTICK)) {
-        printf("\n[SDL_JOYSTICK_ERROR] %s\n\n", SDL_GetError());
+        std::printf("\n[SDL_JOYSTICK_ERROR] %s\n\n", SDL_GetError());
         return false;
     }
 
     if (SDL_InitSubSystem(SDL_INIT_GAMECONTROLLER)) {
-        printf("\n[SDL_GAMECONTROLLER_ERROR] %s\n\n", SDL_GetError());
+        std::printf("\n[SDL_GAMECONTROLLER_ERROR] %s\n\n", SDL_GetError());
         return false;
     }
 
@@ -124,13 +147,13 @@ auto SDL2::SetupSDL2(const VideoInfo& vid_info, const GameTextureInfo& game_info
     );
 
     if (!this->window) {
-        printf("[SDL2] failed to create window %s\n", SDL_GetError());
+        std::printf("[SDL2] failed to create window %s\n", SDL_GetError());
         return false;
     }
 
     // try and load window icon, it's okay if it fails
     {
-        constexpr auto icon_path = "res/icon.bmp";
+        constexpr auto icon_path = "res/icons/icon.bmp";
         auto surface = SDL_LoadBMP(icon_path);
 
         if (surface) {
@@ -138,7 +161,7 @@ auto SDL2::SetupSDL2(const VideoInfo& vid_info, const GameTextureInfo& game_info
             SDL_FreeSurface(surface);
         }
         else {
-            printf("[SDL2] failed to load window icon %s\n", SDL_GetError());
+            std::printf("[SDL2] failed to load window icon %s\n", SDL_GetError());
         }
     }
 
@@ -191,20 +214,20 @@ auto SDL2::SetupSDL2(const VideoInfo& vid_info, const GameTextureInfo& game_info
     // try and load the controller config, doesn't matter much
     // if this fails currently, though warn if it does!
     if (auto r = SDL_GameControllerAddMappingsFromFile(mapping_path); r == -1) {
-        printf("\n[SDL2] failed to load mapping file: %s\n", mapping_path);
+        std::printf("\n[SDL2] failed to load mapping file: %s\n", mapping_path);
     }
     else {
-        printf("\n[SDL2] loaded to load mapping file: %d\n", r);
+        std::printf("\n[SDL2] loaded to load mapping file: %d\n", r);
     }
 
     // todo: scan for controllers here as sdl doesn't seem
     // to pick them up if they are already connected before init...
     auto num_joy = SDL_NumJoysticks();
-    printf("[SDL2] joysticks found: %d\n", num_joy);
+    std::printf("[SDL2] joysticks found: %d\n", num_joy);
     
     for(auto i = 0; i < num_joy; i++) {
         auto joystick = SDL_JoystickOpen(i);
-        printf("\t%s\n", SDL_JoystickName(joystick));
+        std::printf("\t%s\n", SDL_JoystickName(joystick));
     }
 
     return true;
@@ -271,7 +294,7 @@ auto SDL2::HasController(int which) const -> bool {
 auto SDL2::AddController(int index) -> bool {
     auto controller = SDL_GameControllerOpen(index);
     if (!controller) {
-        printf("Failed to open controller from index %d\n", index);
+        std::printf("Failed to open controller from index %d\n", index);
         return false;
     }
 
@@ -380,7 +403,7 @@ auto SDL2::PollEvents() -> void {
 }
 
 auto SDL2::OnQuitEvent(const SDL_QuitEvent& e) -> void {
-    printf("quit request at %u\n", e.timestamp);
+    std::printf("quit request at %u\n", e.timestamp);
     this->callback.OnQuit();
 }
 
@@ -406,7 +429,7 @@ auto SDL2::OnDropEvent(SDL_DropEvent& e) -> void {
 
 #if SDL_VERSION_ATLEAST(2, 0, 4)
 auto SDL2::OnAudioDeviceEvent(const SDL_AudioDeviceEvent&) -> void {
-    printf("[SDL2] SDL_AudioDeviceEvent!\n");
+    std::printf("[SDL2] SDL_AudioDeviceEvent!\n");
 }
 #endif // SDL_VERSION_ATLEAST(2, 0, 4)
 
@@ -487,12 +510,12 @@ auto SDL2::OnMouseButtonEvent(const SDL_MouseButtonEvent& e) -> void {
 
 auto SDL2::OnMouseMotionEvent(const SDL_MouseMotionEvent&) -> void {
     // this gets noisy
-    // printf("[SDL2] SDL_MouseMotionEvent!\n");
+    // std::printf("[SDL2] SDL_MouseMotionEvent!\n");
 }
 
 auto SDL2::OnMouseWheelEvent(const SDL_MouseWheelEvent&) -> void {
     // this gets noisy
-    // printf("[SDL2] SDL_MouseWheelEvent!\n");
+    // std::printf("[SDL2] SDL_MouseWheelEvent!\n");
 }
 
 auto SDL2::OnKeyEvent(const SDL_KeyboardEvent& e) -> void {
@@ -523,7 +546,7 @@ auto SDL2::OnJoypadHatEvent(const SDL_JoyHatEvent&) -> void {
 }
 
 auto SDL2::OnJoypadDeviceEvent(const SDL_JoyDeviceEvent&) -> void {
-    printf("[SDL2] joypad device event!\n");
+    std::printf("[SDL2] joypad device event!\n");
 }
 
 auto SDL2::OnControllerAxisEvent(const SDL_ControllerAxisEvent& e) -> void {

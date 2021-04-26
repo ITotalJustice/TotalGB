@@ -1,4 +1,4 @@
-#include "mem.hpp"
+#include "frontend/util/mem.hpp"
 
 #ifndef MGB_NO_GZIP
 #include <zlib/zlib.h>
@@ -36,10 +36,21 @@ bool Zlib(Data& dst, Data& src, Mode mode, int level, bool gzip) {
             return false;
         }
         dst.resize(stream.total_out);
-    } else {
+    }
+    else {
         auto result = inflateInit2(&stream, window_bits);
+        if (result != Z_OK) {
+            return false;
+        }
+
         result = inflate(&stream, Z_FINISH);
+        
+        if (result != Z_OK) {
+            return false;
+        }
+
         result = inflateEnd(&stream);
+        
         if (result != Z_OK || stream.total_out < dst.size()) {
             return false;
         }
@@ -57,7 +68,8 @@ bool Lz4(Data& dst, const Data& src, Mode mode, int level) {
             return false;
         }
         dst.resize(result);
-    } else {
+    }
+    else {
         const auto result = LZ4_decompress_safe(reinterpret_cast<const char*>(src.data()), reinterpret_cast<char*>(dst.data()), src.size(), dst.size());
         if (result == 0) {
             return false;
@@ -76,7 +88,8 @@ bool Zstd(Data& dst, const Data& src, Mode mode, int level) {
             return false;
         }
         dst.resize(result);
-    } else {
+    }
+    else {
         const auto result = ZSTD_decompress(static_cast<void*>(dst.data()), dst.size(), static_cast<const void*>(src.data()), src.size());
         if (result == 0) {
             return false;
@@ -99,7 +112,8 @@ bool Lzma(Data& dst, const Data& src, Mode mode, int level, unsigned dict_size, 
             return false;
         }
         dst.resize(dst_size);
-    } else {
+    }
+    else {
         auto dst_size = dst.size();
         auto src_size = src.size();
         const std::uint8_t props[5]{0};

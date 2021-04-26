@@ -6,13 +6,13 @@ ar = 'emar'
 
 # this looks so bad, but idk how else to clean this up...
 [built-in options]
-c_args = ['-o', 'index.html', '--preload-file', '../res', '--preload-file', '../roms', '-s', 'EXPORT_ALL=1', '--shell-file', '../../meson_cross/shell_minimal.html']
+c_args = ['-o', 'index.html', '--preload-file', '../res', '--preload-file', '../roms', '-s', '--shell-file', '../../meson_cross/shell_minimal.html']
 
-c_link_args = ['-o', 'index.html', '--preload-file', '../res', '--preload-file', '../roms', '-s', 'EXPORT_ALL=1', '--shell-file', '../../meson_cross/shell_minimal.html']
+c_link_args = ['-o', 'index.html', '--preload-file', '../res', '--preload-file', '../roms', '-s', '--shell-file', '../../meson_cross/shell_minimal.html']
 
-cpp_args = ['-o', 'index.html', '--preload-file', '../res', '--preload-file', '../roms', '-s', 'EXPORT_ALL=1', '--shell-file', '../../meson_cross/shell_minimal.html']
+cpp_args = ['-o', 'index.html', '--preload-file', '../res', '--preload-file', '../roms', '-s', '--shell-file', '../../meson_cross/shell_minimal.html']
 
-cpp_link_args = ['-o', 'index.html', '--preload-file', '../res', '--preload-file', '../roms', '-s', 'EXPORT_ALL=1', '--shell-file', '../../meson_cross/shell_minimal.html']
+cpp_link_args = ['-o', 'index.html', '--preload-file', '../res', '--preload-file', '../roms', '-s', '--shell-file', '../../meson_cross/shell_minimal.html']
 
 
 [host_machine]
