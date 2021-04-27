@@ -1,38 +1,112 @@
 #include "frontend/mgb.hpp"
 
-#include <cstdio>
-
 #ifdef __EMSCRIPTEN__
+
 #include <emscripten.h>
+
+#include "minizip/zip.h"
+#include "minizip/ioapi_mem.h"
+
+#include <cstdio>
+#include <cstdint>
+#include <cstdlib>
+#include <vector>
+#include <string>
+#include <fstream>
+#include <filesystem>
 
 
 #define SAVE_PATH "/saves"
 #define STATE_PATH "/states"
 #define CONFIG_PATH "/config"
 
-
 // we make this global so that C functions can use it
 static mgb::App app;
 
-#include <string>
-#include <filesystem>
+// this is very very hacky, see [download_saves.js]
+static void* saves_zip_ptr = NULL;
 
-auto write_save_file(const std::string& path, const uint8_t* data, std::size_t len) {
+
+auto write_save_file(const std::string& path, const char* data, std::size_t len) {
     const auto fullpath = "/saves/" + std::filesystem::path{path}.filename().string();
     printf("full path is: %s size: %lu\n", fullpath.c_str(), len);
 
-    auto f = fopen(fullpath.c_str(), "wb");
-    if (!f) {
+    std::ofstream fs{fullpath, std::ios::binary};
+    if (fs.good()) {
+        fs.write(data, len);
+    }
+    else {
         printf("failed to open save for writing\n");
-        return false;
+        return false; 
     }
 
-    auto r = fwrite(data, len, 1, f);
-
-    printf("fwrite result is %lu\n", r);
-    fclose(f);
-
     return true;
+}
+
+auto zip_saves(const char* folder_path) -> uint32_t {
+    zlib_filefunc_def filefunc32{};
+    ourmemory_t zipmem{};
+    zipmem.grow = 1; // the memory buffer will grow
+    fill_memory_filefunc(&filefunc32, &zipmem);
+
+    auto zfile = zipOpen3("__notused__", APPEND_STATUS_CREATE, 0, 0, &filefunc32);
+    if (!zfile) {
+        std::printf("failed to zip open in memory\n");
+        return 0;
+    }
+
+    for (auto& entry : std::filesystem::recursive_directory_iterator{folder_path}) {
+        if (entry.is_regular_file()) {
+            // get the fullpath
+            const auto path = entry.path().string();
+            std::ifstream fs{path, std::ios::binary};
+
+            if (fs.good()) {
+
+                // read file into buffer
+                const auto file_size = entry.file_size();
+                std::vector<char> buffer(file_size);
+                fs.read(buffer.data(), buffer.size());
+
+                // open the file inside the zip
+                if (Z_OK != zipOpenNewFileInZip(zfile,
+                    path.c_str(),           // filepath
+                    NULL,                   // info, optional
+                    NULL, 0,                // extrafield and size, optional
+                    NULL, 0,                // extrafield-global and size, optional
+                    NULL,                   // comment, optional
+                    Z_DEFLATED,             // mode
+                    Z_DEFAULT_COMPRESSION   // level
+                )) {
+                    std::printf("failed to open file in zip: %s\n", path.c_str());
+                    continue;
+                }
+
+                // write out the entire file
+                if (Z_OK != zipWriteInFileInZip(zfile, buffer.data(), buffer.size())) {
+                    std::printf("failed to write file in zip: %s\n", path.c_str());
+                }
+
+                // don't forget to close when done!
+                if (Z_OK != zipCloseFileInZip(zfile)) {
+                    std::printf("failed to close file in zip: %s\n", path.c_str());
+                }
+            }
+
+            else {
+                std::printf("failed to open file %s\n", path.c_str());
+            }
+        }
+    }
+
+    zipClose(zfile, NULL);
+
+    if (zipmem.grow && zipmem.base) {
+        saves_zip_ptr = zipmem.base;
+        return zipmem.size;
+    }
+
+    return 0;
 }
 
 // these are the emscripten functions that will be called by JS
@@ -46,9 +120,19 @@ void em_load_rom_data(const char* name, const uint8_t* data, int len) {
 }
 
 EMSCRIPTEN_KEEPALIVE
-void em_upload_save(const char* name, const uint8_t* data, int len) {
+void em_upload_save(const char* name, const char* data, int len) {
     printf("[EM] stroing save! name: %s len: %d\n", name, len);
     write_save_file(name, data, static_cast<size_t>(len));
+}
+
+EMSCRIPTEN_KEEPALIVE
+uint32_t em_zip_all_saves() {
+    return zip_saves("/saves/");
+}
+
+EMSCRIPTEN_KEEPALIVE
+uint8_t* em_get_zip_saves_data() {
+    return (uint8_t*)saves_zip_ptr;
 }
 
 EMSCRIPTEN_KEEPALIVE
@@ -61,7 +145,7 @@ void em_write_save_cb() {
     EM_ASM(
         FS.syncfs(function (err) {
             if (err) {
-                // todo: handle
+                console.log(err);
             }
         });
     );
@@ -83,7 +167,7 @@ int main(int argc, char** argv) {
 
         FS.syncfs(true, function (err) {
             if (err) {
-                // todo: handle
+                console.log(err);
             }
         });
     );

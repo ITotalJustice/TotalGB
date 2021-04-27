@@ -296,6 +296,7 @@ auto App::SaveGame() -> void {
         // save sram
         if (save_data.size > 0) {
             const auto save_path = this->GetSavePath();
+            printf("saving game to path %s\n", save_path.c_str());
             io::Cfile file{save_path, "wb"};
             if (file.good()) {
                 file.write(save_data.data, save_data.size);
@@ -335,7 +336,7 @@ auto App::LoadSave() -> void {
 
         if (file.good()) {
             if (file.size() == save_size) {
-                printf("trying to read... %u\n", save_size);
+                printf("loading from path %s\n", save_path.c_str());
                 file.read(save_data.data, save_size);
                 save_data.size = save_size;
             }

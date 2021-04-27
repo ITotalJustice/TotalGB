@@ -27,9 +27,9 @@
 #include <string.h>
 
 #include <zlib/zlib.h>
-#include "minizip/ioapi.h"
+#include "ioapi.h"
 
-#include "minizip/ioapi_mem.h"
+#include "ioapi_mem.h"
 
 #ifndef IOMEM_BUFFERSIZE
 #  define IOMEM_BUFFERSIZE (UINT16_MAX)
@@ -37,9 +37,11 @@
 
 voidpf ZCALLBACK fopen_mem_func(voidpf opaque, ZIP_UNUSED const char *filename, int mode)
 {
+
     ourmemory_t *mem = (ourmemory_t *)opaque;
-    if (mem == NULL)
+    if (mem == NULL) {
         return NULL; /* Mem structure passed in was null */
+    }
 
     if (mode & ZLIB_FILEFUNC_MODE_CREATE)
     {
@@ -51,8 +53,9 @@ voidpf ZCALLBACK fopen_mem_func(voidpf opaque, ZIP_UNUSED const char *filename, 
 
         mem->limit = 0; /* When writing we start with 0 bytes written */
     }
-    else
+    else {
         mem->limit = mem->size;
+    }
 
     mem->cur_offset = 0;
 
@@ -69,8 +72,9 @@ uint32_t ZCALLBACK fread_mem_func(ZIP_UNUSED voidpf opaque, voidpf stream, void 
 {
     ourmemory_t *mem = (ourmemory_t *)stream;
 
-    if (size > mem->size - mem->cur_offset)
+    if (size > mem->size - mem->cur_offset) {
         size = mem->size - mem->cur_offset;
+    }
 
     memcpy(buf, mem->base + mem->cur_offset, size);
     mem->cur_offset += size;
@@ -89,23 +93,27 @@ uint32_t ZCALLBACK fwrite_mem_func(ZIP_UNUSED voidpf opaque, voidpf stream, cons
         if (mem->grow)
         {
             newmemsize = mem->size;
-            if (size < IOMEM_BUFFERSIZE)
+            if (size < IOMEM_BUFFERSIZE) {
                 newmemsize += IOMEM_BUFFERSIZE;
-            else
+            }
+            else {
                 newmemsize += size;
+            }
             newbase = (char *)malloc(newmemsize);
             memcpy(newbase, mem->base, mem->size);
             free(mem->base);
             mem->base = newbase;
             mem->size = newmemsize;
         }
-        else
+        else {
             size = mem->size - mem->cur_offset;
+        }
     }
     memcpy(mem->base + mem->cur_offset, buf, size);
     mem->cur_offset += size;
-    if (mem->cur_offset > mem->limit)
+    if (mem->cur_offset > mem->limit) {
         mem->limit = mem->cur_offset;
+    }
 
     return size;
 }
@@ -135,8 +143,9 @@ long ZCALLBACK fseek_mem_func(ZIP_UNUSED voidpf opaque, voidpf stream, uint32_t 
             return -1;
     }
 
-    if (new_pos > mem->size)
+    if (new_pos > mem->size) {
         return 1; /* Failed to seek that far */
+    }
     mem->cur_offset = new_pos;
     return 0;
 }

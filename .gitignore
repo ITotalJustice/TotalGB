@@ -57,8 +57,7 @@ output.wasm
 output.js
 buildpc
 buildwasm
-wasm.sh
-buildall.sh
+*.sh
 
 #
 .cache

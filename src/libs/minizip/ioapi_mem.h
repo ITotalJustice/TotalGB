@@ -20,7 +20,7 @@
 #include <string.h>
 
 #include <zlib/zlib.h>
-#include "minizip/ioapi.h"
+#include "ioapi.h"
 
 #ifdef __cplusplus
 extern "C" {

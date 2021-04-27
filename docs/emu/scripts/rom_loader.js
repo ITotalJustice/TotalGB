@@ -9,13 +9,10 @@ let rom_input = document.getElementById("RomFilePicker");
 
 // sanity check to make sure we still have the ID (we might've renamed it!)
 if (rom_input) {
-  console.log("input happened!!!");
-
   rom_input.addEventListener("input", OnInput);
 }
-
 else {
-  console.log("Invalid file!");
+  console.log("[JS] couldn't rom_input get element by ID!");
 }
 
 

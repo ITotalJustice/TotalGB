@@ -34,23 +34,24 @@
   </div>
 
   <label for="RomFilePicker" class="button">Load Rom</label>
-
   <input type="file" id="RomFilePicker" name="LoadRom" accept=".gb, .gbc, .cgb, .dmg, .zip" style="display: none;">
 
-  <label for="UploadSaves" class="button"> Upload Saves</label>
-
+  <label for="UploadSaves" class="button">Upload Saves</label>
   <input type="file" id="UploadSaves" name="UploadSaves" accept=".sav, .rtc" multiple style="display: none;">
 
+  <a class="button" id="DlSaves" download="TotalGB_saves.zip" type="application/zip">Download All Saves</a>
+
   <label for="Pause">Pause</label>
-  <input type="checkbox" id="Pause" name="Pause">
+  <input class="button" type="checkbox" id="Pause" name="Pause">
 
   <label for="Mute">Mute</label>
-  <input type="checkbox" id="Mute" name="Mute">
+  <input class="button" type="checkbox" id="Mute" name="Mute">
 
   <script src="scripts/em.js"></script>
   <script src="scripts/rom_loader.js"></script>
   <script src="scripts/save_loader.js"></script>
   <script src="scripts/save_flush.js"></script>
+  <script src="scripts/download_saves.js"></script>
 
   <!-- this include emscripten js stuff (i think) -->
   {{{ SCRIPT }}}

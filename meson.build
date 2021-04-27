@@ -9,7 +9,6 @@ project('TotalGB', ['c', 'cpp'],
         'strip=true',
 
         # base options
-        # 'b_lto=true',
         'b_ndebug=if-release',
 
         'cpp_std=c++17',
@@ -79,15 +78,14 @@ source = files([
     'src/frontend/platforms/video/sdl2/sdl2_ttf.cpp',
     'src/frontend/platforms/video/sdl2/sdl2_video.cpp',
     # 'src/frontend/platforms/video/sdl2-opengl/sdl2_opengl.cpp',
-    # 'src/frontend/platforms/video/allegro5/allegro5_video.cpp',
 
     # [Audio Backends]
     # 'src/frontend/platforms/audio/sdl1/sdl1_audio.cpp',
     'src/frontend/platforms/audio/sdl2/sdl2_audio.cpp',
-    # 'src/frontend/platforms/audio/allegro5/allegro5_audio.cpp',
 
     # MINIZIP
     'src/libs/minizip/unzip.c',
+    'src/libs/minizip/zip.c',
     'src/libs/minizip/ioapi.c',
     'src/libs/minizip/ioapi_mem.c',
 
@@ -168,6 +166,8 @@ if host_machine.system() == 'windows' or host_machine.system() == 'cygwin'
 elif host_machine.system() == 'linux'
     source += 'src/libs/nativefiledialog/nfd_gtk.cpp'
 
+    # cflags += ['-flto']
+
     dependencies += dependency('sdl2', version : '>=2.0.5')
     dependencies += dependency('gtk+-3.0')
 
@@ -189,9 +189,9 @@ elif host_machine.system() == 'emscripten'
     cppflags += ['-s', 'TOTAL_MEMORY=32MB']
     linkflags += ['-s', 'TOTAL_MEMORY=32MB']
 
-    cflags += ['-s', 'EXTRA_EXPORTED_RUNTIME_METHODS=ccall']
-    cppflags += ['-s', 'EXTRA_EXPORTED_RUNTIME_METHODS=ccall']
-    linkflags += ['-s', 'EXTRA_EXPORTED_RUNTIME_METHODS=ccall']
+    cflags += ['-s', 'EXPORTED_RUNTIME_METHODS=ccall']
+    cppflags += ['-s', 'EXPORTED_RUNTIME_METHODS=ccall']
+    linkflags += ['-s', 'EXPORTED_RUNTIME_METHODS=ccall']
 
     cflags += ['-s', 'EXPORTED_FUNCTIONS=_main, _malloc, _free']
     cppflags += ['-s', 'EXPORTED_FUNCTIONS=_main, _malloc, _free']
