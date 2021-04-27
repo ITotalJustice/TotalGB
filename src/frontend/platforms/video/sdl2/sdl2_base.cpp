@@ -26,27 +26,28 @@ auto OnTouchUp(const CB& callbacks, BC& button_cache, ID Id) {
     }
 
     for (auto it = range.first; it != range.second; ++it) {
-        callbacks.OnAction(it->second, false);
+        auto [type, action] = it->second;
+        callbacks.OnAction(action, false);
     }
 
     button_cache.erase(Id);
 }
 
-template <typename CB, typename TB, typename BC, typename ID>
-auto OnTouchDown(const CB& callbacks, const TB& touch_buttons, BC& button_cache, ID Id, int x, int y) {
-    // find out if its in range...
-    const auto is_in_range = [&touch_buttons, x, y]() -> std::optional<SDL2::TouchButton::Type> {
-        for (auto& button : touch_buttons) {
-            if (x >= button.x && x <= (button.x + button.w)) {
-                if (y >= button.y && y <= (button.y + button.h)) {
-                    return button.type;
-                }
+template <typename TB>
+auto IsTouchInRange(const TB& touch_buttons, int x, int y) -> std::optional<SDL2::TouchButton::Type> {
+    for (auto& button : touch_buttons) {
+        if (x >= button.x && x <= (button.x + button.w)) {
+            if (y >= button.y && y <= (button.y + button.h)) {
+                return button.type;
             }
         }
+    }
 
-        return {};
-    };
+    return {};
+}
 
+template <typename CB, typename TB, typename BC, typename ID>
+auto OnTouchDown(const CB& callbacks, const TB& touch_buttons, BC& button_cache, ID Id, int x, int y) {
     static const auto touch_action_map = std::multimap<SDL2::TouchButton::Type, Action> {
         { SDL2::TouchButton::Type::A, Action::GAME_A },
         { SDL2::TouchButton::Type::B, Action::GAME_B },
@@ -69,7 +70,7 @@ auto OnTouchDown(const CB& callbacks, const TB& touch_buttons, BC& button_cache,
     };
 
     // check that the button press maps to a texture coord
-    const auto type_optional = is_in_range();
+    const auto type_optional = IsTouchInRange(touch_buttons, x, y);
     if (!type_optional) {
         return;
     }
@@ -82,8 +83,61 @@ auto OnTouchDown(const CB& callbacks, const TB& touch_buttons, BC& button_cache,
     }
 
     for (auto it = range.first; it != range.second; ++it) {
-        button_cache.insert({Id, it->second});
+        button_cache.insert({Id, {*type_optional, it->second}});
         callbacks.OnAction(it->second, true);
+    }
+}
+
+template <typename CB, typename TB, typename BC, typename ID>
+auto OnTouchMotion(const CB& callbacks, const TB& touch_buttons, BC& button_cache, ID Id, int x, int y) -> void {
+// NOTE_1:
+    // we need to check if the finger has move to another button
+    // this should instead press that button and release the previous button.
+    // however, if the new x,y has moved away from the old button position
+    // we still keep the button pressed.
+    // imo, this feels best as it's quite easy for a users finger to slightly
+    // slide off a button when using a flat touchscreen, as apposed to
+    // normal, raised physical buttons.
+
+// NOTE_2:
+    // another option that was mentioned to me was to release the button press
+    // when the finger is dragged off, but press the button again when the
+    // finger is dragged back onto the button area (within the same press).
+    // this is a good option, though i think might not be ideal in some games
+    // as it might accidently trigger double taps of buttons if the finger is
+    // on the edge of the button area.
+
+// NOTE_3:
+    // for the onscreen buttons, theres a decent amount of spacing between each
+    // button, so its unlikely that the user will accidently slide their finger
+    // onto another button.
+
+    // check that the button press maps to a texture coord
+    const auto type_optional = IsTouchInRange(touch_buttons, x, y);
+    if (!type_optional) {
+        // see [NOTE_2] above for another option to handle here.
+        return;
+    }
+
+    // we now check if the ID is still in the area of the same button.
+    const auto it = button_cache.find(Id);
+
+    // if doesn't exist, then its a new button
+    if (it == button_cache.end()) {
+        // todo:
+        OnTouchDown(callbacks, touch_buttons, button_cache, Id, x, y);
+    }
+    else {
+        const auto [type, _] = it->second;
+
+        if (type != *type_optional) {
+            // new button
+            OnTouchUp(callbacks, button_cache, Id);
+            OnTouchDown(callbacks, touch_buttons, button_cache, Id, x, y);
+        }
+        else {
+            // same button, we do nothing!
+        }
     }
 }
 
@@ -109,15 +163,6 @@ auto SDL2::SetupSDL2(const VideoInfo& vid_info, const GameTextureInfo& game_info
                compiled.major, compiled.minor, compiled.patch);
         std::printf("[SDL2] But we are linking against SDL version %d.%d.%d.\n",
                linked.major, linked.minor, linked.patch);
-    }
-
-    // this doesn't seem to be defined in my sdl header for some reason...
-    #ifndef SDL_HINT_RENDER_BATCHING
-    #define SDL_HINT_RENDER_BATCHING  "SDL_RENDER_BATCHING"
-    #endif
-
-    if (!SDL_SetHint(SDL_HINT_RENDER_BATCHING, "1")) {
-        std::printf("[SDL2] failed to set batching: %s\n", SDL_GetError());
     }
 
 #ifndef NDEBUG
@@ -379,7 +424,7 @@ auto SDL2::PollEvents() -> void {
                 this->OnControllerDeviceEvent(e.cdevice);
                 break;
 
-            case SDL_FINGERDOWN: case SDL_FINGERUP:
+            case SDL_FINGERDOWN: case SDL_FINGERUP: case SDL_FINGERMOTION:
                 this->OnTouchEvent(e.tfinger);
                 break;
 
@@ -493,24 +538,40 @@ auto SDL2::OnMouseButtonEvent(const SDL_MouseButtonEvent& e) -> void {
     // costly or drastically change a setting that is expected to be called
     // at the end of a frame...
     // 
-    if (e.type == SDL_MOUSEBUTTONUP) {
-        OnTouchUp(
-            this->callback, this->mouse_down_buttons,
-            e.which
-        );
+
+    switch (e.type) {
+        case SDL_MOUSEBUTTONUP:
+            OnTouchUp(
+                this->callback, this->mouse_down_buttons,
+                e.which
+            );
+            break;
+
+        case SDL_MOUSEBUTTONDOWN:
+            // only handle left clicks!
+            if (e.state & SDL_BUTTON(SDL_BUTTON_LEFT)) {
+                OnTouchDown(
+                    this->callback, this->touch_buttons, this->mouse_down_buttons,
+                    e.which, e.x, e.y
+                );
+            }
+            break;
+    }
+}
+
+auto SDL2::OnMouseMotionEvent(const SDL_MouseMotionEvent& e) -> void {
+    // we already handle touch events!
+    if (e.which == SDL_TOUCH_MOUSEID) {
+        return;
     }
 
-    else if (e.type == SDL_MOUSEBUTTONDOWN) {
-        OnTouchDown(
+    // only handle left clicks!
+    if (e.state & SDL_BUTTON(SDL_BUTTON_LEFT)) {
+        OnTouchMotion(
             this->callback, this->touch_buttons, this->mouse_down_buttons,
             e.which, e.x, e.y
         );
     }
-}
-
-auto SDL2::OnMouseMotionEvent(const SDL_MouseMotionEvent&) -> void {
-    // this gets noisy
-    // std::printf("[SDL2] SDL_MouseMotionEvent!\n");
 }
 
 auto SDL2::OnMouseWheelEvent(const SDL_MouseWheelEvent&) -> void {
@@ -632,22 +693,41 @@ auto SDL2::OnControllerDeviceEvent(const SDL_ControllerDeviceEvent& e) -> void {
 }
 
 auto SDL2::OnTouchEvent(const SDL_TouchFingerEvent& e) -> void {
-    if (e.type == SDL_FINGERUP) {
-        OnTouchUp(
-            this->callback, this->touch_down_buttons,
-            e.fingerId
-        );
-    }
+    switch (e.type) {
+        case SDL_FINGERUP:
+            OnTouchUp(
+                this->callback, this->touch_down_buttons,
+                e.fingerId
+            );
+            break;
 
-    else if (e.type == SDL_FINGERDOWN) {
-        // we need to un-normalise x, y
-        const int x = e.x * 640;
-        const int y = e.y * 576;
+        case SDL_FINGERDOWN: {
+            int win_w{}, win_h{};
+            SDL_GetWindowSize(this->window, &win_w, &win_h);
 
-        OnTouchDown(
-            this->callback, this->touch_buttons, this->touch_down_buttons,
-            e.fingerId, x, y
-        );
+            // we need to un-normalise x, y
+            const int x = e.x * win_w;
+            const int y = e.y * win_h;
+
+            OnTouchDown(
+                this->callback, this->touch_buttons, this->touch_down_buttons,
+                e.fingerId, x, y
+            );
+        }   break;
+
+        case SDL_FINGERMOTION: {
+            int win_w{}, win_h{};
+            SDL_GetWindowSize(this->window, &win_w, &win_h);
+
+            // we need to un-normalise x, y
+            const int x = e.x * win_w;
+            const int y = e.y * win_h;
+
+            OnTouchMotion(
+                this->callback, this->touch_buttons, this->touch_down_buttons,
+                e.fingerId, x, y
+            );
+        }   break;
     }
 }
 

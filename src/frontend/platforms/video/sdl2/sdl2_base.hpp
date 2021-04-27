@@ -113,8 +113,8 @@ private:
     // as the mouse / finger can be dragged away from button after press
     // it is impossible to then release the action.
     // so we need to keep track of the button pressed, using it's matching ID
-    std::multimap<std::uint32_t, Action> mouse_down_buttons;
-    std::multimap<SDL_FingerID, Action> touch_down_buttons;
+    std::multimap<std::uint32_t, std::pair<TouchButton::Type, Action>> mouse_down_buttons;
+    std::multimap<SDL_FingerID, std::pair<TouchButton::Type, Action>> touch_down_buttons;
 
 	std::multimap<int, Action> key_action_map;
     std::multimap<int, Action> touch_action_map;

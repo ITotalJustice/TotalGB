@@ -35,8 +35,8 @@ auto SDL2::LoadButtonTextures() -> bool {
     constexpr std::array<ButtonInfo, 9> paths = {{
         { "res/sprites/controls/transparentDark34.bmp",  SDL2::TouchButton::Type::A, 440, 470 },
         { "res/sprites/controls/transparentDark35.bmp",  SDL2::TouchButton::Type::B, 540, 470 },
-        { "res/sprites/controls/transparentDark40.bmp",  SDL2::TouchButton::Type::START, 200, 20 },
-        { "res/sprites/controls/transparentDark41.bmp",  SDL2::TouchButton::Type::SELECT, 320, 20 },
+        { "res/sprites/controls/transparentDark40.bmp",  SDL2::TouchButton::Type::START, 320, 20 },
+        { "res/sprites/controls/transparentDark41.bmp",  SDL2::TouchButton::Type::SELECT, 200, 20 },
         { "res/sprites/controls/transparentDark01.bmp",  SDL2::TouchButton::Type::UP, 80, 410 },
         { "res/sprites/controls/transparentDark08.bmp",  SDL2::TouchButton::Type::DOWN, 80, 490 },
         { "res/sprites/controls/transparentDark03.bmp",  SDL2::TouchButton::Type::LEFT, 25, 460 },
