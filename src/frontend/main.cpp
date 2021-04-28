@@ -3,6 +3,7 @@
 #ifdef __EMSCRIPTEN__
 
 #include <emscripten.h>
+#include <emscripten/html5.h>
 
 #include "minizip/zip.h"
 #include "minizip/ioapi_mem.h"
@@ -183,6 +184,38 @@ int main(int argc, char** argv) {
 
     app.SetWriteSaveCB(em_write_save_cb);
     app.SetWriteStateCB(em_write_save_cb);
+
+    // setting a bunch of emscripten callbacks here for events
+    // SDL should handle them anyway, buuut just in case
+    // ill see it here.
+    // currently these callbacks dont do anything useful, only
+    // logging that the even fired.
+    auto result = emscripten_set_deviceorientation_callback(
+        nullptr, true,
+        [](auto, const auto *event, auto) -> EM_BOOL {
+            std::printf("[EM] got an orientation event!\n");
+            std::printf("\tz: %f\n", event->alpha);
+            std::printf("\tx: %f\n", event->beta);
+            std::printf("\ty: %f\n", event->gamma);
+            std::printf("\tabsolute: %s\n", event->absolute ? "TRUE" : "FALSE");
+
+            // we don't want to consume the event, just incase
+            // SDL wants it!
+            return false;
+        }
+    );
+
+    if (result != EMSCRIPTEN_RESULT_SUCCESS) {
+        if (result == EMSCRIPTEN_RESULT_NOT_SUPPORTED) {
+            std::printf("[EM] Failed emscripten_set_deviceorientation_callback(): UNSUPPORTED!!!\n");    
+        }
+        else {
+            std::printf("[EM] Failed emscripten_set_deviceorientation_callback()...\n");
+        }
+    }
+    else {
+        std::printf("[EM] Registered emscripten_set_deviceorientation_callback()\n");
+    }
 
     // setting 60fps seems to cause many issues in firefox.
     // <= 0 will cause it to *try* to sync to the display refresh rate
