@@ -292,7 +292,8 @@ auto SDL2::SetupSDL2(const VideoInfo& vid_info, const GameTextureInfo& game_info
             #ifdef __EMSCRIPTEN__
                 const auto min_h = std::min(dm.h, vid_info.h);
 
-                SDL_SetWindowSize(this->window, 1920, 1280);
+                // try again
+                SDL_SetWindowSize(this->window, 1280, 720);
                 // SDL_SetWindowSize(this->window, dm.w, min_h);
             #endif // __EMSCRIPTEN__
         }
