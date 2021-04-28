@@ -55,11 +55,7 @@ function OnInput() {
       HEAPU8.set(name_array, name_ptr);
 
       // call out rom load function
-      ccall('em_load_rom_data',
-        null, // no return (void)
-        ['number', 'number', 'number'], // type of the params (ptr is a num, len is a num)
-        [name_ptr, data_ptr, data.length] // ptr and len
-      );
+      _em_load_rom_data(name_ptr, data_ptr, data.length);
 
       // Free memory
       _free(data_ptr);

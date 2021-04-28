@@ -22,7 +22,7 @@ function OnInput() {
 	// if size is > 0, then the second functions is
 	// called which returns a ptr to the memory.
 
-	let data_size = ccall('em_zip_all_saves', 'number', []);
+	let data_size = _em_zip_all_saves();
 
 	if (data_size == 0) {
 		console.log("[JS] zip size was zero from get all saves");

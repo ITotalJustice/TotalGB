@@ -16,6 +16,19 @@ namespace mgb::platform::video::sdl2::base {
 // todo: replace these templates with auto once using c++20!
 template <typename CB, typename BC, typename ID>
 auto OnTouchUp(const CB& callbacks, BC& button_cache, ID Id) {
+
+    SDL_DisplayMode dm{};
+    if (SDL_GetDesktopDisplayMode(0, &dm)) {
+        std::printf("[SDL2] SDL_GetDesktopDisplayMode() failed: %s\n", SDL_GetError());
+    }
+    else {
+        std::printf("[SDL2] DisplayMode: bpp %d\t%s\t%dx%d\n",
+            SDL_BITSPERPIXEL(dm.format),
+            SDL_GetPixelFormatName(dm.format),
+            dm.w, dm.h
+        );
+    }
+
     // check if we have this Id
     const auto range = button_cache.equal_range(Id);
     

@@ -189,9 +189,9 @@ elif host_machine.system() == 'emscripten'
     cppflags += ['-s', 'TOTAL_MEMORY=32MB']
     linkflags += ['-s', 'TOTAL_MEMORY=32MB']
 
-    cflags += ['-s', 'EXPORTED_RUNTIME_METHODS=ccall']
-    cppflags += ['-s', 'EXPORTED_RUNTIME_METHODS=ccall']
-    linkflags += ['-s', 'EXPORTED_RUNTIME_METHODS=ccall']
+    # cflags += ['-s', 'EXPORTED_RUNTIME_METHODS=ccall']
+    # cppflags += ['-s', 'EXPORTED_RUNTIME_METHODS=ccall']
+    # linkflags += ['-s', 'EXPORTED_RUNTIME_METHODS=ccall']
 
     cflags += ['-s', 'EXPORTED_FUNCTIONS=_main, _malloc, _free']
     cppflags += ['-s', 'EXPORTED_FUNCTIONS=_main, _malloc, _free']
