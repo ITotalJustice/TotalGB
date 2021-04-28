@@ -190,7 +190,23 @@ int main(int argc, char** argv) {
     // ill see it here.
     // currently these callbacks dont do anything useful, only
     // logging that the even fired.
-    auto result = emscripten_set_deviceorientation_callback(
+
+    // TODO: all of these events should be handled by the video manager!
+    const auto check_result = [](auto result, auto name){
+        if (result != EMSCRIPTEN_RESULT_SUCCESS) {
+            if (result == EMSCRIPTEN_RESULT_NOT_SUPPORTED) {
+                std::printf("[EM] Failed %s(): UNSUPPORTED!!!\n", name);
+            }
+            else {
+                std::printf("[EM] Failed %s()...\n", name);
+            }
+        }
+        else {
+            std::printf("[EM] Registered %s()\n", name);
+        }
+    };
+
+    check_result(emscripten_set_deviceorientation_callback(
         nullptr, true,
         [](auto, const auto *event, auto) -> EM_BOOL {
             std::printf("[EM] got an orientation event!\n");
@@ -199,23 +215,27 @@ int main(int argc, char** argv) {
             std::printf("\ty: %f\n", event->gamma);
             std::printf("\tabsolute: %s\n", event->absolute ? "TRUE" : "FALSE");
 
-            // we don't want to consume the event, just incase
-            // SDL wants it!
+            // we don't want to consume the event, just incase SDL wants it!
             return false;
         }
-    );
+    ), "emscripten_set_deviceorientation_callback");
 
-    if (result != EMSCRIPTEN_RESULT_SUCCESS) {
-        if (result == EMSCRIPTEN_RESULT_NOT_SUPPORTED) {
-            std::printf("[EM] Failed emscripten_set_deviceorientation_callback(): UNSUPPORTED!!!\n");    
+    check_result(emscripten_set_resize_callback(
+        EMSCRIPTEN_EVENT_TARGET_WINDOW, 0, true,
+        [](auto, auto* event, auto) -> EM_BOOL {
+            std::printf("\nemscripten_set_resize_callback()\n");
+            std::printf("\tdocumentBodyClientWidth: %d\n", event->documentBodyClientWidth);
+            std::printf("\tdocumentBodyClientHeight: %d\n", event->documentBodyClientHeight);
+            std::printf("\twindowInnerWidth: %d\n", event->windowInnerWidth);
+            std::printf("\twindowInnerHeight: %d\n", event->windowInnerHeight);
+            std::printf("\twindowOuterWidth: %d\n", event->windowOuterWidth);
+            std::printf("\twindowOuterHeight: %d\n", event->windowOuterHeight);
+            std::printf("\tscrollTop: %d\n", event->scrollTop);
+            std::printf("\tscrollLeft: %d\n", event->scrollLeft);
+
+            return false;
         }
-        else {
-            std::printf("[EM] Failed emscripten_set_deviceorientation_callback()...\n");
-        }
-    }
-    else {
-        std::printf("[EM] Registered emscripten_set_deviceorientation_callback()\n");
-    }
+    ), "emscripten_set_resize_callback");
 
     // setting 60fps seems to cause many issues in firefox.
     // <= 0 will cause it to *try* to sync to the display refresh rate
