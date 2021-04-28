@@ -24,7 +24,7 @@ public:
     }
 
 private:
-    size_t scale = 4;
+    size_t scale = 3;
 };
 
 class App final {

@@ -42,16 +42,18 @@ public:
             OPTIONS,
         };
 
-        // sets the coords to -1
+        ~TouchButton();
+
+        // sets the coords to -8000
         auto Reset() -> void;
         
-        auto ToRect() const -> SDL_Rect;
+        SDL_Surface* surface{};
 
         Type type{};
 
         // have the buttons be offscreen by default so that
         // they don't trigger if touch is not supported
-        int x{-8000}, y{-8000}, w{-8000}, h{-8000};
+        SDL_Rect rect{-8000, -8000, -8000, -8000};
     };
     
 public:
@@ -59,19 +61,27 @@ public:
     virtual ~SDL2();
 
     auto PollEvents() -> void override;
-    auto UpdateGameTexture(GameTextureData data) -> void override;
     auto ToggleFullscreen() -> void override;
 	auto SetWindowName(const std::string& name) -> void override;
 
 protected:
     auto SetupSDL2(const VideoInfo& vid_info, const GameTextureInfo& game_info, uint32_t win_flags) -> bool;
     auto DeinitSDL2() -> void;
+    auto LoadButtonSurfaces() -> bool;
+
+    virtual auto OnWindowResize(int win_w, int win_h, int scale) -> void = 0;
 
 protected:
-    SDL_Window* window{nullptr};
+    SDL_Window* window{};
     std::array<TouchButton, 9> touch_buttons;
 
+    SDL_Rect texture_rect{};
+    SDL_Rect window_rect{};
+
 private:
+    auto OnWindowResize() -> void;
+    auto ResizeButtons(int win_w, int win_h, int scale) -> void;
+
     auto HasController(int which) const -> bool;
     auto AddController(int index) -> bool;
 

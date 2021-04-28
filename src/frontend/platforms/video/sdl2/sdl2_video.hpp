@@ -21,25 +21,25 @@ public:
 	using base::SDL2::SDL2;
 	~SDL2();
 
+	auto UpdateGameTexture(GameTextureData data) -> void override;
+
 private:
 	auto SetupVideoInternal(VideoInfo vid_info, GameTextureInfo game_info) -> bool override;
 	auto RenderDisplayInternal() -> void override;
 
 	auto LoadButtonTextures() -> bool;
 	auto DestroyButtonTextures() -> void;
+
+	auto RenderPopUps() -> void;
+	auto RenderButtons() -> void;
 	auto RenderCore() -> void;
 
-private:
-	struct ButtonTexture {
-		SDL_Texture* texture{};
-		int w{};
-		int h{};
-	};
+	auto OnWindowResize(int win_w, int win_h, int scale) -> void override;
 
 private:
-    SDL_Renderer* renderer{nullptr};
-    SDL_Texture* core_texture{nullptr};
-    std::array<ButtonTexture, 9> button_textures{};
+    SDL_Renderer* renderer{};
+    SDL_Texture* core_texture{};
+    std::array<SDL_Texture*, 9> button_textures{};
 
     ttf::Font font;
 };

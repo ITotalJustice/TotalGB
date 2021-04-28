@@ -118,8 +118,6 @@ protected:
 protected:
 	Callbacks callback;
 
-	std::vector<std::uint16_t> game_pixels;
-	
 	std::deque<TextPopup> text_popups;
 
 	Vec4 window_vec{};

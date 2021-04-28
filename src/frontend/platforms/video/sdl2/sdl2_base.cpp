@@ -7,9 +7,8 @@
 #include <cassert>
 #include <cstring>
 #include <cmath>
-#include <array>
-#include <map>
 #include <optional>
+#include <algorithm>
 
 
 namespace mgb::platform::video::sdl2::base {
@@ -35,10 +34,10 @@ auto OnTouchUp(const CB& callbacks, BC& button_cache, ID Id) {
 
 template <typename TB>
 auto IsTouchInRange(const TB& touch_buttons, int x, int y) -> std::optional<SDL2::TouchButton::Type> {
-    for (auto& button : touch_buttons) {
-        if (x >= button.x && x <= (button.x + button.w)) {
-            if (y >= button.y && y <= (button.y + button.h)) {
-                return button.type;
+    for (auto& [surface, type, rect] : touch_buttons) {
+        if (x >= rect.x && x <= (rect.x + rect.w)) {
+            if (y >= rect.y && y <= (rect.y + rect.h)) {
+                return type;
             }
         }
     }
@@ -71,7 +70,7 @@ auto OnTouchDown(const CB& callbacks, const TB& touch_buttons, BC& button_cache,
 
     // check that the button press maps to a texture coord
     const auto type_optional = IsTouchInRange(touch_buttons, x, y);
-    if (!type_optional) {
+    if (!type_optional.has_value()) {
         return;
     }
 
@@ -114,7 +113,7 @@ auto OnTouchMotion(const CB& callbacks, const TB& touch_buttons, BC& button_cach
 
     // check that the button press maps to a texture coord
     const auto type_optional = IsTouchInRange(touch_buttons, x, y);
-    if (!type_optional) {
+    if (!type_optional.has_value()) {
         // see [NOTE_2] above for another option to handle here.
         return;
     }
@@ -141,12 +140,79 @@ auto OnTouchMotion(const CB& callbacks, const TB& touch_buttons, BC& button_cach
     }
 }
 
-auto SDL2::TouchButton::Reset() -> void {
-    this->x = this->y = this->w = this->h = -8000;
+SDL2::TouchButton::~TouchButton() {
+    if (this->surface) {
+        SDL_FreeSurface(this->surface);
+        this->surface = nullptr;
+    }
 }
 
-auto SDL2::TouchButton::ToRect() const -> SDL_Rect {
-    return { x, y, w, h };
+auto SDL2::TouchButton::Reset() -> void {
+    this->rect.x = this->rect.y = this->rect.w = this->rect.h = -8000;
+}
+
+auto SDL2::LoadButtonSurfaces() -> bool {
+    struct ButtonInfo {
+        const char* path;
+        SDL2::TouchButton::Type type;
+    };
+
+    // todo: set the button x,y to fit inside [160x144] then scale it with the
+    // the screen size.
+    constexpr std::array<ButtonInfo, 9> paths = {{
+        { "res/sprites/controls/transparentDark34.bmp",  TouchButton::Type::A },
+        { "res/sprites/controls/transparentDark35.bmp",  TouchButton::Type::B },
+        { "res/sprites/controls/transparentDark40.bmp",  TouchButton::Type::START },
+        { "res/sprites/controls/transparentDark41.bmp",  TouchButton::Type::SELECT },
+        { "res/sprites/controls/transparentDark01.bmp",  TouchButton::Type::UP },
+        { "res/sprites/controls/transparentDark08.bmp",  TouchButton::Type::DOWN },
+        { "res/sprites/controls/transparentDark03.bmp",  TouchButton::Type::LEFT },
+        { "res/sprites/controls/transparentDark04.bmp",  TouchButton::Type::RIGHT },
+        { "res/sprites/controls/transparentDark20.bmp",  TouchButton::Type::OPTIONS },
+    }};
+
+    const auto window_surface = SDL_GetWindowSurface(this->window);
+
+    if (window_surface != NULL) {
+        std::printf("[SDL2] Failed to get window surface: %s\n", SDL_GetError());
+    }
+
+    for (std::size_t i = 0; i < paths.size(); ++i) {
+        const auto [path, type] = paths[i];
+
+        auto surface = SDL_LoadBMP(path);
+
+        if (surface != NULL) {
+
+            // this isn't a good idea if the source format
+            // is not Alpha, as the textures need alpha blending!
+            #if 0
+            // optimise the surface, if possible
+            if (window_surface != NULL) {
+                auto optimised_surface = SDL_ConvertSurface(surface, window_surface->format, 0);
+
+                if (optimised_surface != NULL) {
+                    SDL_FreeSurface(surface);
+                    surface = optimised_surface;
+                }
+                else {
+                    std::printf("[SDL2] unable to optimise button surface, using old surface: %s\n", SDL_GetError());
+                    this->touch_buttons[i].surface = surface;
+                }
+            }
+            #endif
+
+            this->touch_buttons[i].surface = surface;
+            this->touch_buttons[i].type = type;
+        }
+
+        else {
+            printf("[SDL2] failed to load button bmp %s\n", SDL_GetError());
+            return false;
+        }
+    }
+
+    return true;
 }
 
 SDL2::~SDL2() {
@@ -167,7 +233,7 @@ auto SDL2::SetupSDL2(const VideoInfo& vid_info, const GameTextureInfo& game_info
 
 #ifndef NDEBUG
     // enable trace logging of sdl
-    SDL_LogSetPriority(SDL_LOG_CATEGORY_APPLICATION, SDL_LOG_PRIORITY_INFO);
+    std::printfSetPriority(std::printf_CATEGORY_APPLICATION, std::printf_PRIORITY_INFO);
 #endif // NDEBUG
 
     if (SDL_InitSubSystem(SDL_INIT_VIDEO)) {
@@ -196,6 +262,43 @@ auto SDL2::SetupSDL2(const VideoInfo& vid_info, const GameTextureInfo& game_info
         return false;
     }
 
+    {
+        int win_w{}, win_h{};
+        SDL_GetWindowMaximumSize(this->window, &win_w, &win_h);
+        std::printf("[SDL2] max window w: %d h: %d\n", win_w, win_h);
+    }
+
+    {
+        SDL_DisplayMode dm{};
+        if (SDL_GetDesktopDisplayMode(0, &dm)) {
+            std::printf("[SDL2] SDL_GetDesktopDisplayMode() failed: %s\n", SDL_GetError());
+        }
+        else {
+            std::printf("[SDL2] DisplayMode: bpp %d\t%s\t%dx%d\n",
+                SDL_BITSPERPIXEL(dm.format),
+                SDL_GetPixelFormatName(dm.format),
+                dm.w, dm.h
+            );
+
+            // this is just to make it look nice on my iphone :)
+            // i will make this customisable (somehow) in the webui
+            // sadly, resizing the browser doesnt seem to trigger any
+            // sdl events (i think), so imo its best to fill the width
+            // of the screen and the height (but not fully as taskbars)
+            // filling the width allows for the onscreen controls to be at
+            // the side of the game window tetxure, which is more
+            // comfortable to play when using a phone, especially in
+            // landscape mode.
+            #ifdef __EMSCRIPTEN__
+                const auto min_h = std::min(dm.h, vid_info.h);
+
+            // really we could set this in window create instead...
+            // oh well.
+                SDL_SetWindowSize(this->window, dm.w, min_h);
+            #endif // __EMSCRIPTEN__
+        }
+    }
+
     // try and load window icon, it's okay if it fails
     {
         constexpr auto icon_path = "res/icons/icon.bmp";
@@ -212,8 +315,13 @@ auto SDL2::SetupSDL2(const VideoInfo& vid_info, const GameTextureInfo& game_info
 
     SDL_SetWindowMinimumSize(this->window, 160, 144);
 
-    // set the size of the buffered pixels
-    this->game_pixels.resize(game_info.w * game_info.h);
+    #ifdef ON_SCREEN_BUTTONS
+        if (!this->LoadButtonSurfaces()) {
+            // fail if on mobile / webasm
+            std::printf("[SDL2] failed to load button surfaces\n");
+            return false;
+        }
+    #endif // ON_SCREEN_BUTTONS
 
     // setup keymap
     this->key_action_map = std::multimap<int, Action>{
@@ -275,6 +383,9 @@ auto SDL2::SetupSDL2(const VideoInfo& vid_info, const GameTextureInfo& game_info
         std::printf("\t%s\n", SDL_JoystickName(joystick));
     }
 
+    // setup texture rect
+    this->OnWindowResize();
+
     return true;
 }
 
@@ -306,13 +417,125 @@ auto SDL2::DeinitSDL2() -> void {
     }
 }
 
-auto SDL2::UpdateGameTexture(GameTextureData data) -> void {
-    std::memcpy(
-        this->game_pixels.data(),
-        data.pixels,
-        data.w * data.h * sizeof(uint16_t)
-    );
+auto SDL2::ResizeButtons(int win_w, int win_h, int scale) -> void {
+    // TODO: don't use magic numbers here!
+    
+    for (auto& [_surface_, type, rect] : this->touch_buttons) {
+        switch (type) {
+            case TouchButton::Type::A:
+                rect.x = win_w - (67 * scale);
+                rect.y = win_h - (35 * scale);
+                rect.w = 27 * scale;
+                rect.h = 27 * scale;
+                break;
+
+            case TouchButton::Type::B:
+                rect.x = win_w - (33 * scale);
+                rect.y = win_h - (35 * scale);
+                rect.w = 27 * scale;
+                rect.h = 27 * scale;
+                break;
+
+            case TouchButton::Type::START:
+                rect.x = (win_w / 2) + 15;
+                rect.y = 7 * scale;
+                rect.w = 36 * scale;
+                rect.h = 16 * scale;
+                break;
+
+            case TouchButton::Type::SELECT:
+                rect.y = 7 * scale;
+                rect.w = 36 * scale;
+                rect.h = 16 * scale;
+                // calc this last as the width needs to be updated first
+                rect.x = (win_w / 2) - 15 - rect.w;
+                break;
+
+            case TouchButton::Type::UP:
+                rect.x = (27 * scale);
+                rect.y = win_h - (55 * scale);
+                rect.w = 20 * scale;
+                rect.h = 25 * scale;
+                break;
+
+            case TouchButton::Type::DOWN:
+                rect.x = (27 * scale);
+                rect.y = win_h - (29 * scale);
+                rect.w = 20 * scale;
+                rect.h = 25 * scale;
+                break;
+
+            case TouchButton::Type::LEFT:
+                rect.x = (8 * scale);
+                rect.y = win_h - (39 * scale);
+                rect.w = 25 * scale;
+                rect.h = 20 * scale;
+                break;
+
+            case TouchButton::Type::RIGHT:
+                rect.x = (40 * scale);
+                rect.y = win_h - (39 * scale);
+                rect.w = 25 * scale;
+                rect.h = 20 * scale;
+                break;
+
+            case TouchButton::Type::OPTIONS:
+                break;       
+        }
+    }
 }
+
+auto SDL2::OnWindowResize() -> void {
+    int win_w{}, win_h{};
+    SDL_GetWindowSize(this->window, &win_w, &win_h);
+
+    constexpr auto GAME_TEXTURE_WIDTH = 160;
+    constexpr auto GAME_TEXTURE_HEIGHT = 144;
+
+    // just in case a broken sdl port ever returns zero...
+    if (!win_w) { win_w = GAME_TEXTURE_WIDTH; }
+    if (!win_h) { win_h = GAME_TEXTURE_HEIGHT; }
+
+    // update the scaling of the game texture to best fit the screen
+    const auto min_w = win_w / GAME_TEXTURE_WIDTH;
+    const auto min_h = win_h / GAME_TEXTURE_HEIGHT;
+
+    const auto scale = std::min(min_w, min_h);
+
+    SDL_Rect rect{};
+    rect.w = GAME_TEXTURE_WIDTH * scale;
+    rect.h = GAME_TEXTURE_HEIGHT * scale;
+    rect.x = win_w - rect.w;
+    rect.y = win_h - rect.h;
+
+    // avoid div by zero
+    if (rect.x) { rect.x /= 2; }
+    if (rect.y) { rect.y /= 2; }
+
+    this->texture_rect = rect;
+
+#ifdef ON_SCREEN_BUTTONS
+    this->ResizeButtons(win_w, win_h, scale);
+#endif // ON_SCREEN_BUTTONS
+
+    this->OnWindowResize(win_w, win_h, scale);
+}
+
+// auto SDL2::UpdateGameTexture(GameTextureData data) -> void {
+//     if (SDL_MUSTLOCK(this->core_surface)) {
+//         SDL_LockSurface(this->core_surface);
+//     }
+
+//     std::memcpy(
+//         this->core_surface->pixels,
+//         data.pixels,
+//         data.w * data.h * sizeof(uint16_t)
+//     );
+
+//     if (SDL_MUSTLOCK(this->core_surface)) {
+//         SDL_UnlockSurface(this->core_surface);
+//     }
+// }
 
 auto SDL2::ToggleFullscreen() -> void {
     if (auto flags = SDL_GetWindowFlags(this->window); flags & (SDL_WINDOW_FULLSCREEN | SDL_WINDOW_FULLSCREEN_DESKTOP)) {
@@ -481,15 +704,15 @@ auto SDL2::OnAudioDeviceEvent(const SDL_AudioDeviceEvent&) -> void {
 auto SDL2::OnWindowEvent(const SDL_WindowEvent& e) -> void {
     switch (e.event) {
         case SDL_WINDOWEVENT_EXPOSED:
-            // this->ResizeScreen();
+            this->OnWindowResize();
             break;
 
         case SDL_WINDOWEVENT_RESIZED:
-            // this->ResizeScreen();
+            this->OnWindowResize();
             break;
 
         case SDL_WINDOWEVENT_RESTORED:
-            // this->ResizeScreen();
+            this->OnWindowResize();
             break;
 
         case SDL_WINDOWEVENT_CLOSE:
@@ -499,12 +722,14 @@ auto SDL2::OnWindowEvent(const SDL_WindowEvent& e) -> void {
 
 #if SDL_VERSION_ATLEAST(2, 0, 9)
 auto SDL2::OnDisplayEvent(const SDL_DisplayEvent& e) -> void {
-   switch (e.event) {
-       case SDL_DISPLAYEVENT_NONE:
-           break;
+    switch (e.event) {
+        case SDL_DISPLAYEVENT_NONE:
+            std::printf("[SDL2] SDL_DISPLAYEVENT_NONE\n");
+            break;
 
-       case SDL_DISPLAYEVENT_ORIENTATION:
-           break;
+        case SDL_DISPLAYEVENT_ORIENTATION:
+            std::printf("[SDL2] SDL_DISPLAYEVENT_ORIENTATION\n");
+            break;
    }
 }
 #endif
