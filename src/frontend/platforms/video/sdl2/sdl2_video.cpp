@@ -121,10 +121,6 @@ auto SDL2::SetupVideoInternal(VideoInfo vid_info, GameTextureInfo game_info) -> 
     return true;
 }
 
-auto SDL2::OnWindowResize(int win_w, int win_h, int scale) -> void {
-    (void)win_w; (void)win_h; (void)scale;
-}
-
 auto SDL2::UpdateGameTexture(GameTextureData data) -> void {
 #if 1
     // this seems to be faster
@@ -148,6 +144,7 @@ auto SDL2::UpdateGameTexture(GameTextureData data) -> void {
 }
 
 auto SDL2::RenderCore() -> void {
+    this->OnWindowResize();
     SDL_RenderCopy(this->renderer, this->core_texture, NULL, &this->texture_rect);
 }
 

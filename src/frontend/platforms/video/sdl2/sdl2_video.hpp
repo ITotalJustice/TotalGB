@@ -34,8 +34,6 @@ private:
 	auto RenderButtons() -> void;
 	auto RenderCore() -> void;
 
-	auto OnWindowResize(int win_w, int win_h, int scale) -> void override;
-
 private:
     SDL_Renderer* renderer{};
     SDL_Texture* core_texture{};

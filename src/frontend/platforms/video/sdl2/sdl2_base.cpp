@@ -293,8 +293,8 @@ auto SDL2::SetupSDL2(const VideoInfo& vid_info, const GameTextureInfo& game_info
                 const auto min_h = std::min(dm.h, vid_info.h);
 
                 // try again
-                SDL_SetWindowSize(this->window, 1280, 720);
-                // SDL_SetWindowSize(this->window, dm.w, min_h);
+                // SDL_SetWindowSize(this->window, 1280, 720);
+                SDL_SetWindowSize(this->window, dm.w, min_h);
             #endif // __EMSCRIPTEN__
         }
     }
@@ -517,8 +517,6 @@ auto SDL2::OnWindowResize() -> void {
 #ifdef ON_SCREEN_BUTTONS
     this->ResizeButtons(win_w, win_h, scale);
 #endif // ON_SCREEN_BUTTONS
-
-    this->OnWindowResize(win_w, win_h, scale);
 }
 
 // auto SDL2::UpdateGameTexture(GameTextureData data) -> void {

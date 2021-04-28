@@ -69,7 +69,7 @@ protected:
     auto DeinitSDL2() -> void;
     auto LoadButtonSurfaces() -> bool;
 
-    virtual auto OnWindowResize(int win_w, int win_h, int scale) -> void = 0;
+    auto OnWindowResize() -> void;
 
 protected:
     SDL_Window* window{};
@@ -79,7 +79,6 @@ protected:
     SDL_Rect window_rect{};
 
 private:
-    auto OnWindowResize() -> void;
     auto ResizeButtons(int win_w, int win_h, int scale) -> void;
 
     auto HasController(int which) const -> bool;
