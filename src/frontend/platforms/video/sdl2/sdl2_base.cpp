@@ -292,9 +292,8 @@ auto SDL2::SetupSDL2(const VideoInfo& vid_info, const GameTextureInfo& game_info
             #ifdef __EMSCRIPTEN__
                 const auto min_h = std::min(dm.h, vid_info.h);
 
-            // really we could set this in window create instead...
-            // oh well.
-                SDL_SetWindowSize(this->window, dm.w, min_h);
+                SDL_SetWindowSize(this->window, 1920, 1280);
+                // SDL_SetWindowSize(this->window, dm.w, min_h);
             #endif // __EMSCRIPTEN__
         }
     }
@@ -419,7 +418,7 @@ auto SDL2::DeinitSDL2() -> void {
 
 auto SDL2::ResizeButtons(int win_w, int win_h, int scale) -> void {
     // TODO: don't use magic numbers here!
-    
+
     for (auto& [_surface_, type, rect] : this->touch_buttons) {
         switch (type) {
             case TouchButton::Type::A:
