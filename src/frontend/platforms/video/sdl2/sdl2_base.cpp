@@ -431,7 +431,26 @@ auto SDL2::SetupSDL2(const VideoInfo& vid_info, const GameTextureInfo& game_info
         EMSCRIPTEN_EVENT_TARGET_WINDOW, this, true,
         [](auto, auto* event, auto* user) -> EM_BOOL {
             auto sdl2 = static_cast<SDL2*>(user);
-            SDL_SetWindowSize(sdl2->GetWindow(), event->windowInnerWidth, event->windowInnerHeight);
+            static int test = 0;
+
+            switch (test) {
+                case 0: case 1:
+                    SDL_SetWindowSize(sdl2->GetWindow(), event->documentBodyClientWidth, event->documentBodyClientHeight);
+                    std::printf("[EM] using documentBodyClient\n");
+                    break;
+                case 2: case 3:
+                    SDL_SetWindowSize(sdl2->GetWindow(), event->windowInnerWidth, event->windowInnerHeight);
+                    std::printf("[EM] using windowInner\n");
+                    break;
+                case 4: case 5:
+                    SDL_SetWindowSize(sdl2->GetWindow(), event->windowOuterWidth, event->windowOuterHeight);
+                    std::printf("[EM] using windowOuter\n");
+                    break;
+            }
+
+            ++test;
+            if (test == 6) test = 0;
+            // SDL_SetWindowSize(sdl2->GetWindow(), event->windowInnerWidth, event->windowInnerHeight);
 
             std::printf("\nemscripten_set_resize_callback()\n");
             std::printf("\tdocumentBodyClientWidth: %d\n", event->documentBodyClientWidth);
