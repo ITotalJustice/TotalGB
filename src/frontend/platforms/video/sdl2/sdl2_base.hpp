@@ -64,6 +64,8 @@ public:
     auto ToggleFullscreen() -> void override;
 	auto SetWindowName(const std::string& name) -> void override;
 
+    auto GetWindow() { return this->window; }
+    
 protected:
     auto SetupSDL2(const VideoInfo& vid_info, const GameTextureInfo& game_info, uint32_t win_flags) -> bool;
     auto DeinitSDL2() -> void;

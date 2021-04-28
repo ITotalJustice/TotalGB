@@ -122,8 +122,7 @@ auto SDL2::SetupVideoInternal(VideoInfo vid_info, GameTextureInfo game_info) -> 
 }
 
 auto SDL2::UpdateGameTexture(GameTextureData data) -> void {
-#if 1
-    // this seems to be faster
+#if 0
     SDL_UpdateTexture(
         this->core_texture, NULL,
         data.pixels, data.w * sizeof(uint16_t)

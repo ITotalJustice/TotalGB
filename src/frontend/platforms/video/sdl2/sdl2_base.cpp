@@ -11,24 +11,18 @@
 #include <algorithm>
 
 
+// todo: create emscripten backend class that inherits from sdl2!
+#ifdef __EMSCRIPTEN__
+#include <emscripten.h>
+#include <emscripten/html5.h>
+#endif
+
+
 namespace mgb::platform::video::sdl2::base {
 
 // todo: replace these templates with auto once using c++20!
 template <typename CB, typename BC, typename ID>
 auto OnTouchUp(const CB& callbacks, BC& button_cache, ID Id) {
-
-    SDL_DisplayMode dm{};
-    if (SDL_GetDesktopDisplayMode(0, &dm)) {
-        std::printf("[SDL2] SDL_GetDesktopDisplayMode() failed: %s\n", SDL_GetError());
-    }
-    else {
-        std::printf("[SDL2] DisplayMode: bpp %d\t%s\t%dx%d\n",
-            SDL_BITSPERPIXEL(dm.format),
-            SDL_GetPixelFormatName(dm.format),
-            dm.w, dm.h
-        );
-    }
-
     // check if we have this Id
     const auto range = button_cache.equal_range(Id);
     
@@ -229,6 +223,11 @@ auto SDL2::LoadButtonSurfaces() -> bool {
 }
 
 SDL2::~SDL2() {
+    #ifdef __EMSCRIPTEN__
+        // remove callbacks before exit!
+        emscripten_set_deviceorientation_callback(nullptr, 0, nullptr);
+        emscripten_set_resize_callback(nullptr, nullptr, 0, nullptr);
+    #endif // __EMSCRIPTEN__
 }
 
 auto SDL2::SetupSDL2(const VideoInfo& vid_info, const GameTextureInfo& game_info, uint32_t win_flags) -> bool {
@@ -397,6 +396,58 @@ auto SDL2::SetupSDL2(const VideoInfo& vid_info, const GameTextureInfo& game_info
     // setup texture rect
     this->OnWindowResize();
 
+#ifdef __EMSCRIPTEN__
+    const auto check_result = [](auto result, auto name){
+        if (result != EMSCRIPTEN_RESULT_SUCCESS) {
+            if (result == EMSCRIPTEN_RESULT_NOT_SUPPORTED) {
+                std::printf("[EM] Failed %s(): UNSUPPORTED!!!\n", name);
+            }
+            else {
+                std::printf("[EM] Failed %s()...\n", name);
+            }
+        }
+        else {
+            std::printf("[EM] Registered %s()\n", name);
+        }
+    };
+
+    check_result(emscripten_set_deviceorientation_callback(
+        this, true,
+        [](auto, const auto *event, auto* user) -> EM_BOOL {
+            auto sdl2 = static_cast<SDL2*>(user);
+
+            std::printf("[EM] got an orientation event!\n");
+            std::printf("\tz: %f\n", event->alpha);
+            std::printf("\tx: %f\n", event->beta);
+            std::printf("\ty: %f\n", event->gamma);
+            std::printf("\tabsolute: %s\n", event->absolute ? "TRUE" : "FALSE");
+
+            // we don't want to consume the event, just incase SDL wants it!
+            return false;
+        }
+    ), "emscripten_set_deviceorientation_callback");
+
+    check_result(emscripten_set_resize_callback(
+        EMSCRIPTEN_EVENT_TARGET_WINDOW, this, true,
+        [](auto, auto* event, auto* user) -> EM_BOOL {
+            auto sdl2 = static_cast<SDL2*>(user);
+            SDL_SetWindowSize(sdl2->GetWindow(), event->windowInnerWidth, event->windowInnerHeight);
+
+            std::printf("\nemscripten_set_resize_callback()\n");
+            std::printf("\tdocumentBodyClientWidth: %d\n", event->documentBodyClientWidth);
+            std::printf("\tdocumentBodyClientHeight: %d\n", event->documentBodyClientHeight);
+            std::printf("\twindowInnerWidth: %d\n", event->windowInnerWidth);
+            std::printf("\twindowInnerHeight: %d\n", event->windowInnerHeight);
+            std::printf("\twindowOuterWidth: %d\n", event->windowOuterWidth);
+            std::printf("\twindowOuterHeight: %d\n", event->windowOuterHeight);
+            std::printf("\tscrollTop: %d\n", event->scrollTop);
+            std::printf("\tscrollLeft: %d\n", event->scrollLeft);
+
+            return false;
+        }
+    ), "emscripten_set_resize_callback");
+#endif // __EMSCRIPTEN__
+
     return true;
 }
 
@@ -564,7 +615,7 @@ auto SDL2::ToggleFullscreen() -> void {
     else {
         // [SDL_WINDOW_FULLSCREEN] doesnt work nicely in my
         // chromebook browser...
-        #if 0
+        #if 1
         SDL_SetWindowFullscreen(this->window, SDL_WINDOW_FULLSCREEN_DESKTOP);
         #else
         SDL_SetWindowFullscreen(this->window, SDL_WINDOW_FULLSCREEN);
