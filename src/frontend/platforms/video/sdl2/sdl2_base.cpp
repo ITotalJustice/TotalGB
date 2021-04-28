@@ -492,9 +492,10 @@ auto SDL2::OnWindowResize() -> void {
     constexpr auto GAME_TEXTURE_WIDTH = 160;
     constexpr auto GAME_TEXTURE_HEIGHT = 144;
 
+    bool zero_size = false;
     // just in case a broken sdl port ever returns zero...
-    if (!win_w) { win_w = GAME_TEXTURE_WIDTH; }
-    if (!win_h) { win_h = GAME_TEXTURE_HEIGHT; }
+    if (!win_w) { win_w = GAME_TEXTURE_WIDTH; zero_size = true; }
+    if (!win_h) { win_h = GAME_TEXTURE_HEIGHT; zero_size = true; }
 
     // update the scaling of the game texture to best fit the screen
     const auto min_w = win_w / GAME_TEXTURE_WIDTH;
@@ -511,6 +512,16 @@ auto SDL2::OnWindowResize() -> void {
     // avoid div by zero
     if (rect.x) { rect.x /= 2; }
     if (rect.y) { rect.y /= 2; }
+
+    std::printf("\n[SDL2] ScreenResize\n");
+    std::printf("\trect.x: %d\n", rect.x);
+    std::printf("\trect.y: %d\n", rect.y);
+    std::printf("\trect.w: %d\n", rect.w);
+    std::printf("\trect.h: %d\n", rect.h);
+    std::printf("\tscale: %d\n", scale);
+    std::printf("\twin_w: %d\n", win_w);
+    std::printf("\twin_h: %d\n", win_h);
+    std::printf("\tzero_size: %s\n", zero_size ? "TRUE-ERROR" : "FALSE");
 
     this->texture_rect = rect;
 

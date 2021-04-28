@@ -54,7 +54,7 @@ auto SDL2::DestroyButtonTextures() -> void {
 }
 
 auto SDL2::SetupVideoInternal(VideoInfo vid_info, GameTextureInfo game_info) -> bool {
-	const auto win_flags = SDL_WINDOW_SHOWN | SDL_WINDOW_RESIZABLE | SDL_WINDOW_ALLOW_HIGHDPI;
+	const auto win_flags = SDL_WINDOW_SHOWN | SDL_WINDOW_RESIZABLE;
 
     if (!this->SetupSDL2(vid_info, game_info, win_flags)) {
 		return false;
@@ -122,7 +122,7 @@ auto SDL2::SetupVideoInternal(VideoInfo vid_info, GameTextureInfo game_info) -> 
 }
 
 auto SDL2::UpdateGameTexture(GameTextureData data) -> void {
-#if 1
+#if 0
     // this seems to be faster
     SDL_UpdateTexture(
         this->core_texture, NULL,
@@ -144,7 +144,6 @@ auto SDL2::UpdateGameTexture(GameTextureData data) -> void {
 }
 
 auto SDL2::RenderCore() -> void {
-    this->OnWindowResize();
     SDL_RenderCopy(this->renderer, this->core_texture, NULL, &this->texture_rect);
 }
 
