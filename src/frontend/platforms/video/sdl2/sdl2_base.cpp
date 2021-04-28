@@ -292,8 +292,6 @@ auto SDL2::SetupSDL2(const VideoInfo& vid_info, const GameTextureInfo& game_info
             #ifdef __EMSCRIPTEN__
                 const auto min_h = std::min(dm.h, vid_info.h);
 
-                // try again
-                // SDL_SetWindowSize(this->window, 1280, 720);
                 SDL_SetWindowSize(this->window, dm.w, min_h);
             #endif // __EMSCRIPTEN__
         }
@@ -712,11 +710,31 @@ auto SDL2::OnAudioDeviceEvent(const SDL_AudioDeviceEvent&) -> void {
 
 auto SDL2::OnWindowEvent(const SDL_WindowEvent& e) -> void {
     switch (e.event) {
+        case SDL_WINDOWEVENT_SHOWN:
+            break;
+
+        case SDL_WINDOWEVENT_HIDDEN:
+            break;
+
         case SDL_WINDOWEVENT_EXPOSED:
-            this->OnWindowResize();
+            break;
+
+        case SDL_WINDOWEVENT_MOVED:
             break;
 
         case SDL_WINDOWEVENT_RESIZED:
+            this->OnWindowResize();
+            break;
+
+        case SDL_WINDOWEVENT_SIZE_CHANGED:
+            this->OnWindowResize();
+            break;
+
+        case SDL_WINDOWEVENT_MINIMIZED:
+            this->OnWindowResize();
+            break;
+
+        case SDL_WINDOWEVENT_MAXIMIZED:
             this->OnWindowResize();
             break;
 
@@ -724,8 +742,31 @@ auto SDL2::OnWindowEvent(const SDL_WindowEvent& e) -> void {
             this->OnWindowResize();
             break;
 
-        case SDL_WINDOWEVENT_CLOSE:
+        case SDL_WINDOWEVENT_ENTER:
             break;
+
+        case SDL_WINDOWEVENT_LEAVE:
+            break;
+
+        case SDL_WINDOWEVENT_FOCUS_GAINED:
+            break;
+
+        case SDL_WINDOWEVENT_FOCUS_LOST:
+            break;
+
+        case SDL_WINDOWEVENT_CLOSE: {
+            SDL_Event event{};
+            event.type = SDL_QUIT;
+            SDL_PushEvent(&event);
+        }   break;
+
+#if SDL_VERSION_ATLEAST(2, 0, 5)
+        case SDL_WINDOWEVENT_TAKE_FOCUS:
+            break;
+
+        case SDL_WINDOWEVENT_HIT_TEST:
+            break;
+#endif // SDL_VERSION_ATLEAST(2, 0, 5)
     }
 }
 

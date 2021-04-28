@@ -122,7 +122,7 @@ auto SDL2::SetupVideoInternal(VideoInfo vid_info, GameTextureInfo game_info) -> 
 }
 
 auto SDL2::UpdateGameTexture(GameTextureData data) -> void {
-#if 0
+#if 1
     // this seems to be faster
     SDL_UpdateTexture(
         this->core_texture, NULL,
@@ -161,8 +161,7 @@ auto SDL2::RenderPopUps() -> void {
     for (auto& popup : this->text_popups) {
 
         this->font.DrawTextBox(this->renderer,
-            0, y,
-            5, 5,
+            0, y, 5, 5,
             box_col,
             popup.GetText()
         );
