@@ -221,7 +221,7 @@ int main(int argc, char** argv) {
     ), "emscripten_set_deviceorientation_callback");
 
     check_result(emscripten_set_resize_callback(
-        EMSCRIPTEN_EVENT_TARGET_WINDOW, 0, true,
+        EMSCRIPTEN_EVENT_TARGET_WINDOW, 0, false,
         [](auto, auto* event, auto) -> EM_BOOL {
             std::printf("\nemscripten_set_resize_callback()\n");
             std::printf("\tdocumentBodyClientWidth: %d\n", event->documentBodyClientWidth);
