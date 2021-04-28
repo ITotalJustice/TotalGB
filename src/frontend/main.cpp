@@ -136,6 +136,11 @@ uint8_t* em_get_zip_saves_data() {
 }
 
 EMSCRIPTEN_KEEPALIVE
+void em_toggle_fullscreen() {
+    app.ToggleFullscreen();
+}
+
+EMSCRIPTEN_KEEPALIVE
 void em_flush_save() {
     app.FlushSave();
 }

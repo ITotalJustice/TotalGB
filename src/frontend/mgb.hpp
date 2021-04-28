@@ -71,6 +71,8 @@ public:
     auto SetWriteSaveCB(OnSaveWriteCB cb) { this->on_save_write_cb = cb; }
     auto SetWriteStateCB(OnStateWriteCB cb) { this->on_state_write_cb = cb; }
 
+    auto ToggleFullscreen() -> void;
+
 public:
     auto OnAudioCallback(const struct GB_ApuCallbackData* data) -> void;
     auto OnVblankCallback() -> void;

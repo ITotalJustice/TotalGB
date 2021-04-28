@@ -549,7 +549,9 @@ auto SDL2::ToggleFullscreen() -> void {
         SDL_SetWindowFullscreen(this->window, 0);
     }
     else {
-        SDL_SetWindowFullscreen(this->window, SDL_WINDOW_FULLSCREEN);
+        // [SDL_WINDOW_FULLSCREEN] doesnt work nicely in my
+        // chromebook browser...
+        SDL_SetWindowFullscreen(this->window, SDL_WINDOW_FULLSCREEN_DESKTOP);
     }
 }
 

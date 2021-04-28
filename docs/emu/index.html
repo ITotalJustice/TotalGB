@@ -41,15 +41,23 @@
 
   <a class="button" id="DlSaves" download="TotalGB_saves.zip" type="application/zip">Download All Saves</a>
 
+  <button class="button" id="Fullscreen">Fullscreen</button>
+
   <label for="Pause">Pause</label>
   <input class="button" type="checkbox" id="Pause" name="Pause">
 
   <label for="Mute">Mute</label>
   <input class="button" type="checkbox" id="Mute" name="Mute">
 
-  <hr/>
-    <textarea class="emscripten" id="output" rows="8"></textarea>
-  <hr>
+  <script type="text/javascript">
+    let input = document.getElementById("Fullscreen");
+    input.addEventListener("click", () => {
+      _em_toggle_fullscreen();
+      // ccall('em_toggle_fullscreen');
+    });
+  </script>
+
+  <!-- <hr/><textarea class="emscripten" id="output" rows="8"></textarea><hr> -->
 
   <script src="scripts/em.js"></script>
   <script src="scripts/rom_loader.js"></script>

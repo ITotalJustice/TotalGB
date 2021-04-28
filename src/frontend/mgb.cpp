@@ -194,6 +194,10 @@ auto App::OnErrorCallback(struct GB_ErrorData* data) -> void {
     }
 }
 
+auto App::ToggleFullscreen() -> void {
+    this->video_platform->ToggleFullscreen();
+}
+
 auto App::FlushSave() -> void {
     this->SaveGame();
 }
