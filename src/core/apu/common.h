@@ -14,10 +14,15 @@ extern "C" {
 #define NOISE_CHANNEL gb->apu.noise
 #define CONTROL_CHANNEL gb->apu.control
 
+#ifndef GB_AUDIO_FREQUENCY
+#define GB_AUDIO_FREQUENCY 22050
+#endif
+// 48000
+
 #ifdef GB_SDL_AUDIO_CALLBACK_STREAM
 #define SAMPLE_RATE 4
 #else
-#define SAMPLE_RATE (4213440 / 48000)
+#define SAMPLE_RATE (4213440 / GB_AUDIO_FREQUENCY)
 #endif
 
 // clocked at 512hz

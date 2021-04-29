@@ -82,6 +82,7 @@ source = files([
     # [Audio Backends]
     # 'src/frontend/platforms/audio/sdl1/sdl1_audio.cpp',
     'src/frontend/platforms/audio/sdl2/sdl2_audio.cpp',
+    # 'src/frontend/platforms/audio/sdl2/sdl2_audio_thread.cpp',
 
     # MINIZIP
     'src/libs/minizip/unzip.c',
@@ -144,6 +145,8 @@ cflags = [
 
     '-DMGB_NO_LZ4',
     '-DMGB_NO_ZSTD',
+
+    '-DGB_AUDIO_FREQUENCY=44100',
 ]
 
 cppflags = [
@@ -170,6 +173,7 @@ elif host_machine.system() == 'linux'
 
     dependencies += dependency('sdl2', version : '>=2.0.5')
     dependencies += dependency('gtk+-3.0')
+    # dependencies += dependency('samplerate')
 
 elif host_machine.system() == 'darwin'
     source += 'src/libs/nativefiledialog/nfd_cocoa.m'

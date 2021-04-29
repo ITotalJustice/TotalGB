@@ -25,6 +25,8 @@
 #include <emscripten.h>
 #endif // __EMSCRIPTEN__
 
+// #define STREAM_AUDIO
+
 namespace mgb {
 
 
@@ -116,7 +118,11 @@ App::App() {
 #endif
 
 #ifdef MGB_SDL2_AUDIO
+#ifndef STREAM_AUDIO
     using AudioPlatform = platform::audio::sdl2::SDL2;
+#else
+    using AudioPlatform = platform::audio::sdl2::thread::SDL2;
+#endif // STREAM_AUDIO
 #elif MGB_SDL1_AUDIO
     using AudioPlatform = platform::audio::sdl1::SDL1;
 #elif MGB_ALLEGRO5_AUDIO
@@ -130,7 +136,7 @@ App::App() {
         vid_info, game_info
     );
 
-    this->audio_platform->SetupAudio();
+    this->audio_platform->SetupAudio(GB_AUDIO_FREQUENCY);
 }
 
 App::~App() {
@@ -388,7 +394,16 @@ auto App::LoadRomInternal(LoadRomInfo&& info) -> bool {
 
         GB_set_rtc_update_config(this->GetCore(), GB_RTC_UPDATE_CONFIG_USE_LOCAL_TIME);
 
-        GB_set_apu_callback(this->GetCore(), AudioCallback, this);
+        struct GB_AudioCallbackData audio_data{};
+        audio_data.cb = AudioCallback;
+        audio_data.user_data = this;
+        #ifdef STREAM_AUDIO
+        // audio_data.mode = AUDIO_CALLBACK_PUSH_ALL;
+        #else
+        audio_data.mode = AUDIO_CALLBACK_FILL_SAMPLES;
+        #endif
+
+        GB_set_apu_callback(this->GetCore(), &audio_data);
         GB_set_vblank_callback(this->GetCore(), VblankCallback, this);
         GB_set_hblank_callback(this->GetCore(), HblankCallback, this);
         GB_set_dma_callback(this->GetCore(), DmaCallback, this);

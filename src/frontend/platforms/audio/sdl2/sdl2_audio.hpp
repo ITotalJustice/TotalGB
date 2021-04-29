@@ -12,7 +12,7 @@ public:
 	using Interface::Interface;
 	~SDL2();
 
-	auto SetupAudio() -> bool override;
+	auto SetupAudio(int freq) -> bool override;
 
 	auto PushSamples(const struct GB_ApuCallbackData* data) -> void override;
 

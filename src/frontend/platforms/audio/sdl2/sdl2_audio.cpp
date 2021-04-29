@@ -33,11 +33,11 @@ SDL2::~SDL2() {
     }
 }
 
-auto SDL2::SetupAudio() -> bool {
+auto SDL2::SetupAudio(int freq) -> bool {
 	// this is to fix very high cpu usage on my chromebook
 	// when using pulseaudio (30%!).
 #ifndef __EMSCRIPTEN__
-	SDL_setenv("SDL_AUDIODRIVER", "sndio", 1);
+	// SDL_setenv("SDL_AUDIODRIVER", "sndio", 1);
 #endif // __EMSCRIPTEN__
 
 	if (SDL_InitSubSystem(SDL_INIT_AUDIO)) {
@@ -57,7 +57,7 @@ auto SDL2::SetupAudio() -> bool {
     }
 
     const SDL_AudioSpec wanted{
-        /* .freq = */ 48000,
+        /* .freq = */ freq,
         /* .format = */ AUDIO_S8,
         /* .channels = */ 2,
         /* .silence = */ 0, // calculated
@@ -94,17 +94,15 @@ auto SDL2::SetupAudio() -> bool {
 }
 
 auto SDL2::PushSamples(const struct GB_ApuCallbackData* data) -> void {
-#ifndef __EMSCRIPTEN__
-    while (SDL_GetQueuedAudioSize(this->device_id) > (sizeof(data->samples) * 4)) {
+    while (SDL_GetQueuedAudioSize(this->device_id) > (1024*4)) {
         SDL_Delay(1);
     }
-#else
-    #if 0
-    while (SDL_GetQueuedAudioSize(this->device_id) > (sizeof(data->samples) * 4)) {
-        emscripten_sleep(1);
-    }
-    #endif
-#endif // __EMSCRIPTEN__
+
+    uint8_t buffer[512*2]{};
+    SDL_MixAudioFormat(buffer, (const uint8_t*)data->buffers.ch1, AUDIO_S8, sizeof(data->buffers.ch1), SDL_MIX_MAXVOLUME/8);
+    SDL_MixAudioFormat(buffer, (const uint8_t*)data->buffers.ch2, AUDIO_S8, sizeof(data->buffers.ch2), SDL_MIX_MAXVOLUME/8);
+    SDL_MixAudioFormat(buffer, (const uint8_t*)data->buffers.ch3, AUDIO_S8, sizeof(data->buffers.ch3), SDL_MIX_MAXVOLUME/8);
+    SDL_MixAudioFormat(buffer, (const uint8_t*)data->buffers.ch4, AUDIO_S8, sizeof(data->buffers.ch4), SDL_MIX_MAXVOLUME/8);
 
     switch (SDL_GetAudioDeviceStatus(this->device_id)) {
         case SDL_AUDIO_STOPPED:
@@ -116,7 +114,7 @@ auto SDL2::PushSamples(const struct GB_ApuCallbackData* data) -> void {
             break;
 
         case SDL_AUDIO_PLAYING:
-            SDL_QueueAudio(this->device_id, data->samples, sizeof(data->samples));
+            SDL_QueueAudio(this->device_id, buffer, sizeof(buffer));
             break;
     }
 }

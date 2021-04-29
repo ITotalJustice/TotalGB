@@ -20,7 +20,7 @@ public:
 	Interface() = default;
 	virtual ~Interface() = default;
 
-	virtual auto SetupAudio() -> bool = 0;
+	virtual auto SetupAudio(int freq) -> bool = 0;
 
 	virtual auto PushSamples(const struct GB_ApuCallbackData* data) -> void = 0;
 

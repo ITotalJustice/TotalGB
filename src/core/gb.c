@@ -8,6 +8,7 @@
 
 #define ROM_SIZE_MULT 0x8000
 
+
 void GB_throw_info(const struct GB_Core* gb, const char* message) {
 	if (gb->error_cb != NULL) {
 		struct GB_ErrorData data = {0};
@@ -631,6 +632,7 @@ int GB_loadstate2(struct GB_Core* gb, const struct GB_CoreState* state) {
 	memcpy(&gb->cart.ram_bank, &state->cart.ram_bank, sizeof(state->cart.ram_bank));
 	memcpy(&gb->cart.ram, &state->cart.ram, sizeof(state->cart.ram));
 	memcpy(&gb->cart.rtc, &state->cart.rtc, sizeof(state->cart.rtc));
+	
 	gb->cart.rom_bank = state->cart.rom_bank;
 	gb->cart.rom_bank_lo = state->cart.rom_bank_lo;
 	gb->cart.rom_bank_hi = state->cart.rom_bank_hi;
@@ -666,9 +668,16 @@ void GB_disable_interrupt(struct GB_Core* gb, const enum GB_Interrupts interrupt
 	IO_IF &= ~(interrupt);
 }
 
-void GB_set_apu_callback(struct GB_Core* gb, GB_apu_callback_t cb, void* user_data) {
-	gb->apu_cb = cb;
-	gb->apu_cb_user_data = user_data;
+void GB_set_apu_callback(struct GB_Core* gb, struct GB_AudioCallbackData* data) {
+	// if NULL, cb is disabled
+	if (!data) {
+		gb->apu_cb = NULL;
+	}
+	else {
+		gb->apu_cb = data->cb;
+		gb->apu_cb_user_data = data->user_data;
+		gb->apu.sample_mode = data->mode;
+	}
 }
 
 void GB_set_vblank_callback(struct GB_Core* gb, GB_vblank_callback_t cb, void* user_data) {

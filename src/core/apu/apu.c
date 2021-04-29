@@ -18,18 +18,18 @@ const uint8_t PERIOD_TABLE[8] = {
 };
 
 
-static inline void clock_len(struct GB_Core* gb) {
+static void clock_len(struct GB_Core* gb) {
     clock_square1_len(gb);
     clock_square2_len(gb);
     clock_wave_len(gb);
     clock_noise_len(gb);
 }
 
-static inline void clock_sweep(struct GB_Core* gb) {
+static void clock_sweep(struct GB_Core* gb) {
     on_square1_sweep(gb);
 }
 
-static inline void clock_vol(struct GB_Core* gb) {
+static void clock_vol(struct GB_Core* gb) {
     clock_square1_vol(gb);
     clock_square2_vol(gb);
     clock_noise_vol(gb);
@@ -85,50 +85,68 @@ static void step_frame_sequencer(struct GB_Core* gb) {
     ++gb->apu.frame_sequencer_counter;
 }
 
-static inline struct GB_MixerResult builtin_mixer(const struct GB_MixerData* data) {
-    struct GB_MixerResult result = {
-        .left = ((
-            (data->square1.sample * data->square1.left) +
-            (data->square2.sample * data->square2.left) +
-            (data->wave.sample * data->wave.left) +
-            (data->noise.sample * data->noise.left)
-        ) / 4) * data->left_master,
+struct MixerResult {
+    int8_t ch1[2];
+    int8_t ch2[2];
+    int8_t ch3[2];
+    int8_t ch4[2];
+};
 
-        .right = ((
-            (data->square1.sample * data->square1.right) +
-            (data->square2.sample * data->square2.right) +
-            (data->wave.sample * data->wave.right) +
-            (data->noise.sample * data->noise.right)
-        ) / 4) * data->right_master,
+struct MixerSampleData {
+    int8_t sample;
+    int8_t left;
+    int8_t right;
+};
+
+struct MixerData {
+    struct MixerSampleData ch1;
+    struct MixerSampleData ch2;
+    struct MixerSampleData ch3;
+    struct MixerSampleData ch4;
+
+    int8_t left_master, right_master;
+};
+
+static struct MixerResult mixer(const struct MixerData* data) {
+    enum { LEFT, RIGHT };
+
+    return (struct MixerResult){
+        .ch1[LEFT] = data->ch1.sample * data->ch1.left * data->left_master,
+        .ch1[RIGHT] = data->ch1.sample * data->ch1.right * data->right_master,
+        .ch2[LEFT] = data->ch2.sample * data->ch2.left * data->left_master,
+        .ch2[RIGHT] = data->ch2.sample * data->ch2.right * data->right_master,
+        .ch3[LEFT] = data->ch3.sample * data->ch3.left * data->left_master,
+        .ch3[RIGHT] = data->ch3.sample * data->ch3.right * data->right_master,
+        .ch4[LEFT] = data->ch4.sample * data->ch4.left * data->left_master,
+        .ch4[RIGHT] = data->ch4.sample * data->ch4.right * data->right_master,
     };
-
-    // this is for testing with sdl2, as the vol is loud!
-    if (result.left != 0) result.left /= 2; 
-    if (result.right != 0) result.right /= 2; 
-
-    return result;
 }
 
 static void sample_channels(struct GB_Core* gb) {
+    // check if we have any callbacks set, if not, avoid
+    // doing all the hardwork below!
+    if (gb->apu_cb == NULL) {
+        return;
+    }
 
     // build up data for the mixer!
-    const struct GB_MixerData mixer_data = {
-        .square1 = {
+    const struct MixerData mixer_data = {
+        .ch1 = {
             .sample = sample_square1(gb) * is_square1_enabled(gb),
             .left = IO_NR51.square1_left,
             .right = IO_NR51.square1_right
         },
-        .square2 = {
+        .ch2 = {
             .sample = sample_square2(gb) * is_square2_enabled(gb),
             .left = IO_NR51.square2_left,
             .right = IO_NR51.square2_right
         },
-        .wave = {
+        .ch3 = {
             .sample = sample_wave(gb) * is_wave_enabled(gb),
             .left = IO_NR51.wave_left,
             .right = IO_NR51.wave_right
         },
-        .noise = {
+        .ch4 = {
             .sample = sample_noise(gb) * is_noise_enabled(gb),
             .left = IO_NR51.noise_left,
             .right = IO_NR51.noise_right
@@ -137,29 +155,35 @@ static void sample_channels(struct GB_Core* gb) {
         .right_master = CONTROL_CHANNEL.nr50.right_vol
     };
 
-    if (gb->mixer_cb != NULL) {
-        const struct GB_MixerResult r = gb->mixer_cb(gb, gb->mixer_cb_user_data, &mixer_data);
-        gb->apu.samples.samples[gb->apu.samples_count + 0] = r.left;
-        gb->apu.samples.samples[gb->apu.samples_count + 1] = r.right;
-    }
+    const struct MixerResult r = mixer(&mixer_data);
 
-    else {
-        const struct GB_MixerResult r = builtin_mixer(&mixer_data);
-        gb->apu.samples.samples[gb->apu.samples_count + 0] = r.left;
-        gb->apu.samples.samples[gb->apu.samples_count + 1] = r.right;
-    }
+    struct GB_ApuCallbackData* samples = &gb->apu.samples;
+    const uint32_t sample_count = gb->apu.samples_count;
 
-    // we stored 2 samples (left and right for stereo)
-    gb->apu.samples_count += 2;
+    samples->buffers.ch1[sample_count + 0] = r.ch1[0];
+    samples->buffers.ch1[sample_count + 1] = r.ch1[1];
+    samples->buffers.ch2[sample_count + 0] = r.ch2[0];
+    samples->buffers.ch2[sample_count + 1] = r.ch2[1];
+    samples->buffers.ch3[sample_count + 0] = r.ch3[0];
+    samples->buffers.ch3[sample_count + 1] = r.ch3[1];
+    samples->buffers.ch4[sample_count + 0] = r.ch4[0];
+    samples->buffers.ch4[sample_count + 1] = r.ch4[1];
+    
+    // fill the samples based on the mode!
+    switch (gb->apu.sample_mode) {
+        case AUDIO_CALLBACK_FILL_SAMPLES:
+            gb->apu.samples_count += 2;
 
-    // check if we filled the buffer
-    if (gb->apu.samples_count >= sizeof(gb->apu.samples.samples)) {
-        gb->apu.samples_count = 0;
+            // check if we filled the buffer
+            if (gb->apu.samples_count >= 512*2) {
+                gb->apu.samples_count = 0;
+                gb->apu_cb(gb, gb->apu_cb_user_data, samples);
+            }
+            break;
 
-        // make sure the frontend did set a callback!
-        if (gb->apu_cb != NULL) {
-            gb->apu_cb(gb, gb->apu_cb_user_data, &gb->apu.samples);
-        }
+        case AUDIO_CALLBACK_PUSH_ALL:
+            gb->apu_cb(gb, gb->apu_cb_user_data, samples);
+            break;
     }
 }
 
@@ -203,26 +227,30 @@ void GB_apu_run(struct GB_Core* gb, uint16_t cycles) {
             gb->apu.next_frame_sequencer_cycles -= FRAME_SEQUENCER_STEP_RATE;
             step_frame_sequencer(gb);
         }
-
-        // see if it's time to create a new sample!
-        gb->apu.next_sample_cycles += cycles;
-        while (gb->apu.next_sample_cycles >= SAMPLE_RATE) {
-            gb->apu.next_sample_cycles -= SAMPLE_RATE;
-            sample_channels(gb);
-        }
     }
 
-    else {
-        // we should still sample even if the apu is disabled
-        // in this case, the samples are filled with 0.
+    // we should still sample even if the apu is disabled
+    // in this case, the samples are filled with 0.
 
-        // this can slightly optimised by just filling that sample with
-        // a fixed silence value, rather than fake-creating samples for
-        // no reason.
-        gb->apu.next_sample_cycles += cycles;
-        while (gb->apu.next_sample_cycles >= SAMPLE_RATE) {
-            gb->apu.next_sample_cycles -= SAMPLE_RATE;
-            sample_channels(gb);
-        }
+    // this can slightly optimised by just filling that sample with
+    // a fixed silence value, rather than fake-creating samples for
+    // no reason.
+
+    switch (gb->apu.sample_mode) {
+        case AUDIO_CALLBACK_FILL_SAMPLES:
+            gb->apu.next_sample_cycles += cycles;
+            while (gb->apu.next_sample_cycles >= SAMPLE_RATE) {
+                gb->apu.next_sample_cycles -= SAMPLE_RATE;
+                sample_channels(gb);
+            }
+            break;
+
+        case AUDIO_CALLBACK_PUSH_ALL:
+            gb->apu.next_sample_cycles += cycles;
+            while (gb->apu.next_sample_cycles >= 8) {
+                gb->apu.next_sample_cycles -= 8;
+                sample_channels(gb);
+            }
+            break;
     }
 }

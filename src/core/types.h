@@ -270,70 +270,9 @@ struct GB_ErrorData {
 	};
 };
 
-struct GB_MixerSampleData {
-	int8_t sample;
-	int8_t left;
-	int8_t right;
-};
-
-struct GB_MixerData {
-	struct GB_MixerSampleData square1;
-	struct GB_MixerSampleData square2;
-	struct GB_MixerSampleData wave;
-	struct GB_MixerSampleData noise;
-
-	int8_t left_master, right_master;
-};
-
-struct GB_MixerResult {
-	int8_t left, right;
-};
-
-// TODO: add button recording
-// // saves the buttons each frame, as well as the frame count.
-// // this is useful for TAS recording.
-// struct GB_ButtonRecord {
-// 	uint8_t buttons; // bitfield buttons
-// 	uint8_t frame; // 0-59
-// };
-
-// // Run-Time-Length encoded button record
-// // the resulting file is usually extreamly small.
-// // however, this type of recording is not suitible for
-// // manually editing, for that, use [GB_ButtonRecord]
-// struct GB_ButtonRecordRLE {
-// 	// how many times this same buttons value is kept
-
-// 	// NOTE: there's further size optimisations to be made here
-// 	// for example, be sacrifising MSB (now 0-128), MSB can represent if the
-// 	// next byte uses the same buttons value, thus, not needing a len for the next
-	
-// 	// however, this is likely not worth it. in games, it is common for a button
-// 	// to be pressed at least once every 256 frames, unless a cutscene is
-// 	// happening, or the user is idle, or game is paused.
-// 	uint8_t len;
-// 	uint8_t buttons;
-// };
-
-// struct GB_ButtonRecordRLEResult {
-// 	// button config changed
-// 	bool new_struct_wanted;
-// };
-
-// struct GB_InternalButtonRecordRLE {
-// 	// button rle is updated 
-// 	bool already_set_this_frame;
-// };
-
-// typedef void(*GB_button_record_rle_callback_t)(struct GB_Core* gb, void* user);
-
 // user-set callbacks
 typedef void(*GB_apu_callback_t)(struct GB_Core* gb, void* user,
 	const struct GB_ApuCallbackData* data
-);
-
-typedef struct GB_MixerResult(*GB_mixer_callback_t)(struct GB_Core* gb, void* user,
-    const struct GB_MixerData* data
 );
 
 typedef void(*GB_error_callback_t)(struct GB_Core* gb, void* user,
@@ -346,6 +285,20 @@ typedef void(*GB_dma_callback_t)(struct GB_Core* gb, void* user);
 typedef void(*GB_halt_callback_t)(struct GB_Core* gb, void* user);
 typedef void(*GB_stop_callback_t)(struct GB_Core* gb, void* user);
 
+
+enum GB_AudioCallbackMode {
+	/* sample buffer is first filled, then callback is called */
+	AUDIO_CALLBACK_FILL_SAMPLES,
+	/* this will push 1 sample at a time, as fast as possible */
+	AUDIO_CALLBACK_PUSH_ALL,
+};
+
+struct GB_AudioCallbackData {
+	GB_apu_callback_t cb;
+	void* user_data;
+	enum GB_AudioCallbackMode mode;
+	int freq;
+};
 
 enum GB_LinkTransferType {
     // tells the other gameboy that it is NOT
@@ -728,7 +681,24 @@ struct GB_ApuControl {
 };
 
 struct GB_ApuCallbackData {
-	int8_t samples[512 * 2];
+	// type
+	union {
+		struct {
+			// 2 because of stereo
+			int8_t ch1[2];
+			int8_t ch2[2];
+			int8_t ch3[2];
+			int8_t ch4[2];
+		} samples;
+
+		struct {
+			// 512 samples * sterero
+			int8_t ch1[512 * 2];
+			int8_t ch2[512 * 2];
+			int8_t ch3[512 * 2];
+			int8_t ch4[512 * 2];
+		} buffers;
+	};
 };
 
 struct GB_Apu {
@@ -745,6 +715,7 @@ struct GB_Apu {
 
 	struct GB_ApuCallbackData samples;
 	uint16_t samples_count;
+	enum GB_AudioCallbackMode sample_mode;
 };
 
 // todo: this struct needs to be re-organised.
@@ -777,9 +748,6 @@ struct GB_Core {
 
 	GB_apu_callback_t apu_cb;
 	void* apu_cb_user_data;
-
-	GB_mixer_callback_t mixer_cb;
-	void* mixer_cb_user_data;
 
 	GB_serial_transfer_t link_cable;
 	void* link_cable_user_data;
