@@ -1,10 +1,12 @@
 #include "core/mbc/mbc.h"
 #include "core/internal.h"
 
+#include <assert.h>
+
 
 void GB_mbc2_write(struct GB_Core* gb, uint16_t addr, uint8_t value) {
-	switch ((addr >> 12) & 0xF) {
-	// RAM ENABLE / ROM BANK
+    switch ((addr >> 12) & 0xF) {
+    // RAM ENABLE / ROM BANK
         case 0x0: case 0x1: case 0x2: case 0x3:
             // if the 8th bit is not set, the value
             // controls the ram enable
@@ -29,11 +31,11 @@ void GB_mbc2_write(struct GB_Core* gb, uint16_t addr, uint8_t value) {
 
             gb->cart.ram[masked_addr] = masked_value;
         } break;
-	}
+    }
 }
 
 struct MBC_RomBankInfo GB_mbc2_get_rom_bank(struct GB_Core* gb, uint8_t bank) {
-	struct MBC_RomBankInfo info = {0};
+    struct MBC_RomBankInfo info = {0};
     const uint8_t* ptr = NULL;
 
     if (bank == 0) {
@@ -52,12 +54,12 @@ struct MBC_RomBankInfo GB_mbc2_get_rom_bank(struct GB_Core* gb, uint8_t bank) {
 }
 
 struct MBC_RamBankInfo GB_mbc2_get_ram_bank(struct GB_Core* gb) {
-	if (!(gb->cart.flags & MBC_FLAGS_RAM) || !gb->cart.ram_enabled) {
-		return mbc_setup_empty_ram();
-	}
+    if (!(gb->cart.flags & MBC_FLAGS_RAM) || !gb->cart.ram_enabled) {
+        return mbc_setup_empty_ram();
+    }
 
-	struct MBC_RamBankInfo info = {0};
-    
+    struct MBC_RamBankInfo info = {0};
+
     const uint8_t* ptr = gb->cart.ram + (0x2000 * gb->cart.ram_bank);
 
     for (size_t i = 0; i < GB_ARR_SIZE(info.entries); ++i) {

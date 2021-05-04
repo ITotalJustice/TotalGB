@@ -1,7 +1,6 @@
 #include "core/gb.h"
 #include "core/internal.h"
 #include "core/apu/apu.h"
-#include "core/apu/common.h"
 
 #include <string.h>
 
@@ -18,37 +17,37 @@ const uint8_t PERIOD_TABLE[8] = {
 };
 
 
-static void clock_len(struct GB_Core* gb) {
+static inline void clock_len(struct GB_Core* gb) {
     clock_square1_len(gb);
     clock_square2_len(gb);
     clock_wave_len(gb);
     clock_noise_len(gb);
 }
 
-static void clock_sweep(struct GB_Core* gb) {
+static inline void clock_sweep(struct GB_Core* gb) {
     on_square1_sweep(gb);
 }
 
-static void clock_vol(struct GB_Core* gb) {
+static inline void clock_vol(struct GB_Core* gb) {
     clock_square1_vol(gb);
     clock_square2_vol(gb);
     clock_noise_vol(gb);
 }
 
 // this is used when a channel is triggered
-bool is_next_frame_suqencer_step_not_len(const struct GB_Core* gb) {
+bool is_next_frame_sequencer_step_not_len(const struct GB_Core* gb) {
     // check if the current counter is the len clock, the next one won't be!
     return gb->apu.frame_sequencer_counter == 0 || gb->apu.frame_sequencer_counter == 2 || gb->apu.frame_sequencer_counter == 4 || gb->apu.frame_sequencer_counter == 6;
 }
 
 // this is used when channels 1,2,4 are triggered
-bool is_next_frame_suqencer_step_vol(const struct GB_Core* gb) {
+bool is_next_frame_sequencer_step_vol(const struct GB_Core* gb) {
     // check if the current counter is the len clock, the next one won't be!
     return gb->apu.frame_sequencer_counter == 6;
 }
 
 // this runs at 512hz
-static void step_frame_sequencer(struct GB_Core* gb) {
+static inline void step_frame_sequencer(struct GB_Core* gb) {
     switch (gb->apu.frame_sequencer_counter) {
         case 0: // len
             clock_len(gb);
@@ -107,7 +106,7 @@ struct MixerData {
     int8_t left_master, right_master;
 };
 
-static struct MixerResult mixer(const struct MixerData* data) {
+static inline struct MixerResult mixer(const struct MixerData* data) {
     enum { LEFT, RIGHT };
 
     return (struct MixerResult){
@@ -122,7 +121,7 @@ static struct MixerResult mixer(const struct MixerData* data) {
     };
 }
 
-static void sample_channels(struct GB_Core* gb) {
+static inline void sample_channels(struct GB_Core* gb) {
     // check if we have any callbacks set, if not, avoid
     // doing all the hardwork below!
     if (gb->apu_cb == NULL) {
@@ -160,15 +159,15 @@ static void sample_channels(struct GB_Core* gb) {
     struct GB_ApuCallbackData* samples = &gb->apu.samples;
     const uint32_t sample_count = gb->apu.samples_count;
 
-    samples->buffers.ch1[sample_count + 0] = r.ch1[0];
-    samples->buffers.ch1[sample_count + 1] = r.ch1[1];
-    samples->buffers.ch2[sample_count + 0] = r.ch2[0];
-    samples->buffers.ch2[sample_count + 1] = r.ch2[1];
-    samples->buffers.ch3[sample_count + 0] = r.ch3[0];
-    samples->buffers.ch3[sample_count + 1] = r.ch3[1];
-    samples->buffers.ch4[sample_count + 0] = r.ch4[0];
-    samples->buffers.ch4[sample_count + 1] = r.ch4[1];
-    
+    samples->data.buffers.ch1[sample_count + 0] = r.ch1[0];
+    samples->data.buffers.ch1[sample_count + 1] = r.ch1[1];
+    samples->data.buffers.ch2[sample_count + 0] = r.ch2[0];
+    samples->data.buffers.ch2[sample_count + 1] = r.ch2[1];
+    samples->data.buffers.ch3[sample_count + 0] = r.ch3[0];
+    samples->data.buffers.ch3[sample_count + 1] = r.ch3[1];
+    samples->data.buffers.ch4[sample_count + 0] = r.ch4[0];
+    samples->data.buffers.ch4[sample_count + 1] = r.ch4[1];
+
     // fill the samples based on the mode!
     switch (gb->apu.sample_mode) {
         case AUDIO_CALLBACK_FILL_SAMPLES:

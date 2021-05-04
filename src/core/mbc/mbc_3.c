@@ -2,6 +2,8 @@
 #include "core/internal.h"
 #include "core/gb.h" // for has flags functions
 
+#include <assert.h>
+
 /*
  08h  RTC S   Seconds   0-59 (0-3Bh)
  09h  RTC M   Minutes   0-59 (0-3Bh)
@@ -40,7 +42,7 @@ void GB_rtc_tick_frame(struct GB_Core* gb) {
     ++gb->cart.rtc.S;
     if (gb->cart.rtc.S > 59) {
         gb->cart.rtc.S = 0;
-        
+
         ++gb->cart.rtc.M;
         if (gb->cart.rtc.M > 59) {
             gb->cart.rtc.M = 0;
@@ -95,14 +97,14 @@ static inline void GB_speed_hack_map_rtc_reg(struct GB_Core* gb) {
     gb->mmap[0xB].mask = 0;
 }
 
-void GB_mbc3_write(struct GB_Core* gb, uint16_t addr, uint8_t value) { 
+void GB_mbc3_write(struct GB_Core* gb, uint16_t addr, uint8_t value) {
     switch ((addr >> 12) & 0xF) {
-	// RAM / RTC REGISTER ENABLE
+    // RAM / RTC REGISTER ENABLE
         case 0x0: case 0x1:
             gb->cart.ram_enabled = (value & 0x0F) == 0x0A;
             GB_update_ram_banks(gb);
             break;
-            
+
     // ROM BANK
         case 0x2: case 0x3:
             gb->cart.rom_bank = ((value) | (value == 0)) % gb->cart.rom_bank_max;
@@ -144,7 +146,7 @@ void GB_mbc3_write(struct GB_Core* gb, uint16_t addr, uint8_t value) {
 }
 
 struct MBC_RomBankInfo GB_mbc3_get_rom_bank(struct GB_Core* gb, uint8_t bank) {
-	struct MBC_RomBankInfo info = {0};
+    struct MBC_RomBankInfo info = {0};
     const uint8_t* ptr = NULL;
 
     if (bank == 0) {
@@ -163,12 +165,12 @@ struct MBC_RomBankInfo GB_mbc3_get_rom_bank(struct GB_Core* gb, uint8_t bank) {
 }
 
 struct MBC_RamBankInfo GB_mbc3_get_ram_bank(struct GB_Core* gb) {
-	if (!(gb->cart.flags & MBC_FLAGS_RAM) || !gb->cart.ram_enabled || !gb->cart.in_ram) {
-		return mbc_setup_empty_ram();
-	}
+    if (!(gb->cart.flags & MBC_FLAGS_RAM) || !gb->cart.ram_enabled || !gb->cart.in_ram) {
+        return mbc_setup_empty_ram();
+    }
 
-	struct MBC_RamBankInfo info = {0};
-    
+    struct MBC_RamBankInfo info = {0};
+
     const uint8_t* ptr = gb->cart.ram + (0x2000 * gb->cart.ram_bank);
 
     for (size_t i = 0; i < GB_ARR_SIZE(info.entries); ++i) {

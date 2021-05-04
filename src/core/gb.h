@@ -1,7 +1,5 @@
-#pragma once
-// GB_ENDIAN: (autodetect by default)
-// set the system endianess.
-// set this to either GB_LITTLE_ENDIAN or GB_BIG_ENDIAN
+#ifndef _GB_H_
+#define _GB_H_
 
 #ifdef __cplusplus
 extern "C" {
@@ -16,26 +14,26 @@ void GB_reset(struct GB_Core* gb);
 // pass the fully loaded rom data.
 // this memory is NOT owned.
 // freeing the memory should still be handled by the caller!
-int GB_loadrom_data(struct GB_Core* gb, const uint8_t* data, size_t size);
+bool GB_loadrom(struct GB_Core* gb, const uint8_t* data, size_t size);
 
 bool GB_has_save(const struct GB_Core* gb);
 bool GB_has_rtc(const struct GB_Core* gb);
 uint32_t GB_calculate_savedata_size(const struct GB_Core* gb);
 uint32_t GB_calculate_state_size(const struct GB_Core* gb);
 
-int GB_savegame(const struct GB_Core* gb, struct GB_SaveData* save);
-int GB_loadsave(struct GB_Core* gb, const struct GB_SaveData* save);
+bool GB_savegame(const struct GB_Core* gb, struct GB_SaveData* save);
+bool GB_loadsave(struct GB_Core* gb, const struct GB_SaveData* save);
 
 // save/loadstate to struct.
 // header info is written / read and endianess is swapped on save.
-int GB_savestate(const struct GB_Core* gb, struct GB_State* state);
-int GB_loadstate(struct GB_Core* gb, const struct GB_State* state);
+bool GB_savestate(const struct GB_Core* gb, struct GB_State* state);
+bool GB_loadstate(struct GB_Core* gb, const struct GB_State* state);
 
 // like save/loadstate but does not fill out the header.
 // this is to be used if creating a rewind buffer as endianess and headers
 // are not needed.
-int GB_savestate2(const struct GB_Core* gb, struct GB_CoreState* state);
-int GB_loadstate2(struct GB_Core* gb, const struct GB_CoreState* state);
+bool GB_savestate2(const struct GB_Core* gb, struct GB_CoreState* state);
+bool GB_loadstate2(struct GB_Core* gb, const struct GB_CoreState* state);
 
 // int GB_set_colour_mode(struct GB_Core* gb, enum GB_ColourMode mode);
 // enum GB_ColourMode GB_get_colour_mode(const struct GB_Core* gb);
@@ -114,7 +112,7 @@ void GB_connect_link_cable(struct GB_Core* gb, GB_serial_transfer_t cb, void* us
 
 // this sets the link cable callback to an interal function.
 // the user_data for the callback will be the passed in gb struct.
-// WARNING: this will overwrite the exisitng link_cable_cb and user_data! 
+// WARNING: this will overwrite the exisitng link_cable_cb and user_data!
 void GB_connect_link_cable_builtin(struct GB_Core* gb, struct GB_Core* gb2);
 
 bool GB_get_rom_palette_hash_from_header(const struct GB_CartHeader* header, uint8_t* hash, uint8_t* forth);
@@ -145,11 +143,6 @@ uint8_t GB_cpu_get_register(const struct GB_Core* gb, enum GB_CpuRegisters reg);
 void GB_cpu_set_register_pair(struct GB_Core* gb, enum GB_CpuRegisterPairs pair, uint16_t value);
 uint16_t GB_cpu_get_register_pair(const struct GB_Core* gb, enum GB_CpuRegisterPairs pair);
 
-// this is a race condition, but should solve audio pops for now
-// until i have audio drive the entire core...
-#ifdef GB_SDL_AUDIO_CALLBACK
-void GB_SDL_audio_callback(struct GB_Core* gb, GB_S8* buf, int len);
-#endif // GB_SDL_AUDIO_CALLBACK
 
 // logs each cpu instruction to stdout
 // this only does something if built with GB_DEBUG=1.
@@ -158,3 +151,5 @@ void GB_cpu_enable_log(const bool enable);
 #ifdef __cplusplus
 }
 #endif
+
+#endif // _GB_H_

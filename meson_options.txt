@@ -1,0 +1,31 @@
+# todo: add more options here, such as debug / release
+
+# option for selecting the video mode, use -Dvideo=xxxx
+option('video', type : 'combo',
+		choices : [
+			'null',
+			'sdl1',
+			'sdl1_opengl',
+			'sdl2',
+			'sdl2_opengl',
+			'allegro4',
+			'allegro4_opengl',
+			'allegro5',
+			'allegro5_opengl',
+			'glfw',
+		],
+		value : 'sdl2',
+		description : 'Choose video backend [Default : sdl2]')
+
+# option for selecting the video mode, use -Daudio=xxxx
+option('audio', type : 'combo',
+		choices : [
+			'null',
+			'sdl1',
+			'sdl2',
+			'allegro4',
+			'allegro5',
+			'openal',
+		],
+		value : 'sdl2',
+		description : 'Choose audio backend [Default : sdl2]')

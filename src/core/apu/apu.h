@@ -1,11 +1,11 @@
-#pragma once
+#ifndef _GB_APU_H_
+#define _GB_APU_H_
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 #include "core/types.h"
-
 
 //        Square 1
 // NR10 FF10 -PPP NSSS Sweep period, negate, shift
@@ -39,6 +39,39 @@ extern "C" {
 // NR50 FF24 ALLL BRRR Vin L enable, Left vol, Vin R enable, Right vol
 // NR51 FF25 NW21 NW21 Left enables, Right enables
 // NR52 FF26 P--- NW21 Power control/status, Channel length statuses
+
+#define SQUARE1_CHANNEL gb->apu.square1
+#define SQUARE2_CHANNEL gb->apu.square2
+#define WAVE_CHANNEL gb->apu.wave
+#define NOISE_CHANNEL gb->apu.noise
+#define CONTROL_CHANNEL gb->apu.control
+
+#ifndef GB_AUDIO_FREQUENCY
+#define GB_AUDIO_FREQUENCY 22050
+#endif
+
+#ifdef GB_SDL_AUDIO_CALLBACK_STREAM
+#define SAMPLE_RATE 4
+#else
+#define SAMPLE_RATE (4213440 / GB_AUDIO_FREQUENCY)
+#endif
+
+// clocked at 512hz
+#define FRAME_SEQUENCER_CLOCK 512
+
+// 4 * 1024^2 / 512
+#define FRAME_SEQUENCER_STEP_RATE 8192
+
+enum EnvelopeMode {
+    SUB = 0,
+    ADD = 1
+};
+
+// defined in core/apu/apu.c
+extern const bool SQUARE_DUTY_CYCLES[4][8];
+
+// defined in core/apu/apu.c
+extern const uint8_t PERIOD_TABLE[8];
 
 
 uint16_t get_square1_freq(const struct GB_Core* gb);
@@ -84,9 +117,11 @@ void clock_noise_vol(struct GB_Core* gb);
 void step_noise_lfsr(struct GB_Core* gb);
 void on_noise_trigger(struct GB_Core* gb);
 
-bool is_next_frame_suqencer_step_not_len(const struct GB_Core* gb);
-bool is_next_frame_suqencer_step_vol(const struct GB_Core* gb);
+bool is_next_frame_sequencer_step_not_len(const struct GB_Core* gb);
+bool is_next_frame_sequencer_step_vol(const struct GB_Core* gb);
 
 #ifdef __cplusplus
 }
 #endif
+
+#endif // _GB_APU_H_

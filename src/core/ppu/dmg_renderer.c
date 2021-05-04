@@ -10,11 +10,12 @@ static inline uint16_t calculate_col_from_palette(const uint8_t palette, const u
     return ((palette >> (colour << 1)) & 3);
 }
 
-static void update_colours(uint16_t colours[4], const uint16_t pal_colours[4], const uint8_t palette, bool* dirty) {
+static inline void update_colours(uint16_t colours[4], const uint16_t pal_colours[4], const uint8_t palette, bool* dirty) {
     assert(colours && pal_colours && dirty);
 
     if (*dirty) {
         *dirty = false;
+        
         for (uint8_t i = 0; i < 4; ++i) {
             colours[i] = pal_colours[calculate_col_from_palette(palette, i)];
         }
@@ -30,7 +31,7 @@ void GB_update_all_colours_gb(struct GB_Core* gb) {
     gb->ppu.dirty_obj[1] = true;
 }
 
-static void render_scanline_bg(struct GB_Core* gb) {
+static inline void render_scanline_bg(struct GB_Core* gb) {
     const uint8_t scanline = IO_LY;
     const uint8_t base_tile_x = IO_SCX >> 3;
     const uint8_t sub_tile_x = (IO_SCX & 7);
@@ -63,7 +64,7 @@ static void render_scanline_bg(struct GB_Core* gb) {
     }
 }
 
-static void render_scanline_win(struct GB_Core* gb) {
+static inline void render_scanline_win(struct GB_Core* gb) {
     const uint8_t scanline = IO_LY;
     const uint8_t base_tile_x = 20 - (IO_WX >> 3);
     const int16_t sub_tile_x = IO_WX - 7;
@@ -90,19 +91,19 @@ static void render_scanline_win(struct GB_Core* gb) {
                 continue;
             }
 
-            did_draw |= 1;
+            did_draw |= true;
 
             const uint8_t pixel = ((!!(byte_b & bit[x])) << 1) | (!!(byte_a & bit[x]));
             pixels[pixel_x] = gb->ppu.bg_colours[0][pixel];
         }
     }
 
-    
-    gb->ppu.window_line += did_draw;
+    if (did_draw) {
+        ++gb->ppu.window_line;
+    }
 }
 
-
-
+// todo: delete this code, actually do sprite prio properly!!!
 static int sprite_comp(const void* a, const void* b) {
     const struct GB_Sprite* sprite_a = (const struct GB_Sprite*)a;
     const struct GB_Sprite* sprite_b = (const struct GB_Sprite*)b;
@@ -117,7 +118,7 @@ static int sprite_comp(const void* a, const void* b) {
     return sprite_b->x - sprite_a->x;
 }
 
-static void render_scanline_obj(struct GB_Core* gb) {
+static inline void render_scanline_obj(struct GB_Core* gb) {
     const uint8_t scanline = IO_LY;
     const uint8_t sprite_size = GB_get_sprite_size(gb);
     const uint16_t bg_trans_col = gb->ppu.bg_colours[0][0];
@@ -134,6 +135,7 @@ static void render_scanline_obj(struct GB_Core* gb) {
 
         if (scanline >= spy && scanline < (spy + (sprite_size))) {
             ++sprite_total;
+
             if ((spx + 8) == 0 || spx >= GB_SCREEN_WIDTH) {
                 continue;
             }
@@ -143,23 +145,32 @@ static void render_scanline_obj(struct GB_Core* gb) {
             // when in 8x16 size, bit-0 is ignored of the tile_index
             const uint8_t tile_index = sprite_size == 16 ? sprite.num & 0xFE : sprite.num;
             const uint16_t offset = 0x8000 | (((sprite_line) << 1) + (tile_index << 4));
-            
+
             const uint8_t byte_a = GB_vram_read(gb, offset + 0, 0);
             const uint8_t byte_b = GB_vram_read(gb, offset + 1, 0);
 
             const uint8_t* bit = sprite.flag.xflip ? PIXEL_BIT_GROW : PIXEL_BIT_SHRINK;
 
-            for (uint8_t x = 0; x < 8; ++x) {
-                if ((spx + x) < 0 || (sprite.flag.priority && pixels[spx + x] != bg_trans_col)) {
+            for (int8_t x = 0; x < 8; ++x) {
+                const int16_t x_index = spx + x;
+
+                // ensure that we are in bounds
+                if (x_index < 0 || x_index >= GB_SCREEN_WIDTH) {
                     continue;
                 }
+
+                // handle prio
+                if (sprite.flag.priority && pixels[x_index] != bg_trans_col) {
+                    continue;
+                }
+
                 const uint8_t pixel = ((!!(byte_b & bit[x])) << 1) | (!!(byte_a & bit[x]));
-                
+
                 if (pixel == 0) {
                     continue;
                 }
 
-                pixels[spx + x] = gb->ppu.obj_colours[sprite.flag.pal_gb][pixel];
+                pixels[x_index] = gb->ppu.obj_colours[sprite.flag.pal_gb][pixel];
             }
         }
     }

@@ -20,23 +20,23 @@ struct PrioBuf {
 };
 
 
-static bool is_bcps_auto_increment(const struct GB_Core* gb) {
+static inline bool is_bcps_auto_increment(const struct GB_Core* gb) {
     return (IO_BCPS & 0x80) > 0;
 }
 
-static bool is_ocps_auto_increment(const struct GB_Core* gb) {
+static inline bool is_ocps_auto_increment(const struct GB_Core* gb) {
     return (IO_OCPS & 0x80) > 0;
 }
 
-static uint8_t get_bcps_index(const struct GB_Core* gb) {
+static inline uint8_t get_bcps_index(const struct GB_Core* gb) {
     return IO_BCPS & 0x3F;
 }
 
-static uint8_t get_ocps_index(const struct GB_Core* gb) {
+static inline uint8_t get_ocps_index(const struct GB_Core* gb) {
     return IO_OCPS & 0x3F;
 }
 
-static void bcps_increment(struct GB_Core* gb) {
+static inline void bcps_increment(struct GB_Core* gb) {
     if (is_bcps_auto_increment(gb) == true) {
         // only increment the lower 5 bits.
         // set back the increment bit after.
@@ -44,7 +44,7 @@ static void bcps_increment(struct GB_Core* gb) {
     }
 }
 
-static void ocps_increment(struct GB_Core* gb) {
+static inline void ocps_increment(struct GB_Core* gb) {
     if (is_ocps_auto_increment(gb) == true) {
         // only increment the lower 5 bits.
         // set back the increment bit after.
@@ -93,7 +93,9 @@ uint8_t hdma_read(const struct GB_Core* gb, const uint16_t addr) {
     return entry.ptr[addr & entry.mask];
 }
 
-void hdma_write(struct GB_Core* gb, const uint16_t addr, const uint8_t value) {
+void hdma_write(struct GB_Core* gb,
+    const uint16_t addr, const uint8_t value
+) {
     gb->ppu.vram[IO_VBK][(addr) & 0x1FFF] = value;
 }
 
@@ -186,7 +188,9 @@ void GB_hdma5_write(struct GB_Core* gb, uint8_t value) {
     }
 }
 
-static void render_scanline_bg(struct GB_Core* gb, struct PrioBuf* prio_buffer) {
+static inline void render_scanline_bg(struct GB_Core* gb,
+    struct PrioBuf* prio_buffer
+) {
     const uint8_t scanline = IO_LY;
     const uint8_t base_tile_x = IO_SCX >> 3;
     const uint8_t sub_tile_x = (IO_SCX & 7);
@@ -202,7 +206,7 @@ static void render_scanline_bg(struct GB_Core* gb, struct PrioBuf* prio_buffer) 
     for (uint8_t tile_x = 0; tile_x <= 20; ++tile_x) {
         // calc the map index
         const uint8_t map_x = ((base_tile_x + tile_x) & 31);
-        
+
         // fetch the tile number and attributes
         const uint8_t tile_num = vram_map[map_x];
         const struct GB_BgAttributes attributes = attribute_map[map_x];
@@ -225,7 +229,7 @@ static void render_scanline_bg(struct GB_Core* gb, struct PrioBuf* prio_buffer) 
             }
 
             const uint8_t colour_id = ((!!(byte_b & bit[x])) << 1) | (!!(byte_a & bit[x]));
-            
+
             // set priority
             prio_buffer->prio[pixel_x] = attributes.priority;
             prio_buffer->colour_id[pixel_x] = colour_id;
@@ -235,7 +239,9 @@ static void render_scanline_bg(struct GB_Core* gb, struct PrioBuf* prio_buffer) 
     }
 }
 
-static void render_scanline_win(struct GB_Core* gb, struct PrioBuf* prio_buffer) {
+static inline void render_scanline_win(struct GB_Core* gb,
+    struct PrioBuf* prio_buffer
+) {
     const uint8_t scanline = IO_LY;
     const uint8_t base_tile_x = 20 - (IO_WX >> 3);
     const int16_t sub_tile_x = IO_WX - 7;
@@ -254,10 +260,9 @@ static void render_scanline_win(struct GB_Core* gb, struct PrioBuf* prio_buffer)
         // fetch the tile number and attributes
         const uint8_t tile_num = vram_map[tile_x];
         const struct GB_BgAttributes attributes = attribute_map[tile_x];
-        
+
         const uint16_t offset = GB_get_tile_offset(gb,
             tile_num,
-            // check if flip the y axis
             attributes.yflip ? 7 - sub_tile_y : sub_tile_y
         );
 
@@ -272,10 +277,10 @@ static void render_scanline_win(struct GB_Core* gb, struct PrioBuf* prio_buffer)
                 continue;
             }
 
-            did_draw |= 1;
+            did_draw |= true;
 
             const uint8_t colour_id = ((!!(byte_b & bit[x])) << 1) | (!!(byte_a & bit[x]));
-            
+
             // set priority
             prio_buffer->prio[pixel_x] = attributes.priority;
             prio_buffer->colour_id[pixel_x] = colour_id;
@@ -284,17 +289,21 @@ static void render_scanline_win(struct GB_Core* gb, struct PrioBuf* prio_buffer)
         }
     }
 
-    gb->ppu.window_line += did_draw;
+    if (did_draw) {
+        ++gb->ppu.window_line;
+    }
 }
 
-static void render_scanline_obj(struct GB_Core* gb, const struct PrioBuf* prio_buffer) {
+static inline void render_scanline_obj(struct GB_Core* gb,
+    const struct PrioBuf* prio_buffer
+) {
     const uint8_t scanline = IO_LY;
     const uint8_t sprite_size = GB_get_sprite_size(gb);
 
     // check if the bg always has prio over obj
     const bool bg_prio = (IO_LCDC & 0x1) > 0;
 
-    // 
+    //
     uint16_t* pixels = gb->ppu.pixles[scanline];
     const struct GB_Sprite* sprites = (const struct GB_Sprite*)gb->ppu.oam;
 
@@ -309,6 +318,7 @@ static void render_scanline_obj(struct GB_Core* gb, const struct PrioBuf* prio_b
 
         if (scanline >= spy && scanline < (spy + (sprite_size))) {
             ++sprite_total;
+
             if ((spx + 8) == 0 || spx >= GB_SCREEN_WIDTH) {
                 continue;
             }
@@ -323,20 +333,22 @@ static void render_scanline_obj(struct GB_Core* gb, const struct PrioBuf* prio_b
 
             const uint8_t* bit = sprites[i].flag.xflip ? PIXEL_BIT_GROW : PIXEL_BIT_SHRINK;
 
-            for (uint8_t x = 0; x < 8; ++x) {
-                // check if this has already been written to
-                // from a previous oam entry
-                if (oam_priority[spx + x]) {
+            for (int8_t x = 0; x < 8; ++x) {
+                const int16_t x_index = spx + x;
+
+                // ensure that we are in bounds
+                if (x_index < 0 || x_index >= GB_SCREEN_WIDTH) {
                     continue;
                 }
 
-                // ensure that we are in bounds
-                if ((spx + x) < 0) {
+                // check if this has already been written to
+                // from a previous oam entry
+                if (oam_priority[x_index]) {
                     continue;
                 }
 
                 const uint8_t colour_id = ((!!(byte_b & bit[x])) << 1) | (!!(byte_a & bit[x]));
-                
+
                 // this tests if the obj is transparrent
                 if (colour_id == 0) {
                     continue;
@@ -344,39 +356,49 @@ static void render_scanline_obj(struct GB_Core* gb, const struct PrioBuf* prio_b
 
                 if (bg_prio == 1) {
                     // this tests if bg always has priority over obj
-                    if (prio_buffer->prio[spx + x] && prio_buffer->colour_id[spx + x]) {
+                    if (prio_buffer->prio[x_index] && prio_buffer->colour_id[x_index]) {
                         continue;
                     }
 
                     // this tests if bg col 1-3 has priority,
                     // then checks if the col is non-zero, if yes, skip
-                    if (sprites[i].flag.priority && prio_buffer->colour_id[spx + x]) {
+                    if (sprites[i].flag.priority && prio_buffer->colour_id[x_index]) {
                         continue;
                     }
                 }
 
                 // save that we have already written to this xpos so the next
                 // oam entries cannot overwrite this pixel!
-                oam_priority[spx + x] = true;
+                oam_priority[x_index] = true;
 
                 // write the pixel (finally!)
-                pixels[spx + x] = gb->ppu.obj_colours[sprites[i].flag.pal_gbc][colour_id];
+                pixels[x_index] = gb->ppu.obj_colours[sprites[i].flag.pal_gbc][colour_id];
             }
         }
     }
 }
 
-static void update_colours(bool dirty[8], uint16_t map[8][4], const uint8_t palette_mem[64]) {
+static inline void update_colours(
+    bool dirty[8], uint16_t map[8][4], const uint8_t palette_mem[64]
+) {
     for (uint8_t palette = 0; palette < 8; ++palette) {
         if (dirty[palette] == true) {
             dirty[palette] = false;
-            
+
             for (uint8_t colours = 0, pos = 0; colours < 4; colours++, pos += 2) {
+
                 const uint8_t col_a = palette_mem[(palette << 3) + pos];
                 const uint8_t col_b = palette_mem[(palette << 3) + pos + 1];
                 const uint16_t pair = (col_b << 8) | col_a;
 
-                map[palette & 7][colours & 3] = pair;
+                #if 1
+                map[palette][colours] = pair;
+                #else
+                // needed for when using
+                // GL_BGBA AND GL_UNSIGNED_SHORT_5_5_5_1,
+                // this also probably depends on the sys endian
+                map[palette][colours] = (pair << 1) | 1;
+                #endif
             }
         }
     }

@@ -1,4 +1,3 @@
-#include "core/apu/common.h"
 #include "core/apu/apu.h"
 #include "core/internal.h"
 
@@ -36,7 +35,7 @@ void clock_square2_len(struct GB_Core* gb) {
         // disable channel if we hit zero...
         if (SQUARE2_CHANNEL.length_counter == 0) {
             square2_disable(gb);
-        }   
+        }
     }
 }
 
@@ -69,7 +68,7 @@ void on_square2_trigger(struct GB_Core* gb) {
     square2_enable(gb);
 
     if (SQUARE2_CHANNEL.length_counter == 0) {
-        if (IO_NR24.length_enable && is_next_frame_suqencer_step_not_len(gb)) {
+        if (IO_NR24.length_enable && is_next_frame_sequencer_step_not_len(gb)) {
             SQUARE2_CHANNEL.length_counter = 63;
         } else {
             SQUARE2_CHANNEL.length_counter = 64;
@@ -79,17 +78,17 @@ void on_square2_trigger(struct GB_Core* gb) {
     SQUARE2_CHANNEL.disable_env = false;
 
     SQUARE2_CHANNEL.volume_timer = PERIOD_TABLE[IO_NR22.period];
-    if (is_next_frame_suqencer_step_vol(gb)) {
+    if (is_next_frame_sequencer_step_vol(gb)) {
         SQUARE2_CHANNEL.volume_timer++;
     }
-    
+
     // reload the volume
     SQUARE2_CHANNEL.volume = IO_NR22.starting_vol;
 
     // when a square channel is triggered, it's lower 2-bits are not modified!
     // SOURCE: https://gbdev.gg8.se/wiki/articles/Gameboy_sound_hardware#Obscure_Behavior
     SQUARE2_CHANNEL.timer = (SQUARE2_CHANNEL.timer & 0x3) | (get_square2_freq(gb) & ~(0x3));
-    
+
     if (is_square2_dac_enabled(gb) == false) {
         square2_disable(gb);
     }

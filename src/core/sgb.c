@@ -36,7 +36,7 @@ enum SGB_Commands {
 
     CMD_MLT_REG     = 0x11, // Controller 2 Request
     CMD_JUMP        = 0x12, // Set SNES Program Counter
-    
+
     CMD_CHR_TRN     = 0x13, // Transfer Character Font Data
     CMD_PCT_TRN     = 0x14, // Set Screen Data Color Data
     CMD_ATTR_TRN    = 0x15, // Set Attribute from ATF
@@ -210,7 +210,7 @@ static void _cmd_palxx(struct GB_Core* gb, uint8_t p0, uint8_t p1) {
 
     //         case 3:
     //             memcpy(gb->palette.OBJ0, pal_array, sizeof(pal_array));
-    //             break; 
+    //             break;
     //     }
     // }
 
@@ -389,10 +389,10 @@ void SGB_handle_joyp_write(struct GB_Core* gb, uint8_t value) {
     // bit-5 = 1. bit-4 = 0.
     const bool p15 = (value & 0x20) > 0;
     const bool p14 = (value & 0x10) > 0;
-    
+
     // can only be 1 if p15 is lo and p14 is hi
     const bool bit_value = p15 == 0 && p14 == 1;
-	
+
     if ((p14 && p15) || (!p14 && !p15 && transfer.state != 0)) {
         return;
     }
@@ -415,7 +415,7 @@ void SGB_handle_joyp_write(struct GB_Core* gb, uint8_t value) {
             }
             break;
 
-    
+
         case DATA_TRANSFER:
             // basically set 1-bit at a time, LSB.
             transfer.packets[transfer.packet_index].data[transfer.packets[transfer.packet_index].bit_index >> 3] |= bit_value << (transfer.packets[transfer.packet_index].bit_index & 7);
@@ -434,7 +434,7 @@ void SGB_handle_joyp_write(struct GB_Core* gb, uint8_t value) {
             if (bit_value != 0) {
                 return;
             }
-            
+
             // if we don't have a len set, then this means that this
             // transfer was a new one, ie, one that sets the len and
             // command!

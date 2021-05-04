@@ -1,8 +1,10 @@
-#pragma once
+#ifndef _GB_PALETTE_TABLE_H_
+#define _GB_PALETTE_TABLE_H_
 
 #ifdef __cplusplus
 extern "C" {
 #endif
+
 
 #include <stdint.h>
 
@@ -69,3 +71,5 @@ int GB_Palette_fill_from_custom(
 #ifdef __cplusplus
 }
 #endif
+
+#endif // _GB_PALETTE_TABLE_H_

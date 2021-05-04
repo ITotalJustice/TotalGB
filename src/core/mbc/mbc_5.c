@@ -1,8 +1,10 @@
 #include "core/mbc/mbc.h"
 #include "core/internal.h"
 
+#include <assert.h>
 
-void GB_mbc5_write(struct GB_Core* gb, uint16_t addr, uint8_t value) { 
+
+void GB_mbc5_write(struct GB_Core* gb, uint16_t addr, uint8_t value) {
     switch ((addr >> 12) & 0xF) {
     // RAM
         case 0x0: case 0x1:
@@ -11,7 +13,7 @@ void GB_mbc5_write(struct GB_Core* gb, uint16_t addr, uint8_t value) {
             gb->cart.ram_enabled = value == 0x0A;
             GB_update_ram_banks(gb);
             break;
-        
+
     // ROM BANK LOW
         case 0x2: {
             // sets bits 0-7
@@ -36,7 +38,7 @@ void GB_mbc5_write(struct GB_Core* gb, uint16_t addr, uint8_t value) {
                 GB_update_ram_banks(gb);
             }
             break;
-            
+
         case 0xA: case 0xB:
             if ((gb->cart.flags & MBC_FLAGS_RAM) && gb->cart.ram_enabled) {
                 gb->cart.ram[(addr & 0x1FFF) + (0x2000 * gb->cart.ram_bank)] = value;
@@ -46,7 +48,7 @@ void GB_mbc5_write(struct GB_Core* gb, uint16_t addr, uint8_t value) {
 }
 
 struct MBC_RomBankInfo GB_mbc5_get_rom_bank(struct GB_Core* gb, uint8_t bank) {
-	struct MBC_RomBankInfo info = {0};
+    struct MBC_RomBankInfo info = {0};
     const uint8_t* ptr = NULL;
 
     if (bank == 0) {
@@ -65,12 +67,12 @@ struct MBC_RomBankInfo GB_mbc5_get_rom_bank(struct GB_Core* gb, uint8_t bank) {
 }
 
 struct MBC_RamBankInfo GB_mbc5_get_ram_bank(struct GB_Core* gb) {
-	if (!(gb->cart.flags & MBC_FLAGS_RAM) || !gb->cart.ram_enabled) {
-		return mbc_setup_empty_ram();
-	}
+    if (!(gb->cart.flags & MBC_FLAGS_RAM) || !gb->cart.ram_enabled) {
+        return mbc_setup_empty_ram();
+    }
 
     struct MBC_RamBankInfo info = {0};
-    
+
     const uint8_t* ptr = gb->cart.ram + (0x2000 * gb->cart.ram_bank);
 
     for (size_t i = 0; i < GB_ARR_SIZE(info.entries); ++i) {

@@ -64,8 +64,8 @@ static bool GB_builtin_link_cable_cb(void* user_data, struct GB_LinkCableData* d
 }
 
 void GB_connect_link_cable(struct GB_Core* gb, GB_serial_transfer_t cb, void* user_data) {
-	gb->link_cable = cb;
-	gb->link_cable_user_data = user_data;
+    gb->link_cable = cb;
+    gb->link_cable_user_data = user_data;
 }
 
 void GB_connect_link_cable_builtin(struct GB_Core* gb, struct GB_Core* gb2) {
@@ -131,7 +131,7 @@ void GB_serial_sc_write(struct GB_Core* gb, const uint8_t data) {
     struct GB_LinkCableData link_data = {0};
     link_data.type = GB_LINK_TRANSFER_TYPE_DATA;
     link_data.in_data = IO_SB;
-    
+
     if (gb->link_cable(gb->link_cable_user_data, &link_data)) {
         // if the transfer was successful, then we have to set IO_SB to
         // the data_out, clear bit-7 of IO_SC and then fire an

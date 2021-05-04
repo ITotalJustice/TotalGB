@@ -1,4 +1,3 @@
-#include "core/apu/common.h"
 #include "core/apu/apu.h"
 #include "core/internal.h"
 
@@ -101,7 +100,7 @@ void on_noise_trigger(struct GB_Core* gb) {
     noise_enable(gb);
 
     if (NOISE_CHANNEL.length_counter == 0) {
-        if (IO_NR44.length_enable && is_next_frame_suqencer_step_not_len(gb)) {
+        if (IO_NR44.length_enable && is_next_frame_sequencer_step_not_len(gb)) {
             NOISE_CHANNEL.length_counter = 63;
         } else {
             NOISE_CHANNEL.length_counter = 64;
@@ -111,7 +110,7 @@ void on_noise_trigger(struct GB_Core* gb) {
     NOISE_CHANNEL.disable_env = false;
 
     NOISE_CHANNEL.volume_timer = PERIOD_TABLE[IO_NR42.period];
-    if (is_next_frame_suqencer_step_vol(gb)) {
+    if (is_next_frame_sequencer_step_vol(gb)) {
         NOISE_CHANNEL.volume_timer++;
     }
 

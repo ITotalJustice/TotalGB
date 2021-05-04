@@ -299,8 +299,16 @@ gzFile ZEXPORT gzdopen(fd, mode)
     char *path;         /* identifier for error messages */
     gzFile gz;
 
-    if (fd == -1 || (path = (char *)malloc(7 + 3 * sizeof(int))) == NULL)
+    if (fd == -1) {
         return NULL;
+    }
+
+    path = (char *)malloc(7 + 3 * sizeof(int));
+
+    if (path == NULL) {
+        return NULL;
+    }
+
 #if !defined(NO_snprintf) && !defined(NO_vsnprintf)
     (void)snprintf(path, 7 + 3 * sizeof(int), "<fd:%d>", fd);
 #else
