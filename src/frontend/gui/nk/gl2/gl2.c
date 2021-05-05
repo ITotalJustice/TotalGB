@@ -1,3 +1,5 @@
+// SOURCE: https://github.com/Immediate-Mode-UI/Nuklear/blob/master/demo/sdl_opengl2/nuklear_sdl_gl2.h
+
 #include "gl2.h"
 #include "nuklear/defines.h"
 #include "nuklear/nuklear.h"

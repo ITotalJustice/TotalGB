@@ -48,6 +48,7 @@ enum VideoInterfaceAxis {
     VideoInterfaceAxis_MAX,
 };
 
+// not yes finished!
 enum VideoInterfaceKey {
     VideoInterfaceKey_Q = 1,
     VideoInterfaceKey_W,
@@ -116,6 +117,26 @@ enum VideoInterfaceKey {
     VideoInterfaceKey_MAX,
 };
 
+// based on SDL1 KeyMod enum!
+enum VideoInterfaceKeyMod {
+    VideoInterfaceKeyMod_NONE   = 0,
+    VideoInterfaceKeyMod_LSHIFT = 1 << 0,
+    VideoInterfaceKeyMod_RSHIFT = 1 << 1,
+    VideoInterfaceKeyMod_LCTRL  = 1 << 2,
+    VideoInterfaceKeyMod_RCTRL  = 1 << 3,
+    VideoInterfaceKeyMod_LALT   = 1 << 4,
+    VideoInterfaceKeyMod_RALT   = 1 << 5,
+    VideoInterfaceKeyMod_NUM    = 1 << 6,
+    VideoInterfaceKeyMod_CAPS   = 1 << 7,
+
+    // helpers for if we don't care if L/R side key is pressed
+    VideoInterfaceKeyMod_SHIFT  = VideoInterfaceKeyMod_LSHIFT | VideoInterfaceKeyMod_RSHIFT,
+    VideoInterfaceKeyMod_CTRL   = VideoInterfaceKeyMod_LCTRL | VideoInterfaceKeyMod_RCTRL,
+    VideoInterfaceKeyMod_ALT    = VideoInterfaceKeyMod_LALT | VideoInterfaceKeyMod_RALT,
+};
+
+// maybe this should be a struct, with a bool for error
+// then a char[] for a string containing a error message...
 enum VideoInterfaceQuitReason {
     VideoInterfaceQuitReason_ERROR,
     VideoInterfaceQuitReason_DEFAULT,
@@ -138,7 +159,7 @@ struct VideoInterfaceUserCallbacks {
         const char* path
     );
     void (*on_key)(void* user,
-        enum VideoInterfaceKey key, bool down
+        enum VideoInterfaceKey key, uint8_t mod, bool down
     );
     void (*on_button)(void* user,
         enum VideoInterfaceButton button, bool down

@@ -43,7 +43,7 @@ static void on_file_drop(void* user,
     const char* path
 );
 static void on_key(void* user,
-    enum VideoInterfaceKey key, bool down
+    enum VideoInterfaceKey key, uint8_t mod, bool down
 );
 static void on_button(void* user,
     enum VideoInterfaceButton button, bool down
@@ -71,9 +71,11 @@ static void on_file_drop(void* user,
 }
 
 static void on_key(void* user,
-    enum VideoInterfaceKey key, bool down
+    enum VideoInterfaceKey key, uint8_t mod, bool down
 ) {
     mui_t* self = (mui_t*)user;
+
+    STUB(mod);
 
     switch (self->state) {
 		case MuiState_MGB:

@@ -368,8 +368,38 @@ static void OnKeyEvent(
     // only handle if we have mapped the key.
     // the emun starts at 1, so all values are > 0.
     if (KEY_MAP[e->keysym.sym]) {
+        const uint16_t key = KEY_MAP[e->keysym.sym];
+        const bool down = e->type == SDL_KEYDOWN;
+        uint8_t mod = VideoInterfaceKeyMod_NONE;
+
+        // idk how to map a bitfield in an array sainly...
+        if (e->keysym.mod & KMOD_LSHIFT) {
+            mod |= VideoInterfaceKeyMod_LSHIFT;
+        }
+        if (e->keysym.mod & KMOD_RSHIFT) {
+            mod |= VideoInterfaceKeyMod_RSHIFT;
+        }
+        if (e->keysym.mod & KMOD_LCTRL) {
+            mod |= VideoInterfaceKeyMod_LCTRL;
+        }
+        if (e->keysym.mod & KMOD_RCTRL) {
+            mod |= VideoInterfaceKeyMod_RCTRL;
+        }
+        if (e->keysym.mod & KMOD_LALT) {
+            mod |= VideoInterfaceKeyMod_LALT;
+        }
+        if (e->keysym.mod & KMOD_RALT) {
+            mod |= VideoInterfaceKeyMod_RALT;
+        }
+        if (e->keysym.mod & KMOD_NUM) {
+            mod |= VideoInterfaceKeyMod_NUM;
+        }
+        if (e->keysym.mod & KMOD_CAPS) {
+            mod |= VideoInterfaceKeyMod_CAPS;
+        }
+
         self->interface_callbacks.on_key(self->interface_callbacks.user,
-            KEY_MAP[e->keysym.sym], e->type == SDL_KEYDOWN
+            key, mod, down
         );
     }    
 }
