@@ -51,7 +51,6 @@ source = files([
     # frontend
     'src/frontend/main.c',
     'src/frontend/mgb.c',
-    'src/frontend/mui.c',
     'src/frontend/util.c',
     'src/frontend/romloader.c',
 
