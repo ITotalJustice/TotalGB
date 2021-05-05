@@ -1,7 +1,7 @@
 #include "sdl1_opengl.h"
 #include "base/base.h"
 
-#include <GL/gl.h>
+#include <SDL/SDL_opengl.h>
 
 
 typedef struct Ctx {
@@ -14,37 +14,116 @@ typedef struct Ctx {
 
 static void quit(
     void* _private
-);
+) {
+    CTX_FROM_PRIVATE;
+
+    if (SDL_WasInit(SDL_INIT_VIDEO)) {
+        if (self->texture) {
+            glDeleteTextures(1, &self->texture);
+            self->texture = 0;
+        }
+
+        base_sdl1_exit(&self->base);
+    }
+
+    SDL_free(self);
+}
 
 static void render_begin(
     void* _private
-);
+) {
+    CTX_FROM_PRIVATE;
+    (void)self;
+
+    glClearColor(0, 1, 0, 1);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+}
 
 static void render_game(
     void* _private
-);
+) {
+    CTX_FROM_PRIVATE;
+    // SOURCE: https://discourse.libsdl.org/t/why-cant-we-do-blit-on-an-opengl-surface/10975/4
+
+    // Use precise pixel coordinates
+    glMatrixMode(GL_MODELVIEW);
+    glLoadIdentity();
+    glTranslatef(0.f, 0.f, 0.f);
+
+    // Setup 1:1 pixel ration
+    glMatrixMode(GL_PROJECTION);
+    glPushMatrix();
+    glLoadIdentity();
+
+    // Sets virtual size to 800x600 (so 0,0 is lower left cornor, and 
+    // 800x600 is top right no matter what the size of the window is)
+    glOrtho(0.0, 160.0, 0.0, 144.0, -1, 1);
+
+    glBindTexture(GL_TEXTURE_2D, self->texture);
+    glEnable(GL_TEXTURE_2D);
+
+    // Draw our background quad
+    glBegin(GL_QUADS);
+        glTexCoord2f(0.f, 1.f); glVertex2f(0.f, 0.f);
+        glTexCoord2f(1.f, 1.f); glVertex2f(160.f, 0.f);
+        glTexCoord2f(1.f, 0.f); glVertex2f(160.f, 144.f);
+        glTexCoord2f(0.f, 0.f); glVertex2f(0.f, 144.f);
+    glEnd();
+
+    glPopMatrix();
+}
 
 static void render_end(
     void* _private
-);
+) {
+    CTX_FROM_PRIVATE;
+    (void)self;
+    SDL_GL_SwapBuffers();
+}
 
 static void update_game_texture(
     void* _private,
     const struct VideoInterfaceGameTexture* game_texture
-);
+) {
+    CTX_FROM_PRIVATE;
+
+    glBindTexture(GL_TEXTURE_2D, self->texture);
+
+    glTexSubImage2D(
+        GL_TEXTURE_2D,
+        0, // level
+        0, 0, // x,y offset
+        160, 144, // width, hieght
+        GL_RGBA,
+        GL_UNSIGNED_SHORT_1_5_5_5_REV,
+        game_texture->pixels
+    );
+}
 
 static void poll_events(
     void* _private
-);
+) {
+    CTX_FROM_PRIVATE;
+
+    base_sdl1_poll_events(&self->base);
+}
 
 static void toggle_fullscreen(
     void* _private
-);
+) {
+    CTX_FROM_PRIVATE;
+
+    base_sdl1_toggle_fullscreen(&self->base);
+}
 
 static void set_window_name(
     void* _private,
     const char* name
-);
+) {
+    CTX_FROM_PRIVATE;
+
+    base_sdl1_set_window_name(&self->base, name);
+}
 
 static void on_resize(
     void* _private,
@@ -54,15 +133,6 @@ static void on_resize(
     glViewport(0, 0, w, h);
 }
 
-static void check_err() {
-	GLenum err;
-	while((err = glGetError()) != GL_NO_ERROR) {
-		printf("got gl error 0x%X\n", err);
-		exit(-1);
-	  // Process/log the error.
-	}
-}
-
 struct VideoInterface* video_interface_init_sdl1_opengl(
     const struct VideoInterfaceInfo* info,
     const struct VideoInterfaceUserCallbacks* callbacks
@@ -70,8 +140,8 @@ struct VideoInterface* video_interface_init_sdl1_opengl(
     struct VideoInterface* iface = NULL;
     ctx_t* self = NULL;
 
-    iface = malloc(sizeof(struct VideoInterface));
-    self = SDL_malloc(sizeof(struct Ctx));
+    iface = (struct VideoInterface*)malloc(sizeof(struct VideoInterface));
+    self = (ctx_t*)SDL_malloc(sizeof(struct Ctx));
 
     if (!iface) {
         goto fail;
@@ -159,118 +229,3 @@ fail:
 
     return NULL;
 }
-
-static void quit(
-    void* _private
-) {
-    CTX_FROM_PRIVATE;
-
-    if (SDL_WasInit(SDL_INIT_VIDEO)) {
-        if (self->texture) {
-            glDeleteTextures(1, &self->texture);
-			self->texture = 0;
-        }
-
-        base_sdl1_exit(&self->base);
-    }
-
-    SDL_free(self);
-}
-
-static void render_begin(
-    void* _private
-) {
-    CTX_FROM_PRIVATE;
-    (void)self;
-
-    glClearColor(0, 1, 0, 1);
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-}
-
-static void render_game(
-    void* _private
-) {
-    CTX_FROM_PRIVATE;
-    // SOURCE: https://discourse.libsdl.org/t/why-cant-we-do-blit-on-an-opengl-surface/10975/4
-
-    // Use precise pixel coordinates
-    glMatrixMode(GL_MODELVIEW);
-    glLoadIdentity();
-    glTranslatef(0.f, 0.f, 0.f);
-
-    // Setup 1:1 pixel ration
-    glMatrixMode(GL_PROJECTION);
-    glPushMatrix();
-    glLoadIdentity();
-
-    // Sets virtual size to 800x600 (so 0,0 is lower left cornor, and 
-    // 800x600 is top right no matter what the size of the window is)
-    glOrtho(0.0, 160.0, 0.0, 144.0, -1, 1);
-
-    glBindTexture(GL_TEXTURE_2D, self->texture);
-    glEnable(GL_TEXTURE_2D);
-
-    // Draw our background quad
-    glBegin(GL_QUADS);
-        glTexCoord2f(0.f, 1.f); glVertex2f(0.f, 0.f);
-        glTexCoord2f(1.f, 1.f); glVertex2f(160.f, 0.f);
-        glTexCoord2f(1.f, 0.f); glVertex2f(160.f, 144.f);
-        glTexCoord2f(0.f, 0.f); glVertex2f(0.f, 144.f);
-    glEnd();
-
-    glPopMatrix();
-    check_err();
-}
-
-static void render_end(
-    void* _private
-) {
-    CTX_FROM_PRIVATE;
-    (void)self;
-    SDL_GL_SwapBuffers();
-}
-
-static void update_game_texture(
-    void* _private,
-    const struct VideoInterfaceGameTexture* game_texture
-) {
-    CTX_FROM_PRIVATE;
-
-    glBindTexture(GL_TEXTURE_2D, self->texture);
-
-    glTexSubImage2D(
-    	GL_TEXTURE_2D,
-    	0, // level
-    	0, 0, // x,y offset
-    	160, 144, // width, hieght
-    	GL_RGBA,
-    	GL_UNSIGNED_SHORT_1_5_5_5_REV,
-    	game_texture->pixels
-    );
-}
-
-static void poll_events(
-    void* _private
-) {
-    CTX_FROM_PRIVATE;
-
-    base_sdl1_poll_events(&self->base);
-}
-
-static void toggle_fullscreen(
-    void* _private
-) {
-    CTX_FROM_PRIVATE;
-
-    base_sdl1_toggle_fullscreen(&self->base);
-}
-
-static void set_window_name(
-    void* _private,
-    const char* name
-) {
-    CTX_FROM_PRIVATE;
-
-    base_sdl1_set_window_name(&self->base, name);
-}
-

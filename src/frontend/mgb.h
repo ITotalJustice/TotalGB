@@ -16,9 +16,6 @@ extern "C" {
 typedef struct mgb {
     struct GB_Core* gameboy;
 
-    struct VideoInterface* video_interface;
-    struct AudioInterface* audio_interface;
-
     uint8_t* rom_data;
     size_t rom_size;
 
@@ -29,13 +26,12 @@ typedef struct mgb {
     struct SafeString custom_state_path;
 
     bool rom_loaded;
-    bool running;
 } mgb_t;
 
 
 bool mgb_init(mgb_t* self);
 void mgb_exit(mgb_t* self);
-void mgb_loop(mgb_t* self);
+void mgb_run(mgb_t* self);
 
 bool mgb_load_rom_file(mgb_t* self, const char* path);
 bool mgb_load_rom_data(mgb_t* self,
@@ -53,6 +49,20 @@ bool mgb_load_state_data(mgb_t* self, const uint8_t* data, size_t size);
 bool mgb_write_save_file(mgb_t* self, const char* path);
 bool mgb_write_rtc_file(mgb_t* self, const char* path);
 bool mgb_write_state_file(mgb_t* self, const char* path);
+
+// all of these return true if it handled the input.
+// this may be used later on by [mui]
+bool mgb_on_key(mgb_t* self,
+    enum VideoInterfaceKey key, bool down
+);
+
+bool mgb_on_button(mgb_t* self,
+    enum VideoInterfaceButton button, bool down
+);
+
+bool mgb_on_axis(mgb_t* self,
+    enum VideoInterfaceAxis axis, int16_t pos, bool down
+);
 
 #ifdef __cplusplus
 }

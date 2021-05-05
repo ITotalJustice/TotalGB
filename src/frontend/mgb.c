@@ -3,46 +3,6 @@
 #include "ifile/cfile/cfile.h"
 #include "ifile/gzip/gzip.h"
 
-#ifdef MGB_VIDEO_BACKEND_SDL1
-    #include "video/sdl1/sdl1.h"
-    #define VIDEO_INTERFACE_INIT video_interface_init_sdl1
-#elif MGB_VIDEO_BACKEND_SDL1_OPENGL
-    #include "video/sdl1/sdl1_opengl.h"
-    #define VIDEO_INTERFACE_INIT video_interface_init_sdl1_opengl
-    #define MGB_GUI 1
-#elif MGB_VIDEO_BACKEND_SDL2
-    #include "video/sdl2/sdl2.h"
-    #define VIDEO_INTERFACE_INIT video_interface_init_sdl2
-#elif MGB_VIDEO_BACKEND_SDL2_OPENGL
-    #include "video/sdl2/sdl2_opengl.h"
-    #define VIDEO_INTERFACE_INIT video_interface_init_sdl2_opengl
-    #define MGB_GUI 1
-#elif MGB_VIDEO_BACKEND_SDL2_VULKAN
-    #include "video/sdl2/sdl2_vulkan.h"
-    #define VIDEO_INTERFACE_INIT video_interface_init_sdl2_vulkan
-#elif MGB_VIDEO_BACKEND_ALLEGRO4
-    #include "video/allegro4/allegro4.h"
-    #define VIDEO_INTERFACE_INIT video_interface_init_allegro4
-#elif MGB_VIDEO_BACKEND_ALLEGRO5
-    #include "video/allegro5/allegro5.h"
-    #define VIDEO_INTERFACE_INIT video_interface_init_allegro5
-#else
-    #error "NO VIDEO BACKEND SELECTED FOR MGB!"
-#endif
-
-// only enabled with opengl backends!
-// can technically also support vulkan, but i dont have a vulkan pc to test
-// this will also (soon) be supported when using sdl2 renderer
-//  SEE: https://github.com/libsdl-org/SDL/pull/4195
-//  SEE: https://github.com/Immediate-Mode-UI/Nuklear/pull/280
-#ifndef MGB_GUI
-#define MGB_GUI 0
-#endif
-
-#if MGB_GUI
-    // todo:
-#endif
-
 // todo: filter audio includes
 #include "audio/sdl2/sdl2.h"
 #include "audio/sdl1/sdl1.h"
@@ -64,24 +24,6 @@ struct LoadRomConfig {
     const size_t size;
     enum LoadRomType type;
 };
-
-
-// [VIDEO INSTANCE CALLBACKS]
-static void on_file_drop(void* user,
-    const char* path
-);
-static void on_key(void* user,
-    enum VideoInterfaceKey key, bool down
-);
-static void on_button(void* user,
-    enum VideoInterfaceButton button, bool down
-);
-static void on_axis(void* user,
-    enum VideoInterfaceAxis axis, int16_t pos, bool down
-);
-static void on_quit(void* user,
-    enum VideoInterfaceQuitReason reason
-);
 
 
 // [CORE CALLBACKS]
@@ -107,8 +49,6 @@ static void core_on_stop(struct GB_Core* gb,
     void* user
 );
 
-static bool setup_video_interface(mgb_t* self);
-static bool setup_audio_interface(mgb_t* self);
 static bool setup_core(mgb_t* self);
 
 static bool loadrom(mgb_t* self, const struct LoadRomConfig* ctx);
@@ -236,13 +176,13 @@ static void loadsave(mgb_t* self) {
 static void core_on_apu(struct GB_Core* gb,
     void* user, const struct GB_ApuCallbackData* data
 ) {
-    (void)gb; (void)user; (void)data;
+    STUB(gb); STUB(user); STUB(data);
 }
 
 static void core_on_error(struct GB_Core* gb,
     void* user, struct GB_ErrorData* e
 ) {
-    (void)gb; (void)user;
+    UNUSED(gb); UNUSED(user);
 
     switch (e->type) {
         case GB_ERROR_TYPE_UNKNOWN_INSTRUCTION:
@@ -277,148 +217,38 @@ static void core_on_vsync(struct GB_Core* gb,
 ) {
     mgb_t* self = (mgb_t*)user;
 
-    const struct VideoInterfaceGameTexture game_texture = {
-        .pixels = (uint16_t*)gb->ppu.pixles
-    };
+    STUB(self); STUB(gb);
+    // const struct VideoInterfaceGameTexture game_texture = {
+    //     .pixels = (uint16_t*)gb->ppu.pixles
+    // };
 
-    video_interface_update_game_texture(
-        self->video_interface, &game_texture
-    );
+    // video_interface_update_game_texture(
+    //     self->video_interface, &game_texture
+    // );
 }
 
 static void core_on_hblank(struct GB_Core* gb,
     void* user
 ) {
-    (void)gb; (void)user;
+    STUB(gb); STUB(user);
 }
 
 static void core_on_dma(struct GB_Core* gb,
     void* user
 ) {
-    (void)gb; (void)user;
+    UNUSED(gb); UNUSED(user);
 }
 
 static void core_on_halt(struct GB_Core* gb,
     void* user
 ) {
-    (void)gb; (void)user;
+    UNUSED(gb); UNUSED(user);
 }
 
 static void core_on_stop(struct GB_Core* gb,
     void* user
 ) {
-    (void)gb; (void)user;
-}
-
-
-// [VIDEO INTERFACE CALLBACKS]
-static void on_file_drop(void* user,
-    const char* path
-) {
-    (void)user; (void)path;
-}
-
-static void on_key(void* user,
-    enum VideoInterfaceKey key, bool down
-) {
-    mgb_t* self = (mgb_t*)user;
-
-    // todo: check which state we are in for which map to use
-    // ie, for ui state, use the ui key map, for core, use core map etc..
-
-    // todo: make this customisable by user
-    static const enum VideoInterfaceKey map[VideoInterfaceKey_MAX] = {
-        [VideoInterfaceKey_Z]       = GB_BUTTON_B,
-        [VideoInterfaceKey_X]       = GB_BUTTON_A,
-        [VideoInterfaceKey_ENTER]   = GB_BUTTON_START,
-        [VideoInterfaceKey_SPACE]   = GB_BUTTON_SELECT,
-        [VideoInterfaceKey_UP]      = GB_BUTTON_UP,
-        [VideoInterfaceKey_DOWN]    = GB_BUTTON_DOWN,
-        [VideoInterfaceKey_LEFT]    = GB_BUTTON_LEFT,
-        [VideoInterfaceKey_RIGHT]   = GB_BUTTON_RIGHT,
-    };
-
-    if (map[key]) {
-        GB_set_buttons(self->gameboy, map[key], down);
-    }
-}
-
-static void on_button(void* user,
-    enum VideoInterfaceButton button, bool down
-) {
-    mgb_t* self = (mgb_t*)user;
-
-    static const enum VideoInterfaceButton map[VideoInterfaceButton_MAX] = {
-        [VideoInterfaceButton_B]        = GB_BUTTON_B,
-        [VideoInterfaceButton_A]        = GB_BUTTON_A,
-        [VideoInterfaceButton_START]    = GB_BUTTON_START,
-        [VideoInterfaceButton_SELECT]   = GB_BUTTON_SELECT,
-        [VideoInterfaceButton_UP]       = GB_BUTTON_UP,
-        [VideoInterfaceButton_DOWN]     = GB_BUTTON_DOWN,
-        [VideoInterfaceButton_LEFT]     = GB_BUTTON_LEFT,
-        [VideoInterfaceButton_RIGHT]    = GB_BUTTON_RIGHT,
-    };
-
-    if (map[button]) {
-        GB_set_buttons(self->gameboy, map[button], down);
-    }
-}
-
-static void on_axis(void* user,
-    enum VideoInterfaceAxis axis, int16_t pos, bool down
-) {
-    (void)user; (void)axis; (void)pos; (void)down;
-}
-
-static void on_quit(void* user,
-    enum VideoInterfaceQuitReason reason
-) {
-    (void)reason;
-
-    mgb_t* self = (mgb_t*)user;
-
-    self->running = false;
-}
-
-static bool setup_video_interface(mgb_t* self) {
-    if (self->video_interface) {
-        video_interface_quit(self->video_interface);
-        self->video_interface = NULL;
-    }
-
-    const struct VideoInterfaceInfo info = {
-        .window_name = "Hello, World!",
-        .x = 0,
-        .y = 0,
-        .w = 160 * 2,
-        .h = 144 * 2,
-    };
-
-    const struct VideoInterfaceUserCallbacks callbacks = {
-        .user = self,
-        .on_file_drop = on_file_drop,
-        .on_key = on_key,
-        .on_button = on_button,
-        .on_axis = on_axis,
-        .on_quit = on_quit
-    };
-
-    self->video_interface = VIDEO_INTERFACE_INIT(
-        &info, &callbacks
-    );
-
-    return self->video_interface != NULL;
-}
-
-static bool setup_audio_interface(mgb_t* self) {
-    if (self->audio_interface) {
-        // audio_interface_quit(self->audio_interface);
-        self->audio_interface = NULL;
-    }
-
-    return true;
-
-    // return self->audio_interface != NULL;
+    UNUSED(gb); UNUSED(user);
 }
 
 static bool setup_core(mgb_t* self) {
@@ -442,7 +272,7 @@ static bool setup_core(mgb_t* self) {
     );
 
     // GB_set_apu_callback(self->gameboy, core_on_vsync, self);
-    (void)core_on_apu;
+    STUB(core_on_apu);
     GB_set_vblank_callback(self->gameboy, core_on_vsync, self);
     GB_set_hblank_callback(self->gameboy, core_on_hblank, self);
     GB_set_dma_callback(self->gameboy, core_on_dma, self);
@@ -540,15 +370,6 @@ bool mgb_init(mgb_t* self) {
         goto fail;
     }
 
-    if (!setup_video_interface(self)) {
-        goto fail;
-    }
-
-    if (!setup_audio_interface(self)) {
-        goto fail;
-    }
-
-    self->running = true;
     return true;
 
 fail:
@@ -568,29 +389,11 @@ void mgb_exit(mgb_t* self) {
         free(self->gameboy);
         self->gameboy = NULL;
     }
-
-    if (self->video_interface) {
-        video_interface_quit(self->video_interface);
-        self->video_interface = NULL;
-    }
-
-    if (self->audio_interface) {
-        // audio_interface_quit(self->audio_interface);
-        self->audio_interface = NULL;
-    }
 }
 
-void mgb_loop(mgb_t* self) {
-    while (self->running == true) {
-        video_interface_poll_events(self->video_interface);
-
-        if (self->rom_loaded) {
-            GB_run_frame(self->gameboy);
-        }
-
-        video_interface_render_begin(self->video_interface);
-        video_interface_render_game(self->video_interface);
-        video_interface_render_end(self->video_interface);
+void mgb_run(mgb_t* self) {
+    if (self->rom_loaded) {
+        GB_run_frame(self->gameboy);
     }
 }
 
@@ -616,4 +419,58 @@ bool mgb_load_rom_data(mgb_t* self,
     };
 
     return loadrom(self, &ctx);
+}
+
+bool mgb_on_key(mgb_t* self,
+    enum VideoInterfaceKey key, bool down
+) {
+    static const enum VideoInterfaceKey map[VideoInterfaceKey_MAX] = {
+        [VideoInterfaceKey_Z]       = GB_BUTTON_B,
+        [VideoInterfaceKey_X]       = GB_BUTTON_A,
+        [VideoInterfaceKey_ENTER]   = GB_BUTTON_START,
+        [VideoInterfaceKey_SPACE]   = GB_BUTTON_SELECT,
+        [VideoInterfaceKey_UP]      = GB_BUTTON_UP,
+        [VideoInterfaceKey_DOWN]    = GB_BUTTON_DOWN,
+        [VideoInterfaceKey_LEFT]    = GB_BUTTON_LEFT,
+        [VideoInterfaceKey_RIGHT]   = GB_BUTTON_RIGHT,
+    };
+
+    if (map[key]) {
+        GB_set_buttons(self->gameboy, map[key], down);
+        return true;
+    }
+    else {
+        return false;
+    }
+}
+
+bool mgb_on_button(mgb_t* self,
+    enum VideoInterfaceButton button, bool down
+) {
+    static const enum VideoInterfaceButton map[VideoInterfaceButton_MAX] = {
+        [VideoInterfaceButton_B]        = GB_BUTTON_B,
+        [VideoInterfaceButton_A]        = GB_BUTTON_A,
+        [VideoInterfaceButton_START]    = GB_BUTTON_START,
+        [VideoInterfaceButton_SELECT]   = GB_BUTTON_SELECT,
+        [VideoInterfaceButton_UP]       = GB_BUTTON_UP,
+        [VideoInterfaceButton_DOWN]     = GB_BUTTON_DOWN,
+        [VideoInterfaceButton_LEFT]     = GB_BUTTON_LEFT,
+        [VideoInterfaceButton_RIGHT]    = GB_BUTTON_RIGHT,
+    };
+
+    if (map[button]) {
+        GB_set_buttons(self->gameboy, map[button], down);
+        return true;
+    }
+    else {
+        return false;
+    }
+}
+
+bool mgb_on_axis(mgb_t* self,
+    enum VideoInterfaceAxis axis, int16_t pos, bool down
+) {
+    STUB(self); STUB(axis); STUB(pos); STUB(down);
+
+    return false;
 }

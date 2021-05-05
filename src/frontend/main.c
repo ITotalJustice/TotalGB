@@ -2,24 +2,24 @@
 #include <stdbool.h>
 #include <stdio.h>
 
-#include "mgb.h"
+#include "mui.h"
 
 
 int main(int argc, char** argv) {
-    static struct mgb mgb;
+    static struct mui mui;
 
-    if (!mgb_init(&mgb)) {
+    if (!mui_init(&mui)) {
         return -1;
     }
 
     if (argc > 1) {
-        if (!mgb_load_rom_file(&mgb, argv[1])) {
+        if (!mgb_load_rom_file(&mui.mgb, argv[1])) {
             return -1;
         }
     }
 
-    mgb_loop(&mgb);
-    mgb_exit(&mgb);
+    mui_loop(&mui);
+    mui_exit(&mui);
 
     printf("done!\n");
 

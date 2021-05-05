@@ -51,6 +51,7 @@ source = files([
     # frontend
     'src/frontend/main.c',
     'src/frontend/mgb.c',
+    'src/frontend/mui.c',
     'src/frontend/util.c',
     'src/frontend/romloader.c',
 
@@ -85,6 +86,13 @@ source = files([
     'src/libs/zlib/trees.c',
     'src/libs/zlib/uncompr.c',
     'src/libs/zlib/zutil.c',
+
+    # nuklear
+    'src/libs/nuklear/nuklear.c',
+    'src/frontend/gui/nk/interface.c',
+    'src/frontend/gui/nk/gl2/gl2.c',
+    #'src/frontend/gui/nk/gl3/gl3.c',
+    #'src/frontend/gui/nk/gl4/gl4.c',
 ])
 
 

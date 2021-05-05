@@ -10,6 +10,13 @@ extern "C" {
 #include <stdbool.h>
 
 
+// simple macro which silences warnings for stuff that i want to quickly ignore
+#define UNUSED(x) (void)x
+
+// same as above [UNUSED], but more clear that this var is yet to be implemented
+#define STUB(x) (void)x
+
+// only pass in c-arrays...
 #define ARRAY_SIZE(a) (sizeof(a) / sizeof((a)[0]))
 
 
