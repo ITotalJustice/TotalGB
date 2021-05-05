@@ -786,7 +786,7 @@ enum nk_keys {
     NK_KEY_MAX
 };
 enum nk_buttons {
-    NK_BUTTON_LEFT,
+    NK_BUTTON_LEFT = 1,
     NK_BUTTON_MIDDLE,
     NK_BUTTON_RIGHT,
     NK_BUTTON_DOUBLE,

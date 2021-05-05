@@ -16,17 +16,16 @@ extern "C" {
 
 
 enum MgbState {
-	// all inputs will be sent to core
-	MgbState_CORE,
 	// all inputs will be sent to gui, core is paused
 	MgbState_GUI,
+	// all inputs will be sent to core
+	MgbState_CORE,
 };
 
 typedef struct mgb {
 	struct VideoInterface* video_interface;
     struct AudioInterface* audio_interface;
     struct NkInterface* nk_interface;
-    struct nk_context* nk_ctx;
 
 	struct GB_Core* gameboy;
 

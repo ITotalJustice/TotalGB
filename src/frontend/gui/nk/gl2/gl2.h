@@ -7,9 +7,7 @@ extern "C" {
 #include "../interface.h"
 
 
-struct NkInterface* nk_interface_gl2_init(
-    struct nk_context** nk_context_out
-);
+struct NkInterface* nk_interface_gl2_init(void);
 
 #ifdef __cplusplus
 }

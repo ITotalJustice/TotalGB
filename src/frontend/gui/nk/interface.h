@@ -14,6 +14,8 @@ extern "C" {
 #include "nuklear/defines.h"
 #include "nuklear/nuklear.h"
 
+#include "frontend/video/interface.h"
+
 #include <stdint.h>
 #include <stdbool.h>
 
@@ -21,17 +23,45 @@ extern "C" {
 struct NkInterface {
     void* _private;
 
+    struct nk_context* (*get_context)(void* _private);
     void (*quit)(void* _private);
-    bool (*event)(void* _private);
     void (*render)(void* _private, enum nk_anti_aliasing AA);
 };
+
+struct nk_context* nk_interface_get_context(
+	struct NkInterface* self
+);
 
 void nk_interface_quit(
     struct NkInterface* self
 );
 
-bool nk_interface_handle_event(
-    struct NkInterface* self
+void nk_interface_input_begin(
+	struct NkInterface* self
+);
+
+void nk_interface_input_end(
+	struct NkInterface* self
+);
+
+bool nk_interface_on_mouse_button(struct NkInterface* self,
+    enum VideoInterfaceMouseButton button, int x, int y, bool down
+);
+
+bool nk_interface_on_mouse_motion(struct NkInterface* self,
+    int x, int y, int xrel, int yrel
+);
+
+bool nk_interface_on_key(struct NkInterface* self,
+    enum VideoInterfaceKey key, uint8_t mod, bool down
+);
+
+bool nk_interface_on_button(struct NkInterface* self,
+    enum VideoInterfaceButton button, bool down
+);
+
+bool nk_interface_on_axis(struct NkInterface* self,
+    enum VideoInterfaceAxis axis, int16_t pos, bool down
 );
 
 void nk_interface_render(

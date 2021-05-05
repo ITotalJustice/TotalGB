@@ -30,7 +30,7 @@ typedef struct gl2_ctx {
     struct nk_font_atlas atlas;
 } ctx_t;
 
-#define PRIVATE_TO_SELF ctx_t* self = (ctx_t*)_private
+#define VOID_TO_SELF(_private) ctx_t* self = (ctx_t*)_private
 
 
 static void gl2_device_upload_atlas(
@@ -49,8 +49,14 @@ static void gl2_device_upload_atlas(
     );
 }
 
+static struct nk_context* internal_get_context(void* _private) {
+    VOID_TO_SELF(_private);
+
+    return &self->ctx;
+}
+
 static void internal_quit(void* _private) {
-	PRIVATE_TO_SELF;
+	VOID_TO_SELF(_private);
 
 	struct gl2_device *dev = &self->ogl;
     nk_font_atlas_clear(&self->atlas);
@@ -62,14 +68,14 @@ static void internal_quit(void* _private) {
 }
 
 static void internal_font_stash_begin(void* _private) {
-	PRIVATE_TO_SELF;
+	VOID_TO_SELF(_private);
 
 	nk_font_atlas_init_default(&self->atlas);
     nk_font_atlas_begin(&self->atlas);
 }
 
 static void internal_font_stash_end(void* _private) {
-	PRIVATE_TO_SELF;
+	VOID_TO_SELF(_private);
 
 	int w, h;
     const void* image = nk_font_atlas_bake(&self->atlas, &w, &h, NK_FONT_ATLAS_RGBA32);
@@ -81,17 +87,8 @@ static void internal_font_stash_end(void* _private) {
     }
 }
 
-static bool internal_event(void* _private) {
-	PRIVATE_TO_SELF;
-
-	struct nk_context *ctx = &self->ctx;
-
-    (void)ctx;
-    return 0;
-}
-
 static void internal_render(void* _private, enum nk_anti_aliasing AA) {
-	PRIVATE_TO_SELF;
+	VOID_TO_SELF(_private);
 
 
 	/* setup global state */
@@ -214,9 +211,7 @@ static void internal_render(void* _private, enum nk_anti_aliasing AA) {
     glPopAttrib();
 }
 
-struct NkInterface* nk_interface_gl2_init(
-    struct nk_context** nk_context_out
-) {
+struct NkInterface* nk_interface_gl2_init(void) {
 	struct NkInterface* iface = NULL;
 	ctx_t* self = NULL;
 
@@ -242,14 +237,13 @@ struct NkInterface* nk_interface_gl2_init(
     internal_font_stash_end(self);
 
     const struct NkInterface internal_iface = {
-    	._private = self,
-    	.quit = internal_quit,
-    	.event = internal_event,
-    	.render = internal_render
+    	._private      = self,
+        .get_context   = internal_get_context,
+    	.quit          = internal_quit,
+    	.render        = internal_render
     };
 
     *iface = internal_iface;
-    *nk_context_out = &self->ctx;
 
     return iface;
 

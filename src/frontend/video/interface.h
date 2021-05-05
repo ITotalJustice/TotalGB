@@ -15,13 +15,19 @@ struct VideoInterfaceGameTexture;
 struct VideoInterfaceUserCallbacks;
 
 enum VideoInterfaceMouseButton {
-    VideoInterfaceMouseButton_LEFT = 1,
+    VideoInterfaceMouseButton_NONE = 0,
+
+    VideoInterfaceMouseButton_LEFT,
     VideoInterfaceMouseButton_MIDDLE,
     VideoInterfaceMouseButton_RIGHT,
+
+    VideoInterfaceMouseButton_MAX,
 };
 
 enum VideoInterfaceButton {
-    VideoInterfaceButton_A = 1,
+    VideoInterfaceButton_NONE = 0,
+
+    VideoInterfaceButton_A,
     VideoInterfaceButton_B,
     VideoInterfaceButton_X,
     VideoInterfaceButton_Y,
@@ -44,7 +50,9 @@ enum VideoInterfaceButton {
 };
 
 enum VideoInterfaceAxis {
-    VideoInterfaceAxis_L2 = 1,
+    VideoInterfaceAxis_NONE = 0,
+
+    VideoInterfaceAxis_L2,
     VideoInterfaceAxis_R2,
     VideoInterfaceAxis_LEFTX,
     VideoInterfaceAxis_LEFTY,
@@ -56,7 +64,9 @@ enum VideoInterfaceAxis {
 
 // not yes finished!
 enum VideoInterfaceKey {
-    VideoInterfaceKey_Q = 1,
+    VideoInterfaceKey_NONE = 0,
+
+    VideoInterfaceKey_Q,
     VideoInterfaceKey_W,
     VideoInterfaceKey_E,
     VideoInterfaceKey_R,
@@ -110,10 +120,13 @@ enum VideoInterfaceKey {
     VideoInterfaceKey_ENTER,
     VideoInterfaceKey_BACKSPACE,
     VideoInterfaceKey_SPACE,
+    VideoInterfaceKey_TAB, // todo:
     VideoInterfaceKey_ESCAPE,
     VideoInterfaceKey_DELETE,
     VideoInterfaceKey_LSHIFT,
     VideoInterfaceKey_RSHIFT,
+    VideoInterfaceKey_LCTRL, // todo:
+    VideoInterfaceKey_RCTRL, // todo:
 
     VideoInterfaceKey_UP,
     VideoInterfaceKey_DOWN,

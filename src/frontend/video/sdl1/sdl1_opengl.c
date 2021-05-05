@@ -9,13 +9,13 @@ typedef struct Ctx {
     GLuint texture;
 } ctx_t;
 
-#define CTX_FROM_PRIVATE ctx_t* self = (ctx_t*)_private;
+#define VOID_TO_SELF(_private) ctx_t* self = (ctx_t*)_private;
 
 
 static void quit(
     void* _private
 ) {
-    CTX_FROM_PRIVATE;
+    VOID_TO_SELF(_private);
 
     if (SDL_WasInit(SDL_INIT_VIDEO)) {
         if (self->texture) {
@@ -32,17 +32,17 @@ static void quit(
 static void render_begin(
     void* _private
 ) {
-    CTX_FROM_PRIVATE;
+    VOID_TO_SELF(_private);
     (void)self;
 
-    glClearColor(0, 1, 0, 1);
+    glClearColor(0.f, 0.f, 0.f, 1.f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 }
 
 static void render_game(
     void* _private
 ) {
-    CTX_FROM_PRIVATE;
+    VOID_TO_SELF(_private);
     // SOURCE: https://discourse.libsdl.org/t/why-cant-we-do-blit-on-an-opengl-surface/10975/4
 
     // Use precise pixel coordinates
@@ -76,7 +76,7 @@ static void render_game(
 static void render_end(
     void* _private
 ) {
-    CTX_FROM_PRIVATE;
+    VOID_TO_SELF(_private);
     (void)self;
     SDL_GL_SwapBuffers();
 }
@@ -85,7 +85,7 @@ static void update_game_texture(
     void* _private,
     const struct VideoInterfaceGameTexture* game_texture
 ) {
-    CTX_FROM_PRIVATE;
+    VOID_TO_SELF(_private);
 
     glBindTexture(GL_TEXTURE_2D, self->texture);
 
@@ -103,7 +103,7 @@ static void update_game_texture(
 static void poll_events(
     void* _private
 ) {
-    CTX_FROM_PRIVATE;
+    VOID_TO_SELF(_private);
 
     base_sdl1_poll_events(&self->base);
 }
@@ -111,7 +111,7 @@ static void poll_events(
 static void toggle_fullscreen(
     void* _private
 ) {
-    CTX_FROM_PRIVATE;
+    VOID_TO_SELF(_private);
 
     base_sdl1_toggle_fullscreen(&self->base);
 }
@@ -120,7 +120,7 @@ static void set_window_name(
     void* _private,
     const char* name
 ) {
-    CTX_FROM_PRIVATE;
+    VOID_TO_SELF(_private);
 
     base_sdl1_set_window_name(&self->base, name);
 }

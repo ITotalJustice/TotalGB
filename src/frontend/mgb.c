@@ -1,5 +1,6 @@
 #include "mgb.h"
 #include "util.h"
+#include "gui/gui.h"
 
 #include "romloader.h"
 #include "ifile/cfile/cfile.h"
@@ -178,9 +179,27 @@ static void core_run(mgb_t* self) {
     }
 }
 
-static bool core_on_key(mgb_t* self,
-    enum VideoInterfaceKey key, bool down
+static bool core_on_mouse_button(mgb_t* self,
+    enum VideoInterfaceMouseButton button, int x, int y, bool down
 ) {
+	UNUSED(self); UNUSED(button); UNUSED(x); UNUSED(y); UNUSED(down);
+
+	return false; // we don't handle this event!
+}
+
+static bool core_on_mouse_motion(mgb_t* self,
+    int x, int y, int xrel, int yrel
+) {
+	UNUSED(self); UNUSED(x); UNUSED(y); UNUSED(xrel); UNUSED(yrel);
+
+	return false; // we don't handle this event!
+}
+
+static bool core_on_key(mgb_t* self,
+    enum VideoInterfaceKey key, uint8_t mod, bool down
+) {
+    UNUSED(mod);
+
     static const enum VideoInterfaceKey map[VideoInterfaceKey_MAX] = {
         [VideoInterfaceKey_Z]       = GB_BUTTON_B,
         [VideoInterfaceKey_X]       = GB_BUTTON_A,
@@ -246,7 +265,15 @@ static void on_mouse_button(void* user,
 ) {
 	mgb_t* self = (mgb_t*)user;
 
-	STUB(self); STUB(x); STUB(y); STUB(button); STUB(down);
+	switch (self->state) {
+		case MgbState_CORE:
+			core_on_mouse_button(self, button, x, y, down);
+			break;
+
+		case MgbState_GUI:
+			gui_on_mouse_button(self, button, x, y, down);
+			break;
+	}
 }
 
 static void on_mouse_motion(void* user,
@@ -254,7 +281,15 @@ static void on_mouse_motion(void* user,
 ) {
 	mgb_t* self = (mgb_t*)user;
 
-	STUB(self); STUB(x); STUB(y); STUB(xrel); STUB(yrel);
+	switch (self->state) {
+		case MgbState_CORE:
+			core_on_mouse_motion(self, x, y, xrel, yrel);
+			break;
+
+		case MgbState_GUI:
+			gui_on_mouse_motion(self, x, y, xrel, yrel);
+			break;
+	}
 }
 
 static void on_key(void* user,
@@ -262,14 +297,13 @@ static void on_key(void* user,
 ) {
     mgb_t* self = (mgb_t*)user;
 
-    STUB(mod);
-
     switch (self->state) {
 		case MgbState_CORE:
-			core_on_key(self, key, down);
+			core_on_key(self, key, mod, down);
 			break;
 
 		case MgbState_GUI:
+            gui_on_key(self, key, mod, down);
 			break;
 	}
 }
@@ -285,6 +319,7 @@ static void on_button(void* user,
 			break;
 
 		case MgbState_GUI:
+            gui_on_button(self, button, down);
 			break;
 	}
 }
@@ -300,6 +335,7 @@ static void on_axis(void* user,
 			break;
 
 		case MgbState_GUI:
+            gui_on_axis(self, axis, pos, down);
 			break;
 	}
 }
@@ -416,9 +452,7 @@ static bool setup_audio_interface(mgb_t* self) {
 
 static bool setup_nk_interface(mgb_t* self) {
 	#ifdef NK_INTERFACE_INIT
-		self->nk_interface = NK_INTERFACE_INIT(
-			&self->nk_ctx
-		);
+		self->nk_interface = NK_INTERFACE_INIT();
 		return self->nk_interface != NULL;
 	#else
 		// if we don't have a gui backend, then return true for now
@@ -427,7 +461,15 @@ static bool setup_nk_interface(mgb_t* self) {
 }
 
 static void run_events(mgb_t* self) {
-	video_interface_poll_events(self->video_interface);
+    if (self->state == MgbState_GUI) {
+        nk_interface_input_begin(self->nk_interface);        
+    }
+	
+    video_interface_poll_events(self->video_interface);
+    
+    if (self->state == MgbState_GUI) {
+        nk_interface_input_end(self->nk_interface);        
+    }
 }
 
 static void run_state(mgb_t* self) {
@@ -437,6 +479,7 @@ static void run_state(mgb_t* self) {
 			break;
 
 		case MgbState_GUI:
+            gui_run(self);
 			break;
 	}
 }
@@ -450,6 +493,7 @@ static void run_render(mgb_t* self) {
 			break;
 
 		case MgbState_GUI:
+            gui_render(self);
 			break;
 	}
 
@@ -628,6 +672,9 @@ static bool loadrom(mgb_t* self, const struct LoadRomConfig* config) {
     // try loading any saves if possible
     loadsave(self);
 
+    // switch to core state!
+    self->state = MgbState_CORE;
+
     return true;
 
 fail:
@@ -635,6 +682,9 @@ fail:
         ifile_close(romloader);
         romloader = NULL;
     }
+
+    // show the gui menu on fail!
+    self->state = MgbState_GUI;
 
     return false;
 }
