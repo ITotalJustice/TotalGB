@@ -42,6 +42,12 @@
 static void on_file_drop(void* user,
     const char* path
 );
+static void on_mouse_button(void* user,
+    enum VideoInterfaceMouseButton button, int x, int y, bool down
+);
+static void on_mouse_motion(void* user,
+    int x, int y, int xrel, int yrel
+);
 static void on_key(void* user,
     enum VideoInterfaceKey key, uint8_t mod, bool down
 );
@@ -50,6 +56,9 @@ static void on_button(void* user,
 );
 static void on_axis(void* user,
     enum VideoInterfaceAxis axis, int16_t pos, bool down
+);
+static void on_resize(void* user,
+    int w, int h
 );
 static void on_quit(void* user,
     enum VideoInterfaceQuitReason reason
@@ -67,7 +76,25 @@ static void run_render(mui_t* self);
 static void on_file_drop(void* user,
     const char* path
 ) {
-    (void)user; (void)path;
+	mui_t* self = (mui_t*)user;
+
+    STUB(self); STUB(path);
+}
+
+static void on_mouse_button(void* user,
+    enum VideoInterfaceMouseButton button, int x, int y, bool down
+) {
+	mui_t* self = (mui_t*)user;
+
+	STUB(self); STUB(x); STUB(y); STUB(button); STUB(down);
+}
+
+static void on_mouse_motion(void* user,
+    int x, int y, int xrel, int yrel
+) {
+	mui_t* self = (mui_t*)user;
+
+	STUB(self); STUB(x); STUB(y); STUB(xrel); STUB(yrel);
 }
 
 static void on_key(void* user,
@@ -117,6 +144,14 @@ static void on_axis(void* user,
 	}
 }
 
+static void on_resize(void* user,
+    int w, int h
+) {
+	mui_t* self = (mui_t*)user;
+
+	STUB(self); STUB(w); STUB(h);
+}
+
 static void on_quit(void* user,
     enum VideoInterfaceQuitReason reason
 ) {
@@ -152,9 +187,12 @@ static bool setup_video_interface(mui_t* self) {
     const struct VideoInterfaceUserCallbacks callbacks = {
         .user = self,
         .on_file_drop = on_file_drop,
+        .on_mouse_button = on_mouse_button,
+        .on_mouse_motion = on_mouse_motion,
         .on_key = on_key,
         .on_button = on_button,
         .on_axis = on_axis,
+        .on_resize = on_resize,
         .on_quit = on_quit
     };
 

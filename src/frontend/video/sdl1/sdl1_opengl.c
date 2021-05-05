@@ -172,6 +172,7 @@ struct VideoInterface* video_interface_init_sdl1_opengl(
             .user = self,
             .on_resize = on_resize
         },
+        .user_callbacks = *callbacks,
         .window_name = info->window_name,
         .window_flags = SDL_OPENGL | SDL_HWSURFACE | SDL_DOUBLEBUF | SDL_RESIZABLE,
         .w = info->w,
@@ -196,7 +197,7 @@ struct VideoInterface* video_interface_init_sdl1_opengl(
     
     #undef CHECK
 
-    if (!base_sdl1_init_window(&self->base, &base_config, callbacks)) {
+    if (!base_sdl1_init_window(&self->base, &base_config)) {
         goto fail;
     }
 

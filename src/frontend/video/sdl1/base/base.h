@@ -13,6 +13,7 @@ struct BaseEventCallbacks {
 };
 
 struct BaseConfig {
+	struct VideoInterfaceUserCallbacks user_callbacks;
 	struct BaseEventCallbacks event_callbacks;
 	const char* const window_name;
 	int window_flags;
@@ -22,7 +23,7 @@ struct BaseConfig {
 
 struct Base {
 	struct BaseEventCallbacks event_callbacks;
-    struct VideoInterfaceUserCallbacks interface_callbacks;
+    struct VideoInterfaceUserCallbacks user_callbacks;
     SDL_Surface* window;
     SDL_Rect texture_rect;
 };
@@ -33,8 +34,7 @@ bool base_sdl1_init_system(
 
 bool base_sdl1_init_window(
 	struct Base* self,
-	const struct BaseConfig* config,
-    const struct VideoInterfaceUserCallbacks* callbacks
+	const struct BaseConfig* config
 );
 
 void base_sdl1_exit(struct Base* self);

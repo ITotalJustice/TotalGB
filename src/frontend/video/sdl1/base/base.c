@@ -70,61 +70,160 @@ static const uint16_t KEY_MAP[512] = {
     [SDLK_RIGHT]        = VideoInterfaceKey_RIGHT,
 };
 
+static const uint8_t MOUSE_BUTTON_MAP[256] = {
+    [SDL_BUTTON_LEFT]   = VideoInterfaceMouseButton_LEFT,
+    [SDL_BUTTON_MIDDLE] = VideoInterfaceMouseButton_MIDDLE,
+    [SDL_BUTTON_RIGHT]  = VideoInterfaceMouseButton_RIGHT
+};
+
+// sdl events
 static void OnQuitEvent(
     struct Base* self, const SDL_QuitEvent* e
-);
+) {
+    (void)e;
+
+    self->user_callbacks.on_quit(
+        self->user_callbacks.user, VideoInterfaceQuitReason_DEFAULT
+    );
+}
 
 static void OnActiveEvent(
 	struct Base* self, const SDL_ActiveEvent* e
-);
+) {
+	(void)self; (void)e;
+}
 
 static void OnVideoResizeEvent(
 	struct Base* self, const SDL_ResizeEvent* e
-);
+) {
+	// in SDL1, we have to get a new video mode...
+	self->window = SDL_SetVideoMode(
+		e->w, e->h,
+		self->window->format->BitsPerPixel,
+		self->window->flags
+	);
+
+	self->event_callbacks.on_resize(
+		self->event_callbacks.user,
+		e->w, e->h
+	);
+
+    self->user_callbacks.on_resize(
+        self->user_callbacks.user,
+        e->w, e->h
+    );
+}
 
 static void OnVideoExposeEvent(
 	struct Base* self, const SDL_ExposeEvent* e
-);
+) {
+	(void)self; (void)e;
+}
 
 static void OnMouseButtonEvent(
     struct Base* self, const SDL_MouseButtonEvent* e
-);
+) {
+    assert(self->user_callbacks.on_mouse_button);
+
+    if (MOUSE_BUTTON_MAP[e->button]) {
+        self->user_callbacks.on_mouse_button(self->user_callbacks.user,
+            MOUSE_BUTTON_MAP[e->button], e->x, e->y,
+            e->type == SDL_MOUSEBUTTONDOWN
+        );
+    }
+}
 
 static void OnMouseMotionEvent(
     struct Base* self, const SDL_MouseMotionEvent* e
-);
+) {
+    assert(self->user_callbacks.on_mouse_motion);
+
+    self->user_callbacks.on_mouse_motion(self->user_callbacks.user,
+        e->x, e->y, e->xrel, e->yrel
+    );
+}
 
 static void OnKeyEvent(
     struct Base* self, const SDL_KeyboardEvent* e
-);
+) {
+    assert(self->user_callbacks.on_key);
+
+    // only handle if we have mapped the key.
+    // the emun starts at 1, so all values are > 0.
+    if (KEY_MAP[e->keysym.sym]) {
+        const uint16_t key = KEY_MAP[e->keysym.sym];
+        const bool down = e->type == SDL_KEYDOWN;
+        uint8_t mod = VideoInterfaceKeyMod_NONE;
+
+        // idk how to map a bitfield in an array sainly...
+        if (e->keysym.mod & KMOD_LSHIFT) {
+            mod |= VideoInterfaceKeyMod_LSHIFT;
+        }
+        if (e->keysym.mod & KMOD_RSHIFT) {
+            mod |= VideoInterfaceKeyMod_RSHIFT;
+        }
+        if (e->keysym.mod & KMOD_LCTRL) {
+            mod |= VideoInterfaceKeyMod_LCTRL;
+        }
+        if (e->keysym.mod & KMOD_RCTRL) {
+            mod |= VideoInterfaceKeyMod_RCTRL;
+        }
+        if (e->keysym.mod & KMOD_LALT) {
+            mod |= VideoInterfaceKeyMod_LALT;
+        }
+        if (e->keysym.mod & KMOD_RALT) {
+            mod |= VideoInterfaceKeyMod_RALT;
+        }
+        if (e->keysym.mod & KMOD_NUM) {
+            mod |= VideoInterfaceKeyMod_NUM;
+        }
+        if (e->keysym.mod & KMOD_CAPS) {
+            mod |= VideoInterfaceKeyMod_CAPS;
+        }
+
+        self->user_callbacks.on_key(self->user_callbacks.user,
+            key, mod, down
+        );
+    }    
+}
 
 static void OnJoypadAxisEvent(
     struct Base* self, const SDL_JoyAxisEvent* e
-);
+) {
+    (void)self; (void)e;
+}
 
 static void OnJoypadButtonEvent(
     struct Base* self, const SDL_JoyButtonEvent* e
-);
+) {
+    (void)self; (void)e;
+}
 
 static void OnJoypadHatEvent(
     struct Base* self, const SDL_JoyHatEvent* e
-);
+) {
+    (void)self; (void)e;
+}
 
 static void OnSysWMEvent(
     struct Base* self, const SDL_SysWMEvent* e
-);
+) {
+    (void)self; (void)e;
+}
 
 static void OnUserEvent(
     struct Base* self, SDL_UserEvent* e
-);
+) {
+    (void)self; (void)e;
+}
 
 
 bool base_sdl1_init_system(
-	struct Base* self
+    struct Base* self
 ) {
-	memset(self, 0, sizeof(struct Base));
+    memset(self, 0, sizeof(struct Base));
 
-	if (SDL_InitSubSystem(SDL_INIT_VIDEO)) {
+    if (SDL_InitSubSystem(SDL_INIT_VIDEO)) {
         fprintf(stderr, "%s\n\n", SDL_GetError());
         goto fail;
     }
@@ -138,31 +237,30 @@ bool base_sdl1_init_system(
 
     // log the best video info
     printf("\nBest Video Info:\n");
-	printf("\thw_available:\t%s\n", video_info->hw_available ? "TRUE" : "FALE");
-	printf("\twm_available:\t%s\n", video_info->wm_available ? "TRUE" : "FALE");
-	printf("\tblit_hw:\t%s\n", video_info->blit_hw ? "TRUE" : "FALE");
-	printf("\tblit_hw_CC:\t%s\n", video_info->blit_hw_CC ? "TRUE" : "FALE");
-	printf("\tblit_hw_A:\t%s\n", video_info->blit_hw_A ? "TRUE" : "FALE");
-	printf("\tblit_sw:\t%s\n", video_info->blit_sw ? "TRUE" : "FALE");
-	printf("\tblit_sw_CC:\t%s\n", video_info->blit_sw_CC ? "TRUE" : "FALE");
-	printf("\tblit_sw_A:\t%s\n", video_info->blit_sw_A ? "TRUE" : "FALE");
-	printf("\tblit_fill:\t%u\n", video_info->blit_fill);
-	printf("\tvideo_mem:\t%u\n", video_info->video_mem);
+    printf("\thw_available:\t%s\n", video_info->hw_available ? "TRUE" : "FALE");
+    printf("\twm_available:\t%s\n", video_info->wm_available ? "TRUE" : "FALE");
+    printf("\tblit_hw:\t%s\n", video_info->blit_hw ? "TRUE" : "FALE");
+    printf("\tblit_hw_CC:\t%s\n", video_info->blit_hw_CC ? "TRUE" : "FALE");
+    printf("\tblit_hw_A:\t%s\n", video_info->blit_hw_A ? "TRUE" : "FALE");
+    printf("\tblit_sw:\t%s\n", video_info->blit_sw ? "TRUE" : "FALE");
+    printf("\tblit_sw_CC:\t%s\n", video_info->blit_sw_CC ? "TRUE" : "FALE");
+    printf("\tblit_sw_A:\t%s\n", video_info->blit_sw_A ? "TRUE" : "FALE");
+    printf("\tblit_fill:\t%u\n", video_info->blit_fill);
+    printf("\tvideo_mem:\t%u\n", video_info->video_mem);
 
     return true;
 
 fail:
-	base_sdl1_exit(self);
-	return false;
+    base_sdl1_exit(self);
+    return false;
 }
 
 bool base_sdl1_init_window(
-	struct Base* self,
-	const struct BaseConfig* config,
-    const struct VideoInterfaceUserCallbacks* callbacks
+    struct Base* self,
+    const struct BaseConfig* config
 ) {
-	assert(SDL_WasInit(SDL_INIT_VIDEO));
-	assert(SDL_WasInit(SDL_INIT_JOYSTICK));
+    assert(SDL_WasInit(SDL_INIT_VIDEO));
+    assert(SDL_WasInit(SDL_INIT_JOYSTICK));
 
     self->window = SDL_SetVideoMode(
         config->w, config->h,
@@ -210,34 +308,34 @@ bool base_sdl1_init_window(
 
     // save the callbacks
     self->event_callbacks = config->event_callbacks;
-    self->interface_callbacks = *callbacks;
+    self->user_callbacks = config->user_callbacks;
 
     return true;
 
 fail:
-	base_sdl1_exit(self);
-	return false;
+    base_sdl1_exit(self);
+    return false;
 }
 
 void base_sdl1_exit(struct Base* self) {
-	if (SDL_WasInit(SDL_INIT_JOYSTICK)) {
+    if (SDL_WasInit(SDL_INIT_JOYSTICK)) {
         SDL_InitSubSystem(SDL_INIT_JOYSTICK);
     }
 
-	if (SDL_WasInit(SDL_INIT_VIDEO)) {
-		if (self->window) {
-			// The framebuffer surface, or NULL if it fails.
-			// The surface returned is freed by SDL_Quit()
-			// and should nt be freed by the caller.
-			// SOURCE: https://www.libsdl.org/release/SDL-1.2.15/docs/html/sdlsetvideomode.html
-	    }
+    if (SDL_WasInit(SDL_INIT_VIDEO)) {
+        if (self->window) {
+            // The framebuffer surface, or NULL if it fails.
+            // The surface returned is freed by SDL_Quit()
+            // and should nt be freed by the caller.
+            // SOURCE: https://www.libsdl.org/release/SDL-1.2.15/docs/html/sdlsetvideomode.html
+        }
 
-	    SDL_QuitSubSystem(SDL_INIT_VIDEO);
-	}
+        SDL_QuitSubSystem(SDL_INIT_VIDEO);
+    }
 }
 
 void base_sdl1_poll_events(struct Base* self) {
-	SDL_Event e;
+    SDL_Event e;
 
     while (SDL_PollEvent(&e)) {
         switch (e.type) {
@@ -246,16 +344,16 @@ void base_sdl1_poll_events(struct Base* self) {
                 break;
 
             case SDL_ACTIVEEVENT:
-            	OnActiveEvent(self, &e.active);
-            	break;
+                OnActiveEvent(self, &e.active);
+                break;
 
             case SDL_VIDEORESIZE:
-            	OnVideoResizeEvent(self, &e.resize);
-            	break;
+                OnVideoResizeEvent(self, &e.resize);
+                break;
 
             case SDL_VIDEOEXPOSE:
-            	OnVideoExposeEvent(self, &e.expose);
-            	break;
+                OnVideoExposeEvent(self, &e.expose);
+                break;
 
             case SDL_MOUSEBUTTONDOWN:
             case SDL_MOUSEBUTTONUP:
@@ -296,140 +394,15 @@ void base_sdl1_poll_events(struct Base* self) {
 }
 
 void base_sdl1_toggle_fullscreen(struct Base* self) {
-	if (SDL_WM_ToggleFullScreen(self->window) == 0) {
-		fprintf(stderr, "%s\n", SDL_GetError());
-	}
+    if (SDL_WM_ToggleFullScreen(self->window) == 0) {
+        fprintf(stderr, "%s\n", SDL_GetError());
+    }
+    // NOTE: sdl fires a resize event after
 }
 
 void base_sdl1_set_window_name(struct Base* self, const char* name) {
-	(void)self;
+    (void)self;
 
-	// name, icon name (set icon name to window name)
-	SDL_WM_SetCaption(name, name);
-}
-
-
-// sdl events
-static void OnQuitEvent(
-    struct Base* self, const SDL_QuitEvent* e
-) {
-    (void)e;
-
-    self->interface_callbacks.on_quit(
-        self->interface_callbacks.user, VideoInterfaceQuitReason_DEFAULT
-    );
-}
-
-static void OnActiveEvent(
-	struct Base* self, const SDL_ActiveEvent* e
-) {
-	(void)self; (void)e;
-}
-
-static void OnVideoResizeEvent(
-	struct Base* self, const SDL_ResizeEvent* e
-) {
-	// in SDL1, we have to get a new video mode...
-	self->window = SDL_SetVideoMode(
-		e->w, e->h,
-		self->window->format->BitsPerPixel,
-		self->window->flags
-	);
-
-	self->event_callbacks.on_resize(
-		self->event_callbacks.user,
-		e->w, e->h
-	);
-}
-
-static void OnVideoExposeEvent(
-	struct Base* self, const SDL_ExposeEvent* e
-) {
-	(void)self; (void)e;
-}
-
-static void OnMouseButtonEvent(
-    struct Base* self, const SDL_MouseButtonEvent* e
-) {
-    (void)self; (void)e;
-}
-
-static void OnMouseMotionEvent(
-    struct Base* self, const SDL_MouseMotionEvent* e
-) {
-    (void)self; (void)e;
-}
-
-static void OnKeyEvent(
-    struct Base* self, const SDL_KeyboardEvent* e
-) {
-    assert(self->interface_callbacks.on_key);
-
-    // only handle if we have mapped the key.
-    // the emun starts at 1, so all values are > 0.
-    if (KEY_MAP[e->keysym.sym]) {
-        const uint16_t key = KEY_MAP[e->keysym.sym];
-        const bool down = e->type == SDL_KEYDOWN;
-        uint8_t mod = VideoInterfaceKeyMod_NONE;
-
-        // idk how to map a bitfield in an array sainly...
-        if (e->keysym.mod & KMOD_LSHIFT) {
-            mod |= VideoInterfaceKeyMod_LSHIFT;
-        }
-        if (e->keysym.mod & KMOD_RSHIFT) {
-            mod |= VideoInterfaceKeyMod_RSHIFT;
-        }
-        if (e->keysym.mod & KMOD_LCTRL) {
-            mod |= VideoInterfaceKeyMod_LCTRL;
-        }
-        if (e->keysym.mod & KMOD_RCTRL) {
-            mod |= VideoInterfaceKeyMod_RCTRL;
-        }
-        if (e->keysym.mod & KMOD_LALT) {
-            mod |= VideoInterfaceKeyMod_LALT;
-        }
-        if (e->keysym.mod & KMOD_RALT) {
-            mod |= VideoInterfaceKeyMod_RALT;
-        }
-        if (e->keysym.mod & KMOD_NUM) {
-            mod |= VideoInterfaceKeyMod_NUM;
-        }
-        if (e->keysym.mod & KMOD_CAPS) {
-            mod |= VideoInterfaceKeyMod_CAPS;
-        }
-
-        self->interface_callbacks.on_key(self->interface_callbacks.user,
-            key, mod, down
-        );
-    }    
-}
-
-static void OnJoypadAxisEvent(
-    struct Base* self, const SDL_JoyAxisEvent* e
-) {
-    (void)self; (void)e;
-}
-
-static void OnJoypadButtonEvent(
-    struct Base* self, const SDL_JoyButtonEvent* e
-) {
-    (void)self; (void)e;
-}
-
-static void OnJoypadHatEvent(
-    struct Base* self, const SDL_JoyHatEvent* e
-) {
-    (void)self; (void)e;
-}
-
-static void OnSysWMEvent(
-    struct Base* self, const SDL_SysWMEvent* e
-) {
-    (void)self; (void)e;
-}
-
-static void OnUserEvent(
-    struct Base* self, SDL_UserEvent* e
-) {
-    (void)self; (void)e;
+    // name, icon name (set icon name to window name)
+    SDL_WM_SetCaption(name, name);
 }

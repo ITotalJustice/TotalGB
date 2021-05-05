@@ -14,6 +14,12 @@ struct VideoInterface;
 struct VideoInterfaceGameTexture;
 struct VideoInterfaceUserCallbacks;
 
+enum VideoInterfaceMouseButton {
+    VideoInterfaceMouseButton_LEFT = 1,
+    VideoInterfaceMouseButton_MIDDLE,
+    VideoInterfaceMouseButton_RIGHT,
+};
+
 enum VideoInterfaceButton {
     VideoInterfaceButton_A = 1,
     VideoInterfaceButton_B,
@@ -157,6 +163,12 @@ struct VideoInterfaceUserCallbacks {
 
     void (*on_file_drop)(void* user,
         const char* path
+    );
+    void (*on_mouse_button)(void* user,
+        enum VideoInterfaceMouseButton button, int x, int y, bool down
+    );
+    void (*on_mouse_motion)(void* user,
+        int x, int y, int xrel, int yrel
     );
     void (*on_key)(void* user,
         enum VideoInterfaceKey key, uint8_t mod, bool down
