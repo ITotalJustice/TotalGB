@@ -12,6 +12,9 @@
 #include <assert.h>
 
 
+#define VOID_TO_SELF(_private) mgb_t* self = (mgb_t*)_private
+
+
 enum LoadRomType {
     LoadRomType_FILE,
     LoadRomType_MEM,
@@ -138,7 +141,7 @@ static void core_on_error(struct GB_Core* gb,
 static void core_on_vsync(struct GB_Core* gb,
     void* user
 ) {
-    mgb_t* self = (mgb_t*)user;
+    VOID_TO_SELF(user);
 
     const struct VideoInterfaceGameTexture game_texture = {
         .pixels = (uint16_t*)gb->ppu.pixles
@@ -255,7 +258,7 @@ static bool core_on_axis(mgb_t* self,
 static void on_file_drop(void* user,
     const char* path
 ) {
-	mgb_t* self = (mgb_t*)user;
+    VOID_TO_SELF(user);
 
     STUB(self); STUB(path);
 }
@@ -263,7 +266,7 @@ static void on_file_drop(void* user,
 static void on_mouse_button(void* user,
     enum VideoInterfaceMouseButton button, int x, int y, bool down
 ) {
-	mgb_t* self = (mgb_t*)user;
+    VOID_TO_SELF(user);
 
 	switch (self->state) {
 		case MgbState_CORE:
@@ -279,7 +282,7 @@ static void on_mouse_button(void* user,
 static void on_mouse_motion(void* user,
     int x, int y, int xrel, int yrel
 ) {
-	mgb_t* self = (mgb_t*)user;
+    VOID_TO_SELF(user);
 
 	switch (self->state) {
 		case MgbState_CORE:
@@ -295,7 +298,7 @@ static void on_mouse_motion(void* user,
 static void on_key(void* user,
     enum VideoInterfaceKey key, uint8_t mod, bool down
 ) {
-    mgb_t* self = (mgb_t*)user;
+    VOID_TO_SELF(user);
 
     switch (self->state) {
 		case MgbState_CORE:
@@ -311,7 +314,7 @@ static void on_key(void* user,
 static void on_button(void* user,
     enum VideoInterfaceButton button, bool down
 ) {
-    mgb_t* self = (mgb_t*)user;
+    VOID_TO_SELF(user);
 
     switch (self->state) {
 		case MgbState_CORE:
@@ -327,7 +330,7 @@ static void on_button(void* user,
 static void on_axis(void* user,
     enum VideoInterfaceAxis axis, int16_t pos, bool down
 ) {
-	mgb_t* self = (mgb_t*)user;
+    VOID_TO_SELF(user);
 
     switch (self->state) {
 		case MgbState_CORE:
@@ -343,15 +346,17 @@ static void on_axis(void* user,
 static void on_resize(void* user,
     int w, int h
 ) {
-	mgb_t* self = (mgb_t*)user;
+    VOID_TO_SELF(user);
 
-	STUB(self); STUB(w); STUB(h);
+    // always pass resize events to gui regardless of the state
+    nk_interface_set_window_size(self->nk_interface, w, h);
+    nk_interface_set_viewport_size(self->nk_interface, w, h);
 }
 
 static void on_quit(void* user,
     enum VideoInterfaceQuitReason reason
 ) {
-	mgb_t* self = (mgb_t*)user;
+    VOID_TO_SELF(user);
 
 	switch (reason) {
 		case VideoInterfaceQuitReason_ERROR:
@@ -452,7 +457,15 @@ static bool setup_audio_interface(mgb_t* self) {
 
 static bool setup_nk_interface(mgb_t* self) {
 	#ifdef NK_INTERFACE_INIT
-		self->nk_interface = NK_INTERFACE_INIT();
+        const struct NkInterfaceInitConfig config = {
+            .window_w = 160 * 2,
+            .window_h = 144 * 2,
+            .viewport_w = 160 * 2,
+            .viewport_h = 144 * 2,
+        };
+
+		self->nk_interface = NK_INTERFACE_INIT(&config);
+
 		return self->nk_interface != NULL;
 	#else
 		// if we don't have a gui backend, then return true for now

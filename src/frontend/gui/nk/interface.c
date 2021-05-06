@@ -56,6 +56,18 @@ void nk_interface_quit(
 	free(self);
 }
 
+void nk_interface_set_window_size(
+    struct NkInterface* self, int w, int h
+) {
+	self->set_window_size(self->_private, w, h);
+}
+
+void nk_interface_set_viewport_size(
+    struct NkInterface* self, int w, int h
+) {
+	self->set_viewport_size(self->_private, w, h);
+}
+
 void nk_interface_input_begin(
 	struct NkInterface* self
 ) {
@@ -72,23 +84,23 @@ void nk_interface_input_end(
 	nk_input_end(ctx);
 }
 
-bool nk_interface_on_mouse_button(struct NkInterface* self,
+bool nk_interface_on_mouse_button(
+	struct NkInterface* self,
     enum VideoInterfaceMouseButton button, int x, int y, bool down
 ) {
 	struct nk_context* ctx = nk_interface_get_context(self);
 
 	if (MOUSE_BUTTON_MAP[button]) {
-		printf("got mouse btton, its being handled\n");
 		nk_input_button(ctx, MOUSE_BUTTON_MAP[button], x, y, down);
 		return true;
 	}
 	else {
-		printf("invalid mouse button %d\n", button);
 		return false;
 	}
 }
 
-bool nk_interface_on_mouse_motion(struct NkInterface* self,
+bool nk_interface_on_mouse_motion(
+	struct NkInterface* self,
     int x, int y, int xrel, int yrel
 ) {
 	struct nk_context* ctx = nk_interface_get_context(self);
@@ -101,7 +113,8 @@ bool nk_interface_on_mouse_motion(struct NkInterface* self,
 	return true; // always handle?
 }
 
-bool nk_interface_on_key(struct NkInterface* self,
+bool nk_interface_on_key(
+	struct NkInterface* self,
     enum VideoInterfaceKey key, uint8_t mod, bool down
 ) {
 	struct nk_context* ctx = nk_interface_get_context(self);
@@ -118,7 +131,8 @@ bool nk_interface_on_key(struct NkInterface* self,
 	}
 }
 
-bool nk_interface_on_button(struct NkInterface* self,
+bool nk_interface_on_button(
+	struct NkInterface* self,
     enum VideoInterfaceButton button, bool down
 ) {
 	struct nk_context* ctx = nk_interface_get_context(self);
@@ -133,7 +147,8 @@ bool nk_interface_on_button(struct NkInterface* self,
 	(void)ctx; (void)button; (void)down;
 }
 
-bool nk_interface_on_axis(struct NkInterface* self,
+bool nk_interface_on_axis(
+	struct NkInterface* self,
     enum VideoInterfaceAxis axis, int16_t pos, bool down
 ) {
 	struct nk_context* ctx = nk_interface_get_context(self);

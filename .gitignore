@@ -59,7 +59,7 @@ output.js
 build_*/
 old_code/
 *.geany
-
+src/libs/nuklear/console.c
 *.sh
 
 #

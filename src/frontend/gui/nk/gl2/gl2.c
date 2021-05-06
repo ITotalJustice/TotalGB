@@ -12,33 +12,38 @@
 #include <GL/gl.h>
 
 
-struct gl2_device {
+struct device {
     struct nk_buffer cmds;
     struct nk_draw_null_texture null;
     GLuint font_tex;
 };
 
-struct gl2_vertex {
+struct vertex {
     float position[2];
     float uv[2];
     nk_byte col[4];
 };
 
-typedef struct gl2_ctx {
-    struct gl2_device ogl;
+typedef struct ctx {
+    struct device ogl;
     struct nk_context ctx;
     struct nk_font_atlas atlas;
+    
+    // the actual size of the window
+    int window_w, window_h;
+    // the gl viewport size
+    int viewport_w, viewport_h;
 } ctx_t;
 
 #define VOID_TO_SELF(_private) ctx_t* self = (ctx_t*)_private
 
 
-static void gl2_device_upload_atlas(
+static void device_upload_atlas(
 	ctx_t* self,
 	const void *image,
 	int width, int height
 ) {
-    struct gl2_device *dev = &self->ogl;
+    struct device *dev = &self->ogl;
     glGenTextures(1, &dev->font_tex);
     glBindTexture(GL_TEXTURE_2D, dev->font_tex);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
@@ -58,13 +63,27 @@ static struct nk_context* internal_get_context(void* _private) {
 static void internal_quit(void* _private) {
 	VOID_TO_SELF(_private);
 
-	struct gl2_device *dev = &self->ogl;
+	struct device *dev = &self->ogl;
     nk_font_atlas_clear(&self->atlas);
     nk_free(&self->ctx);
     glDeleteTextures(1, &dev->font_tex);
     nk_buffer_free(&dev->cmds);
 
     free(self);
+}
+
+static void internal_set_window_size(void* _private, int w, int h) {
+    VOID_TO_SELF(_private);
+
+    self->window_w = w;
+    self->window_h = h;
+}
+
+static void internal_set_viewport_size(void* _private, int w, int h) {
+    VOID_TO_SELF(_private);
+
+    self->viewport_w = w;
+    self->viewport_h = h;
 }
 
 static void internal_font_stash_begin(void* _private) {
@@ -79,7 +98,7 @@ static void internal_font_stash_end(void* _private) {
 
 	int w, h;
     const void* image = nk_font_atlas_bake(&self->atlas, &w, &h, NK_FONT_ATLAS_RGBA32);
-    gl2_device_upload_atlas(self, image, w, h);
+    device_upload_atlas(self, image, w, h);
     nk_font_atlas_end(&self->atlas, nk_handle_id((int)self->ogl.font_tex), &self->ogl.null);
     
     if (self->atlas.default_font) {
@@ -92,9 +111,11 @@ static void internal_render(void* _private, enum nk_anti_aliasing AA) {
 
 
 	/* setup global state */
-    struct gl2_device *dev = &self->ogl;
-    int width = 160*2, height = 144*2;
-    int display_width = 160*2, display_height = 144*2;
+    struct device *dev = &self->ogl;
+    const int width = self->window_w;
+    const int height = self->window_h;
+    const int display_width = self->viewport_w;
+    const int display_height = self->viewport_h;
     struct nk_vec2 scale;
 
     // SDL_GetWindowSize(self->win, &width, &height);
@@ -124,10 +145,10 @@ static void internal_render(void* _private, enum nk_anti_aliasing AA) {
     glEnableClientState(GL_TEXTURE_COORD_ARRAY);
     glEnableClientState(GL_COLOR_ARRAY);
     {
-        GLsizei vs = sizeof(struct gl2_vertex);
-        size_t vp = offsetof(struct gl2_vertex, position);
-        size_t vt = offsetof(struct gl2_vertex, uv);
-        size_t vc = offsetof(struct gl2_vertex, col);
+        GLsizei vs = sizeof(struct vertex);
+        size_t vp = offsetof(struct vertex, position);
+        size_t vt = offsetof(struct vertex, uv);
+        size_t vc = offsetof(struct vertex, col);
 
         /* convert from command queue into draw list and draw to screen */
         const struct nk_draw_command *cmd;
@@ -137,17 +158,17 @@ static void internal_render(void* _private, enum nk_anti_aliasing AA) {
         /* fill converting configuration */
         struct nk_convert_config config;
         static const struct nk_draw_vertex_layout_element vertex_layout[] = {
-            {NK_VERTEX_POSITION, NK_FORMAT_FLOAT, NK_OFFSETOF(struct gl2_vertex, position)},
-            {NK_VERTEX_TEXCOORD, NK_FORMAT_FLOAT, NK_OFFSETOF(struct gl2_vertex, uv)},
-            {NK_VERTEX_COLOR, NK_FORMAT_R8G8B8A8, NK_OFFSETOF(struct gl2_vertex, col)},
+            {NK_VERTEX_POSITION, NK_FORMAT_FLOAT, NK_OFFSETOF(struct vertex, position)},
+            {NK_VERTEX_TEXCOORD, NK_FORMAT_FLOAT, NK_OFFSETOF(struct vertex, uv)},
+            {NK_VERTEX_COLOR, NK_FORMAT_R8G8B8A8, NK_OFFSETOF(struct vertex, col)},
             {NK_VERTEX_LAYOUT_END}
         };
 
         memset(&config, 0, sizeof(config));
         
         config.vertex_layout = vertex_layout;
-        config.vertex_size = sizeof(struct gl2_vertex);
-        config.vertex_alignment = NK_ALIGNOF(struct gl2_vertex);
+        config.vertex_size = sizeof(struct vertex);
+        config.vertex_alignment = NK_ALIGNOF(struct vertex);
         config.null = dev->null;
         config.circle_segment_count = 22;
         config.curve_segment_count = 22;
@@ -211,7 +232,9 @@ static void internal_render(void* _private, enum nk_anti_aliasing AA) {
     glPopAttrib();
 }
 
-struct NkInterface* nk_interface_gl2_init(void) {
+struct NkInterface* nk_interface_gl2_init(
+    const struct NkInterfaceInitConfig* config
+) {
 	struct NkInterface* iface = NULL;
 	ctx_t* self = NULL;
 
@@ -237,11 +260,18 @@ struct NkInterface* nk_interface_gl2_init(void) {
     internal_font_stash_end(self);
 
     const struct NkInterface internal_iface = {
-    	._private      = self,
-        .get_context   = internal_get_context,
-    	.quit          = internal_quit,
-    	.render        = internal_render
+    	._private              = self,
+        .get_context           = internal_get_context,
+    	.quit                  = internal_quit,
+        .set_window_size       = internal_set_window_size,
+        .set_viewport_size     = internal_set_viewport_size,
+    	.render                = internal_render
     };
+
+    self->window_w = config->window_w;
+    self->window_h = config->window_h;
+    self->viewport_w = config->viewport_w;
+    self->viewport_h = config->viewport_h;
 
     *iface = internal_iface;
 
