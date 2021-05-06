@@ -12,6 +12,8 @@ extern "C" {
 #include "audio/interface.h"
 #include "gui/nk/interface.h"
 
+#include "gui/gui.h"
+
 #include "../core/gb.h"
 
 
@@ -27,6 +29,9 @@ typedef struct mgb {
     struct AudioInterface* audio_interface;
     struct NkInterface* nk_interface;
 
+    struct Gui gui;
+
+    // todo: make below stuff into a struct
 	struct GB_Core* gameboy;
 
     uint8_t* rom_data;

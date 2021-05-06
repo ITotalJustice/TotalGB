@@ -348,9 +348,9 @@ static void on_resize(void* user,
 ) {
     VOID_TO_SELF(user);
 
-    // always pass resize events to gui regardless of the state
-    nk_interface_set_window_size(self->nk_interface, w, h);
-    nk_interface_set_viewport_size(self->nk_interface, w, h);
+        // always pass resize events to gui regardless of the state
+    gui_set_window_size(self, w, h);
+    gui_set_viewport_size(self, w, h);
 }
 
 static void on_quit(void* user,
@@ -465,6 +465,9 @@ static bool setup_nk_interface(mgb_t* self) {
         };
 
 		self->nk_interface = NK_INTERFACE_INIT(&config);
+        // need to set the gui size
+        gui_set_window_size(self, config.window_w, config.window_h);
+        gui_set_viewport_size(self, config.viewport_w, config.viewport_h);
 
 		return self->nk_interface != NULL;
 	#else

@@ -53,8 +53,15 @@ source = files([
     'src/frontend/mgb.c',
     'src/frontend/util.c',
     'src/frontend/romloader.c',
-    
+
+    # gui stuff
     'src/frontend/gui/gui.c',
+    'src/frontend/gui/menus/common.c',
+    'src/frontend/gui/menus/menu_core_settings.c',
+    'src/frontend/gui/menus/menu_gui_settings.c',
+    'src/frontend/gui/menus/menu_help.c',
+    'src/frontend/gui/menus/menu_loadrom.c',
+    'src/frontend/gui/menus/menu_main.c',
 
     'src/frontend/ifile/ifile.c',
     'src/frontend/ifile/cfile/cfile.c',
