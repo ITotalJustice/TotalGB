@@ -60,13 +60,12 @@ bool mgb_load_rom_data(mgb_t* self,
 );
 
 bool mgb_savestate(mgb_t* self);
+bool mgb_savestate_filedialog(mgb_t* self);
+bool mgb_savestate_file(mgb_t* self, const char* path);
 
 bool mgb_loadstate(mgb_t* self);
 bool mgb_loadstate_filedialog(mgb_t* self);
 bool mgb_loadstate_file(mgb_t* self, const char* path);
-bool mgb_loadstate_data(mgb_t* self,
-    const char* path, const uint8_t* data, size_t size
-);
 
 bool mgb_load_save_file(mgb_t* self, const char* path);
 bool mgb_load_rtc_file(mgb_t* self, const char* path);

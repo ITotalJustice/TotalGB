@@ -189,20 +189,35 @@ static void on_key(mgb_t* self,
 
     // handle any hotkeys
     if (e->down && e->mod & VideoInterfaceKeyMod_CTRL) {
-        switch (e->key) {
-            case VideoInterfaceKey_O:
-                mgb_load_rom_filedialog(self);
-                break;
+        if (e->mod & VideoInterfaceKeyMod_SHIFT) {
+            switch (e->key) {
+                case VideoInterfaceKey_S:
+                    mgb_savestate_filedialog(self);
+                    break;
 
-            case VideoInterfaceKey_S:
-                mgb_savestate(self);
-                break;
+                case VideoInterfaceKey_L:
+                    mgb_loadstate_filedialog(self);
+                    break;
 
-            case VideoInterfaceKey_L:
-                mgb_loadstate(self);
-                break;
+                default: break;
+            }
+        }
+        else {
+            switch (e->key) {
+                case VideoInterfaceKey_O:
+                    mgb_load_rom_filedialog(self);
+                    break;
 
-            default: break;
+                case VideoInterfaceKey_S:
+                    mgb_savestate(self);
+                    break;
+
+                case VideoInterfaceKey_L:
+                    mgb_loadstate(self);
+                    break;
+
+                default: break;
+            }
         }
 
         // don't handle the key press
@@ -647,11 +662,51 @@ bool mgb_load_rom_filedialog(mgb_t* self) {
             return mgb_load_rom_file(self, result.path);
 
         case FileDialogResultType_ERROR:
-            printf("FD-Result: FileDialogResultType_ERROR\n");
             return false;
 
         case FileDialogResultType_CANCEL:
-            printf("FD-Result: FileDialogResultType_CANCEL\n");
+            return false;
+    }
+
+    return false;
+}
+
+bool mgb_savestate_filedialog(mgb_t* self) {
+    const char* filters = "state";
+
+    const struct FileDialogResult result = filedialog_save_file(
+        filters
+    );
+
+    switch (result.type) {
+        case FileDialogResultType_OK:
+            return mgb_savestate_file(self, result.path);
+
+        case FileDialogResultType_ERROR:
+            return false;
+
+        case FileDialogResultType_CANCEL:
+            return false;
+    }
+
+    return false;
+}
+
+bool mgb_loadstate_filedialog(mgb_t* self) {
+    const char* filters = "state";
+
+    const struct FileDialogResult result = filedialog_open_file(
+        filters
+    );
+
+    switch (result.type) {
+        case FileDialogResultType_OK:
+            return mgb_loadstate_file(self, result.path);
+
+        case FileDialogResultType_ERROR:
+            return false;
+
+        case FileDialogResultType_CANCEL:
             return false;
     }
 
@@ -661,7 +716,6 @@ bool mgb_load_rom_filedialog(mgb_t* self) {
 bool mgb_load_rom_file(mgb_t* self, const char* path) {
     const struct LoadRomConfig config = {
         .path = path,
-        .data = NULL,
         .size = 0,
         .type = LoadRomType_FILE
     };
@@ -695,17 +749,7 @@ bool mgb_savestate(mgb_t* self) {
         return false;
     }
 
-    struct GB_State* state = (struct GB_State*)malloc(sizeof(struct GB_State));
-    GB_savestate(self->gameboy, state);
-
-    IFile_t* file = icfile_open(path.str, "wb");
-    ifile_write(file, state, sizeof(struct GB_State));
-    ifile_close(file);
-
-    free(state);
-    state = NULL;
-
-    return true;
+    return mgb_savestate_file(self, path.str);
 }
 
 bool mgb_loadstate(mgb_t* self) {
@@ -721,9 +765,36 @@ bool mgb_loadstate(mgb_t* self) {
         return false;
     }
 
+    return mgb_loadstate_file(self, path.str);
+}
+
+bool mgb_savestate_file(mgb_t* self, const char* path) {
+    IFile_t* file = icfile_open(path, "wb");
+    if (!file) {
+        return false;
+    }
+
+    struct GB_State* state = (struct GB_State*)malloc(sizeof(struct GB_State));
+    GB_savestate(self->gameboy, state);
+
+    ifile_write(file, state, sizeof(struct GB_State));
+    ifile_close(file);
+    file = NULL;
+
+    free(state);
+    state = NULL;
+
+    return true;
+}
+
+bool mgb_loadstate_file(mgb_t* self, const char* path) {
+    IFile_t* file = icfile_open(path, "rb");
+    if (!file) {
+        return false;
+    }
+
     struct GB_State* state = (struct GB_State*)malloc(sizeof(struct GB_State));
 
-    IFile_t* file = icfile_open(path.str, "rb");
     ifile_read(file, state, sizeof(struct GB_State));
     ifile_close(file);
 
