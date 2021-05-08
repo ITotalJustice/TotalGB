@@ -1,5 +1,7 @@
 #include "mgb.h"
 #include "util.h"
+#include "filedialog.h"
+#include "imgui/backends/imgui_impl_mgb.h"
 #include "gui/gui.h"
 
 #include "romloader.h"
@@ -34,16 +36,12 @@ struct LoadRomConfig {
 #elif MGB_VIDEO_BACKEND_SDL1_OPENGL
     #include "video/sdl1/sdl1_opengl.h"
     #define VIDEO_INTERFACE_INIT video_interface_init_sdl1_opengl
-	#include "gui/nk/gl2/gl2.h"
-	#define NK_INTERFACE_INIT nk_interface_gl2_init
 #elif MGB_VIDEO_BACKEND_SDL2
     #include "video/sdl2/sdl2.h"
     #define VIDEO_INTERFACE_INIT video_interface_init_sdl2
 #elif MGB_VIDEO_BACKEND_SDL2_OPENGL
     #include "video/sdl2/sdl2_opengl.h"
     #define VIDEO_INTERFACE_INIT video_interface_init_sdl2_opengl
-	#include "gui/nk/gl2/gl2.h"
-	#define NK_INTERFACE_INIT nk_interface_gl2_init
 #elif MGB_VIDEO_BACKEND_SDL2_VULKAN
     #include "video/sdl2/sdl2_vulkan.h"
     #define VIDEO_INTERFACE_INIT video_interface_init_sdl2_vulkan
@@ -57,33 +55,6 @@ struct LoadRomConfig {
     #error "NO VIDEO BACKEND SELECTED FOR MGB!"
 #endif
 
-
-
-// [VIDEO INSTANCE CALLBACKS]
-static void on_file_drop(void* user,
-    const char* path
-);
-static void on_mouse_button(void* user,
-    enum VideoInterfaceMouseButton button, int x, int y, bool down
-);
-static void on_mouse_motion(void* user,
-    int x, int y, int xrel, int yrel
-);
-static void on_key(void* user,
-    enum VideoInterfaceKey key, uint8_t mod, bool down
-);
-static void on_button(void* user,
-    enum VideoInterfaceButton button, bool down
-);
-static void on_axis(void* user,
-    enum VideoInterfaceAxis axis, int16_t pos, bool down
-);
-static void on_resize(void* user,
-    int w, int h
-);
-static void on_quit(void* user,
-    enum VideoInterfaceQuitReason reason
-);
 
 static bool setup_video_interface(mgb_t* self);
 static bool setup_audio_interface(mgb_t* self);
@@ -182,28 +153,30 @@ static void core_run(mgb_t* self) {
     }
 }
 
-static bool core_on_mouse_button(mgb_t* self,
-    enum VideoInterfaceMouseButton button, int x, int y, bool down
-) {
-	UNUSED(self); UNUSED(button); UNUSED(x); UNUSED(y); UNUSED(down);
 
-	return false; // we don't handle this event!
+// [VIDEO INTERFACE CALLBACKS]
+static void on_file_drop(mgb_t* self,
+     const struct VideoInterfaceEventDataFileDrop* e
+) {
+    STUB(self); STUB(e);
 }
 
-static bool core_on_mouse_motion(mgb_t* self,
-    int x, int y, int xrel, int yrel
+static void on_mbutton(mgb_t* self,
+     const struct VideoInterfaceEventDataMouseButton* e
 ) {
-	UNUSED(self); UNUSED(x); UNUSED(y); UNUSED(xrel); UNUSED(yrel);
-
-	return false; // we don't handle this event!
+    STUB(self); STUB(e);
 }
 
-static bool core_on_key(mgb_t* self,
-    enum VideoInterfaceKey key, uint8_t mod, bool down
+static void on_mmotion(mgb_t* self,
+     const struct VideoInterfaceEventDataMouseMotion* e
 ) {
-    UNUSED(mod);
+    STUB(self); STUB(e);
+}
 
-    static const enum VideoInterfaceKey map[VideoInterfaceKey_MAX] = {
+static void on_key(mgb_t* self,
+     const struct VideoInterfaceEventDataKey* e
+) {
+    static const uint8_t map[VideoInterfaceKey_MAX] = {
         [VideoInterfaceKey_Z]       = GB_BUTTON_B,
         [VideoInterfaceKey_X]       = GB_BUTTON_A,
         [VideoInterfaceKey_ENTER]   = GB_BUTTON_START,
@@ -214,151 +187,80 @@ static bool core_on_key(mgb_t* self,
         [VideoInterfaceKey_RIGHT]   = GB_BUTTON_RIGHT,
     };
 
-    if (map[key]) {
-        GB_set_buttons(self->gameboy, map[key], down);
-        return true;
-    }
-    else {
-        return false;
+    // handle any hotkeys
+    if (e->down && e->mod & VideoInterfaceKeyMod_CTRL) {
+        switch (e->key) {
+            case VideoInterfaceKey_O:
+                mgb_load_rom_filedialog(self);
+                break;
+
+            case VideoInterfaceKey_S:
+                mgb_savestate(self);
+                break;
+
+            case VideoInterfaceKey_L:
+                mgb_loadstate(self);
+                break;
+
+            default: break;
+        }
+
+        // don't handle the key press
+        return;
+    } 
+
+    if (map[e->key]) {
+        GB_set_buttons(self->gameboy, map[e->key], e->down);
     }
 }
 
-static bool core_on_button(mgb_t* self,
-    enum VideoInterfaceButton button, bool down
+static void on_cbutton(mgb_t* self,
+     const struct VideoInterfaceEventDataControllerButton* e
 ) {
-    static const enum VideoInterfaceButton map[VideoInterfaceButton_MAX] = {
-        [VideoInterfaceButton_B]        = GB_BUTTON_B,
-        [VideoInterfaceButton_A]        = GB_BUTTON_A,
-        [VideoInterfaceButton_START]    = GB_BUTTON_START,
-        [VideoInterfaceButton_SELECT]   = GB_BUTTON_SELECT,
-        [VideoInterfaceButton_UP]       = GB_BUTTON_UP,
-        [VideoInterfaceButton_DOWN]     = GB_BUTTON_DOWN,
-        [VideoInterfaceButton_LEFT]     = GB_BUTTON_LEFT,
-        [VideoInterfaceButton_RIGHT]    = GB_BUTTON_RIGHT,
+    static const uint8_t map[VideoInterfaceControllerButton_MAX] = {
+        [VideoInterfaceControllerButton_B]        = GB_BUTTON_B,
+        [VideoInterfaceControllerButton_A]        = GB_BUTTON_A,
+        [VideoInterfaceControllerButton_START]    = GB_BUTTON_START,
+        [VideoInterfaceControllerButton_SELECT]   = GB_BUTTON_SELECT,
+        [VideoInterfaceControllerButton_UP]       = GB_BUTTON_UP,
+        [VideoInterfaceControllerButton_DOWN]     = GB_BUTTON_DOWN,
+        [VideoInterfaceControllerButton_LEFT]     = GB_BUTTON_LEFT,
+        [VideoInterfaceControllerButton_RIGHT]    = GB_BUTTON_RIGHT,
     };
 
-    if (map[button]) {
-        GB_set_buttons(self->gameboy, map[button], down);
-        return true;
-    }
-    else {
-        return false;
+    if (map[e->button]) {
+        GB_set_buttons(self->gameboy, map[e->button], e->down);
     }
 }
 
-static bool core_on_axis(mgb_t* self,
-    enum VideoInterfaceAxis axis, int16_t pos, bool down
+static void on_caxis(mgb_t* self,
+     const struct VideoInterfaceEventDataControllerAxis* e
 ) {
-    STUB(self); STUB(axis); STUB(pos); STUB(down);
-
-    return false;
+    STUB(self); STUB(e);
 }
 
-// [VIDEO INTERFACE CALLBACKS]
-static void on_file_drop(void* user,
-    const char* path
+static void on_resize(mgb_t* self,
+     const struct VideoInterfaceEventDataResize* e
 ) {
-    VOID_TO_SELF(user);
-
-    STUB(self); STUB(path);
+    STUB(self); STUB(e);
 }
 
-static void on_mouse_button(void* user,
-    enum VideoInterfaceMouseButton button, int x, int y, bool down
+static void on_hidden(mgb_t* self,
+     const struct VideoInterfaceEventDataHidden* e
 ) {
-    VOID_TO_SELF(user);
-
-	switch (self->state) {
-		case MgbState_CORE:
-			core_on_mouse_button(self, button, x, y, down);
-			break;
-
-		case MgbState_GUI:
-			gui_on_mouse_button(self, button, x, y, down);
-			break;
-	}
+    STUB(self); UNUSED(e);
 }
 
-static void on_mouse_motion(void* user,
-    int x, int y, int xrel, int yrel
+static void on_shown(mgb_t* self,
+     const struct VideoInterfaceEventDataShown* e
 ) {
-    VOID_TO_SELF(user);
-
-	switch (self->state) {
-		case MgbState_CORE:
-			core_on_mouse_motion(self, x, y, xrel, yrel);
-			break;
-
-		case MgbState_GUI:
-			gui_on_mouse_motion(self, x, y, xrel, yrel);
-			break;
-	}
+    STUB(self); UNUSED(e);
 }
 
-static void on_key(void* user,
-    enum VideoInterfaceKey key, uint8_t mod, bool down
+static void on_quit(mgb_t* self,
+    const struct VideoInterfaceEventDataQuit* e
 ) {
-    VOID_TO_SELF(user);
-
-    switch (self->state) {
-		case MgbState_CORE:
-			core_on_key(self, key, mod, down);
-			break;
-
-		case MgbState_GUI:
-            gui_on_key(self, key, mod, down);
-			break;
-	}
-}
-
-static void on_button(void* user,
-    enum VideoInterfaceButton button, bool down
-) {
-    VOID_TO_SELF(user);
-
-    switch (self->state) {
-		case MgbState_CORE:
-			core_on_button(self, button, down);
-			break;
-
-		case MgbState_GUI:
-            gui_on_button(self, button, down);
-			break;
-	}
-}
-
-static void on_axis(void* user,
-    enum VideoInterfaceAxis axis, int16_t pos, bool down
-) {
-    VOID_TO_SELF(user);
-
-    switch (self->state) {
-		case MgbState_CORE:
-			core_on_axis(self, axis, pos, down);
-			break;
-
-		case MgbState_GUI:
-            gui_on_axis(self, axis, pos, down);
-			break;
-	}
-}
-
-static void on_resize(void* user,
-    int w, int h
-) {
-    VOID_TO_SELF(user);
-
-        // always pass resize events to gui regardless of the state
-    gui_set_window_size(self, w, h);
-    gui_set_viewport_size(self, w, h);
-}
-
-static void on_quit(void* user,
-    enum VideoInterfaceQuitReason reason
-) {
-    VOID_TO_SELF(user);
-
-	switch (reason) {
+	switch (e->reason) {
 		case VideoInterfaceQuitReason_ERROR:
 			printf("[MUI] exit requested due to error!\n");
 			break;
@@ -369,6 +271,73 @@ static void on_quit(void* user,
 	}
 
     self->running = false;
+}
+
+static void process_event(mgb_t* self,
+    const union VideoInterfaceEvent* e
+) {
+    switch (e->type) {
+        case VideoInterfaceEventType_FILE_DROP:
+            on_file_drop(self, &e->file_drop);
+            break;
+
+        case VideoInterfaceEventType_MBUTTON:
+            on_mbutton(self, &e->mbutton);
+            break;
+
+        case VideoInterfaceEventType_MMOTION:
+            on_mmotion(self, &e->mmotion);
+            break;
+
+        case VideoInterfaceEventType_KEY:
+            on_key(self, &e->key);
+            break;
+
+        case VideoInterfaceEventType_CBUTTON:
+            on_cbutton(self, &e->cbutton);
+            break;
+
+        case VideoInterfaceEventType_CAXIS:
+            on_caxis(self, &e->caxis);
+            break;
+
+        case VideoInterfaceEventType_RESIZE:
+            on_resize(self, &e->resize);
+            break;
+
+        case VideoInterfaceEventType_HIDDEN:
+            on_hidden(self, &e->hidden);
+            break;
+
+        case VideoInterfaceEventType_SHOWN:
+            on_shown(self, &e->shown);
+            break;
+
+        case VideoInterfaceEventType_QUIT:
+            on_quit(self, &e->quit);
+            break;
+    } 
+}
+
+static void on_event(void* user,
+    const union VideoInterfaceEvent* e
+) {
+    VOID_TO_SELF(user);
+
+    if (e->type == VideoInterfaceEventType_QUIT) {
+        process_event(self, e);
+        return;
+    }
+
+    switch (self->state) {
+        case MgbState_CORE:
+            process_event(self, e);
+            break;
+
+        case MgbState_GUI:
+            ImGui_ImplMGB_Event(e);
+            break;
+    }
 }
 
 static bool setup_core(mgb_t* self) {
@@ -425,20 +394,8 @@ static bool setup_video_interface(mgb_t* self) {
         .h = 144 * 2,
     };
 
-    const struct VideoInterfaceUserCallbacks callbacks = {
-        .user = self,
-        .on_file_drop = on_file_drop,
-        .on_mouse_button = on_mouse_button,
-        .on_mouse_motion = on_mouse_motion,
-        .on_key = on_key,
-        .on_button = on_button,
-        .on_axis = on_axis,
-        .on_resize = on_resize,
-        .on_quit = on_quit
-    };
-
     self->video_interface = VIDEO_INTERFACE_INIT(
-        &info, &callbacks
+        &info, self, on_event
     );
 
     return self->video_interface != NULL;
@@ -455,37 +412,8 @@ static bool setup_audio_interface(mgb_t* self) {
     // return self->audio_interface != NULL;
 }
 
-static bool setup_nk_interface(mgb_t* self) {
-	#ifdef NK_INTERFACE_INIT
-        const struct NkInterfaceInitConfig config = {
-            .window_w = 160 * 2,
-            .window_h = 144 * 2,
-            .viewport_w = 160 * 2,
-            .viewport_h = 144 * 2,
-        };
-
-		self->nk_interface = NK_INTERFACE_INIT(&config);
-        // need to set the gui size
-        gui_set_window_size(self, config.window_w, config.window_h);
-        gui_set_viewport_size(self, config.viewport_w, config.viewport_h);
-
-		return self->nk_interface != NULL;
-	#else
-		// if we don't have a gui backend, then return true for now
-		return true;
-	#endif
-}
-
 static void run_events(mgb_t* self) {
-    if (self->state == MgbState_GUI) {
-        nk_interface_input_begin(self->nk_interface);        
-    }
-	
     video_interface_poll_events(self->video_interface);
-    
-    if (self->state == MgbState_GUI) {
-        nk_interface_input_end(self->nk_interface);        
-    }
 }
 
 static void run_state(mgb_t* self) {
@@ -509,7 +437,9 @@ static void run_render(mgb_t* self) {
 			break;
 
 		case MgbState_GUI:
+            ImGui_ImplMGB_RenderBegin();
             gui_render(self);
+            ImGui_ImplMGB_RenderEnd();
 			break;
 	}
 
@@ -705,6 +635,29 @@ fail:
     return false;
 }
 
+bool mgb_load_rom_filedialog(mgb_t* self) {
+    const char* filters = "gb,gbc,zip";
+
+    const struct FileDialogResult result = filedialog_open_file(
+        filters
+    );
+
+    switch (result.type) {
+        case FileDialogResultType_OK:
+            return mgb_load_rom_file(self, result.path);
+
+        case FileDialogResultType_ERROR:
+            printf("FD-Result: FileDialogResultType_ERROR\n");
+            return false;
+
+        case FileDialogResultType_CANCEL:
+            printf("FD-Result: FileDialogResultType_CANCEL\n");
+            return false;
+    }
+
+    return false;
+}
+
 bool mgb_load_rom_file(mgb_t* self, const char* path) {
     const struct LoadRomConfig config = {
         .path = path,
@@ -727,6 +680,59 @@ bool mgb_load_rom_data(mgb_t* self,
     };
 
     return loadrom(self, &config);
+}
+
+bool mgb_savestate(mgb_t* self) {
+    if (!self->rom_loaded) {
+        return false;
+    }
+
+    const struct SafeString path = util_create_state_path(
+        self->rom_path.str
+    );
+
+    if (!path.valid) {
+        return false;
+    }
+
+    struct GB_State* state = (struct GB_State*)malloc(sizeof(struct GB_State));
+    GB_savestate(self->gameboy, state);
+
+    IFile_t* file = icfile_open(path.str, "wb");
+    ifile_write(file, state, sizeof(struct GB_State));
+    ifile_close(file);
+
+    free(state);
+    state = NULL;
+
+    return true;
+}
+
+bool mgb_loadstate(mgb_t* self) {
+    if (!self->rom_loaded) {
+        return false;
+    }
+
+    const struct SafeString path = util_create_state_path(
+        self->rom_path.str
+    );
+
+    if (!path.valid) {
+        return false;
+    }
+
+    struct GB_State* state = (struct GB_State*)malloc(sizeof(struct GB_State));
+
+    IFile_t* file = icfile_open(path.str, "rb");
+    ifile_read(file, state, sizeof(struct GB_State));
+    ifile_close(file);
+
+    GB_loadstate(self->gameboy, state);
+
+    free(state);
+    state = NULL;
+
+    return true;
 }
 
 void mgb_loop(mgb_t* self) {
@@ -756,8 +762,8 @@ bool mgb_init(mgb_t* self) {
         goto fail;
     }
 
-    if (!setup_nk_interface(self)) {
-    	goto fail;
+    if (!ImGui_ImplMGB_Init(160*2, 144*2, 160*2, 144*2)) {
+        goto fail;
     }
 
     self->running = true;
@@ -781,10 +787,7 @@ void mgb_exit(mgb_t* self) {
         self->gameboy = NULL;
     }
 
-    if (self->nk_interface) {
-    	nk_interface_quit(self->nk_interface);
-    	self->nk_interface = NULL;
-    }
+    ImGui_ImplMGB_Shutdown();
 
     if (self->video_interface) {
         video_interface_quit(self->video_interface);

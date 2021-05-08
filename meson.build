@@ -1,4 +1,4 @@
-project('TotalGB', ['c'],
+project('TotalGB', ['c', 'cpp'],
     version: '0.0.1',
     license : 'MIT',
     default_options: [
@@ -53,15 +53,7 @@ source = files([
     'src/frontend/mgb.c',
     'src/frontend/util.c',
     'src/frontend/romloader.c',
-
-    # gui stuff
-    'src/frontend/gui/gui.c',
-    'src/frontend/gui/menus/common.c',
-    'src/frontend/gui/menus/menu_core_settings.c',
-    'src/frontend/gui/menus/menu_gui_settings.c',
-    'src/frontend/gui/menus/menu_help.c',
-    'src/frontend/gui/menus/menu_loadrom.c',
-    'src/frontend/gui/menus/menu_main.c',
+    'src/frontend/filedialog.c',
 
     'src/frontend/ifile/ifile.c',
     'src/frontend/ifile/cfile/cfile.c',
@@ -71,6 +63,10 @@ source = files([
 
     'src/frontend/video/interface.c',
     'src/frontend/audio/interface.c',
+
+    # gui
+    'src/frontend/gui/gui.cpp',
+    'src/frontend/gui/menu/main.cpp',
 
     # MINIZIP
     'src/libs/minizip/unzip.c',
@@ -95,12 +91,14 @@ source = files([
     'src/libs/zlib/uncompr.c',
     'src/libs/zlib/zutil.c',
 
-    # nuklear
-    'src/libs/nuklear/nuklear.c',
-    'src/frontend/gui/nk/interface.c',
-    'src/frontend/gui/nk/gl2/gl2.c',
-    #'src/frontend/gui/nk/gl3/gl3.c',
-    #'src/frontend/gui/nk/gl4/gl4.c',
+    # imgui
+    'src/libs/imgui/imgui.cpp',
+    #'src/libs/imgui/imgui_demo.cpp',
+    'src/libs/imgui/imgui_draw.cpp',
+    'src/libs/imgui/imgui_tables.cpp',
+    'src/libs/imgui/imgui_widgets.cpp',
+    'src/libs/imgui/backends/imgui_impl_opengl2.cpp',
+    'src/libs/imgui/backends/imgui_impl_mgb.cpp',
 ])
 
 
@@ -180,7 +178,7 @@ cflags = [
     '-Wformat=2',
     '-Wformat-overflow=2',
     '-Wformat-truncation=1',
-    '-Wundef',
+    # '-Wundef',
     '-Wmissing-include-dirs',
     '-Wstrict-aliasing=2',
     '-Walloca',
@@ -221,6 +219,48 @@ cflags = [
     '-DNOCRYPT',
 
     '-DGB_AUDIO_FREQUENCY=44100',
+]
+
+cppflags = [
+    # warns
+    '-Wall',
+    '-Wextra',
+    '-Werror',
+    '-Wfatal-errors',
+    '-Wpedantic',
+    '-Wshadow',
+    # will add back later, lots of warns for imgui_widgets.cpp
+    #'-Wdouble-promotion',
+    '-Wformat=2',
+    '-Wformat-overflow=1',
+    '-Wformat-truncation=1',
+    # '-Wundef',
+    '-Wmissing-include-dirs',
+    '-Wstrict-aliasing=2',
+    '-Walloca',
+    '-Wduplicated-branches',
+    '-Wduplicated-cond',
+    '-Wwrite-strings',
+    '-Wdate-time',
+    '-Wsizeof-pointer-memaccess',
+    '-Wlogical-op',
+    '-Wpacked',
+    '-Wredundant-decls',
+    '-Winline',
+
+    '-ftrapv',
+    '-freg-struct-return',
+    '-fno-common',
+
+    '-Wno-unused-function',
+
+    # these also need to be added to the linker!
+    '-fsanitize=address',
+    '-fsanitize=leak',
+    '-fsanitize=undefined',
+    '-fsanitize=pointer-compare',
+    '-fsanitize=pointer-subtract',
+    '-fstack-protector-all',
 ]
 
 linkflags = [
@@ -299,6 +339,9 @@ endif
 # detect the OS
 if host_machine.system() == 'android'
 elif host_machine.system() == 'windows' or host_machine.system() == 'cygwin'
+    # nativefiledialog
+    cflags += '-DHAS_NFD=1'
+    source += 'src/libs/nativefiledialog/nfd_win.c'
 elif host_machine.system() == 'darwin'
 elif host_machine.system() == 'dragonfly'
 elif host_machine.system() == 'emscripten'
@@ -306,6 +349,19 @@ elif host_machine.system() == 'freebsd'
 elif host_machine.system() == 'gnu'
 elif host_machine.system() == 'haiku'
 elif host_machine.system() == 'linux'
+    # nativefiledialog
+    cflags += '-DHAS_NFD=1'
+
+    # check if we have gtk, if not, use zenity
+    if dependency('gtk+-3.0', required : false).found()
+        source += 'src/libs/nativefiledialog/nfd_gtk.c'
+        dependencies_str += 'gtk+-3.0'
+    elif dependency('gtk+-2.0', required : false).found()
+        source += 'src/libs/nativefiledialog/nfd_gtk.c'
+        dependencies_str += 'gtk+-2.0'
+    else
+        source += 'src/libs/nativefiledialog/nfd_zenity.c'
+    endif
 elif host_machine.system() == 'netbsd'
 elif host_machine.system() == 'openbsd'
 elif host_machine.system() == 'sunos'
@@ -325,6 +381,7 @@ exe = executable(
     install: true,
     include_directories: [ includes ],
     c_args: [ cflags ],
+    cpp_args: [ cppflags ],
     link_args: [ linkflags ],
 )
 

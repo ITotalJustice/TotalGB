@@ -10,9 +10,9 @@ extern "C" {
 
 #include "video/interface.h"
 #include "audio/interface.h"
-#include "gui/nk/interface.h"
+// #include "gui/nk/interface.h"
 
-#include "gui/gui.h"
+// #include "gui/gui.h"
 
 #include "../core/gb.h"
 
@@ -27,9 +27,9 @@ enum MgbState {
 typedef struct mgb {
 	struct VideoInterface* video_interface;
     struct AudioInterface* audio_interface;
-    struct NkInterface* nk_interface;
+    // struct NkInterface* nk_interface;
 
-    struct Gui gui;
+    // struct Gui gui;
 
     // todo: make below stuff into a struct
 	struct GB_Core* gameboy;
@@ -53,8 +53,18 @@ bool mgb_init(mgb_t* self);
 void mgb_exit(mgb_t* self);
 void mgb_loop(mgb_t* self);
 
+bool mgb_load_rom_filedialog(mgb_t* self);
 bool mgb_load_rom_file(mgb_t* self, const char* path);
 bool mgb_load_rom_data(mgb_t* self,
+    const char* path, const uint8_t* data, size_t size
+);
+
+bool mgb_savestate(mgb_t* self);
+
+bool mgb_loadstate(mgb_t* self);
+bool mgb_loadstate_filedialog(mgb_t* self);
+bool mgb_loadstate_file(mgb_t* self, const char* path);
+bool mgb_loadstate_data(mgb_t* self,
     const char* path, const uint8_t* data, size_t size
 );
 

@@ -14,7 +14,11 @@ struct BaseEventCallbacks {
 };
 
 struct BaseConfig {
-	struct BaseEventCallbacks event_callbacks;
+	void* user;
+	void (*on_event)(void* user, const union VideoInterfaceEvent* e);
+
+	// this is used for *inheritied* sdl impl to get access to the resize cb.
+	struct BaseEventCallbacks callbacks;
 
 	const char* const window_name;
 	int window_flags;
@@ -31,7 +35,12 @@ struct BaseConfig {
 };
 
 struct Base {
-    struct VideoInterfaceUserCallbacks callbacks;
+	void* user;
+	void (*on_event)(void* user, const union VideoInterfaceEvent* e);
+
+	// this is used for *inheritied* sdl impl to get access to the resize cb.
+	struct BaseEventCallbacks callbacks;
+
     SDL_Window* window;
     SDL_Rect texture_rect;
 };
@@ -42,8 +51,7 @@ bool base_sdl2_init_system(
 
 bool base_sdl2_init_window(
 	struct Base* self,
-	const struct BaseConfig* config,
-    const struct VideoInterfaceUserCallbacks* callbacks
+	const struct BaseConfig* config
 );
 
 void base_sdl2_exit(struct Base* self);

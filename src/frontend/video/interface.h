@@ -24,42 +24,42 @@ enum VideoInterfaceMouseButton {
     VideoInterfaceMouseButton_MAX,
 };
 
-enum VideoInterfaceButton {
-    VideoInterfaceButton_NONE = 0,
+enum VideoInterfaceControllerButton {
+    VideoInterfaceControllerButton_NONE = 0,
 
-    VideoInterfaceButton_A,
-    VideoInterfaceButton_B,
-    VideoInterfaceButton_X,
-    VideoInterfaceButton_Y,
+    VideoInterfaceControllerButton_A,
+    VideoInterfaceControllerButton_B,
+    VideoInterfaceControllerButton_X,
+    VideoInterfaceControllerButton_Y,
 
-    VideoInterfaceButton_START,
-    VideoInterfaceButton_SELECT,
-    VideoInterfaceButton_HOME,
+    VideoInterfaceControllerButton_START,
+    VideoInterfaceControllerButton_SELECT,
+    VideoInterfaceControllerButton_HOME,
 
-    VideoInterfaceButton_L1,
-    VideoInterfaceButton_L3,
-    VideoInterfaceButton_R1,
-    VideoInterfaceButton_R3,
+    VideoInterfaceControllerButton_L1,
+    VideoInterfaceControllerButton_L3,
+    VideoInterfaceControllerButton_R1,
+    VideoInterfaceControllerButton_R3,
 
-    VideoInterfaceButton_UP,
-    VideoInterfaceButton_DOWN,
-    VideoInterfaceButton_LEFT,
-    VideoInterfaceButton_RIGHT,
+    VideoInterfaceControllerButton_UP,
+    VideoInterfaceControllerButton_DOWN,
+    VideoInterfaceControllerButton_LEFT,
+    VideoInterfaceControllerButton_RIGHT,
 
-    VideoInterfaceButton_MAX
+    VideoInterfaceControllerButton_MAX
 };
 
-enum VideoInterfaceAxis {
-    VideoInterfaceAxis_NONE = 0,
+enum VideoInterfaceControllerAxis {
+    VideoInterfaceControllerAxis_NONE = 0,
 
-    VideoInterfaceAxis_L2,
-    VideoInterfaceAxis_R2,
-    VideoInterfaceAxis_LEFTX,
-    VideoInterfaceAxis_LEFTY,
-    VideoInterfaceAxis_RIGHTX,
-    VideoInterfaceAxis_RIGHTY,
+    VideoInterfaceControllerAxis_L2,
+    VideoInterfaceControllerAxis_R2,
+    VideoInterfaceControllerAxis_LEFTX,
+    VideoInterfaceControllerAxis_LEFTY,
+    VideoInterfaceControllerAxis_RIGHTX,
+    VideoInterfaceControllerAxis_RIGHTY,
 
-    VideoInterfaceAxis_MAX,
+    VideoInterfaceControllerAxis_MAX,
 };
 
 // not yes finished!
@@ -171,33 +171,90 @@ struct VideoInterfaceGameTexture {
     int w, h;
 };
 
-struct VideoInterfaceUserCallbacks {
-    void* user;
+enum VideoInterfaceEventType {
+    VideoInterfaceEventType_FILE_DROP,
+    VideoInterfaceEventType_MBUTTON,
+    VideoInterfaceEventType_MMOTION,
+    VideoInterfaceEventType_KEY,
+    VideoInterfaceEventType_CBUTTON,
+    VideoInterfaceEventType_CAXIS,
+    VideoInterfaceEventType_RESIZE,
+    VideoInterfaceEventType_HIDDEN,
+    VideoInterfaceEventType_SHOWN,
+    VideoInterfaceEventType_QUIT,
+};
 
-    void (*on_file_drop)(void* user,
-        const char* path
-    );
-    void (*on_mouse_button)(void* user,
-        enum VideoInterfaceMouseButton button, int x, int y, bool down
-    );
-    void (*on_mouse_motion)(void* user,
-        int x, int y, int xrel, int yrel
-    );
-    void (*on_key)(void* user,
-        enum VideoInterfaceKey key, uint8_t mod, bool down
-    );
-    void (*on_button)(void* user,
-        enum VideoInterfaceButton button, bool down
-    );
-    void (*on_axis)(void* user,
-        enum VideoInterfaceAxis axis, int16_t pos, bool down
-    );
-    void (*on_resize)(void* user,
-        int w, int h
-    );
-    void (*on_quit)(void* user,
-        enum VideoInterfaceQuitReason reason
-    );
+struct VideoInterfaceEventDataFileDrop {
+    enum VideoInterfaceEventType type;
+    const char* path;
+};
+
+struct VideoInterfaceEventDataMouseButton {
+    enum VideoInterfaceEventType type;
+    enum VideoInterfaceMouseButton button;
+    int x, y;
+    bool down;
+};
+
+struct VideoInterfaceEventDataMouseMotion {
+    enum VideoInterfaceEventType type;
+    int x, y;
+    int xrel, yrel;
+};
+
+struct VideoInterfaceEventDataKey {
+    enum VideoInterfaceEventType type;
+    enum VideoInterfaceKey key;
+    uint16_t mod;
+    bool down;
+};
+
+struct VideoInterfaceEventDataControllerButton {
+    enum VideoInterfaceEventType type;
+    enum VideoInterfaceControllerButton button;
+    bool down;
+};
+
+struct VideoInterfaceEventDataControllerAxis {
+    enum VideoInterfaceEventType type;
+    enum VideoInterfaceControllerAxis axis;
+    int16_t pos;
+    bool down;
+};
+
+struct VideoInterfaceEventDataResize {
+    enum VideoInterfaceEventType type;
+    int w, h;
+    int display_w, display_h;
+};
+
+struct VideoInterfaceEventDataHidden {
+    enum VideoInterfaceEventType type;
+};
+
+struct VideoInterfaceEventDataShown {
+    enum VideoInterfaceEventType type;
+};
+
+struct VideoInterfaceEventDataQuit {
+    enum VideoInterfaceEventType type;
+    enum VideoInterfaceQuitReason reason;
+};
+
+// very much inspired by SDL2 event
+union VideoInterfaceEvent {
+    enum VideoInterfaceEventType type;
+
+    struct VideoInterfaceEventDataFileDrop file_drop;
+    struct VideoInterfaceEventDataMouseButton mbutton;
+    struct VideoInterfaceEventDataMouseMotion mmotion;
+    struct VideoInterfaceEventDataKey key;
+    struct VideoInterfaceEventDataControllerButton cbutton;
+    struct VideoInterfaceEventDataControllerAxis caxis;
+    struct VideoInterfaceEventDataResize resize;
+    struct VideoInterfaceEventDataHidden hidden;
+    struct VideoInterfaceEventDataShown shown;
+    struct VideoInterfaceEventDataQuit quit;
 };
 
 struct VideoInterface {
@@ -229,18 +286,6 @@ struct VideoInterface {
         void* _private,
         const char* name
     );
-
-    // these are set by the interface after init!
-    int x, y, w, h;
-
-    bool has_file_dialog;
-    bool has_message_box;
-    bool has_controller;
-    bool has_keyboard;
-    bool has_mouse;
-
-    bool is_vsync;
-    bool is_hw_accel;
 };
 
 
@@ -276,39 +321,6 @@ void video_interface_toggle_fullscreen(
 void video_interface_set_window_name(
     struct VideoInterface* self,
     const char* name
-);
-
-void video_interface_get_dimensions(
-    const struct VideoInterface* self,
-    int* x, int* y, int* w, int* h
-);
-
-bool video_interface_has_file_dialog(
-    const struct VideoInterface* self
-);
-
-bool video_interface_has_message_box(
-    const struct VideoInterface* self
-);
-
-bool video_interface_has_controller(
-    const struct VideoInterface* self
-);
-
-bool video_interface_has_keyboard(
-    const struct VideoInterface* self
-);
-
-bool video_interface_has_mouse(
-    const struct VideoInterface* self
-);
-
-bool video_interface_is_vsync(
-    const struct VideoInterface* self
-);
-
-bool video_interface_is_hw_accel(
-    const struct VideoInterface* self
 );
 
 #ifdef __cplusplus

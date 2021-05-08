@@ -1,35 +1,41 @@
 #include "base.h"
 
 
-static const uint8_t BUTTON_MAP[SDL_CONTROLLER_BUTTON_MAX] = {
-    [SDL_CONTROLLER_BUTTON_A]               = VideoInterfaceButton_A,
-    [SDL_CONTROLLER_BUTTON_B]               = VideoInterfaceButton_B,
-    [SDL_CONTROLLER_BUTTON_X]               = VideoInterfaceButton_X,
-    [SDL_CONTROLLER_BUTTON_Y]               = VideoInterfaceButton_Y,
+static const uint8_t CONTROLLER_BUTTON_MAP[SDL_CONTROLLER_BUTTON_MAX] = {
+    [SDL_CONTROLLER_BUTTON_A]               = VideoInterfaceControllerButton_A,
+    [SDL_CONTROLLER_BUTTON_B]               = VideoInterfaceControllerButton_B,
+    [SDL_CONTROLLER_BUTTON_X]               = VideoInterfaceControllerButton_X,
+    [SDL_CONTROLLER_BUTTON_Y]               = VideoInterfaceControllerButton_Y,
 
-    [SDL_CONTROLLER_BUTTON_START]           = VideoInterfaceButton_START,
-    [SDL_CONTROLLER_BUTTON_BACK]            = VideoInterfaceButton_SELECT,
-    [SDL_CONTROLLER_BUTTON_GUIDE]           = VideoInterfaceButton_HOME,
+    [SDL_CONTROLLER_BUTTON_START]           = VideoInterfaceControllerButton_START,
+    [SDL_CONTROLLER_BUTTON_BACK]            = VideoInterfaceControllerButton_SELECT,
+    [SDL_CONTROLLER_BUTTON_GUIDE]           = VideoInterfaceControllerButton_HOME,
 
-    [SDL_CONTROLLER_BUTTON_LEFTSHOULDER]    = VideoInterfaceButton_L1,
-    [SDL_CONTROLLER_BUTTON_LEFTSTICK]       = VideoInterfaceButton_L3,
-    [SDL_CONTROLLER_BUTTON_RIGHTSHOULDER]   = VideoInterfaceButton_R1,
-    [SDL_CONTROLLER_BUTTON_RIGHTSTICK]      = VideoInterfaceButton_R3,
+    [SDL_CONTROLLER_BUTTON_LEFTSHOULDER]    = VideoInterfaceControllerButton_L1,
+    [SDL_CONTROLLER_BUTTON_LEFTSTICK]       = VideoInterfaceControllerButton_L3,
+    [SDL_CONTROLLER_BUTTON_RIGHTSHOULDER]   = VideoInterfaceControllerButton_R1,
+    [SDL_CONTROLLER_BUTTON_RIGHTSTICK]      = VideoInterfaceControllerButton_R3,
 
-    [SDL_CONTROLLER_BUTTON_DPAD_UP]         = VideoInterfaceButton_UP,
-    [SDL_CONTROLLER_BUTTON_DPAD_DOWN]       = VideoInterfaceButton_DOWN,
-    [SDL_CONTROLLER_BUTTON_DPAD_LEFT]       = VideoInterfaceButton_LEFT,
-    [SDL_CONTROLLER_BUTTON_DPAD_RIGHT]      = VideoInterfaceButton_RIGHT,
+    [SDL_CONTROLLER_BUTTON_DPAD_UP]         = VideoInterfaceControllerButton_UP,
+    [SDL_CONTROLLER_BUTTON_DPAD_DOWN]       = VideoInterfaceControllerButton_DOWN,
+    [SDL_CONTROLLER_BUTTON_DPAD_LEFT]       = VideoInterfaceControllerButton_LEFT,
+    [SDL_CONTROLLER_BUTTON_DPAD_RIGHT]      = VideoInterfaceControllerButton_RIGHT,
 };
 
-static const uint8_t AXIS_MAP[SDL_CONTROLLER_AXIS_MAX] = {
-    [SDL_CONTROLLER_AXIS_TRIGGERLEFT]   = VideoInterfaceAxis_L2,
-    [SDL_CONTROLLER_AXIS_TRIGGERRIGHT]  = VideoInterfaceAxis_R2,
+static const uint8_t CONTROLLER_AXIS_MAP[SDL_CONTROLLER_AXIS_MAX] = {
+    [SDL_CONTROLLER_AXIS_TRIGGERLEFT]   = VideoInterfaceControllerAxis_L2,
+    [SDL_CONTROLLER_AXIS_TRIGGERRIGHT]  = VideoInterfaceControllerAxis_R2,
 
-    [SDL_CONTROLLER_AXIS_LEFTX]         = VideoInterfaceAxis_LEFTX,
-    [SDL_CONTROLLER_AXIS_LEFTY]         = VideoInterfaceAxis_LEFTY,
-    [SDL_CONTROLLER_AXIS_RIGHTX]        = VideoInterfaceAxis_RIGHTX,
-    [SDL_CONTROLLER_AXIS_RIGHTY]        = VideoInterfaceAxis_RIGHTY,
+    [SDL_CONTROLLER_AXIS_LEFTX]         = VideoInterfaceControllerAxis_LEFTX,
+    [SDL_CONTROLLER_AXIS_LEFTY]         = VideoInterfaceControllerAxis_LEFTY,
+    [SDL_CONTROLLER_AXIS_RIGHTX]        = VideoInterfaceControllerAxis_RIGHTX,
+    [SDL_CONTROLLER_AXIS_RIGHTY]        = VideoInterfaceControllerAxis_RIGHTY,
+};
+
+static const uint8_t MOUSE_BUTTON_MAP[256] = {
+    [SDL_BUTTON_LEFT]   = VideoInterfaceMouseButton_LEFT,
+    [SDL_BUTTON_MIDDLE] = VideoInterfaceMouseButton_MIDDLE,
+    [SDL_BUTTON_RIGHT]  = VideoInterfaceMouseButton_RIGHT
 };
 
 static const uint16_t KEY_MAP[SDL_NUM_SCANCODES] = {
@@ -98,101 +104,400 @@ static const uint16_t KEY_MAP[SDL_NUM_SCANCODES] = {
     [SDL_SCANCODE_RIGHT]        = VideoInterfaceKey_RIGHT,
 };
 
+static void push_user_event(
+    struct Base* self, const union VideoInterfaceEvent* e
+) {
+    self->on_event(self->user, e);
+}
+
+// sdl events
 static void OnQuitEvent(
     struct Base* self, const SDL_QuitEvent* e
-);
+) {
+    (void)e;
+
+    const union VideoInterfaceEvent event = {
+        .quit = {
+            .type = VideoInterfaceEventType_QUIT,
+            .reason = VideoInterfaceQuitReason_DEFAULT
+        }
+    };
+
+    push_user_event(self, &event);
+}
 
 static void OnDropEvent(
     struct Base* self, SDL_DropEvent* e
-);
+) {
+    switch (e->type) {
+        case SDL_DROPFILE:
+            if (e->file != NULL) {
+                const union VideoInterfaceEvent event = {
+                    .file_drop = {
+                        .type = VideoInterfaceEventType_FILE_DROP,
+                        .path = e->file
+                    }
+                };
+
+                push_user_event(self, &event);
+                SDL_free(e->file);
+            }
+            break;
+
+        case SDL_DROPTEXT:
+            break;
+
+        case SDL_DROPBEGIN:
+            break;
+
+        case SDL_DROPCOMPLETE:
+            break;
+    }
+}
 
 static void OnWindowEvent(
     struct Base* self, const SDL_WindowEvent* e
-);
+) {
+    (void)self;
+
+    switch (e->event) {
+        case SDL_WINDOWEVENT_SHOWN:
+        case SDL_WINDOWEVENT_EXPOSED:
+        case SDL_WINDOWEVENT_RESTORED: {
+            const union VideoInterfaceEvent event = {
+                .shown = {
+                    .type = VideoInterfaceEventType_SHOWN,
+                }
+            };
+
+            push_user_event(self, &event);
+        }   break;
+
+        case SDL_WINDOWEVENT_MINIMIZED:
+        case SDL_WINDOWEVENT_HIDDEN: {
+            const union VideoInterfaceEvent event = {
+                .hidden = {
+                    .type = VideoInterfaceEventType_HIDDEN,
+                }
+            };
+
+            push_user_event(self, &event);
+        }   break;
+
+        case SDL_WINDOWEVENT_MOVED:
+            break;
+
+        case SDL_WINDOWEVENT_RESIZED:
+        case SDL_WINDOWEVENT_SIZE_CHANGED: {
+            const union VideoInterfaceEvent event = {
+                .resize = {
+                    .type = VideoInterfaceEventType_RESIZE,
+                    .w = e->data1,
+                    .h = e->data2,
+                    .display_w = e->data1,
+                    .display_h = e->data2,
+                }
+            };
+
+            push_user_event(self, &event);
+
+            self->callbacks.on_resize(
+                self->callbacks.user, e->data1, e->data2
+            );
+        }   break;
+
+        case SDL_WINDOWEVENT_MAXIMIZED:
+            break;
+
+        case SDL_WINDOWEVENT_ENTER:
+            break;
+
+        case SDL_WINDOWEVENT_LEAVE:
+            break;
+
+        case SDL_WINDOWEVENT_FOCUS_GAINED:
+            break;
+
+        case SDL_WINDOWEVENT_FOCUS_LOST:
+            break;
+
+        case SDL_WINDOWEVENT_CLOSE:
+            break;
+
+#if SDL_VERSION_ATLEAST(2, 0, 5)
+        case SDL_WINDOWEVENT_TAKE_FOCUS:
+            break;
+
+        case SDL_WINDOWEVENT_HIT_TEST:
+            break;
+#endif // SDL_VERSION_ATLEAST(2, 0, 5)
+    }
+}
 
 #if SDL_VERSION_ATLEAST(2, 0, 4)
 static void OnAudioDeviceEvent(
     struct Base* self, const SDL_AudioDeviceEvent* e
-);
+) {
+    (void)self; (void)e;
+}
 #endif // SDL_VERSION_ATLEAST(2, 0, 4)
 
 #if SDL_VERSION_ATLEAST(2, 0, 9)
 static void OnDisplayEvent(
     struct Base* self, const SDL_DisplayEvent* e
-);
+) {
+    (void)self;
+
+    switch (e->event) {
+        case SDL_DISPLAYEVENT_NONE:
+            SDL_Log("[SDL2] SDL_DISPLAYEVENT_NONE\n");
+            break;
+
+        case SDL_DISPLAYEVENT_ORIENTATION:
+            SDL_Log("[SDL2] SDL_DISPLAYEVENT_ORIENTATION\n");
+            break;
+   }
+}
 #endif // SDL_VERSION_ATLEAST(2, 0, 9)
 
 static void OnMouseButtonEvent(
     struct Base* self, const SDL_MouseButtonEvent* e
-);
+) {
+    if (e->which == SDL_TOUCH_MOUSEID) {
+        // don't hadle touch events
+        return;
+    }
+
+    if (MOUSE_BUTTON_MAP[e->button]) {
+        const union VideoInterfaceEvent event = {
+            .mbutton = {
+                .type = VideoInterfaceEventType_MBUTTON,
+                .button = MOUSE_BUTTON_MAP[e->button],
+                .x = e->x,
+                .y = e->y,
+                .down = e->type == SDL_MOUSEBUTTONDOWN
+            }
+        };
+
+        push_user_event(self, &event);
+    }
+}
 
 static void OnMouseMotionEvent(
     struct Base* self, const SDL_MouseMotionEvent* e
-);
+) {
+    const union VideoInterfaceEvent event = {
+        .mmotion = {
+            .type = VideoInterfaceEventType_MMOTION,
+            .x = e->x,
+            .y = e->y,
+            .xrel = e->xrel,
+            .yrel = e->yrel,
+        }
+    };
+
+    push_user_event(self, &event);
+}
 
 static void OnMouseWheelEvent(
     struct Base* self, const SDL_MouseWheelEvent* e
-);
+) {
+    (void)self; (void)e;
+}
 
 static void OnKeyEvent(
     struct Base* self, const SDL_KeyboardEvent* e
-);
+) {
+    // only handle if we have mapped the key.
+    // the emun starts at 1, so all values are > 0.
+    if (KEY_MAP[e->keysym.scancode]) {
+        uint16_t mod = VideoInterfaceKeyMod_NONE;
+
+        // idk how to map a bitfield in an array sainly...
+        if (e->keysym.mod & KMOD_LSHIFT) {
+            mod |= VideoInterfaceKeyMod_LSHIFT;
+        }
+        if (e->keysym.mod & KMOD_RSHIFT) {
+            mod |= VideoInterfaceKeyMod_RSHIFT;
+        }
+        if (e->keysym.mod & KMOD_LCTRL) {
+            mod |= VideoInterfaceKeyMod_LCTRL;
+        }
+        if (e->keysym.mod & KMOD_RCTRL) {
+            mod |= VideoInterfaceKeyMod_RCTRL;
+        }
+        if (e->keysym.mod & KMOD_LALT) {
+            mod |= VideoInterfaceKeyMod_LALT;
+        }
+        if (e->keysym.mod & KMOD_RALT) {
+            mod |= VideoInterfaceKeyMod_RALT;
+        }
+        if (e->keysym.mod & KMOD_NUM) {
+            mod |= VideoInterfaceKeyMod_NUM;
+        }
+        if (e->keysym.mod & KMOD_CAPS) {
+            mod |= VideoInterfaceKeyMod_CAPS;
+        }
+
+        const union VideoInterfaceEvent event = {
+            .key = {
+                .type = VideoInterfaceEventType_KEY,
+                .key = KEY_MAP[e->keysym.scancode],
+                .mod = mod,
+                .down = e->type == SDL_KEYDOWN
+            }
+        };
+
+        push_user_event(self, &event);
+    }    
+}
 
 static void OnJoypadAxisEvent(
     struct Base* self, const SDL_JoyAxisEvent* e
-);
+) {
+    (void)self; (void)e;
+}
 
 static void OnJoypadButtonEvent(
     struct Base* self, const SDL_JoyButtonEvent* e
-);
+) {
+    (void)self; (void)e;
+}
 
 static void OnJoypadHatEvent(
     struct Base* self, const SDL_JoyHatEvent* e
-);
+) {
+    (void)self; (void)e;
+}
 
 static void OnJoypadDeviceEvent(
     struct Base* self, const SDL_JoyDeviceEvent* e
-);
+) {
+    (void)self; (void)e;
+}
 
 static void OnControllerAxisEvent(
     struct Base* self, const SDL_ControllerAxisEvent* e
-);
+) {
+    // sdl recommends deadzone of 8000
+    enum {
+        DEADZONE = 8000,
+        LEFT     = -DEADZONE,
+        RIGHT    = +DEADZONE,
+        UP       = -DEADZONE,
+        DOWN     = +DEADZONE,
+    };
+
+    if (CONTROLLER_AXIS_MAP[e->axis]) {
+        bool down = false;
+
+        switch (e->axis) {
+            case SDL_CONTROLLER_AXIS_LEFTX:
+            case SDL_CONTROLLER_AXIS_RIGHTX:
+                if (e->value < LEFT) {
+                    down = true;
+                }
+                else if (e->value > RIGHT) {
+                    down = false;
+                }
+                else {
+                    return;
+                }
+                break;
+
+            case SDL_CONTROLLER_AXIS_LEFTY:
+            case SDL_CONTROLLER_AXIS_RIGHTY:
+                if (e->value < UP) {
+                    down = true;
+                }
+                else if (e->value > DOWN) {
+                    down = false;
+                }
+                else {
+                    return;
+                }
+                break;
+
+            default:
+                return;
+        }
+
+        const union VideoInterfaceEvent event = {
+            .caxis = {
+                .type = VideoInterfaceEventType_CAXIS,
+                .axis = CONTROLLER_AXIS_MAP[e->axis],
+                .pos = e->value,
+                .down = down
+            }
+        };
+
+        push_user_event(self, &event);
+    }
+}
 
 static void OnControllerButtonEvent(
     struct Base* self, const SDL_ControllerButtonEvent* e
-);
+) {
+    if (CONTROLLER_BUTTON_MAP[e->button]) {
+        const union VideoInterfaceEvent event = {
+            .cbutton = {
+                .type = VideoInterfaceEventType_CBUTTON,
+                .button = CONTROLLER_BUTTON_MAP[e->button],
+                .down = e->type == SDL_CONTROLLERBUTTONDOWN
+            }
+        };
+
+        push_user_event(self, &event);
+    }
+}
 
 static void OnControllerDeviceEvent(
     struct Base* self, const SDL_ControllerDeviceEvent* e
-);
+) {
+    (void)self; (void)e;
+}
 
 static void OnTouchEvent(
     struct Base* self, const SDL_TouchFingerEvent* e
-);
+) {
+    (void)self; (void)e;
+}
 
 static void OnMultiGestureEvent(
     struct Base* self, const SDL_MultiGestureEvent* e
-);
+) {
+    (void)self; (void)e;
+}
 
 static void OnDollarGestureEvent(
     struct Base* self, const SDL_DollarGestureEvent* e
-);
+) {
+    (void)self; (void)e;
+}
 
 static void OnTextEditEvent(
     struct Base* self, const SDL_TextEditingEvent* e
-);
+) {
+    (void)self; (void)e;
+}
 
 static void OnTextInputEvent(
     struct Base* self, const SDL_TextInputEvent* e
-);
+) {
+    (void)self; (void)e;
+}
 
 static void OnSysWMEvent(
     struct Base* self, const SDL_SysWMEvent* e
-);
+) {
+    (void)self; (void)e;
+}
 
 static void OnUserEvent(
     struct Base* self, SDL_UserEvent* e
-);
+) {
+    (void)self; (void)e;
+}
 
 
 bool base_sdl2_init_system(
@@ -222,8 +527,7 @@ fail:
 
 bool base_sdl2_init_window(
 	struct Base* self,
-	const struct BaseConfig* config,
-    const struct VideoInterfaceUserCallbacks* callbacks
+	const struct BaseConfig* config
 ) {
     self->window = SDL_CreateWindow(
         config->window_name,
@@ -249,7 +553,9 @@ bool base_sdl2_init_window(
 	}
 
     // save the user callbacks
-    self->callbacks = *callbacks;
+    self->user = config->user;
+    self->on_event = config->on_event;
+    self->callbacks = config->callbacks;
 
     return true;
 
@@ -406,303 +712,4 @@ void base_sdl2_toggle_fullscreen(struct Base* self) {
 
 void base_sdl2_set_window_name(struct Base* self, const char* name) {
 	SDL_SetWindowTitle(self->window, name);
-}
-
-
-// sdl events
-static void OnQuitEvent(
-    struct Base* self, const SDL_QuitEvent* e
-) {
-    (void)e;
-
-    self->callbacks.on_quit(
-        self->callbacks.user, VideoInterfaceQuitReason_DEFAULT
-    );
-}
-
-static void OnDropEvent(
-    struct Base* self, SDL_DropEvent* e
-) {
-    switch (e->type) {
-        case SDL_DROPFILE:
-            if (e->file != NULL) {
-                self->callbacks.on_file_drop(self->callbacks.user, e->file);
-                SDL_free(e->file);
-            }
-            break;
-
-        case SDL_DROPTEXT:
-            break;
-
-        case SDL_DROPBEGIN:
-            break;
-
-        case SDL_DROPCOMPLETE:
-            break;
-    }
-}
-
-static void OnWindowEvent(
-    struct Base* self, const SDL_WindowEvent* e
-) {
-    (void)self;
-
-    switch (e->event) {
-        case SDL_WINDOWEVENT_SHOWN:
-            break;
-
-        case SDL_WINDOWEVENT_HIDDEN:
-            break;
-
-        case SDL_WINDOWEVENT_EXPOSED:
-            break;
-
-        case SDL_WINDOWEVENT_MOVED:
-            break;
-
-        case SDL_WINDOWEVENT_RESIZED:
-            // this->OnWindowResize();
-            break;
-
-        case SDL_WINDOWEVENT_SIZE_CHANGED:
-            // this->OnWindowResize();
-            break;
-
-        case SDL_WINDOWEVENT_MINIMIZED:
-            // this->OnWindowResize();
-            break;
-
-        case SDL_WINDOWEVENT_MAXIMIZED:
-            // this->OnWindowResize();
-            break;
-
-        case SDL_WINDOWEVENT_RESTORED:
-            // this->OnWindowResize();
-            break;
-
-        case SDL_WINDOWEVENT_ENTER:
-            break;
-
-        case SDL_WINDOWEVENT_LEAVE:
-            break;
-
-        case SDL_WINDOWEVENT_FOCUS_GAINED:
-            break;
-
-        case SDL_WINDOWEVENT_FOCUS_LOST:
-            break;
-
-        case SDL_WINDOWEVENT_CLOSE:
-            break;
-
-#if SDL_VERSION_ATLEAST(2, 0, 5)
-        case SDL_WINDOWEVENT_TAKE_FOCUS:
-            break;
-
-        case SDL_WINDOWEVENT_HIT_TEST:
-            break;
-#endif // SDL_VERSION_ATLEAST(2, 0, 5)
-    }
-}
-
-#if SDL_VERSION_ATLEAST(2, 0, 4)
-static void OnAudioDeviceEvent(
-    struct Base* self, const SDL_AudioDeviceEvent* e
-) {
-    (void)self; (void)e;
-}
-#endif // SDL_VERSION_ATLEAST(2, 0, 4)
-
-#if SDL_VERSION_ATLEAST(2, 0, 9)
-static void OnDisplayEvent(
-    struct Base* self, const SDL_DisplayEvent* e
-) {
-    (void)self;
-
-    switch (e->event) {
-        case SDL_DISPLAYEVENT_NONE:
-            SDL_Log("[SDL2] SDL_DISPLAYEVENT_NONE\n");
-            break;
-
-        case SDL_DISPLAYEVENT_ORIENTATION:
-            SDL_Log("[SDL2] SDL_DISPLAYEVENT_ORIENTATION\n");
-            break;
-   }
-}
-#endif // SDL_VERSION_ATLEAST(2, 0, 9)
-
-static void OnMouseButtonEvent(
-    struct Base* self, const SDL_MouseButtonEvent* e
-) {
-    (void)self; (void)e;
-}
-
-static void OnMouseMotionEvent(
-    struct Base* self, const SDL_MouseMotionEvent* e
-) {
-    (void)self; (void)e;
-}
-
-static void OnMouseWheelEvent(
-    struct Base* self, const SDL_MouseWheelEvent* e
-) {
-    (void)self; (void)e;
-}
-
-static void OnKeyEvent(
-    struct Base* self, const SDL_KeyboardEvent* e
-) {
-    if (!self->callbacks.on_key) {
-        return;
-    }
-
-    // only handle if we have mapped the key.
-    // the emun starts at 1, so all values are > 0.
-    if (KEY_MAP[e->keysym.scancode]) {
-        self->callbacks.on_key(self->callbacks.user,
-            KEY_MAP[e->keysym.scancode], e->type == SDL_KEYDOWN
-        );
-    }    
-}
-
-static void OnJoypadAxisEvent(
-    struct Base* self, const SDL_JoyAxisEvent* e
-) {
-    (void)self; (void)e;
-}
-
-static void OnJoypadButtonEvent(
-    struct Base* self, const SDL_JoyButtonEvent* e
-) {
-    (void)self; (void)e;
-}
-
-static void OnJoypadHatEvent(
-    struct Base* self, const SDL_JoyHatEvent* e
-) {
-    (void)self; (void)e;
-}
-
-static void OnJoypadDeviceEvent(
-    struct Base* self, const SDL_JoyDeviceEvent* e
-) {
-    (void)self; (void)e;
-}
-
-static void OnControllerAxisEvent(
-    struct Base* self, const SDL_ControllerAxisEvent* e
-) {
-    if (!self->callbacks.on_axis) {
-        return;
-    }
-
-    // sdl recommends deadzone of 8000
-    enum {
-        DEADZONE = 8000,
-        LEFT     = -DEADZONE,
-        RIGHT    = +DEADZONE,
-        UP       = -DEADZONE,
-        DOWN     = +DEADZONE,
-    };
-
-    if (AXIS_MAP[e->axis]) {
-        bool down = false;
-
-        switch (e->axis) {
-            case SDL_CONTROLLER_AXIS_LEFTX:
-            case SDL_CONTROLLER_AXIS_RIGHTX:
-                if (e->value < LEFT) {
-                    down = true;
-                }
-                else if (e->value > RIGHT) {
-                    down = false;
-                }
-                else {
-                    return;
-                }
-                break;
-
-            case SDL_CONTROLLER_AXIS_LEFTY:
-            case SDL_CONTROLLER_AXIS_RIGHTY:
-                if (e->value < UP) {
-                    down = true;
-                }
-                else if (e->value > DOWN) {
-                    down = false;
-                }
-                else {
-                    return;
-                }
-                break;
-
-            default:
-                return;
-        }
-
-        self->callbacks.on_axis(
-            self->callbacks.user, AXIS_MAP[e->axis], e->value, down
-        );
-    }
-}
-
-static void OnControllerButtonEvent(
-    struct Base* self, const SDL_ControllerButtonEvent* e
-) {
-    if (!self->callbacks.on_button) {
-        return;
-    }
-
-    if (BUTTON_MAP[e->button]) {
-        self->callbacks.on_button(self->callbacks.user,
-            BUTTON_MAP[e->button], e->type == SDL_CONTROLLERBUTTONDOWN
-        );
-    }
-}
-
-static void OnControllerDeviceEvent(
-    struct Base* self, const SDL_ControllerDeviceEvent* e
-) {
-    (void)self; (void)e;
-}
-
-static void OnTouchEvent(
-    struct Base* self, const SDL_TouchFingerEvent* e
-) {
-    (void)self; (void)e;
-}
-
-static void OnMultiGestureEvent(
-    struct Base* self, const SDL_MultiGestureEvent* e
-) {
-    (void)self; (void)e;
-}
-
-static void OnDollarGestureEvent(
-    struct Base* self, const SDL_DollarGestureEvent* e
-) {
-    (void)self; (void)e;
-}
-
-static void OnTextEditEvent(
-    struct Base* self, const SDL_TextEditingEvent* e
-) {
-    (void)self; (void)e;
-}
-
-static void OnTextInputEvent(
-    struct Base* self, const SDL_TextInputEvent* e
-) {
-    (void)self; (void)e;
-}
-
-static void OnSysWMEvent(
-    struct Base* self, const SDL_SysWMEvent* e
-) {
-    (void)self; (void)e;
-}
-
-static void OnUserEvent(
-    struct Base* self, SDL_UserEvent* e
-) {
-    (void)self; (void)e;
 }

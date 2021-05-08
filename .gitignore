@@ -59,8 +59,11 @@ output.js
 build_*/
 old_code/
 *.geany
-src/libs/nuklear/console.c
 *.sh
+
+# imgui stuff
+*imgui.ini
+imgui_demo.cpp
 
 #
 .cache

@@ -9,7 +9,7 @@ extern "C" {
 
 struct VideoInterface* video_interface_init_sdl2_opengl(
     const struct VideoInterfaceInfo* info,
-    const struct VideoInterfaceUserCallbacks* callbacks
+    void* user, void (*on_event)(void*, const union VideoInterfaceEvent*)
 );
 
 #ifdef __cplusplus

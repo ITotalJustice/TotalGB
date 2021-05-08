@@ -7,6 +7,7 @@ extern "C" {
 #include "../../interface.h"
 #include <SDL/SDL.h>
 
+
 struct BaseEventCallbacks {
 	void* user;
 	void (*on_resize)(void* user, int w, int h);
