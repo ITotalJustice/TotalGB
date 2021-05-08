@@ -1,4 +1,5 @@
-#pragma once
+#ifndef _GB_PPU_H_
+#define _GB_PPU_H_
 
 #ifdef __cplusplus
 extern "C" {
@@ -38,3 +39,5 @@ void SGB_render_scanline(struct GB_Core* gb);
 #ifdef __cplusplus
 }
 #endif
+
+#endif // _GB_PPU_H_

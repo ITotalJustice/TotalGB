@@ -37,7 +37,7 @@ void GB_set_buttons(struct GB_Core* gb, uint8_t buttons, bool is_down) {
             gb->joypad.var |= GB_BUTTON_LEFT;
         }
         if (buttons & GB_BUTTON_LEFT) {
-            gb->joypad.var |= GB_BUTTON_RIGHT;   
+            gb->joypad.var |= GB_BUTTON_RIGHT;
         }
         if (buttons & GB_BUTTON_UP) {
             gb->joypad.var |= GB_BUTTON_DOWN;

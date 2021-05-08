@@ -1704,7 +1704,7 @@ int GB_palette_fill_from_table_entry(
     assert(palette);
     assert(table <= GB_PALETTE_TABLE_MAX);
     assert(entry <= GB_PALETTE_ENTRY_MAX);
-    
+
     if (!palette) {
         return -1;
     }
@@ -1737,7 +1737,7 @@ int GB_palette_fill_from_hash(
                 forth_byte != PALETTE_HASH_ENTRIES[i].forth) {
                 continue;
             }
-            
+
             GB_palette_fill_from_table_entry(
                 PALETTE_HASH_ENTRIES[i].table,
                 PALETTE_HASH_ENTRIES[i].entry,
@@ -1757,7 +1757,7 @@ int GB_palette_fill_from_buttons(
     struct GB_PalettePreviewShades* preview /* optional (can be NULL) */
 ) {
     assert(palette);
-    
+
     if (!palette) {
         return -1;
     }
@@ -1786,7 +1786,7 @@ int GB_Palette_fill_from_custom(
     struct GB_PaletteEntry* palette
 ) {
     assert(palette);
-    assert(custom < GB_CUSTOM_PALETTE_MAX && custom >= 0);
+    assert(custom < GB_CUSTOM_PALETTE_MAX && custom > 0);
 
     if (custom >= GB_CUSTOM_PALETTE_MAX || custom < 0) {
         return -1;

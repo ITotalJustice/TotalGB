@@ -8,11 +8,17 @@
 
 
 // these are extern, used for dmg / gbc / sgb render functions
-const uint8_t PIXEL_BIT_SHRINK[] = { 0x80, 0x40, 0x20, 0x10, 0x08, 0x04, 0x02, 0x01 };
-const uint8_t PIXEL_BIT_GROW[] = { 0x01, 0x02, 0x04, 0x08, 0x10, 0x20, 0x40, 0x80 };
+const uint8_t PIXEL_BIT_SHRINK[] = {
+    0x80, 0x40, 0x20, 0x10, 0x08, 0x04, 0x02, 0x01
+};
+const uint8_t PIXEL_BIT_GROW[] = {
+    0x01, 0x02, 0x04, 0x08, 0x10, 0x20, 0x40, 0x80
+};
 
 
-uint8_t GB_vram_read(const struct GB_Core* gb, const uint16_t addr, const uint8_t bank) {
+uint8_t GB_vram_read(const struct GB_Core* gb,
+    const uint16_t addr, const uint8_t bank
+) {
     assert(bank < 2);
     return gb->ppu.vram[bank][addr & 0x1FFF];
 }
@@ -43,8 +49,23 @@ uint16_t GB_get_win_map_select(const struct GB_Core* gb) {
     return GB_get_win_data_select(gb) ? 0x9C00 : 0x9800;
 }
 
-uint16_t GB_get_tile_offset(const struct GB_Core* gb, const uint8_t tile_num, const uint8_t sub_tile_y) {
-    return (GB_get_title_map_select(gb) + (((GB_get_title_data_select(gb) ? tile_num : (int8_t)tile_num)) << 4) + (sub_tile_y << 1));
+uint16_t GB_get_tile_offset(const struct GB_Core* gb,
+    const uint8_t tile_num, const uint8_t sub_tile_y
+) {
+    // this is way too complicated!
+    // if (GB_get_title_data_select(gb)) {
+        // return GB_get_title_map_select(gb) + tile_num + (sub_tile_y * 2);
+    // }
+    // else {
+        // const int16_t stile_num = ((int8_t)tile_num) * 16;
+        // return GB_get_title_map_select(gb) + stile_num + (sub_tile_y * 2);
+    // }
+
+    return (GB_get_title_map_select(gb) + (((GB_get_title_data_select(gb) ? tile_num : (int8_t)tile_num)) * 16) + (sub_tile_y << 1));
+
+    // this causes left shift of signed value!
+    // this usually causes sign-extended, which is NOT what i wanted.
+    // return (GB_get_title_map_select(gb) + (((GB_get_title_data_select(gb) ? tile_num : (int8_t)tile_num)) << 4) + (sub_tile_y << 1));
 }
 
 uint8_t GB_get_sprite_size(const struct GB_Core* gb) {
@@ -70,19 +91,19 @@ enum GB_StatusModes GB_get_status_mode(const struct GB_Core* gb) {
 }
 
 bool GB_is_lcd_enabled(const struct GB_Core* gb) {
-    return (!!(IO_LCDC & 0x80)); 
+    return (!!(IO_LCDC & 0x80));
 }
 
 bool GB_is_win_enabled(const struct GB_Core* gb) {
-    return (!!(IO_LCDC & 0x20)); 
+    return (!!(IO_LCDC & 0x20));
 }
 
 bool GB_is_obj_enabled(const struct GB_Core* gb) {
-    return (!!(IO_LCDC & 0x02)); 
+    return (!!(IO_LCDC & 0x02));
 }
 
 bool GB_is_bg_enabled(const struct GB_Core* gb) {
-    return (!!(IO_LCDC & 0x01)); 
+    return (!!(IO_LCDC & 0x01));
 }
 
 void GB_compare_LYC(struct GB_Core* gb) {
@@ -90,15 +111,17 @@ void GB_compare_LYC(struct GB_Core* gb) {
         GB_set_coincidence_flag(gb, true);
         GB_raise_if_enabled(gb, STAT_INT_MODE_COINCIDENCE);
     }
-    
+
     else {
         GB_set_coincidence_flag(gb, false);
     }
 }
 
-void GB_change_status_mode(struct GB_Core* gb, const uint8_t new_mode) {
+void GB_change_status_mode(struct GB_Core* gb,
+    const uint8_t new_mode
+) {
     GB_set_status_mode(gb, new_mode);
-    
+
     switch (new_mode) {
         case STATUS_MODE_HBLANK:
             GB_raise_if_enabled(gb, STAT_INT_MODE_0);
@@ -197,7 +220,7 @@ void GB_ppu_run(struct GB_Core* gb, uint16_t cycles) {
                 GB_change_status_mode(gb, STATUS_MODE_SPRITE);
             }
             break;
-        
+
         case STATUS_MODE_VBLANK:
             ++IO_LY;
             GB_compare_LYC(gb);
@@ -207,16 +230,16 @@ void GB_ppu_run(struct GB_Core* gb, uint16_t cycles) {
                 gb->ppu.window_line = 0;
                 gb->ppu.next_cycles -= 456;
                 IO_LY = 0;
-                GB_compare_LYC(gb); // important, this is needed for zelda intro.
+                GB_compare_LYC(gb);
                 GB_change_status_mode(gb, STATUS_MODE_SPRITE);
             }
-            
+
             break;
-        
+
         case STATUS_MODE_SPRITE:
             GB_change_status_mode(gb, STATUS_MODE_TRANSFER);
             break;
-        
+
         case STATUS_MODE_TRANSFER:
             GB_change_status_mode(gb, STATUS_MODE_HBLANK);
             break;
@@ -241,7 +264,7 @@ void GB_DMA(struct GB_Core* gb) {
         // mbc2-ram!!!
         memcpy(gb->ppu.oam, entry.ptr + ((IO_DMA & 0xF) << 8), sizeof(gb->ppu.oam));
     }
-	
+
     // because i am peforming the dma at once, i am also adding the cycles
     // at once as well.
     // however, this has broken at least one game (Heroes of Might and Magic II)
@@ -251,7 +274,9 @@ void GB_DMA(struct GB_Core* gb) {
     gb->cpu.cycles += 646 >> 1;
 }
 
-bool GB_is_render_layer_enabled(const struct GB_Core* gb, enum GB_RenderLayerConfig want) {
+bool GB_is_render_layer_enabled(const struct GB_Core* gb,
+    enum GB_RenderLayerConfig want
+) {
     return (gb->config.render_layer_config == GB_RENDER_LAYER_CONFIG_ALL) || ((gb->config.render_layer_config & want) > 0);
 }
 
@@ -267,6 +292,6 @@ void GB_draw_scanline(struct GB_Core* gb) {
 
         case GB_SYSTEM_TYPE_SGB:
             SGB_render_scanline(gb);
-            break;   
+            break;
     }
 }

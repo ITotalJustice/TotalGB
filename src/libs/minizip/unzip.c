@@ -667,7 +667,7 @@ static int unzGetCurrentFileInfoField(unzFile file, uint32_t *seek, void *field,
         }
         else
             bytes_to_read = field_size;
-        
+
         if (*seek != 0)
         {
             if (ZSEEK64(s->z_filefunc, s->filestream_with_CD, *seek, ZLIB_FILEFUNC_SEEK_CUR) == 0)
@@ -675,7 +675,7 @@ static int unzGetCurrentFileInfoField(unzFile file, uint32_t *seek, void *field,
             else
                 err = UNZ_ERRNO;
         }
-        
+
         if ((size_file_field > 0) && (field_size > 0))
         {
             if (ZREAD64(s->z_filefunc, s->filestream_with_CD, field, bytes_to_read) != bytes_to_read)
@@ -1057,7 +1057,7 @@ extern int ZEXPORT unzOpenCurrentFile3(unzFile file, int *method, int *level, in
 
     if (unzCheckCurrentFileCoherencyHeader(s, &size_variable, &offset_local_extrafield, &size_local_extrafield) != UNZ_OK)
         return UNZ_BADZIPFILE;
-    
+
     compression_method = s->cur_file_info.compression_method;
 #ifdef HAVE_AES
     if (compression_method == AES_METHOD)
@@ -1093,7 +1093,7 @@ extern int ZEXPORT unzOpenCurrentFile3(unzFile file, int *method, int *level, in
             return UNZ_BADZIPFILE;
         }
     }
-    
+
     pfile_in_zip_read_info = (file_in_zip64_read_info_s*)ALLOC(sizeof(file_in_zip64_read_info_s));
     if (pfile_in_zip_read_info == NULL)
         return UNZ_INTERNALERROR;
@@ -1104,7 +1104,7 @@ extern int ZEXPORT unzOpenCurrentFile3(unzFile file, int *method, int *level, in
         TRYFREE(pfile_in_zip_read_info);
         return UNZ_INTERNALERROR;
     }
-    
+
     pfile_in_zip_read_info->stream_initialised = 0;
 
     pfile_in_zip_read_info->filestream = s->filestream;
@@ -1115,7 +1115,7 @@ extern int ZEXPORT unzOpenCurrentFile3(unzFile file, int *method, int *level, in
     pfile_in_zip_read_info->crc32_expected = s->cur_file_info.crc;
     pfile_in_zip_read_info->total_out_64 = 0;
     pfile_in_zip_read_info->compression_method = compression_method;
-    
+
     pfile_in_zip_read_info->offset_local_extrafield = offset_local_extrafield;
     pfile_in_zip_read_info->size_local_extrafield = size_local_extrafield;
     pfile_in_zip_read_info->pos_local_extrafield = 0;
@@ -1126,7 +1126,7 @@ extern int ZEXPORT unzOpenCurrentFile3(unzFile file, int *method, int *level, in
 
     if (s->number_disk == s->gi.number_disk_with_CD)
         pfile_in_zip_read_info->byte_before_the_zipfile = s->byte_before_the_zipfile;
-        
+
     pfile_in_zip_read_info->pos_in_zipfile = s->cur_file_info_internal.offset_curfile + SIZEZIPLOCALHEADER + size_variable;
 
     pfile_in_zip_read_info->stream.zalloc = (alloc_func)0;
@@ -1238,7 +1238,7 @@ extern int ZEXPORT unzOpenCurrentFile3(unzFile file, int *method, int *level, in
             int i;
             uint8_t expected;
             uint8_t actual;
-           
+
             s->pcrc_32_tab = (const z_crc_t*)get_crc_table();
             init_keys(password, s->keys, s->pcrc_32_tab);
 
@@ -1431,20 +1431,27 @@ extern int ZEXPORT unzReadCurrentFile(unzFile file, voidp buf, uint32_t len)
             s->pfile_in_zip_read->bstream.avail_in       = s->pfile_in_zip_read->stream.avail_in;
             s->pfile_in_zip_read->bstream.total_in_lo32  = (uint32_t)s->pfile_in_zip_read->stream.total_in;
             s->pfile_in_zip_read->bstream.total_in_hi32  = s->pfile_in_zip_read->stream.total_in >> 32;
-            
+
             s->pfile_in_zip_read->bstream.next_out       = (char*)s->pfile_in_zip_read->stream.next_out;
             s->pfile_in_zip_read->bstream.avail_out      = s->pfile_in_zip_read->stream.avail_out;
             s->pfile_in_zip_read->bstream.total_out_lo32 = (uint32_t)s->pfile_in_zip_read->stream.total_out;
             s->pfile_in_zip_read->bstream.total_out_hi32 = s->pfile_in_zip_read->stream.total_out >> 32;
 
-            total_out_before = s->pfile_in_zip_read->bstream.total_out_lo32 + 
-                (((uint32_t)s->pfile_in_zip_read->bstream.total_out_hi32) << 32);
+            // TJ: cppcheck warned below about shifitng a 32bit << 32 is UB
+            // i understand why the code below did this, it cast to 32bit as a way
+            // to mask only the lo half, then shift back up the hi 64-bit
+            // a fix was to double cast, another would be to just mask it, though
+            // i think masking is endian specific, so im guessing this is why
+            // they went with casts? i'm not sure if that does anything different...
+            
+            total_out_before = s->pfile_in_zip_read->bstream.total_out_lo32 +
+                ((uint64_t)((uint32_t)s->pfile_in_zip_read->bstream.total_out_hi32) << 32);
             buf_before = (const uint8_t*)s->pfile_in_zip_read->bstream.next_out;
 
             err = BZ2_bzDecompress(&s->pfile_in_zip_read->bstream);
 
-            total_out_after = s->pfile_in_zip_read->bstream.total_out_lo32 + 
-                (((uint32_t)s->pfile_in_zip_read->bstream.total_out_hi32) << 32);
+            total_out_after = s->pfile_in_zip_read->bstream.total_out_lo32 +
+                ((uint64_t)((uint32_t)s->pfile_in_zip_read->bstream.total_out_hi32) << 32);
 
             out_bytes = total_out_after - total_out_before;
 
@@ -1647,7 +1654,7 @@ extern int ZEXPORT unzCloseCurrentFile(unzFile file)
 #else
         inflateEnd(&pfile_in_zip_read_info->stream);
 #endif
-        
+
     }
 #ifdef HAVE_BZIP2
     else if (pfile_in_zip_read_info->stream_initialised == Z_BZIP2ED)
@@ -1756,15 +1763,28 @@ extern int ZEXPORT unzLocateFile(unzFile file, const char *filename, unzFileName
 
     err = unzGoToFirstFile2(file, NULL, current_filename, sizeof(current_filename)-1, NULL, 0, NULL, 0);
 
-    while (err == UNZ_OK)
-    {
-        if (filename_compare_func != NULL)
+    if (filename_compare_func != NULL) {
+        while (err == UNZ_OK) {
             err = filename_compare_func(file, current_filename, filename);
-        else
+
+            if (err == 0) {
+                return UNZ_OK;
+            }
+
+            err = unzGoToNextFile2(file, NULL, current_filename, sizeof(current_filename)-1, NULL, 0, NULL, 0);
+        }
+    }
+
+    else {
+        while (err == UNZ_OK) {
             err = strcmp(current_filename, filename);
-        if (err == 0)
-            return UNZ_OK;
-        err = unzGoToNextFile2(file, NULL, current_filename, sizeof(current_filename)-1, NULL, 0, NULL, 0);
+
+            if (err == 0) {
+                return UNZ_OK;
+            }
+
+            err = unzGoToNextFile2(file, NULL, current_filename, sizeof(current_filename)-1, NULL, 0, NULL, 0);
+        }
     }
 
     /* We failed, so restore the state of the 'current file' to where we were. */
@@ -1945,7 +1965,7 @@ extern int ZEXPORT unzSeek64(unzFile file, uint64_t offset, int origin)
     else
         stream_pos_begin = 0;
 
-    is_within_buffer = 
+    is_within_buffer =
         (s->pfile_in_zip_read->stream.avail_in != 0) &&
         (s->pfile_in_zip_read->rest_read_compressed != 0 || s->cur_file_info.compressed_size < UNZ_BUFSIZE) &&
         (position >= stream_pos_begin && position < stream_pos_end);

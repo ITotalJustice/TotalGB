@@ -55,9 +55,15 @@ msvc/tempboy/x64
 output.html
 output.wasm
 output.js
-buildpc
-buildwasm
+
+build_*/
+old_code/
+*.geany
 *.sh
+
+# imgui stuff
+*imgui.ini
+imgui_demo.cpp
 
 #
 .cache

@@ -1,4 +1,5 @@
-#pragma once
+#ifndef _GB_INTERNAL_H_
+#define _GB_INTERNAL_H_
 
 #ifdef __cplusplus
 extern "C" {
@@ -209,3 +210,5 @@ void SGB_handle_joyp_write(struct GB_Core* gb, uint8_t value);
 #ifdef __cplusplus
 }
 #endif
+
+#endif // _GB_INTERNAL_H_

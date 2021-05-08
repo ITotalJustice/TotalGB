@@ -1,4 +1,3 @@
-#include "core/apu/common.h"
 #include "core/apu/apu.h"
 #include "core/internal.h"
 
@@ -65,7 +64,7 @@ void on_wave_trigger(struct GB_Core* gb) {
     wave_enable(gb);
 
     if (WAVE_CHANNEL.length_counter == 0) {
-        if (IO_NR34.length_enable && is_next_frame_suqencer_step_not_len(gb)) {
+        if (IO_NR34.length_enable && is_next_frame_sequencer_step_not_len(gb)) {
             WAVE_CHANNEL.length_counter = 255;
         } else {
             WAVE_CHANNEL.length_counter = 256;
@@ -78,7 +77,7 @@ void on_wave_trigger(struct GB_Core* gb) {
     // SOURCE: https://gbdev.gg8.se/wiki/articles/Gameboy_sound_hardware#Obscure_Behavior
 
     WAVE_CHANNEL.timer = get_wave_freq(gb);
-    
+
     if (is_wave_dac_enabled(gb) == false) {
         wave_disable(gb);
     }

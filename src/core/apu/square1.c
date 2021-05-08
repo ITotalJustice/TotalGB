@@ -1,4 +1,3 @@
-#include "core/apu/common.h"
 #include "core/apu/apu.h"
 #include "core/internal.h"
 
@@ -36,7 +35,7 @@ void clock_square1_len(struct GB_Core* gb) {
         // disable channel if we hit zero...
         if (SQUARE1_CHANNEL.length_counter == 0) {
             square1_disable(gb);
-        }   
+        }
     }
 }
 
@@ -67,7 +66,7 @@ void clock_square1_vol(struct GB_Core* gb) {
 
 static uint16_t get_new_sweep_freq(const struct GB_Core* gb) {
     const uint16_t new_freq = SQUARE1_CHANNEL.freq_shadow_register >> IO_NR10.shift;
-        
+
     if (IO_NR10.negate) {
         return SQUARE1_CHANNEL.freq_shadow_register - new_freq;
     } else {
@@ -116,25 +115,25 @@ void on_square1_trigger(struct GB_Core* gb) {
     square1_enable(gb);
 
     if (SQUARE1_CHANNEL.length_counter == 0) {
-        if (IO_NR14.length_enable && is_next_frame_suqencer_step_not_len(gb)) {
+        if (IO_NR14.length_enable && is_next_frame_sequencer_step_not_len(gb)) {
             SQUARE1_CHANNEL.length_counter = 63;
         } else {
             SQUARE1_CHANNEL.length_counter = 64;
         }
     }
-    
+
     SQUARE1_CHANNEL.disable_env = false;
-    
+
     SQUARE1_CHANNEL.volume_timer = PERIOD_TABLE[IO_NR12.period];
     // if the next frame sequence clocks the vol, then
     // the timer is reloaded + 1.
-    if (is_next_frame_suqencer_step_vol(gb)) {
+    if (is_next_frame_sequencer_step_vol(gb)) {
         SQUARE1_CHANNEL.volume_timer++;
     }
-    
+
     // reload the volume
     SQUARE1_CHANNEL.volume = IO_NR12.starting_vol;
-    
+
     // when a square channel is triggered, it's lower 2-bits are not modified!
     // SOURCE: https://gbdev.gg8.se/wiki/articles/Gameboy_sound_hardware#Obscure_Behavior
     SQUARE1_CHANNEL.timer = (SQUARE1_CHANNEL.timer & 0x3) | (get_square1_freq(gb) & ~(0x3));
@@ -149,7 +148,7 @@ void on_square1_trigger(struct GB_Core* gb) {
     if (IO_NR10.shift != 0) {
         do_freq_sweep_calc(gb);
     }
-    
+
     if (is_square1_dac_enabled(gb) == false) {
         square1_disable(gb);
     }

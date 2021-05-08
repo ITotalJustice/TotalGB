@@ -56,7 +56,7 @@ struct PrinterCallbackData {
 
     union {
         struct PrinterDataInfo info;
-    };
+    } data;
 };
 
 typedef void(*GB_print_callback_t)(void* user, struct PrinterCallbackData* data);
