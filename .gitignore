@@ -59,7 +59,7 @@ output.js
 build_*/
 old_code/
 *.geany
-*.sh
+run.sh
 
 # imgui stuff
 *imgui.ini
