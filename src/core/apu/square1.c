@@ -1,5 +1,6 @@
-#include "core/apu/apu.h"
-#include "core/internal.h"
+#include "../internal.h"
+#include "apu.h"
+
 
 
 uint16_t get_square1_freq(const struct GB_Core* gb) {

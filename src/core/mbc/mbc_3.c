@@ -1,6 +1,6 @@
-#include "core/mbc/mbc.h"
-#include "core/internal.h"
-#include "core/gb.h" // for has flags functions
+#include "../internal.h"
+#include "../gb.h" // for has flags functions
+#include "mbc.h"
 
 #include <assert.h>
 

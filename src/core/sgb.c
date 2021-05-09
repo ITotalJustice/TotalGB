@@ -1,5 +1,5 @@
-#include "core/internal.h"
-#include "core/gb.h"
+#include "gb.h"
+#include "internal.h"
 
 
 #include <stdio.h>

@@ -1,5 +1,5 @@
-#include "core/gb.h"
-#include "core/internal.h"
+#include "gb.h"
+#include "internal.h"
 
 
 static const uint16_t TAC_FREQ[4] = { 1024, 16, 64, 256 };

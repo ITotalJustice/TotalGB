@@ -5,7 +5,7 @@
 extern "C" {
 #endif
 
-#include "core/types.h"
+#include "../types.h"
 
 
 struct MBC_RamBankInfo mbc_setup_empty_ram(void);

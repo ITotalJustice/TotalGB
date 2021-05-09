@@ -1,5 +1,6 @@
-#include "core/ppu/ppu.h"
-#include "core/internal.h"
+#include "ppu.h"
+#include "../internal.h"
+#include "../gb.h"
 
 #include <stdlib.h> // for qsort, will remove soon
 #include <string.h>

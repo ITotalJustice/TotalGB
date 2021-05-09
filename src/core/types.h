@@ -5,7 +5,7 @@
 extern "C" {
 #endif
 
-#include "core/tables/palette_table.h"
+#include "tables/palette_table.h"
 
 #include <stddef.h>
 #include <stdbool.h>
@@ -40,12 +40,14 @@ struct GB_Config;
 struct GB_ErrorData;
 
 
-#define GB_SCREEN_WIDTH 160
-#define GB_SCREEN_HEIGHT 144
+enum {
+    GB_SCREEN_WIDTH = 160,
+    GB_SCREEN_HEIGHT = 144,
 
-#define GB_BOOTROM_SIZE 0x100
+    GB_BOOTROM_SIZE = 0x100,
 
-#define GB_FRAME_CPU_CYCLES 70224
+    GB_FRAME_CPU_CYCLES = 70224,
+};
 
 
 enum GB_MbcType {
@@ -486,7 +488,7 @@ struct GB_Cart {
 
     const uint8_t* rom;
 
-    uint8_t ram[0x10000];
+    uint8_t ram[GB_SAVE_SIZE_MAX];
     uint32_t rom_size;
     uint32_t ram_size;
 
@@ -781,7 +783,7 @@ struct GB_Core {
 // however *most* games do have ram, and fixing the size removes the
 // need to allocate and simplifies savestate / rewinding *a lot*.
 struct GB_CartState {
-    uint8_t ram[0x10000];
+    uint8_t ram[GB_SAVE_SIZE_MAX];
 
     uint16_t rom_bank;
     uint8_t rom_bank_lo;

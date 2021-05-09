@@ -1,6 +1,6 @@
-#include "core/gb.h"
-#include "core/internal.h"
-#include "core/apu/apu.h"
+#include "../internal.h"
+#include "../gb.h"
+#include "apu.h"
 
 #include <string.h>
 

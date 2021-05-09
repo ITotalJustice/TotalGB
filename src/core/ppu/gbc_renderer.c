@@ -1,6 +1,6 @@
-#include "core/ppu/ppu.h"
-#include "core/gb.h"
-#include "core/internal.h"
+#include "ppu.h"
+#include "../internal.h"
+#include "../gb.h"
 
 #include <assert.h>
 #include <string.h>

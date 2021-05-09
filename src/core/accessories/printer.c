@@ -1,6 +1,7 @@
-#include "core/accessories/printer.h"
-#include "core/gb.h"
-#include "core/internal.h"
+#include "printer.h"
+#include "../internal.h"
+#include "../gb.h"
+
 
 #include <stdio.h>
 #include <string.h>

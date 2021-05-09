@@ -1,5 +1,5 @@
-#include "core/apu/apu.h"
-#include "core/internal.h"
+#include "../internal.h"
+#include "apu.h"
 
 
 // used for LFSR shifter

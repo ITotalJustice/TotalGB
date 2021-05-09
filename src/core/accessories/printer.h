@@ -4,7 +4,7 @@
 extern "C" {
 #endif
 
-#include "core/types.h"
+#include "../types.h"
 
 enum GB_PrinterMode {
     // Sync

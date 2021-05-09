@@ -1,8 +1,8 @@
-#include "core/gb.h"
-#include "core/internal.h"
-#include "core/tables/cycle_table.h"
+#include "gb.h"
+#include "internal.h"
+#include "tables/cycle_table.h"
 #ifdef GB_DEBUG
-#include "core/tables/cycle_table_debug.h"
+#include "tables/cycle_table_debug.h"
 #endif // GB_DEBUG
 
 #include <assert.h>

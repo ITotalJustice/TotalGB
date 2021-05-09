@@ -5,7 +5,7 @@
 extern "C" {
 #endif
 
-#include "core/types.h"
+#include "../types.h"
 
 //        Square 1
 // NR10 FF10 -PPP NSSS Sweep period, negate, shift

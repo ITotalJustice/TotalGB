@@ -1,5 +1,7 @@
-#include "core/tables/palette_table.h"
-#include "core/types.h"
+#include "palette_table.h"
+#include "../types.h"
+
+#ifndef GB_NO_BUILTIN_PALETTE
 
 #include <assert.h>
 
@@ -1800,3 +1802,41 @@ int GB_Palette_fill_from_custom(
 
     return 0;
 }
+
+#else // #ifndef GB_NO_BUILTIN_PALETTE
+
+int GB_palette_fill_from_table_entry(
+    uint8_t table, uint8_t entry, /* keys */
+    struct GB_PaletteEntry* palette
+) {
+    (void)table; (void)entry; (void)palette;
+    return -1;
+}
+
+int GB_palette_fill_from_hash(
+    uint8_t hash, /* key */
+    uint8_t forth_byte, /* key */
+    struct GB_PaletteEntry* palette
+) {
+    (void)hash; (void)forth_byte; (void)palette;
+    return -1;
+}
+
+int GB_palette_fill_from_buttons(
+    uint8_t buttons, /* key */
+    struct GB_PaletteEntry* palette,
+    struct GB_PalettePreviewShades* preview /* optional (can be NULL) */
+) {
+    (void)buttons; (void)palette; (void)preview;
+    return -1;
+}
+
+int GB_Palette_fill_from_custom(
+    enum GB_CustomPalette custom, /* key */
+    struct GB_PaletteEntry* palette
+) {
+    (void)custom; (void)palette;
+    return -1;
+}
+
+#endif // #ifndef GB_NO_BUILTIN_PALETTE

@@ -1,5 +1,6 @@
-#include "core/mbc/mbc.h"
-#include "core/internal.h"
+#include "../internal.h"
+#include "mbc.h"
+
 
 #include <assert.h>
 

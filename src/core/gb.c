@@ -1,6 +1,5 @@
-#include "core/gb.h"
-#include "core/tables/palette_table.h"
-#include "core/internal.h"
+#include "gb.h"
+#include "internal.h"
 
 #include <stdio.h>
 #include <string.h>

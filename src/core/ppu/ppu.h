@@ -5,7 +5,7 @@
 extern "C" {
 #endif
 
-#include "core/types.h"
+#include "../types.h"
 
 
 // defined in core/ppu/ppu.c

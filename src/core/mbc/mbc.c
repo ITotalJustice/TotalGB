@@ -1,6 +1,6 @@
-#include "core/gb.h"
-#include "core/internal.h"
-#include "core/mbc/mbc.h"
+#include "../gb.h"
+#include "../internal.h"
+#include "mbc.h"
 
 #include <stdio.h>
 #include <string.h>
@@ -101,7 +101,14 @@ int GB_get_rom_name(const struct GB_Core* gb, struct GB_CartName* name) {
 bool GB_get_cart_ram_size(uint8_t type, uint32_t* size) {
     // i think that more ram sizes are valid, however
     // i have yet to see a ram size bigger than this...
-    static const uint32_t GB_CART_RAM_SIZES[6] = { 0, 0x800, 0x2000, 0x8000, 0x20000, 0x10000 };
+    const uint32_t GB_CART_RAM_SIZES[6] = {
+        GB_SAVE_SIZE_NONE   /*0*/,
+        GB_SAVE_SIZE_1      /*0x800*/,
+        GB_SAVE_SIZE_2      /*0x2000*/,
+        GB_SAVE_SIZE_3      /*0x8000*/,
+        GB_SAVE_SIZE_4      /*0x20000*/,
+        GB_SAVE_SIZE_5      /*0x10000*/,
+    };
 
     assert(type < GB_ARR_SIZE(GB_CART_RAM_SIZES) && "OOB type access!");
 

@@ -1,7 +1,6 @@
-#include "core/gb.h"
-#include "core/internal.h"
-#include "core/ppu/ppu.h"
-#include "core/tables/palette_table.h"
+#include "ppu.h"
+#include "../internal.h"
+#include "../gb.h"
 
 #include <string.h>
 #include <assert.h>
