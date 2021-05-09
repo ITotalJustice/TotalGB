@@ -29,3 +29,8 @@ option('audio', type : 'combo',
 		],
 		value : 'sdl2',
 		description : 'Choose audio backend [Default : sdl2]')
+
+# core options
+option('gb-debug', type : 'boolean', value : false)
+option('gb-builtin-palette', type : 'boolean', value : true)
+option('gb-sram-size', type : 'integer', min : 0, max : 5, value : 5)

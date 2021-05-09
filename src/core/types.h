@@ -50,13 +50,6 @@ enum {
 };
 
 
-enum GB_MbcType {
-    MBC_TYPE_NONE = 0,
-
-    MBC_TYPE_0,
-    MBC_TYPE_1,
-};
-
 // for changing the internal colour buffer.
 // this is is faster than converting each colour to rgb when rendering.
 // most consoles support rgb565 or bg565 but not bgr555 (default).
@@ -80,7 +73,25 @@ enum GB_SaveSizes {
     GB_SAVE_SIZE_4      = 0x20000,
     GB_SAVE_SIZE_5      = 0x10000,
 
+#ifdef GB_MAX_SRAM_SIZE
+    #if GB_MAX_SRAM_SIZE == 0
+        GB_SAVE_SIZE_MAX = 1, // this is so that the ram arrays don't error!
+    #elif GB_MAX_SRAM_SIZE == 1
+        GB_SAVE_SIZE_MAX = GB_SAVE_SIZE_1
+    #elif GB_MAX_SRAM_SIZE == 2
+        GB_SAVE_SIZE_MAX = GB_SAVE_SIZE_2
+    #elif GB_MAX_SRAM_SIZE == 3
+        GB_SAVE_SIZE_MAX = GB_SAVE_SIZE_3
+    #elif GB_MAX_SRAM_SIZE == 4
+        GB_SAVE_SIZE_MAX = GB_SAVE_SIZE_4
+    #elif GB_MAX_SRAM_SIZE == 5
+        GB_SAVE_SIZE_MAX = GB_SAVE_SIZE_5
+    #else
+        #error "Invalid SRAM size set!, Valid range is 0-5"
+    #endif
+#else
     GB_SAVE_SIZE_MAX = GB_SAVE_SIZE_5,
+#endif
 };
 
 enum GB_MbcFlags {
@@ -509,7 +520,6 @@ struct GB_Cart {
     bool in_ram;
 
     uint8_t flags;
-    enum GB_MbcType mbc_type;
 };
 
 struct GB_Timer {

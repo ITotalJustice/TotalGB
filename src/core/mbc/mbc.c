@@ -170,6 +170,14 @@ bool GB_setup_mbc(struct GB_Cart* mbc, const struct GB_CartHeader* header) {
         else {
             mbc->ram_bank_max = mbc->ram_size / 0x2000;
         }
+
+        // check that the size (if any) returned is within range of the
+        // maximum ram size.
+        // this can be set by the user, using build flags!
+        if (mbc->ram_size > GB_SAVE_SIZE_MAX) {
+            printf("cart-ram size is too big for the maximum size set! got: %u max: %d", mbc->ram_size, GB_SAVE_SIZE_MAX);
+            return false;
+        }
     }
 
     return true;

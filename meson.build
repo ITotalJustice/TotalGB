@@ -280,6 +280,28 @@ elif
 endif
 
 
+if get_option('gb-debug') == true
+    cflags += '-DGB_DEBUG=1'
+endif
+
+if get_option('gb-builtin-palette') == false
+    cflags += '-DGB_NO_BUILTIN_PALETTE=1'
+endif
+
+if get_option('gb-sram-size') == 0
+    cflags += '-DGB_MAX_SRAM_SIZE=0'
+elif get_option('gb-sram-size') == 1
+    cflags += '-DGB_MAX_SRAM_SIZE=1'
+elif get_option('gb-sram-size') == 2
+    cflags += '-DGB_MAX_SRAM_SIZE=2'
+elif get_option('gb-sram-size') == 3
+    cflags += '-DGB_MAX_SRAM_SIZE=3'
+elif get_option('gb-sram-size') == 4
+    cflags += '-DGB_MAX_SRAM_SIZE=4'
+elif get_option('gb-sram-size') == 5
+    cflags += '-DGB_MAX_SRAM_SIZE=5'
+endif
+
 if get_option('video') == 'sdl1'
     source += sdl1_video_backend_source
     dependencies_str +=  sdl1_video_backend_dependencies
