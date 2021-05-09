@@ -66,7 +66,7 @@ static size_t internal_size(void* _private) {
     return (size_t)file_size;
 }
 
-IFile_t* icfile_open(const char* file, const char* mode) {
+IFile_t* icfile_open(const char* file, enum IFileMode mode) {
     IFile_t* ifile = malloc(sizeof(IFile_t));
 
     // if this ever fails, we have less than 56 bytes of mem
@@ -74,7 +74,13 @@ IFile_t* icfile_open(const char* file, const char* mode) {
         exit(-1);
     }
 
-    ctx_t* ctx = fopen(file, mode);
+    const char* modes[] = {
+        [IFileMode_READ] = "rb",
+        [IFileMode_WRITE] = "wb",
+        [IFileMode_APPEND] = "ab",
+    };
+
+    ctx_t* ctx = fopen(file, modes[mode]);
 
     if (!ctx) {
         goto fail;

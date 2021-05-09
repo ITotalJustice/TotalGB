@@ -14,11 +14,11 @@ static bool zip_cmp_func(const char* name) {
 }
 
 static IFile_t* load_from_cfile(const char* path) {
-    return icfile_open(path, "rb");
+    return icfile_open(path, IFileMode_READ);
 }
 
 static IFile_t* load_from_zip(const char* path) {
-    IFile_t* file = izip_open(path, IZipMode_READ);
+    IFile_t* file = izip_open(path, IFileMode_READ);
 
     if (!file) {
         goto fail;

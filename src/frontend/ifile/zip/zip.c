@@ -11,7 +11,7 @@ typedef struct {
         zipFile z;
     } file;
     ourmemory_t ourmem;
-    enum IZipMode mode;
+    enum IFileMode mode;
 } ctx_t;
 
 #define PRIVATE_TO_CTX ctx_t* ctx = (ctx_t*)_private
@@ -23,7 +23,7 @@ static void internal_close(void* _private) {
 
     if (ctx) {
         switch (ctx->mode) {
-            case IZipMode_READ:
+            case IFileMode_READ:
                 if (ctx->file.u) {
                     unzCloseCurrentFile(ctx->file.u);
                     unzClose(ctx->file.u);
@@ -31,13 +31,16 @@ static void internal_close(void* _private) {
                 }
                 break;
 
-            case IZipMode_WRITE:
+            case IFileMode_WRITE:
                 if (ctx->file.z) {
                     zipCloseFileInZip(ctx->file.z);
                     zipClose(ctx->file.z, NULL);
                     ctx->file.z = NULL;
                 }
                 break;
+
+            case IFileMode_APPEND:
+                break; // not supported (yet)
         }
 
         if (ctx->ourmem.base) {
@@ -53,7 +56,7 @@ static void internal_close(void* _private) {
 static bool internal_read(void* _private, void* data, size_t len) {
     PRIVATE_TO_CTX;
 
-    if (ctx->mode != IZipMode_READ) {
+    if (ctx->mode != IFileMode_READ) {
         return false;
     }
 
@@ -63,7 +66,7 @@ static bool internal_read(void* _private, void* data, size_t len) {
 static bool internal_write(void* _private, const void* data, size_t len) {
     PRIVATE_TO_CTX;
 
-    if (ctx->mode != IZipMode_WRITE) {
+    if (ctx->mode != IFileMode_WRITE) {
         return false;
     }
 
@@ -73,7 +76,7 @@ static bool internal_write(void* _private, const void* data, size_t len) {
 static bool internal_seek(void* _private, long offset, int whence) {
     PRIVATE_TO_CTX;
 
-    if (ctx->mode != IZipMode_READ) {
+    if (ctx->mode != IFileMode_READ) {
         return false;
     }
 
@@ -88,7 +91,7 @@ static bool internal_seek(void* _private, long offset, int whence) {
 static size_t internal_tell(void* _private) {
     PRIVATE_TO_CTX;
 
-    if (ctx->mode != IZipMode_READ) {
+    if (ctx->mode != IFileMode_READ) {
         return false;
     }
 
@@ -99,7 +102,7 @@ static size_t internal_tell(void* _private) {
 static size_t internal_size(void* _private) {
     PRIVATE_TO_CTX;
 
-    if (ctx->mode != IZipMode_READ) {
+    if (ctx->mode != IFileMode_READ) {
         return false;
     }
 
@@ -140,7 +143,7 @@ static IFile_t* open_read(const char* path) {
     const ctx_t _ctx = {
         .file.u = file,
         .ourmem = {0}, // unused!
-        .mode = IZipMode_READ
+        .mode = IFileMode_READ
     };
 
     *ctx = _ctx;
@@ -201,7 +204,7 @@ static IFile_t* open_write(const char* path) {
     const ctx_t _ctx = {
         .file.z = file,
         .ourmem = {0}, // unused!
-        .mode = IZipMode_WRITE
+        .mode = IFileMode_WRITE
     };
 
     *ctx = _ctx;
@@ -239,13 +242,16 @@ fail:
     return NULL;
 }
 
-IFile_t* izip_open(const char* path, enum IZipMode mode) {
+IFile_t* izip_open(const char* path, enum IFileMode mode) {
     switch (mode) {
-        case IZipMode_READ:
+        case IFileMode_READ:
             return open_read(path);
 
-        case IZipMode_WRITE:
+        case IFileMode_WRITE:
             return open_write(path);
+
+        case IFileMode_APPEND:
+            return NULL; // not supported (yet)
     }
 
     return NULL;
@@ -255,7 +261,7 @@ IFile_t* izip_open(const char* path, enum IZipMode mode) {
 size_t izip_get_file_count(IFile_t* ifile) {
     IFILE_TO_CTX;
 
-    if (ctx->mode != IZipMode_READ) {
+    if (ctx->mode != IFileMode_READ) {
         return 0;
     }
 
@@ -272,13 +278,16 @@ void izip_close_file(IFile_t* ifile) {
     IFILE_TO_CTX;
 
     switch (ctx->mode) {
-        case IZipMode_READ:
+        case IFileMode_READ:
             unzCloseCurrentFile(ctx->file.u);
             break;
 
-        case IZipMode_WRITE:
+        case IFileMode_WRITE:
             zipCloseFileInZip(ctx->file.z);
             break;
+
+        case IFileMode_APPEND:
+            break; // not supported (yet)
     }
 }
 
@@ -286,7 +295,7 @@ bool izip_open_file(IFile_t* ifile, const char *name) {
     IFILE_TO_CTX;
 
     switch (ctx->mode) {
-        case IZipMode_READ:
+        case IFileMode_READ:
             if (UNZ_OK == unzLocateFile(
                 ctx->file.u, name, NULL
             )) {
@@ -294,12 +303,15 @@ bool izip_open_file(IFile_t* ifile, const char *name) {
             }
             return false;
 
-        case IZipMode_WRITE:
+        case IFileMode_WRITE:
             return Z_OK == zipOpenNewFileInZip(
                 ctx->file.z, name,
                 NULL, NULL, 0, NULL, 0, NULL,
                 Z_DEFLATED, Z_DEFAULT_COMPRESSION
             );
+
+        case IFileMode_APPEND:
+            return false; // not supported (yet)
     }
 
     return false;
@@ -324,7 +336,7 @@ static int comp(unzFile ufile, const char* f1, const char* f2) {
 bool izip_find_file_callback(IFile_t* ifile, user_cmp_t cmp) {
     IFILE_TO_CTX;
 
-    if (ctx->mode != IZipMode_READ) {
+    if (ctx->mode != IFileMode_READ) {
         return false;
     }
 

@@ -7,12 +7,7 @@ extern "C" {
 #include "../ifile.h"
 
 
-enum IZipMode {
-    IZipMode_READ,
-    IZipMode_WRITE
-};
-
-IFile_t* izip_open(const char* path, enum IZipMode mode);
+IFile_t* izip_open(const char* path, enum IFileMode mode);
 
 
 // returns how many files / folders are in the zip

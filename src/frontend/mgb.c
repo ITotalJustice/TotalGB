@@ -6,6 +6,7 @@
 
 #include "romloader.h"
 #include "ifile/cfile/cfile.h"
+#include "ifile/zip/zip.h"
 #include "ifile/gzip/gzip.h"
 
 #include <stdio.h>
@@ -187,8 +188,8 @@ static void on_key(mgb_t* self,
         [VideoInterfaceKey_RIGHT]   = GB_BUTTON_RIGHT,
     };
 
-    // handle any hotkeys
-    if (e->down && e->mod & VideoInterfaceKeyMod_CTRL) {
+    // handle any hotkeys after a key press (when its released)
+    if (!e->down && e->mod & VideoInterfaceKeyMod_CTRL) {
         if (e->mod & VideoInterfaceKeyMod_SHIFT) {
             switch (e->key) {
                 case VideoInterfaceKey_S:
@@ -501,7 +502,7 @@ static void savegame(mgb_t* self) {
         if (game_has_save && save_path.valid) {
             const size_t save_size = GB_calculate_savedata_size(self->gameboy);
 
-            IFile_t* file = icfile_open(save_path.str, "wb");
+            IFile_t* file = icfile_open(save_path.str, IFileMode_WRITE);
             
             if (file) {
                 if (ifile_write(file, save_data.data, save_size)) {
@@ -512,7 +513,7 @@ static void savegame(mgb_t* self) {
         }
 
         if (game_has_rtc && rtc_path.valid) {
-            IFile_t* file = icfile_open(rtc_path.str, "wb");
+            IFile_t* file = icfile_open(rtc_path.str, IFileMode_WRITE);
             
             if (file) {
                 if (ifile_write(file, &save_data.rtc, sizeof(save_data.rtc))) {
@@ -543,7 +544,7 @@ static void loadsave(mgb_t* self) {
         if (game_has_save && save_path.valid) {
             const size_t save_size = GB_calculate_savedata_size(self->gameboy);
 
-            IFile_t* file = icfile_open(save_path.str, "rb");
+            IFile_t* file = icfile_open(save_path.str, IFileMode_READ);
             
             if (file) {
                 if (ifile_size(file) == save_size) {
@@ -559,7 +560,7 @@ static void loadsave(mgb_t* self) {
         if (game_has_rtc && rtc_path.valid) {
             const size_t save_size = sizeof(save_data.rtc);
 
-            IFile_t* file = icfile_open(rtc_path.str, "rb");
+            IFile_t* file = icfile_open(rtc_path.str, IFileMode_READ);
             
             if (file) {
                 if (ifile_size(file) == save_size) {
@@ -769,41 +770,79 @@ bool mgb_loadstate(mgb_t* self) {
 }
 
 bool mgb_savestate_file(mgb_t* self, const char* path) {
-    IFile_t* file = icfile_open(path, "wb");
+    bool result = true;
+    IFile_t* file = NULL;
+    struct GB_State* state = NULL;
+
+    file = izip_open(path, IFileMode_WRITE);
+    
     if (!file) {
-        return false;
+        result = false; goto end;
     }
 
-    struct GB_State* state = (struct GB_State*)malloc(sizeof(struct GB_State));
+    if (!izip_open_file(file, "state")) {
+        result = false; goto end;
+    }
+
+    state = (struct GB_State*)malloc(sizeof(struct GB_State));
+    
+    if (!state) {
+        result = false; goto end;
+    }
+
     GB_savestate(self->gameboy, state);
-
     ifile_write(file, state, sizeof(struct GB_State));
-    ifile_close(file);
-    file = NULL;
 
-    free(state);
-    state = NULL;
+end:
+    if (file) {
+        ifile_close(file);
+        file = NULL;
+    }
 
-    return true;
+    if (state) {
+        free(state);
+        state = NULL;
+    }
+
+    return result;
 }
 
 bool mgb_loadstate_file(mgb_t* self, const char* path) {
-    IFile_t* file = icfile_open(path, "rb");
+    bool result = true;
+    IFile_t* file = NULL;
+    struct GB_State* state = NULL;
+
+    file = izip_open(path, IFileMode_READ);
+    
     if (!file) {
-        return false;
+        result = false; goto end;
     }
 
-    struct GB_State* state = (struct GB_State*)malloc(sizeof(struct GB_State));
+    if (!izip_open_file(file, "state")) {
+        result = false; goto end;
+    }
 
+    state = (struct GB_State*)malloc(sizeof(struct GB_State));
+    
+    if (!state) {
+        result = false; goto end;
+    }
+    
     ifile_read(file, state, sizeof(struct GB_State));
-    ifile_close(file);
-
     GB_loadstate(self->gameboy, state);
 
-    free(state);
-    state = NULL;
+end:
+    if (file) {
+        ifile_close(file);
+        file = NULL;
+    }
 
-    return true;
+    if (state) {
+        free(state);
+        state = NULL;
+    }
+
+    return result;
 }
 
 void mgb_loop(mgb_t* self) {

@@ -9,6 +9,13 @@ extern "C" {
 #include <stddef.h>
 
 
+enum IFileMode {
+    IFileMode_READ,
+    IFileMode_WRITE,
+    IFileMode_APPEND,
+};
+
+
 typedef struct IFile {
     void* _private;
 

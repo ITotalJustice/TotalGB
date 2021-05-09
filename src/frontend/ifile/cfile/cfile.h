@@ -7,7 +7,7 @@ extern "C" {
 #include "../ifile.h"
 
 
-IFile_t* icfile_open(const char* file, const char* mode);
+IFile_t* icfile_open(const char* file, enum IFileMode mode);
 
 #ifdef __cplusplus
 }
