@@ -7,15 +7,15 @@ extern "C" {
 
 #if defined _WIN32 || defined __CYGWIN__
   #ifdef BUILDING_LIB
-    #define GB_PUBLIC __declspec(dllexport)
+    #define GBAPI __declspec(dllexport)
   #else
-    #define GB_PUBLIC __declspec(dllimport)
+    #define GBAPI __declspec(dllimport)
   #endif
 #else
   #ifdef BUILDING_LIB
-      #define GB_PUBLIC __attribute__ ((visibility ("default")))
+      #define GBAPI __attribute__ ((visibility ("default")))
   #else
-      #define GB_PUBLIC
+      #define GBAPI
   #endif
 #endif
 
@@ -377,21 +377,6 @@ struct GB_RomInfo {
     uint32_t rom_size;
     uint32_t ram_size;
     uint8_t mbc_flags; /* flags ored together */
-};
-
-// todo: ensure packed to 2 bytes (uint16_t).
-struct GB_Colour {
-#if GB_ENDIAN == GB_LITTLE_ENDIAN
-    uint8_t r:5;
-    uint8_t g:5;
-    uint8_t b:5;
-    uint8_t _pad[1];
-#else
-    uint8_t _pad[1];
-    uint8_t b:5;
-    uint8_t g:5;
-    uint8_t r:5;
-#endif /* GB_ENDIAN */
 };
 
 struct GB_BgAttributes {

@@ -102,12 +102,12 @@ bool GB_get_cart_ram_size(uint8_t type, uint32_t* size) {
     // i think that more ram sizes are valid, however
     // i have yet to see a ram size bigger than this...
     const uint32_t GB_CART_RAM_SIZES[6] = {
-        GB_SAVE_SIZE_NONE   /*0*/,
-        GB_SAVE_SIZE_1      /*0x800*/,
-        GB_SAVE_SIZE_2      /*0x2000*/,
-        GB_SAVE_SIZE_3      /*0x8000*/,
-        GB_SAVE_SIZE_4      /*0x20000*/,
-        GB_SAVE_SIZE_5      /*0x10000*/,
+        [0] = GB_SAVE_SIZE_NONE   /*0*/,
+        [1] = GB_SAVE_SIZE_1      /*0x800*/,
+        [2] = GB_SAVE_SIZE_2      /*0x2000*/,
+        [3] = GB_SAVE_SIZE_3      /*0x8000*/,
+        [4] = GB_SAVE_SIZE_4      /*0x20000*/,
+        [5] = GB_SAVE_SIZE_5      /*0x10000*/,
     };
 
     assert(type < GB_ARR_SIZE(GB_CART_RAM_SIZES) && "OOB type access!");
@@ -116,9 +116,9 @@ bool GB_get_cart_ram_size(uint8_t type, uint32_t* size) {
         return false;
     }
 
-    if (type == 1) {
-        printf("ram size is 0x800, this will break mapped ram!\n");
-        assert(type != 1);
+    if (type == 5) {
+        printf("ram is of type GB_SAVE_SIZE_5, finally found a game that uses this!\n");
+        assert(type != 5);
         return false;
     }
 
