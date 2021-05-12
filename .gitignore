@@ -32,38 +32,7 @@
 *.app
 
 # my ignores
-build
 .vscode/
-roms/
-unused/
-tests/
-audio_dump.raw
-
-# VS stuff
-msvc/.*
-msvc/packages
-msvc/Debug
-msvc/Release
-msvc/x64
-msvc/tempboy/Release
-msvc/tempboy/Debug
-msvc/tempboy/x64
-*.tlog
-*.log
-
-# wasm
-output.html
-output.wasm
-output.js
-
-build_*/
-old_code/
-*.geany
-run.sh
-
-# imgui stuff
-*imgui.ini
-imgui_demo.cpp
-
-#
+build*/
 .cache
+run.sh

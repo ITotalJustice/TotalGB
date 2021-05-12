@@ -1,1 +1,0 @@
-#include "sdl2_emscripten.h"
