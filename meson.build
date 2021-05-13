@@ -87,25 +87,25 @@ if host_machine.endian() == 'little'
 elif
 endif
 
-if get_option('gb-debug') == true
+if get_option('debug') == true
     c_flags += '-DGB_DEBUG=1'
 endif
 
-if get_option('gb-builtin-palette') == false
+if get_option('builtin-palette') == false
     c_flags += '-DGB_NO_BUILTIN_PALETTE=1'
 endif
 
-if get_option('gb-sram-size') == 0
+if get_option('sram-size') == 0
     c_flags += '-DGB_MAX_SRAM_SIZE=0'
-elif get_option('gb-sram-size') == 1
+elif get_option('sram-size') == 1
     c_flags += '-DGB_MAX_SRAM_SIZE=1'
-elif get_option('gb-sram-size') == 2
+elif get_option('sram-size') == 2
     c_flags += '-DGB_MAX_SRAM_SIZE=2'
-elif get_option('gb-sram-size') == 3
+elif get_option('sram-size') == 3
     c_flags += '-DGB_MAX_SRAM_SIZE=3'
-elif get_option('gb-sram-size') == 4
+elif get_option('sram-size') == 4
     c_flags += '-DGB_MAX_SRAM_SIZE=4'
-elif get_option('gb-sram-size') == 5
+elif get_option('sram-size') == 5
     c_flags += '-DGB_MAX_SRAM_SIZE=5'
 endif
 
