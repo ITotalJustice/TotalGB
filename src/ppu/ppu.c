@@ -222,17 +222,26 @@ void GB_ppu_run(struct GB_Core* gb, uint16_t cycles) {
 
         case STATUS_MODE_VBLANK:
             ++IO_LY;
-            GB_compare_LYC(gb);
-            gb->ppu.next_cycles += 456;
-
-            if (UNLIKELY(IO_LY == 153)) {
-                gb->ppu.window_line = 0;
-                gb->ppu.next_cycles -= 456;
+            
+            // there is a bug in which on line 153, LY=153 only lasts
+            // for 4-Tcycles.
+            if (IO_LY == 153) {
+                gb->ppu.next_cycles += 4;
+                GB_compare_LYC(gb);
+            }
+            else if (IO_LY == 154) {
+                gb->ppu.next_cycles += 452;
                 IO_LY = 0;
                 GB_compare_LYC(gb);
+            }
+            else if (IO_LY == 1) {
+                IO_LY = 0;
                 GB_change_status_mode(gb, STATUS_MODE_SPRITE);
             }
-
+            else {
+                gb->ppu.next_cycles += 456;
+                GB_compare_LYC(gb);
+            }
             break;
 
         case STATUS_MODE_SPRITE:
