@@ -199,8 +199,7 @@ void GB_on_lcdc_write(struct GB_Core* gb, const uint8_t value) {
     // check if the game wants to re-enable the lcd
     else if (!GB_is_lcd_enabled(gb) && (value & 0x80)) {
         // i think the ppu starts again in vblank
-        IO_STAT |= 0x1;
-        // i'm not sure on this...
+        IO_STAT |= STATUS_MODE_VBLANK;
         GB_compare_LYC(gb);
         GB_log("enabling ppu!\n");
     }
@@ -230,7 +229,8 @@ void GB_ppu_run(struct GB_Core* gb, uint16_t cycles) {
 
             if (UNLIKELY(IO_LY == 144)) {
                 GB_change_status_mode(gb, STATUS_MODE_VBLANK);
-            } else {
+            }
+            else {
                 GB_change_status_mode(gb, STATUS_MODE_SPRITE);
             }
             break;
@@ -247,6 +247,7 @@ void GB_ppu_run(struct GB_Core* gb, uint16_t cycles) {
             else if (IO_LY == 154) {
                 gb->ppu.next_cycles += 452;
                 IO_LY = 0;
+                gb->ppu.window_line = 0;
                 GB_compare_LYC(gb);
             }
             else if (IO_LY == 1) {
@@ -308,7 +309,7 @@ void GB_draw_scanline(struct GB_Core* gb) {
     if (!gb->pixels || !gb->pitch) {
         return;
     }
-    
+
     switch (GB_get_system_type(gb)) {
         case GB_SYSTEM_TYPE_DMG:
             DMG_render_scanline(gb);
