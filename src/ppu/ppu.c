@@ -15,6 +15,21 @@ const uint8_t PIXEL_BIT_GROW[] = {
 };
 
 
+struct GB_Pixels get_pixels_at_scanline(struct GB_Core* gb, uint8_t ly) {
+    assert(gb && gb->pixels && gb->pitch);
+    assert(ly <= 144);
+
+    return (struct GB_Pixels){
+#if GB_PIXEL_STRIDE == 8
+    ((uint8_t*)gb->pixels) + (gb->pitch * ly)
+#elif GB_PIXEL_STRIDE == 16
+    ((uint16_t*)gb->pixels) + (gb->pitch * ly)
+#elif GB_PIXEL_STRIDE == 32
+    ((uint32_t*)gb->pixels) + (gb->pitch * ly)
+#endif
+    };
+}
+
 uint8_t GB_vram_read(const struct GB_Core* gb,
     const uint16_t addr, const uint8_t bank
 ) {
@@ -289,6 +304,11 @@ bool GB_is_render_layer_enabled(const struct GB_Core* gb,
 }
 
 void GB_draw_scanline(struct GB_Core* gb) {
+    // check if the user has set any pixels, if not, skip rendering!
+    if (!gb->pixels || !gb->pitch) {
+        return;
+    }
+    
     switch (GB_get_system_type(gb)) {
         case GB_SYSTEM_TYPE_DMG:
             DMG_render_scanline(gb);

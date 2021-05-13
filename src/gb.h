@@ -12,6 +12,10 @@ GBAPI bool GB_init(struct GB_Core* gb);
 GBAPI void GB_quit(struct GB_Core* gb);
 GBAPI void GB_reset(struct GB_Core* gb);
 
+// set the pixels that the game will render to
+// IMPORTANT: if pixels == NULL, then no rendering will happen!
+GBAPI void GB_set_pixels(struct GB_Core* gb, void* pixels, uint32_t pitch);
+
 // pass the fully loaded rom data.
 // this memory is NOT owned.
 // freeing the memory should still be handled by the caller!

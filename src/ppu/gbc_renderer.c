@@ -201,7 +201,9 @@ static inline void render_scanline_bg(struct GB_Core* gb,
     // array maps
     const uint8_t* vram_map = &gb->ppu.vram[0][(GB_get_bg_map_select(gb) + (tile_y << 5)) & 0x1FFF];
     const struct GB_BgAttributes* attribute_map = (struct GB_BgAttributes*)&gb->ppu.vram[1][(GB_get_bg_map_select(gb) + (tile_y << 5)) & 0x1FFF];
-    uint16_t* pixels = gb->ppu.pixles[scanline];
+    
+    struct GB_Pixels pixels = get_pixels_at_scanline(gb, scanline);
+
 
     for (uint8_t tile_x = 0; tile_x <= 20; ++tile_x) {
         // calc the map index
@@ -234,7 +236,7 @@ static inline void render_scanline_bg(struct GB_Core* gb,
             prio_buffer->prio[pixel_x] = attributes.priority;
             prio_buffer->colour_id[pixel_x] = colour_id;
 
-            pixels[pixel_x] = gb->ppu.bg_colours[attributes.pal][colour_id];
+            pixels.p[pixel_x] = gb->ppu.bg_colours[attributes.pal][colour_id];
         }
     }
 }
@@ -253,7 +255,9 @@ static inline void render_scanline_win(struct GB_Core* gb,
 
     const uint8_t *vram_map = &gb->ppu.vram[0][(GB_get_win_map_select(gb) + (tile_y << 5)) & 0x1FFF];
     const struct GB_BgAttributes* attribute_map = (struct GB_BgAttributes*)&gb->ppu.vram[1][(GB_get_win_map_select(gb) + (tile_y << 5)) & 0x1FFF];
-    uint16_t* pixels = gb->ppu.pixles[scanline];
+
+    struct GB_Pixels pixels = get_pixels_at_scanline(gb, scanline);
+
 
     for (uint8_t tile_x = 0; tile_x <= base_tile_x; ++tile_x) {
 
@@ -285,7 +289,7 @@ static inline void render_scanline_win(struct GB_Core* gb,
             prio_buffer->prio[pixel_x] = attributes.priority;
             prio_buffer->colour_id[pixel_x] = colour_id;
 
-            pixels[pixel_x] = gb->ppu.bg_colours[attributes.pal][colour_id];
+            pixels.p[pixel_x] = gb->ppu.bg_colours[attributes.pal][colour_id];
         }
     }
 
@@ -304,7 +308,8 @@ static inline void render_scanline_obj(struct GB_Core* gb,
     const bool bg_prio = (IO_LCDC & 0x1) > 0;
 
     //
-    uint16_t* pixels = gb->ppu.pixles[scanline];
+    struct GB_Pixels pixels = get_pixels_at_scanline(gb, scanline);
+
     const struct GB_Sprite* sprites = (const struct GB_Sprite*)gb->ppu.oam;
 
     // gbc uses oam prio rather than x-pos
@@ -372,14 +377,14 @@ static inline void render_scanline_obj(struct GB_Core* gb,
                 oam_priority[x_index] = true;
 
                 // write the pixel (finally!)
-                pixels[x_index] = gb->ppu.obj_colours[sprites[i].flag.pal_gbc][colour_id];
+                pixels.p[x_index] = gb->ppu.obj_colours[sprites[i].flag.pal_gbc][colour_id];
             }
         }
     }
 }
 
 static inline void update_colours(
-    bool dirty[8], uint16_t map[8][4], const uint8_t palette_mem[64]
+    bool dirty[8], uint32_t map[8][4], const uint8_t palette_mem[64]
 ) {
     for (uint8_t palette = 0; palette < 8; ++palette) {
         if (dirty[palette] == true) {

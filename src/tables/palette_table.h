@@ -28,14 +28,14 @@ enum GB_CustomPalette {
 };
 
 struct GB_PaletteEntry {
-    uint16_t BG[4];
-    uint16_t OBJ0[4];
-    uint16_t OBJ1[4];
+    uint32_t BG[4];
+    uint32_t OBJ0[4];
+    uint32_t OBJ1[4];
 };
 
 struct GB_PalettePreviewShades {
-    uint16_t shade1;
-    uint16_t shade2;
+    uint32_t shade1;
+    uint32_t shade2;
 };
 
 /* RETURNS: */

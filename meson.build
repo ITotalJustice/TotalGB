@@ -74,6 +74,14 @@ lib_args = [
   '-DBUILDING_LIB',
 ]
 
+if get_option('pixel-stride') == '8'
+  c_flags += '-DGB_PIXEL_STRIDE=8'
+elif get_option('pixel-stride') == '16'
+  c_flags += '-DGB_PIXEL_STRIDE=16'
+elif get_option('pixel-stride') == '32'
+  c_flags += '-DGB_PIXEL_STRIDE=32'
+endif
+
 # todo: setup the endianness
 if host_machine.endian() == 'little'
 elif

@@ -36,6 +36,20 @@ void DMG_render_scanline(struct GB_Core* gb);
 void GBC_render_scanline(struct GB_Core* gb);
 void SGB_render_scanline(struct GB_Core* gb);
 
+struct GB_Pixels {
+#if GB_PIXEL_STRIDE == 8
+    uint8_t* p;
+#elif GB_PIXEL_STRIDE == 16
+    uint16_t* p;
+#elif GB_PIXEL_STRIDE == 32
+    uint32_t* p;
+#else
+    #error "invalid GB_PIXEL_STRIDE! Use 8,16,32"
+#endif
+};
+
+struct GB_Pixels get_pixels_at_scanline(struct GB_Core* gb, uint8_t ly);
+
 #ifdef __cplusplus
 }
 #endif

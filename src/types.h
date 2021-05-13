@@ -453,13 +453,12 @@ struct GB_Cpu {
 
 struct GB_Ppu {
     int16_t next_cycles;
-    uint16_t pixles[GB_SCREEN_HEIGHT][GB_SCREEN_WIDTH]; // h*w
 
     uint8_t vram[2][0x2000]; // 2 banks of 8kb
     uint8_t oam[0xA0]; // sprite mem
 
-    uint16_t bg_colours[8][4]; // calculate the colours from the palette once.
-    uint16_t obj_colours[8][4];
+    uint32_t bg_colours[8][4]; // calculate the colours from the palette once.
+    uint32_t obj_colours[8][4];
 
     // these are set when a hdma occurs (not a DMA or GDMA)
     uint16_t hdma_src_addr;
@@ -472,6 +471,7 @@ struct GB_Ppu {
 
     uint8_t bg_palette[0x40]; // background palette memory.
     uint8_t obj_palette[0x40]; // sprite palette memory.
+
     bool dirty_bg[8]; // only update the colours if the palette changes values.
     bool dirty_obj[8];
 };
@@ -526,6 +526,7 @@ struct GB_Timer {
     int16_t next_cycles;
 };
 
+// TODO: REMOVE ALL BITFIELDS!
 struct GB_ApuSquare1 {
     struct {
         uint8_t sweep_period : 3;
@@ -731,7 +732,7 @@ struct GB_Apu {
     enum GB_AudioCallbackMode sample_mode;
 };
 
-// todo: this struct needs to be re-organised.
+// TODO: this struct needs to be re-organised.
 // atm, i've just been dumping vars in here as one big container,
 // which works fine, though, it's starting to get messy, and could be
 // *slightly* optimised by putting common accessed vars next to each other.
@@ -759,6 +760,10 @@ struct GB_Core {
 
     struct GB_Config config;
 
+    void* pixels;
+    uint32_t pitch;
+
+    // TODO: only have 1 user data ptr, not per callback!!!
     GB_apu_callback_t apu_cb;
     void* apu_cb_user_data;
 

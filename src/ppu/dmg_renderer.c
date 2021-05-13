@@ -11,7 +11,7 @@ static inline uint16_t calculate_col_from_palette(const uint8_t palette, const u
     return ((palette >> (colour << 1)) & 3);
 }
 
-static inline void update_colours(uint16_t colours[4], const uint16_t pal_colours[4], const uint8_t palette, bool* dirty) {
+static inline void update_colours(uint32_t colours[4], const uint32_t pal_colours[4], const uint8_t palette, bool* dirty) {
     assert(colours && pal_colours && dirty);
 
     if (*dirty) {
@@ -42,7 +42,7 @@ static inline void render_scanline_bg(struct GB_Core* gb) {
 
     const uint8_t* bit = PIXEL_BIT_SHRINK;
     const uint8_t *vram_map = &gb->ppu.vram[0][(GB_get_bg_map_select(gb) + (tile_y << 5)) & 0x1FFF];
-    uint16_t* pixels = gb->ppu.pixles[scanline];
+    struct GB_Pixels pixels = get_pixels_at_scanline(gb, scanline);
 
     for (uint8_t tile_x = 0; tile_x <= 20; ++tile_x) {
         const uint8_t map_x = ((base_tile_x + tile_x) & 31);
@@ -60,7 +60,7 @@ static inline void render_scanline_bg(struct GB_Core* gb) {
             }
 
             const uint8_t pixel = ((!!(byte_b & bit[x])) << 1) | (!!(byte_a & bit[x]));
-            pixels[pixel_x] = gb->ppu.bg_colours[0][pixel];
+            pixels.p[pixel_x] = gb->ppu.bg_colours[0][pixel];
         }
     }
 }
@@ -77,7 +77,7 @@ static inline void render_scanline_win(struct GB_Core* gb) {
 
     const uint8_t* bit = PIXEL_BIT_SHRINK;
     const uint8_t *vram_map = &gb->ppu.vram[0][(GB_get_win_map_select(gb) + (tile_y << 5)) & 0x1FFF];
-    uint16_t* pixels = gb->ppu.pixles[scanline];
+    struct GB_Pixels pixels = get_pixels_at_scanline(gb, scanline);
 
     for (uint8_t tile_x = 0; tile_x <= base_tile_x; ++tile_x) {
         const uint8_t tile_num = vram_map[tile_x];
@@ -95,7 +95,7 @@ static inline void render_scanline_win(struct GB_Core* gb) {
             did_draw |= true;
 
             const uint8_t pixel = ((!!(byte_b & bit[x])) << 1) | (!!(byte_a & bit[x]));
-            pixels[pixel_x] = gb->ppu.bg_colours[0][pixel];
+            pixels.p[pixel_x] = gb->ppu.bg_colours[0][pixel];
         }
     }
 
@@ -123,7 +123,7 @@ static inline void render_scanline_obj(struct GB_Core* gb) {
     const uint8_t scanline = IO_LY;
     const uint8_t sprite_size = GB_get_sprite_size(gb);
     const uint16_t bg_trans_col = gb->ppu.bg_colours[0][0];
-    uint16_t* pixels = gb->ppu.pixles[scanline];
+    struct GB_Pixels pixels = get_pixels_at_scanline(gb, scanline);
 
     struct GB_Sprite sprites[40];
     memcpy(sprites, gb->ppu.oam, sizeof(struct GB_Sprite) * 40);
@@ -161,7 +161,7 @@ static inline void render_scanline_obj(struct GB_Core* gb) {
                 }
 
                 // handle prio
-                if (sprite.flag.priority && pixels[x_index] != bg_trans_col) {
+                if (sprite.flag.priority && pixels.p[x_index] != bg_trans_col) {
                     continue;
                 }
 
@@ -171,7 +171,7 @@ static inline void render_scanline_obj(struct GB_Core* gb) {
                     continue;
                 }
 
-                pixels[x_index] = gb->ppu.obj_colours[sprite.flag.pal_gb][pixel];
+                pixels.p[x_index] = gb->ppu.obj_colours[sprite.flag.pal_gb][pixel];
             }
         }
     }

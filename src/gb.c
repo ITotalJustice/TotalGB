@@ -61,7 +61,6 @@ void GB_reset(struct GB_Core* gb) {
     memset(gb->ppu.vram, 0, sizeof(gb->ppu.vram));
     memset(gb->ppu.bg_palette, 0, sizeof(gb->ppu.bg_palette));
     memset(gb->ppu.obj_palette, 0, sizeof(gb->ppu.obj_palette));
-    memset(gb->ppu.pixles, 0, sizeof(gb->ppu.pixles));
     memset(gb->ppu.bg_colours, 0, sizeof(gb->ppu.bg_colours));
     memset(gb->ppu.obj_colours, 0, sizeof(gb->ppu.obj_colours));
     memset(gb->ppu.dirty_bg, 0, sizeof(gb->ppu.dirty_bg));
@@ -346,6 +345,11 @@ static void GB_setup_palette(struct GB_Core* gb, const struct GB_CartHeader* hea
             GB_set_palette_from_palette(gb, &palette);
         }
     }
+}
+
+void GB_set_pixels(struct GB_Core* gb, void* pixels, uint32_t pitch) {
+    gb->pixels = pixels;
+    gb->pitch = pitch;
 }
 
 bool GB_loadrom(struct GB_Core* gb, const uint8_t* data, size_t size) {
