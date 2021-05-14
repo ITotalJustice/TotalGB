@@ -66,6 +66,8 @@ source = files([
     'src/sgb.c',
     'src/accessories/printer.c',
     'src/tables/palette_table.c',
+    'src/extras/zrom.c',
+    'src/extras/lz4.c',
 ])
 
 # These arguments are only used to build the shared library
@@ -93,6 +95,11 @@ endif
 
 if get_option('builtin-palette') == false
     c_flags += '-DGB_NO_BUILTIN_PALETTE=1'
+endif
+
+if get_option('zrom') == true
+  source += 'src/extras/zrom.c'
+  source += 'src/extras/lz4.c'
 endif
 
 if get_option('sram-size') == 0
@@ -134,6 +141,9 @@ test_dep = declare_dependency(
 install_headers('src/gb.h', subdir : 'TotalGB')
 install_headers('src/types.h', subdir : 'TotalGB')
 install_headers('src/tables/palette_table.h', subdir : 'TotalGB/tables')
+if get_option('zrom') == true
+  install_headers('src/extras/zrom.h', subdir : 'TotalGB/extras')
+endif
 
 pkg_mod = import('pkgconfig')
 pkg_mod.generate(

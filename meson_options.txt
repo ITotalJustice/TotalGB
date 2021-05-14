@@ -4,11 +4,13 @@ option('builtin-palette', type : 'boolean', value : true)
 
 option('sram-size', type : 'integer', min : 0, max : 5, value : 5)
 
+option('zrom', type : 'boolean', value : true)
+
 option('pixel-stride', type : 'combo',
-    choices : [
-      '8',
-      '16',
-      '32',
-    ],
-    value : '16',
-    description : 'Select pixel stride [Default : 16]')
+  choices : [
+    '8',
+    '16',
+    '32',
+  ],
+  value : '16',
+  description : 'Select pixel stride [Default : 16]')
