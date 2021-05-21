@@ -40,7 +40,7 @@ c_warnings = [
   '-Winline',
 ]
 
-source = files([
+sources = files([
     'src/gb.c',
     'src/cpu.c',
     'src/bus.c',
@@ -67,6 +67,10 @@ source = files([
     'src/accessories/printer.c',
     'src/tables/palette_table.c',
 ])
+
+include_dirs = include_directories(
+    '.',
+)
 
 # These arguments are only used to build the shared library
 # not the executables that use the library.
@@ -109,39 +113,38 @@ elif get_option('sram-size') == 5
     c_flags += '-DGB_MAX_SRAM_SIZE=5'
 endif
 
-shlib = shared_library(
-  'TotalGB', source,
-  install : true,
-  c_args : [lib_args, c_warnings, c_flags],
-  gnu_symbol_visibility : 'hidden',
+TotalGB = library('TotalGB',
+    sources,
+    include_directories: include_dirs,
+    c_args : [lib_args, c_warnings, c_flags],
+    gnu_symbol_visibility : 'hidden',
+)
+
+TotalGB_dep = declare_dependency(
+    include_directories: include_dirs,
+    link_with: TotalGB
 )
 
 test_sanity_exe = executable(
   'args_test', 'tests/sanity.c',
-  link_with : shlib
+  link_with : TotalGB
 )
 
 test('sanity', test_sanity_exe)
 
-# Make this library usable as a Meson subproject.
-test_dep = declare_dependency(
-  include_directories: include_directories('src'),
-  link_with : shlib
-)
-
-# Make this library usable from the system's
-# package manager.
+# Make this library usable from the system's package manager.
 install_headers('src/gb.h', subdir : 'TotalGB')
 install_headers('src/types.h', subdir : 'TotalGB')
 install_headers('src/tables/palette_table.h', subdir : 'TotalGB/tables')
 
 pkg_mod = import('pkgconfig')
+
 pkg_mod.generate(
   name : 'TotalGB',
   filebase : 'TotalGB',
   description : '[GB, GBC] emulator core!',
   subdirs : 'TotalGB',
-  libraries : shlib,
+  libraries : TotalGB,
   version : '0.0.1',
 )
 
