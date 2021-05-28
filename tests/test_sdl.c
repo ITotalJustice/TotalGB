@@ -57,8 +57,8 @@ static void on_key_event(const SDL_KeyboardEvent* e)
 
     switch (e->keysym.scancode)
     {
-        case SDL_SCANCODE_X:        GB_set_buttons(&gameboy, GB_BUTTON_B, down);        break;
-        case SDL_SCANCODE_Z:        GB_set_buttons(&gameboy, GB_BUTTON_A, down);        break;
+        case SDL_SCANCODE_X:        GB_set_buttons(&gameboy, GB_BUTTON_A, down);        break;
+        case SDL_SCANCODE_Z:        GB_set_buttons(&gameboy, GB_BUTTON_B, down);        break;
         case SDL_SCANCODE_RETURN:   GB_set_buttons(&gameboy, GB_BUTTON_START, down);    break;
         case SDL_SCANCODE_SPACE:    GB_set_buttons(&gameboy, GB_BUTTON_SELECT, down);   break;
         case SDL_SCANCODE_UP:       GB_set_buttons(&gameboy, GB_BUTTON_UP, down);       break;
@@ -149,7 +149,8 @@ int main(int argc, char** argv)
         goto fail;
     }
 
-    renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC);
+    renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED);
+    // renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC);
 
     if (!renderer)
     {

@@ -120,10 +120,6 @@ void perform_hdma(struct GB_Core* gb) {
     if (gb->ppu.hdma_length == 0) {
         gb->ppu.hdma_length = 0;
 
-        IO_HDMA1 = 0xFF;
-        IO_HDMA2 = 0xFF;
-        IO_HDMA3 = 0xFF;
-        IO_HDMA4 = 0xFF;
         IO_HDMA5 = 0xFF;
     }
 }
@@ -135,7 +131,7 @@ uint8_t GB_hdma5_read(const struct GB_Core* gb) {
 void GB_hdma5_write(struct GB_Core* gb, uint8_t value) {
     // the lower 4-bits of both address are ignored
     const uint16_t dma_src = (IO_HDMA1 << 8) | (IO_HDMA2 & 0xF0);
-    const uint16_t dma_dst = (IO_HDMA3 << 8) | (IO_HDMA4 & 0xF0);
+    const uint16_t dma_dst = ((IO_HDMA3 & 0x7F) << 8) | (IO_HDMA4 & 0xF0);
 
     // lower 6-bits are the length + 1 * 0x10
     const uint16_t dma_len = ((value & 0x7F) + 1) << 4;
@@ -172,10 +168,6 @@ void GB_hdma5_write(struct GB_Core* gb, uint8_t value) {
 
         // it's unclear if all HDMA regs are set to 0xFF post transfer,
         // HDMA5 is, but not sure about the rest.
-        IO_HDMA1 = 0xFF;
-        IO_HDMA2 = 0xFF;
-        IO_HDMA3 = 0xFF;
-        IO_HDMA4 = 0xFF;
         IO_HDMA5 = 0xFF;
     }
     else {
