@@ -12,6 +12,8 @@ static void* rom_data = NULL;
 static size_t rom_size = 0;
 static bool running = true;
 static int scale = 2;
+static int speed = 1;
+static int frameskip_counter = 0;
 
 static SDL_Window* window = NULL;
 static SDL_Renderer* renderer = NULL;
@@ -20,7 +22,10 @@ static SDL_Texture* texture = NULL;
 
 static void run()
 {
-    GB_run_frame(&gameboy);
+    for (int i = 0; i < speed; ++i)
+    {
+        GB_run_frame(&gameboy);
+    }
 }
 
 static void resize_screen()
@@ -49,6 +54,18 @@ static void on_key_event(const SDL_KeyboardEvent* e)
             case SDL_SCANCODE_KP_MINUS:
                 scale = scale > 0 ? scale - 1 : 1;
                 resize_screen();
+                break;
+
+            case SDL_SCANCODE_1:
+            case SDL_SCANCODE_2:
+            case SDL_SCANCODE_3:
+            case SDL_SCANCODE_4:
+            case SDL_SCANCODE_5:
+            case SDL_SCANCODE_6:
+            case SDL_SCANCODE_7:
+            case SDL_SCANCODE_8:
+            case SDL_SCANCODE_9:
+                speed = (e->keysym.scancode - SDL_SCANCODE_1) + 1;
                 break;
         }
 
@@ -98,11 +115,18 @@ static void events()
 
 static void core_on_vblank(struct GB_Core* gb, void* user)
 {
-    void* pixels; int pitch;
+    ++frameskip_counter;
 
-    SDL_LockTexture(texture, NULL, &pixels, &pitch);
-    memcpy(pixels, core_pixels, sizeof(core_pixels));
-    SDL_UnlockTexture(texture);
+    if (frameskip_counter >= speed)
+    {
+        void* pixels; int pitch;
+
+        SDL_LockTexture(texture, NULL, &pixels, &pitch);
+        memcpy(pixels, core_pixels, sizeof(core_pixels));
+        SDL_UnlockTexture(texture);
+
+        frameskip_counter = 0;
+    }
 }
 
 static void render()
@@ -149,8 +173,7 @@ int main(int argc, char** argv)
         goto fail;
     }
 
-    renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED);
-    // renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC);
+    renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC);
 
     if (!renderer)
     {

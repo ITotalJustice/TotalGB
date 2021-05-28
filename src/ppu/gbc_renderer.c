@@ -130,11 +130,11 @@ uint8_t GB_hdma5_read(const struct GB_Core* gb) {
 
 void GB_hdma5_write(struct GB_Core* gb, uint8_t value) {
     // the lower 4-bits of both address are ignored
-    const uint16_t dma_src = (IO_HDMA1 << 8) | (IO_HDMA2 & 0xF0);
-    const uint16_t dma_dst = ((IO_HDMA3 & 0x7F) << 8) | (IO_HDMA4 & 0xF0);
+    const uint16_t dma_src = ((IO_HDMA1 << 8) | IO_HDMA2) & 0xFFF0;
+    const uint16_t dma_dst = ((IO_HDMA3 << 8) | IO_HDMA4) & 0x7FF0;
 
     // lower 6-bits are the length + 1 * 0x10
-    const uint16_t dma_len = ((value & 0x7F) + 1) << 4;
+    const uint16_t dma_len = ((value & 0x7F) + 1) * 0x10;
 
     // by checking bit-7 of value, it returns the type of dma to perform.
     const uint8_t mode = value & 0x80;
@@ -148,20 +148,18 @@ void GB_hdma5_write(struct GB_Core* gb, uint8_t value) {
         // setting bit-7 = 0 whilst a HDMA is currently active
         // actually disables that transfer
         if (GB_is_hdma_active(gb) == true) {
-            gb->ppu.hdma_length = 0;
             IO_HDMA5 = ((gb->ppu.hdma_length >> 4) - 1) | 0x80;
+            gb->ppu.hdma_length = 0;
 
             // do not perform GDMA after, this only cancels the active
             // transfer and sets HDMA5.
+            printf("cancle\n");
             return;
         }
 
         // GDMA are performed immediately
         for (uint16_t i = 0; i < dma_len; ++i) {
-            hdma_write(gb,
-                dma_dst + i, // dst
-                hdma_read(gb, dma_src + i) // value
-            );
+            hdma_write(gb, dma_dst + i, hdma_read(gb, dma_src + i));
         }
 
         gb->cpu.cycles += (value & 0x7F) + 1;
