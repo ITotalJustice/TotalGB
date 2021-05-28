@@ -6,7 +6,6 @@
 #endif // GB_DEBUG
 
 #include <assert.h>
-#include <stdio.h>
 
 
 #ifdef GB_DEBUG
@@ -859,9 +858,9 @@ static inline void STOP(struct GB_Core* gb) {
     // STOP is a 2-byte instruction, 0x10 | 0x00
     const uint8_t next_byte = read8(REG_PC++);
     if (next_byte == 0x00) {
-        printf("[CPU-STOP] next byte is 0x00, this is valid!\n");
+        GB_log("[CPU-STOP] next byte is 0x00, this is valid!\n");
     } else {
-        printf("[CPU-STOP] next byte is 0x%02X, this is NOT valid!\n", next_byte);
+        GB_log("[CPU-STOP] next byte is 0x%02X, this is NOT valid!\n", next_byte);
     }
 
     gb->cpu.cycles += 2050;
@@ -937,7 +936,7 @@ static inline void GB_execute(struct GB_Core* gb) {
     #ifdef GB_DEBUG
     if (CPU_LOG) {
         const opcode_t debug_op = CYCLE_TABLE_DEBUG[opcode];
-        printf("[CPU] [OP_CODE 0x%02X] %s %s %s\n", opcode, debug_op.name, debug_op.group, debug_op.flags);
+        GB_log("[CPU] [OP_CODE 0x%02X] %s %s %s\n", opcode, debug_op.name, debug_op.group, debug_op.flags);
         if (opcode == 0x20) {
             putchar('\n');
         }
@@ -1116,7 +1115,7 @@ static inline void GB_execute_cb(struct GB_Core* gb) {
     #ifdef GB_DEBUG
     if (CPU_LOG) {
         const opcode_t debug_op = CYCLE_TABLE_DEBUG[opcode];
-        printf("[CPU] [OP_CODE 0x%02X] %s %s %s\n", opcode, debug_op.name, debug_op.group, debug_op.flags);
+        GB_log("[CPU] [OP_CODE 0x%02X] %s %s %s\n", opcode, debug_op.name, debug_op.group, debug_op.flags);
     }
     #endif // GB_DEBUG
 

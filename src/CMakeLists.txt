@@ -1,3 +1,6 @@
+cmake_minimum_required(VERSION 3.13.4)
+
+
 add_library(TotalGB
     gb.c
     cpu.c
@@ -31,8 +34,10 @@ target_include_directories(TotalGB PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 set(CMAKE_C_STANDARD 99)
 set(CMAKE_C_STANDARD_REQUIRED True)
 
+if (GB_DEBUG)
+    target_compile_definitions(TotalGB PRIVATE GB_DEBUG=1)
+endif()
+
 # TODO: learn how to have this be set by parent cmakefile
 # thats including this cmakelist
-add_compile_definitions(
-    GB_PIXEL_STRIDE=16
-)
+target_compile_definitions(TotalGB PRIVATE GB_PIXEL_STRIDE=16)

@@ -149,6 +149,8 @@ GBAPI uint8_t GB_cpu_get_register(const struct GB_Core* gb, enum GB_CpuRegisters
 GBAPI void GB_cpu_set_register_pair(struct GB_Core* gb, enum GB_CpuRegisterPairs pair, uint16_t value);
 GBAPI uint16_t GB_cpu_get_register_pair(const struct GB_Core* gb, enum GB_CpuRegisterPairs pair);
 
+GBAPI void GB_cpu_enable_log(const bool enable);
+
 #ifdef __cplusplus
 }
 #endif

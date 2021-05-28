@@ -65,12 +65,12 @@ void GB_bcpd_write(struct GB_Core* gb, uint8_t value) {
 
 uint8_t GBC_bcpd_read(struct GB_Core* gb) {
     const uint8_t index = get_bcps_index(gb);
-    return gb->ppu.bg_palette[index] | 0xC0;
+    return gb->ppu.bg_palette[index];
 }
 
 uint8_t GBC_ocpd_read(struct GB_Core* gb) {
     const uint8_t index = get_ocps_index(gb);
-    return gb->ppu.obj_palette[index] | 0xC0;
+    return gb->ppu.obj_palette[index];
 }
 
 void GB_ocpd_write(struct GB_Core* gb, uint8_t value) {

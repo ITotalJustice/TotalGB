@@ -169,25 +169,25 @@ static const char* cart_type_str(const uint8_t type) {
 }
 
 static void cart_header_print(const struct GB_CartHeader* header) {
-    printf("\nROM HEADER INFO\n");
+    GB_log("\nROM HEADER INFO\n");
 
     struct GB_CartName cart_name;
     GB_get_rom_name_from_header(header, &cart_name);
 
-    printf("\tTITLE: %s\n", cart_name.name);
-    printf("\tNEW LICENSEE CODE: 0x%02X\n", header->new_licensee_code);
-    printf("\tSGB FLAG: 0x%02X\n", header->sgb_flag);
-    printf("\tCART TYPE: %s\n", cart_type_str(header->cart_type));
-    printf("\tCART TYPE VALUE: 0x%02X\n", header->cart_type);
-    printf("\tROM SIZE: 0x%02X\n", header->rom_size);
-    printf("\tRAM SIZE: 0x%02X\n", header->ram_size);
-    printf("\tHEADER CHECKSUM: 0x%02X\n", header->header_checksum);
-    printf("\tGLOBAL CHECKSUM: 0x%04X\n", header->global_checksum);
+    GB_log("\tTITLE: %s\n", cart_name.name);
+    GB_log("\tNEW LICENSEE CODE: 0x%02X\n", header->new_licensee_code);
+    GB_log("\tSGB FLAG: 0x%02X\n", header->sgb_flag);
+    GB_log("\tCART TYPE: %s\n", cart_type_str(header->cart_type));
+    GB_log("\tCART TYPE VALUE: 0x%02X\n", header->cart_type);
+    GB_log("\tROM SIZE: 0x%02X\n", header->rom_size);
+    GB_log("\tRAM SIZE: 0x%02X\n", header->ram_size);
+    GB_log("\tHEADER CHECKSUM: 0x%02X\n", header->header_checksum);
+    GB_log("\tGLOBAL CHECKSUM: 0x%04X\n", header->global_checksum);
 
     uint8_t hash = 0, forth = 0;
     GB_get_rom_palette_hash_from_header(header, &hash, &forth);
-    printf("\tHASH: 0x%02X, 0x%02X\n", hash, forth);
-    putchar('\n');
+    GB_log("\tHASH: 0x%02X, 0x%02X\n", hash, forth);
+    GB_log("\n");
 }
 
 bool GB_get_rom_header_from_data(const uint8_t* data, struct GB_CartHeader* header) {
@@ -310,7 +310,7 @@ static const char* GB_get_system_type_string(const enum GB_SystemType type) {
 }
 
 static void GB_set_system_type(struct GB_Core* gb, const enum GB_SystemType type) {
-    printf("[INFO] setting system type to %s\n", GB_get_system_type_string(type));
+    GB_log("[INFO] setting system type to %s\n", GB_get_system_type_string(type));
     gb->system_type = type;
 }
 
@@ -399,7 +399,7 @@ bool GB_loadrom(struct GB_Core* gb, const uint8_t* data, size_t size) {
     if ((gbc_flag & GBC_ONLY) == GBC_ONLY) {
         // check if the user wants to force gbc mode
         if (gb->config.system_type_config == GB_SYSTEM_TYPE_CONFIG_DMG) {
-            printf("[ERROR] only GBC system supported but config forces DMG system!\n");
+            GB_log("[ERROR] only GBC system supported but config forces DMG system!\n");
             return false;
         }
 
@@ -427,7 +427,7 @@ bool GB_loadrom(struct GB_Core* gb, const uint8_t* data, size_t size) {
     else {
         // check if the user wants to force GBC mode
         if (gb->config.system_type_config == GB_SYSTEM_TYPE_CONFIG_GBC) {
-            printf("[ERROR] only DMG system supported but config forces GBC system!\n");
+            GB_log("[ERROR] only DMG system supported but config forces GBC system!\n");
             return false;
         }
 
@@ -443,14 +443,14 @@ bool GB_loadrom(struct GB_Core* gb, const uint8_t* data, size_t size) {
     // need to change the above if-else tree to support this
     // for now, try and detect SGB
     if (header->sgb_flag == SGB_FLAG && header->old_licensee_code == NEW_LICENSEE_USED) {
-        printf("[INFO] game supports SGB!\n");
+        GB_log("[INFO] game supports SGB!\n");
         // GB_set_system_type(gb, GB_SYSTEM_TYPE_SGB);
     }
 
     // try and setup the mbc, this also implicitly sets up
     // gbc mode
     if (!GB_setup_mbc(&gb->cart, header)) {
-        printf("failed to setup mbc!\n");
+        GB_log("failed to setup mbc!\n");
         return false;
     }
 
@@ -491,7 +491,7 @@ bool GB_savegame(const struct GB_Core* gb, struct GB_SaveData* save) {
     assert(gb && save);
 
     if (!GB_has_save(gb)) {
-        printf("[GB-ERROR] trying to savegame when cart doesn't support battery ram!\n");
+        GB_log("[GB-ERROR] trying to savegame when cart doesn't support battery ram!\n");
         return false;
     }
 
@@ -510,7 +510,7 @@ bool GB_loadsave(struct GB_Core* gb, const struct GB_SaveData* save) {
     assert(gb && save);
 
     if (!GB_has_save(gb)) {
-        printf("[GB-ERROR] trying to loadsave when cart doesn't support battery ram!\n");
+        GB_log("[GB-ERROR] trying to loadsave when cart doesn't support battery ram!\n");
         return false;
     }
 
@@ -526,7 +526,7 @@ bool GB_loadsave(struct GB_Core* gb, const struct GB_SaveData* save) {
     const uint32_t wanted_size = GB_calculate_savedata_size(gb);
     
     if (save->size != wanted_size) {
-        printf("[GB-ERROR] wrong wanted savesize. got: %u wanted %u\n", save->size, wanted_size);
+        GB_log("[GB-ERROR] wrong wanted savesize. got: %u wanted %u\n", save->size, wanted_size);
         return false;
     }
 
@@ -539,7 +539,7 @@ bool GB_loadsave(struct GB_Core* gb, const struct GB_SaveData* save) {
             // such as 0-59 for seconds...
             GB_set_rtc(gb, save->rtc);
         } else {
-            printf("[WARN] game supports RTC but no RTC was loaded when loading save!\n");
+            GB_log("[WARN] game supports RTC but no RTC was loaded when loading save!\n");
         }
     }
 
