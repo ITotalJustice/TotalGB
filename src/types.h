@@ -750,9 +750,7 @@ struct GB_Core {
     struct GB_Timer timer;
     struct GB_Joypad joypad;
 
-    // internal frame counter, range 0-59, then resets.
-    // mostly unused currently.
-    uint8_t frame_counter;
+    bool skip_next_frame;
 
     struct GB_PaletteEntry palette; /* default */
 

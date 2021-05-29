@@ -146,6 +146,11 @@ void GB_reset(struct GB_Core* gb) {
     }
 }
 
+void GB_skip_next_frame(struct GB_Core* gb)
+{
+    gb->skip_next_frame = true;
+}
+
 static const char* cart_type_str(const uint8_t type) {
     switch (type) {
         case 0x00:  return "ROM ONLY";                 case 0x19:  return "MBC5";
@@ -731,6 +736,9 @@ void GB_run_frame(struct GB_Core* gb) {
         cycles_elapsed += GB_run_step(gb);
 
     } while (cycles_elapsed < GB_FRAME_CPU_CYCLES);
+
+    // reset
+    gb->skip_next_frame = false;
 
     // check if we should update rtc using a switch so that
     // compiler warns if i add new enum entries...

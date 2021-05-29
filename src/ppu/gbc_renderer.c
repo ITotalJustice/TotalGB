@@ -350,7 +350,7 @@ static inline void render_scanline_obj(struct GB_Core* gb,
 
             // check if the sprite has a chance of being on screen
             // + 8 because thats the width of each sprite (8 pixels)
-            if ((sprite->x + 8) <= 0 || sprite->x >= GB_SCREEN_WIDTH)
+            if ((spx + 8) <= 0 || spx >= GB_SCREEN_WIDTH)
             {
                 continue;
             }

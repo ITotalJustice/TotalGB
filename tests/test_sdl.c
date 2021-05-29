@@ -24,6 +24,12 @@ static void run()
 {
     for (int i = 0; i < speed; ++i)
     {
+        // check if we should skip next frame
+        if (i + 1 != speed)
+        {
+            GB_skip_next_frame(&gameboy);
+        }
+
         GB_run_frame(&gameboy);
     }
 }
