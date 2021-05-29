@@ -22,45 +22,56 @@
 // at 60, it will finally tick the actual RTC.
 // if the RTC is disabled, then the RTC is not ticked...
 
-void GB_rtc_tick_frame(struct GB_Core* gb) {
+void GB_rtc_tick_frame(struct GB_Core* gb)
+{
     // check if we even have rtc?
-    if ((gb->cart.flags & MBC_FLAGS_RTC) == 0) {
+    if ((gb->cart.flags & MBC_FLAGS_RTC) == 0)
+    {
         return;
     }
 
-    enum GB_RtcFlags {
+    enum GB_RtcFlags
+    {
         OVERFLOW = 0x01,
         HALT = 0x40
     };
 
-    if ((gb->cart.rtc.DH & HALT) == HALT) {
+    if ((gb->cart.rtc.DH & HALT) == HALT)
+    {
         return;
     }
 
     // this is a bit sphagetii, but basically tick the lowest entry
     // if overflow, reset and tick the next one, then repeat...
     ++gb->cart.rtc.S;
-    if (gb->cart.rtc.S > 59) {
+    if (gb->cart.rtc.S > 59)
+    {
         gb->cart.rtc.S = 0;
 
         ++gb->cart.rtc.M;
-        if (gb->cart.rtc.M > 59) {
+        if (gb->cart.rtc.M > 59)
+        {
             gb->cart.rtc.M = 0;
 
             ++gb->cart.rtc.H;
-            if (gb->cart.rtc.H > 23) {
+            if (gb->cart.rtc.H > 23)
+            {
                 gb->cart.rtc.H = 0;
 
                 ++gb->cart.rtc.DL;
-                if (gb->cart.rtc.DL == 0) { // wrap around to 0
+                if (gb->cart.rtc.DL == 0)
+                { // wrap around to 0
                     gb->cart.rtc.DL = 0;
 
                     // if already set, we have overflowed the days counter!
                     // 0-511 days!
-                    if ((gb->cart.rtc.DH & OVERFLOW) == OVERFLOW) {
+                    if ((gb->cart.rtc.DH & OVERFLOW) == OVERFLOW)
+                    {
                         // set the overflow bit but keep bit-6!
                         gb->cart.rtc.DH = (gb->cart.rtc.DH & 0x40) | 0x80;
-                    } else {
+                    }
+                    else
+                    {
                         ++gb->cart.rtc.DH;
                     }
                 }
@@ -69,9 +80,11 @@ void GB_rtc_tick_frame(struct GB_Core* gb) {
     }
 }
 
-static inline void GB_mbc3_rtc_write(struct GB_Core* gb, uint8_t value) {
+static inline void GB_mbc3_rtc_write(struct GB_Core* gb, uint8_t value)
+{
     // TODO: cap the values so they aren't invalid!
-    switch (gb->cart.rtc_mapped_reg) {
+    switch (gb->cart.rtc_mapped_reg)
+    {
         case GB_RTC_MAPPED_REG_S: gb->cart.rtc.S = value; break;
         case GB_RTC_MAPPED_REG_M: gb->cart.rtc.M = value; break;
         case GB_RTC_MAPPED_REG_H: gb->cart.rtc.H = value; break;
@@ -80,10 +93,12 @@ static inline void GB_mbc3_rtc_write(struct GB_Core* gb, uint8_t value) {
     }
 }
 
-static inline void GB_speed_hack_map_rtc_reg(struct GB_Core* gb) {
+static inline void GB_speed_hack_map_rtc_reg(struct GB_Core* gb)
+{
     uint8_t* ptr = NULL;
 
-    switch (gb->cart.rtc_mapped_reg) {
+    switch (gb->cart.rtc_mapped_reg)
+    {
         case GB_RTC_MAPPED_REG_S: ptr = &gb->cart.rtc.S; break;
         case GB_RTC_MAPPED_REG_M: ptr = &gb->cart.rtc.M; break;
         case GB_RTC_MAPPED_REG_H: ptr = &gb->cart.rtc.H; break;
@@ -97,8 +112,10 @@ static inline void GB_speed_hack_map_rtc_reg(struct GB_Core* gb) {
     gb->mmap[0xB].mask = 0;
 }
 
-void GB_mbc3_write(struct GB_Core* gb, uint16_t addr, uint8_t value) {
-    switch ((addr >> 12) & 0xF) {
+void GB_mbc3_write(struct GB_Core* gb, uint16_t addr, uint8_t value)
+{
+    switch ((addr >> 12) & 0xF)
+    {
     // RAM / RTC REGISTER ENABLE
         case 0x0: case 0x1:
             gb->cart.ram_enabled = (value & 0x0F) == 0x0A;
@@ -114,14 +131,16 @@ void GB_mbc3_write(struct GB_Core* gb, uint16_t addr, uint8_t value) {
     // RAM BANK / RTC REGISTER
         case 0x4: case 0x5:
             // set bank 0-3
-            if (value <= 0x03) {
+            if (value <= 0x03)
+            {
                 // NOTE: can this be out of range?
                 gb->cart.ram_bank = value & 0x3;
                 gb->cart.in_ram = true;
                 GB_update_ram_banks(gb);
             }
             // if we have rtc and in range, set the mapped rtc reg
-            else if (GB_has_mbc_flags(gb, MBC_FLAGS_RTC) && value >= 0x08 && value <= 0x0C) {
+            else if (GB_has_mbc_flags(gb, MBC_FLAGS_RTC) && value >= 0x08 && value <= 0x0C)
+            {
                 gb->cart.rtc_mapped_reg = value - 0x08;
                 gb->cart.in_ram = false;
                 GB_speed_hack_map_rtc_reg(gb);
@@ -133,11 +152,14 @@ void GB_mbc3_write(struct GB_Core* gb, uint16_t addr, uint8_t value) {
             break;
 
         case 0xA: case 0xB:
-            if (GB_has_mbc_flags(gb, MBC_FLAGS_RAM) && gb->cart.ram_enabled) {
-                if (gb->cart.in_ram) {
+            if (GB_has_mbc_flags(gb, MBC_FLAGS_RAM) && gb->cart.ram_enabled)
+            {
+                if (gb->cart.in_ram)
+                {
                     gb->cart.ram[(addr & 0x1FFF) + (0x2000 * gb->cart.ram_bank)] = value;
                 }
-                else if (GB_has_mbc_flags(gb, MBC_FLAGS_RTC)) {
+                else if (GB_has_mbc_flags(gb, MBC_FLAGS_RTC))
+                {
                     GB_mbc3_rtc_write(gb, value);
                 }
             }
@@ -145,18 +167,22 @@ void GB_mbc3_write(struct GB_Core* gb, uint16_t addr, uint8_t value) {
     }
 }
 
-struct MBC_RomBankInfo GB_mbc3_get_rom_bank(struct GB_Core* gb, uint8_t bank) {
+struct MBC_RomBankInfo GB_mbc3_get_rom_bank(struct GB_Core* gb, uint8_t bank)
+{
     struct MBC_RomBankInfo info = {0};
     const uint8_t* ptr = NULL;
 
-    if (bank == 0) {
+    if (bank == 0)
+    {
         ptr = gb->cart.rom;
     }
-    else {
+    else
+    {
         ptr = gb->cart.rom + (gb->cart.rom_bank * 0x4000);
     }
 
-    for (size_t i = 0; i < GB_ARR_SIZE(info.entries); ++i) {
+    for (size_t i = 0; i < GB_ARR_SIZE(info.entries); ++i)
+    {
         info.entries[i].ptr = ptr + (0x1000 * i);
         info.entries[i].mask = 0x0FFF;
     }
@@ -164,8 +190,10 @@ struct MBC_RomBankInfo GB_mbc3_get_rom_bank(struct GB_Core* gb, uint8_t bank) {
     return info;
 }
 
-struct MBC_RamBankInfo GB_mbc3_get_ram_bank(struct GB_Core* gb) {
-    if (!(gb->cart.flags & MBC_FLAGS_RAM) || !gb->cart.ram_enabled || !gb->cart.in_ram) {
+struct MBC_RamBankInfo GB_mbc3_get_ram_bank(struct GB_Core* gb)
+{
+    if (!(gb->cart.flags & MBC_FLAGS_RAM) || !gb->cart.ram_enabled || !gb->cart.in_ram)
+    {
         return mbc_setup_empty_ram();
     }
 
@@ -173,7 +201,8 @@ struct MBC_RamBankInfo GB_mbc3_get_ram_bank(struct GB_Core* gb) {
 
     const uint8_t* ptr = gb->cart.ram + (0x2000 * gb->cart.ram_bank);
 
-    for (size_t i = 0; i < GB_ARR_SIZE(info.entries); ++i) {
+    for (size_t i = 0; i < GB_ARR_SIZE(info.entries); ++i)
+    {
         info.entries[i].ptr = ptr + (0x1000 * i);
         info.entries[i].mask = 0x0FFF;
     }

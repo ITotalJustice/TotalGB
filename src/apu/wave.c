@@ -3,30 +3,37 @@
 
 
 
-uint16_t get_wave_freq(const struct GB_Core* gb) {
+uint16_t get_wave_freq(const struct GB_Core* gb)
+{
     return (2048 - ((IO_NR34.freq_msb << 8) | IO_NR33.freq_lsb)) << 1;
 }
 
-bool is_wave_dac_enabled(const struct GB_Core* gb) {
+bool is_wave_dac_enabled(const struct GB_Core* gb)
+{
     return IO_NR30.DAC_power > 0;
 }
 
-bool is_wave_enabled(const struct GB_Core* gb) {
+bool is_wave_enabled(const struct GB_Core* gb)
+{
     return IO_NR52.wave > 0;
 }
 
-void wave_enable(struct GB_Core* gb) {
+void wave_enable(struct GB_Core* gb)
+{
     IO_NR52.wave = 1;
 }
 
-void wave_disable(struct GB_Core* gb) {
+void wave_disable(struct GB_Core* gb)
+{
     IO_NR52.wave = 0;
 }
 
-int8_t sample_wave(struct GB_Core* gb) {
-    static const int8_t test_table[15] = {
+int8_t sample_wave(struct GB_Core* gb)
+{
+    static const int8_t test_table[15] =
+    {
         -7, -6, -5, -4, -3, -2, -1,
-        0,
+        +0,
         +1, +2, +3, +4, +5, +6, +7
     };
 
@@ -41,33 +48,42 @@ int8_t sample_wave(struct GB_Core* gb) {
     return test_table[(sample >> WAVE_SHIFT[IO_NR32.vol_code])] * 2;
 }
 
-void clock_wave_len(struct GB_Core* gb) {
-    if (IO_NR34.length_enable && WAVE_CHANNEL.length_counter > 0) {
+void clock_wave_len(struct GB_Core* gb)
+{
+    if (IO_NR34.length_enable && WAVE_CHANNEL.length_counter > 0)
+    {
         --WAVE_CHANNEL.length_counter;
         // disable channel if we hit zero...
-        if (WAVE_CHANNEL.length_counter == 0) {
+        if (WAVE_CHANNEL.length_counter == 0)
+        {
             wave_disable(gb);
         }
     }
 }
 
-void advance_wave_position_counter(struct GB_Core* gb) {
+void advance_wave_position_counter(struct GB_Core* gb)
+{
     ++WAVE_CHANNEL.position_counter;
     // check if we need to wrap around
-    if (WAVE_CHANNEL.position_counter >= 32) {
+    if (WAVE_CHANNEL.position_counter >= 32)
+    {
         WAVE_CHANNEL.position_counter = 0;
     }
 
     WAVE_CHANNEL.sample_buffer = IO_WAVE_TABLE[WAVE_CHANNEL.position_counter >> 1];
 }
 
-void on_wave_trigger(struct GB_Core* gb) {
+void on_wave_trigger(struct GB_Core* gb)
+{
     wave_enable(gb);
 
-    if (WAVE_CHANNEL.length_counter == 0) {
-        if (IO_NR34.length_enable && is_next_frame_sequencer_step_not_len(gb)) {
+    if (WAVE_CHANNEL.length_counter == 0)
+    {
+        if (IO_NR34.length_enable && is_next_frame_sequencer_step_not_len(gb))
+        {
             WAVE_CHANNEL.length_counter = 255;
-        } else {
+        } else
+        {
             WAVE_CHANNEL.length_counter = 256;
         }
     }
@@ -79,7 +95,8 @@ void on_wave_trigger(struct GB_Core* gb) {
 
     WAVE_CHANNEL.timer = get_wave_freq(gb);
 
-    if (is_wave_dac_enabled(gb) == false) {
+    if (is_wave_dac_enabled(gb) == false)
+    {
         wave_disable(gb);
     }
 }

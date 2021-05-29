@@ -7,7 +7,8 @@
 #include <assert.h>
 
 
-struct GB_MbcInterface {
+struct GB_MbcInterface
+{
     // function callbacks
     void (*write)(struct GB_Core *gb, uint16_t addr, uint8_t value);
     struct MBC_RomBankInfo (*get_rom_bank)(struct GB_Core *gb, uint8_t bank);
@@ -21,7 +22,8 @@ struct GB_MbcInterface {
 
 // this data is indexed using the [cart_type] member from the
 // cart header struct.
-static const struct GB_MbcInterface MBC_SETUP_DATA[0x100] = {
+static const struct GB_MbcInterface MBC_SETUP_DATA[0x100] =
+{
     // MBC0
     [0x00] = {GB_mbc0_write, GB_mbc0_get_rom_bank, GB_mbc0_get_ram_bank, 0, MBC_FLAGS_NONE},
     // MBC1
@@ -45,27 +47,33 @@ static const struct GB_MbcInterface MBC_SETUP_DATA[0x100] = {
     [0x1E] = {GB_mbc5_write, GB_mbc5_get_rom_bank, GB_mbc5_get_ram_bank, 1, MBC_FLAGS_RAM | MBC_FLAGS_BATTERY},
 };
 
-struct MBC_RamBankInfo mbc_setup_empty_ram(void) {
+struct MBC_RamBankInfo mbc_setup_empty_ram(void)
+{
     static const uint8_t MBC_NO_RAM = 0xFF;
 
-    return (struct MBC_RamBankInfo){
-        .entries[0] = {
+    return (struct MBC_RamBankInfo)
+    {
+        .entries[0] =
+        {
             .ptr = &MBC_NO_RAM,
             .mask = 0,
         },
-        .entries[1] = {
+        .entries[1] =
+        {
             .ptr = &MBC_NO_RAM,
             .mask = 0,
         }
     };
 }
 
-static bool is_ascii_char_valid(const char c) {
+static bool is_ascii_char_valid(const char c)
+{
     // always upper case! ignore lower case ascii
     return c >= ' ' && c <= '_';
 }
 
-int GB_get_rom_name_from_header(const struct GB_CartHeader* header, struct GB_CartName* name) {
+int GB_get_rom_name_from_header(const struct GB_CartHeader* header, struct GB_CartName* name)
+{
     // in later games, including all gbc games, the title area was
     // actually reduced in size from 16 bytes down to 15, then 11.
     // as all titles are UPPER_CASE ASCII, it is easy to range check each
@@ -76,10 +84,12 @@ int GB_get_rom_name_from_header(const struct GB_CartHeader* header, struct GB_Ca
     memset(name, 0, sizeof(struct GB_CartName));
 
     // manually copy the name using range check as explained above...
-    for (size_t i = 0; i < sizeof(header->title); ++i) {
+    for (size_t i = 0; i < sizeof(header->title); ++i)
+    {
         const char c = header->title[i];
 
-        if (is_ascii_char_valid(c) == false) {
+        if (is_ascii_char_valid(c) == false)
+        {
             break;
         }
 
@@ -89,7 +99,8 @@ int GB_get_rom_name_from_header(const struct GB_CartHeader* header, struct GB_Ca
     return 0;
 }
 
-int GB_get_rom_name(const struct GB_Core* gb, struct GB_CartName* name) {
+int GB_get_rom_name(const struct GB_Core* gb, struct GB_CartName* name)
+{
     assert(gb && name);
 
     const struct GB_CartHeader* header = GB_get_rom_header_ptr(gb);
@@ -98,10 +109,12 @@ int GB_get_rom_name(const struct GB_Core* gb, struct GB_CartName* name) {
     return GB_get_rom_name_from_header(header, name);
 }
 
-bool GB_get_cart_ram_size(uint8_t type, uint32_t* size) {
+bool GB_get_cart_ram_size(uint8_t type, uint32_t* size)
+{
     // i think that more ram sizes are valid, however
     // i have yet to see a ram size bigger than this...
-    const uint32_t GB_CART_RAM_SIZES[6] = {
+    const uint32_t GB_CART_RAM_SIZES[6] =
+    {
         [0] = GB_SAVE_SIZE_NONE   /*0*/,
         [1] = GB_SAVE_SIZE_1      /*0x800*/,
         [2] = GB_SAVE_SIZE_2      /*0x2000*/,
@@ -112,11 +125,13 @@ bool GB_get_cart_ram_size(uint8_t type, uint32_t* size) {
 
     assert(type < GB_ARR_SIZE(GB_CART_RAM_SIZES) && "OOB type access!");
 
-    if (type >= GB_ARR_SIZE(GB_CART_RAM_SIZES)) {
+    if (type >= GB_ARR_SIZE(GB_CART_RAM_SIZES))
+    {
         return false;
     }
 
-    if (type == 5) {
+    if (type == 5)
+    {
         printf("ram is of type GB_SAVE_SIZE_5, finally found a game that uses this!\n");
         assert(type != 5);
         return false;
@@ -126,8 +141,10 @@ bool GB_get_cart_ram_size(uint8_t type, uint32_t* size) {
     return true;
 }
 
-bool GB_setup_mbc(struct GB_Cart* mbc, const struct GB_CartHeader* header) {
-    if (!mbc || !header) {
+bool GB_setup_mbc(struct GB_Cart* mbc, const struct GB_CartHeader* header)
+{
+    if (!mbc || !header)
+    {
         return false;
     }
 
@@ -137,7 +154,8 @@ bool GB_setup_mbc(struct GB_Cart* mbc, const struct GB_CartHeader* header) {
 
     // this is a check to see if we have data.
     // i could check only 1 func, but just in case i check all 3.
-    if (!data->write || !data->get_rom_bank || !data->get_ram_bank) {
+    if (!data->write || !data->get_rom_bank || !data->get_ram_bank)
+    {
         printf("MBC NOT IMPLEMENTED: 0x%02X\n", header->cart_type);
         assert(0);
         return false;
@@ -157,24 +175,29 @@ bool GB_setup_mbc(struct GB_Cart* mbc, const struct GB_CartHeader* header) {
     mbc->rom_bank_max = mbc->rom_size / 0x4000;
 
     // todo: setup more flags.
-    if (mbc->flags & MBC_FLAGS_RAM) {
+    if (mbc->flags & MBC_FLAGS_RAM)
+    {
         // check if mbc2, if so, manually set the ram size!
-        if (header->cart_type == 0x5 || header->cart_type == 0x6) {
+        if (header->cart_type == 0x5 || header->cart_type == 0x6)
+        {
             mbc->ram_size = 0x200;
         }
         // otherwise get the ram size via a LUT
-        else if (!GB_get_cart_ram_size(header->ram_size, &mbc->ram_size)) {
+        else if (!GB_get_cart_ram_size(header->ram_size, &mbc->ram_size))
+        {
             printf("rom has ram but the size entry in header is invalid! %u\n", header->ram_size);
             return false;
         }
-        else {
+        else
+        {
             mbc->ram_bank_max = mbc->ram_size / 0x2000;
         }
 
         // check that the size (if any) returned is within range of the
         // maximum ram size.
         // this can be set by the user, using build flags!
-        if (mbc->ram_size > GB_SAVE_SIZE_MAX) {
+        if (mbc->ram_size > GB_SAVE_SIZE_MAX)
+        {
             printf("cart-ram size is too big for the maximum size set! got: %u max: %d", mbc->ram_size, GB_SAVE_SIZE_MAX);
             return false;
         }

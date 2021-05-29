@@ -831,7 +831,7 @@ static inline void STOP(struct GB_Core* gb) {
     if (GB_is_system_gbc(gb)) {
         // only set if speed-switch is requested
         if ((IO_KEY1 & 0x1) == 1) {
-            GB_throw_info(gb, "changing speed mode");
+            GB_log("changing speed mode");
 
             // switch speed state.
             gb->cpu.double_speed = !gb->cpu.double_speed;

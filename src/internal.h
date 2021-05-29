@@ -136,8 +136,6 @@ extern "C" {
 // struct to the error callback.
 // this function is still marked const because it is often called
 // in const functions.
-void GB_throw_info(const struct GB_Core* gb, const char* message);
-void GB_throw_warn(const struct GB_Core* gb, const char* message);
 void GB_throw_error(const struct GB_Core* gb, enum GB_ErrorDataType type, const char* message);
 
 void GB_rtc_tick_frame(struct GB_Core* gb);

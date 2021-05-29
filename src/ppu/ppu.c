@@ -15,7 +15,8 @@ const uint8_t PIXEL_BIT_GROW[] = {
 };
 
 
-struct GB_Pixels get_pixels_at_scanline(struct GB_Core* gb, uint8_t ly) {
+struct GB_Pixels get_pixels_at_scanline(struct GB_Core* gb, uint8_t ly)
+{
     assert(gb && gb->pixels && gb->pitch);
     assert(ly <= 144);
 
@@ -32,117 +33,127 @@ struct GB_Pixels get_pixels_at_scanline(struct GB_Core* gb, uint8_t ly) {
 
 uint8_t GB_vram_read(const struct GB_Core* gb,
     const uint16_t addr, const uint8_t bank
-) {
+)
+{
     assert(bank < 2);
     return gb->ppu.vram[bank][addr & 0x1FFF];
 }
 
 // data selects
-bool GB_get_bg_data_select(const struct GB_Core* gb) {
+bool GB_get_bg_data_select(const struct GB_Core* gb)
+{
     return (!!(IO_LCDC & 0x08));
 }
 
-bool GB_get_title_data_select(const struct GB_Core* gb) {
+bool GB_get_title_data_select(const struct GB_Core* gb)
+{
     return (!!(IO_LCDC & 0x10));
 }
 
-bool GB_get_win_data_select(const struct GB_Core* gb) {
+bool GB_get_win_data_select(const struct GB_Core* gb)
+{
     return (!!(IO_LCDC & 0x40));
 }
 
 // map selects
-uint16_t GB_get_bg_map_select(const struct GB_Core* gb) {
+uint16_t GB_get_bg_map_select(const struct GB_Core* gb)
+{
     return GB_get_bg_data_select(gb) ? 0x9C00 : 0x9800;
 }
 
-uint16_t GB_get_title_map_select(const struct GB_Core* gb) {
+uint16_t GB_get_title_map_select(const struct GB_Core* gb)
+{
     return GB_get_title_data_select(gb) ? 0x8000 : 0x9000;
 }
 
-uint16_t GB_get_win_map_select(const struct GB_Core* gb) {
+uint16_t GB_get_win_map_select(const struct GB_Core* gb)
+{
     return GB_get_win_data_select(gb) ? 0x9C00 : 0x9800;
 }
 
 uint16_t GB_get_tile_offset(const struct GB_Core* gb,
     const uint8_t tile_num, const uint8_t sub_tile_y
 ) {
-    // this is way too complicated!
-    // if (GB_get_title_data_select(gb)) {
-        // return GB_get_title_map_select(gb) + tile_num + (sub_tile_y * 2);
-    // }
-    // else {
-        // const int16_t stile_num = ((int8_t)tile_num) * 16;
-        // return GB_get_title_map_select(gb) + stile_num + (sub_tile_y * 2);
-    // }
-
     return (GB_get_title_map_select(gb) + (((GB_get_title_data_select(gb) ? tile_num : (int8_t)tile_num)) * 16) + (sub_tile_y << 1));
-
-    // this causes left shift of signed value!
-    // this usually causes sign-extended, which is NOT what i wanted.
-    // return (GB_get_title_map_select(gb) + (((GB_get_title_data_select(gb) ? tile_num : (int8_t)tile_num)) << 4) + (sub_tile_y << 1));
 }
 
-uint8_t GB_get_sprite_size(const struct GB_Core* gb) {
+uint8_t GB_get_sprite_size(const struct GB_Core* gb)
+{
     return ((IO_LCDC & 0x04) ? 16 : 8);
 }
 
-static inline void GB_raise_if_enabled(struct GB_Core* gb, const uint8_t mode) {
-    if (IO_STAT & mode) {
+static inline void GB_raise_if_enabled(struct GB_Core* gb, const uint8_t mode)
+{
+    if (IO_STAT & mode)
+    {
         GB_enable_interrupt(gb, GB_INTERRUPT_LCD_STAT);
     }
 }
 
-void GB_set_coincidence_flag(struct GB_Core* gb, const bool n) {
+void GB_set_coincidence_flag(struct GB_Core* gb, const bool n)
+{
     IO_STAT = n ? IO_STAT | 0x04 : IO_STAT & ~0x04;
 }
 
-void GB_set_status_mode(struct GB_Core* gb, const enum GB_StatusModes mode) {
+void GB_set_status_mode(struct GB_Core* gb, const enum GB_StatusModes mode)
+{
     IO_STAT = (IO_STAT & 252) | mode;
 }
 
-enum GB_StatusModes GB_get_status_mode(const struct GB_Core* gb) {
+enum GB_StatusModes GB_get_status_mode(const struct GB_Core* gb)
+{
     return (IO_STAT & 0x03);
 }
 
-bool GB_is_lcd_enabled(const struct GB_Core* gb) {
+bool GB_is_lcd_enabled(const struct GB_Core* gb)
+{
     return (!!(IO_LCDC & 0x80));
 }
 
-bool GB_is_win_enabled(const struct GB_Core* gb) {
+bool GB_is_win_enabled(const struct GB_Core* gb)
+{
     return (!!(IO_LCDC & 0x20));
 }
 
-bool GB_is_obj_enabled(const struct GB_Core* gb) {
+bool GB_is_obj_enabled(const struct GB_Core* gb)
+{
     return (!!(IO_LCDC & 0x02));
 }
 
-bool GB_is_bg_enabled(const struct GB_Core* gb) {
+bool GB_is_bg_enabled(const struct GB_Core* gb)
+{
     return (!!(IO_LCDC & 0x01));
 }
 
-void GB_compare_LYC(struct GB_Core* gb) {
-    if (UNLIKELY(IO_LY == IO_LYC)) {
+void GB_compare_LYC(struct GB_Core* gb)
+{
+    if (UNLIKELY(IO_LY == IO_LYC))
+    {
         GB_set_coincidence_flag(gb, true);
         GB_raise_if_enabled(gb, STAT_INT_MODE_COINCIDENCE);
     }
 
-    else {
+    else
+    {
         GB_set_coincidence_flag(gb, false);
     }
 }
 
 void GB_change_status_mode(struct GB_Core* gb,
     const uint8_t new_mode
-) {
+)
+{
     GB_set_status_mode(gb, new_mode);
 
-    switch (new_mode) {
+    switch (new_mode)
+    {
         case STATUS_MODE_HBLANK:
             GB_raise_if_enabled(gb, STAT_INT_MODE_0);
             gb->ppu.next_cycles += 146;
             GB_draw_scanline(gb);
 
-            if (gb->hblank_cb != NULL) {
+            if (gb->hblank_cb != NULL)
+            {
                 gb->hblank_cb(gb, gb->hblank_cb_user_data);
             }
             break;
@@ -152,7 +163,8 @@ void GB_change_status_mode(struct GB_Core* gb,
             GB_enable_interrupt(gb, GB_INTERRUPT_VBLANK);
             gb->ppu.next_cycles += 456;
 
-            if (gb->vblank_cb != NULL) {
+            if (gb->vblank_cb != NULL)
+            {
                 gb->vblank_cb(gb, gb->vblank_cb_user_data);
             }
             break;
@@ -183,11 +195,14 @@ FF41 - STAT - LCDC Status (R/W)
             3: During Transfering Data to LCD Driver
 
 */
-void GB_on_lcdc_write(struct GB_Core* gb, const uint8_t value) {
+void GB_on_lcdc_write(struct GB_Core* gb, const uint8_t value)
+{
     // check if the game wants to disable the ppu
     // this *should* only happen in vblank!
-    if (GB_is_lcd_enabled(gb) && (value & 0x80) == 0) {
-        if (GB_get_status_mode(gb) != STATUS_MODE_VBLANK) {
+    if (GB_is_lcd_enabled(gb) && (value & 0x80) == 0)
+    {
+        if (GB_get_status_mode(gb) != STATUS_MODE_VBLANK)
+        {
             GB_log("[PPU-WARN] game is disabling lcd outside vblank: 0x%0X\n", GB_get_status_mode(gb));
         }
 
@@ -197,7 +212,8 @@ void GB_on_lcdc_write(struct GB_Core* gb, const uint8_t value) {
     }
 
     // check if the game wants to re-enable the lcd
-    else if (!GB_is_lcd_enabled(gb) && (value & 0x80)) {
+    else if (!GB_is_lcd_enabled(gb) && (value & 0x80))
+    {
         // i think the ppu starts again in vblank
         IO_STAT |= STATUS_MODE_VBLANK;
         GB_compare_LYC(gb);
@@ -207,30 +223,36 @@ void GB_on_lcdc_write(struct GB_Core* gb, const uint8_t value) {
     IO_LCDC = value;
 }
 
-void GB_ppu_run(struct GB_Core* gb, uint16_t cycles) {
-    if (UNLIKELY(!GB_is_lcd_enabled(gb))) {
-
+void GB_ppu_run(struct GB_Core* gb, uint16_t cycles)
+{
+    if (UNLIKELY(!GB_is_lcd_enabled(gb)))
+    {
         return;
     }
 
     gb->ppu.next_cycles -= cycles;
-    if (((gb->ppu.next_cycles) > 0)) {
+    if (((gb->ppu.next_cycles) > 0))
+    {
         return;
     }
 
-    switch (GB_get_status_mode(gb)) {
+    switch (GB_get_status_mode(gb))
+    {
         case STATUS_MODE_HBLANK:
             ++IO_LY;
             GB_compare_LYC(gb);
 
-            if (GB_is_hdma_active(gb)) {
+            if (GB_is_hdma_active(gb))
+            {
                 perform_hdma(gb);
             }
 
-            if (UNLIKELY(IO_LY == 144)) {
+            if (UNLIKELY(IO_LY == 144))
+            {
                 GB_change_status_mode(gb, STATUS_MODE_VBLANK);
             }
-            else {
+            else
+            {
                 GB_change_status_mode(gb, STATUS_MODE_SPRITE);
             }
             break;
@@ -240,21 +262,25 @@ void GB_ppu_run(struct GB_Core* gb, uint16_t cycles) {
             
             // there is a bug in which on line 153, LY=153 only lasts
             // for 4-Tcycles.
-            if (IO_LY == 153) {
+            if (IO_LY == 153)
+            {
                 gb->ppu.next_cycles += 4;
                 GB_compare_LYC(gb);
             }
-            else if (IO_LY == 154) {
+            else if (IO_LY == 154)
+            {
                 gb->ppu.next_cycles += 452;
                 IO_LY = 0;
                 gb->ppu.window_line = 0;
                 GB_compare_LYC(gb);
             }
-            else if (IO_LY == 1) {
+            else if (IO_LY == 1)
+            {
                 IO_LY = 0;
                 GB_change_status_mode(gb, STATUS_MODE_SPRITE);
             }
-            else {
+            else
+            {
                 gb->ppu.next_cycles += 456;
                 GB_compare_LYC(gb);
             }
@@ -270,7 +296,8 @@ void GB_ppu_run(struct GB_Core* gb, uint16_t cycles) {
     }
 }
 
-void GB_DMA(struct GB_Core* gb) {
+void GB_DMA(struct GB_Core* gb)
+{
     assert(IO_DMA <= 0xDF);
 
     // because it's possible for the index to be
@@ -280,10 +307,12 @@ void GB_DMA(struct GB_Core* gb) {
     // else, a normal copy happens.
     const struct GB_MemMapEntry entry = gb->mmap[IO_DMA >> 4];
 
-    if (entry.mask == 0) {
+    if (entry.mask == 0)
+    {
         memset(gb->ppu.oam, entry.ptr[0], sizeof(gb->ppu.oam));
     }
-    else {
+    else
+    {
         // TODO: check the math to see if this can go OOB for
         // mbc2-ram!!!
         memcpy(gb->ppu.oam, entry.ptr + ((IO_DMA & 0xF) << 8), sizeof(gb->ppu.oam));
@@ -304,9 +333,11 @@ bool GB_is_render_layer_enabled(const struct GB_Core* gb,
     return (gb->config.render_layer_config == GB_RENDER_LAYER_CONFIG_ALL) || ((gb->config.render_layer_config & want) > 0);
 }
 
-void GB_draw_scanline(struct GB_Core* gb) {
+void GB_draw_scanline(struct GB_Core* gb)
+{
     // check if the user has set any pixels, if not, skip rendering!
-    if (!gb->pixels || !gb->pitch) {
+    if (!gb->pixels || !gb->pitch)
+    {
         return;
     }
 
@@ -314,8 +345,9 @@ void GB_draw_scanline(struct GB_Core* gb) {
     {
         return;
     }
-    
-    switch (GB_get_system_type(gb)) {
+
+    switch (GB_get_system_type(gb))
+    {
         case GB_SYSTEM_TYPE_DMG:
             DMG_render_scanline(gb);
             break;

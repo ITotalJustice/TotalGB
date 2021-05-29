@@ -4,10 +4,12 @@
 #include <assert.h>
 
 
-static inline void GB_iowrite_gbc(struct GB_Core* gb, uint16_t addr, uint8_t value) {
+static inline void GB_iowrite_gbc(struct GB_Core* gb, uint16_t addr, uint8_t value)
+{
     assert(GB_is_system_gbc(gb) == true);
 
-    switch (addr & 0x7F) {
+    switch (addr & 0x7F)
+    {
         case 0x4D:
             IO_KEY1 |= value & 0x1;
             GB_log("writing to key1 0x%02X\n", value);
@@ -86,8 +88,10 @@ static inline void GB_iowrite_gbc(struct GB_Core* gb, uint16_t addr, uint8_t val
     }
 }
 
-uint8_t GB_ioread(struct GB_Core* gb, uint16_t addr) {
-    switch (addr & 0x7F) {
+uint8_t GB_ioread(struct GB_Core* gb, uint16_t addr)
+{
+    switch (addr & 0x7F)
+    {
         case 0x00:
             return GB_joypad_read(gb);
 
@@ -119,32 +123,44 @@ uint8_t GB_ioread(struct GB_Core* gb, uint16_t addr) {
             return 0xFF;
 
         case 0x4D:
-            if (GB_is_system_gbc(gb) == true) {
+            if (GB_is_system_gbc(gb) == true)
+            {
                 return 0x7E | IO_KEY1;
-            } else {
+            }
+            else
+            {
                 return 0xFF;
             }
 
         case 0x4F: // (GBC) VBK
-            if (GB_is_system_gbc(gb) == true) {
+            if (GB_is_system_gbc(gb) == true)
+            {
                 return IO_VBK;
-            } else {
+            }
+            else
+            {
                 return 0xFF;
             }
 
 
         case 0x55: // (GBC) HDMA5
-            if (GB_is_system_gbc(gb) == true) {
+            if (GB_is_system_gbc(gb) == true)
+            {
                 return GB_hdma5_read(gb);
-            } else {
+            }
+            else
+            {
                 return 0xFF;
             }
 
         case 0x56:
-            if (GB_is_system_gbc(gb) == true) {
+            if (GB_is_system_gbc(gb) == true)
+            {
                 GB_log("reading from infrared port\n");
                 return 0x00;
-            } else {
+            }
+            else
+            {
                 return 0xFF;
             }
 
@@ -155,23 +171,32 @@ uint8_t GB_ioread(struct GB_Core* gb, uint16_t addr) {
             return IO_OCPS;
 
         case 0x69:
-            if (GB_is_system_gbc(gb) == true) {
+            if (GB_is_system_gbc(gb) == true)
+            {
                 return GBC_bcpd_read(gb);
-            } else {
+            }
+            else
+            {
                 return 0xFF;
             }
 
         case 0x6B:
-            if (GB_is_system_gbc(gb) == true) {
+            if (GB_is_system_gbc(gb) == true)
+            {
                 return GBC_ocpd_read(gb);
-            } else {
+            }
+            else
+            {
                 return 0xFF;
             }
 
         case 0x70: // (GBC) SVBK
-            if (GB_is_system_gbc(gb) == true) {
+            if (GB_is_system_gbc(gb) == true)
+            {
                 return IO_SVBK;
-            } else {
+            }
+            else
+            {
                 return 0xFF;
             }
 
@@ -180,8 +205,10 @@ uint8_t GB_ioread(struct GB_Core* gb, uint16_t addr) {
     }
 }
 
-void GB_iowrite(struct GB_Core* gb, uint16_t addr, uint8_t value) {
-    switch (addr & 0x7F) {
+void GB_iowrite(struct GB_Core* gb, uint16_t addr, uint8_t value)
+{
+    switch (addr & 0x7F)
+    {
         case 0x00: // joypad
             GB_joypad_write(gb, value);
             break;
@@ -281,25 +308,31 @@ void GB_iowrite(struct GB_Core* gb, uint16_t addr, uint8_t value) {
             break;
 
         default:
-            if (GB_is_system_gbc(gb) == true) {
+            if (GB_is_system_gbc(gb) == true)
+            {
                 GB_iowrite_gbc(gb, addr, value);
             }
             break;
     }
 }
 
-uint8_t GB_read8(struct GB_Core* gb, const uint16_t addr) {
-    if (LIKELY(addr < 0xFE00)) {
+uint8_t GB_read8(struct GB_Core* gb, const uint16_t addr)
+{
+    if (LIKELY(addr < 0xFE00))
+    {
         const struct GB_MemMapEntry entry = gb->mmap[(addr >> 12)];
         return entry.ptr[addr & entry.mask];
     }
-    else if (addr <= 0xFE9F) {
+    else if (addr <= 0xFE9F)
+    {
         return gb->ppu.oam[addr & 0xFF];
     }
-    else if (addr >= 0xFF00 && addr <= 0xFF7F) {
+    else if (addr >= 0xFF00 && addr <= 0xFF7F)
+    {
         return GB_ioread(gb, addr);
     }
-    else if (addr >= 0xFF80) {
+    else if (addr >= 0xFF80)
+    {
         return gb->hram[addr & 0x7F];
     }
 
@@ -307,9 +340,12 @@ uint8_t GB_read8(struct GB_Core* gb, const uint16_t addr) {
     return 0xFF;
 }
 
-void GB_write8(struct GB_Core* gb, uint16_t addr, uint8_t value) {
-    if (LIKELY(addr < 0xFE00)) {
-        switch ((addr >> 12) & 0xF) {
+void GB_write8(struct GB_Core* gb, uint16_t addr, uint8_t value)
+{
+    if (LIKELY(addr < 0xFE00))
+    {
+        switch ((addr >> 12) & 0xF)
+        {
             case 0x0: case 0x1: case 0x2: case 0x3: case 0x4:
             case 0x5: case 0x6: case 0x7: case 0xA: case 0xB:
                 gb->cart.write(gb, addr, value);
@@ -328,30 +364,36 @@ void GB_write8(struct GB_Core* gb, uint16_t addr, uint8_t value) {
                 break;
         }
     }
-    else if (addr <= 0xFE9F) {
+    else if (addr <= 0xFE9F)
+    {
         gb->ppu.oam[addr & 0xFF] = value;
     }
-    else if (addr >= 0xFF00 && addr <= 0xFF7F) {
+    else if (addr >= 0xFF00 && addr <= 0xFF7F)
+    {
         GB_iowrite(gb, addr, value);
     }
-    else if (addr >= 0xFF80) {
+    else if (addr >= 0xFF80)
+    {
         gb->hram[addr & 0x7F] = value;
     }
 }
 
-uint16_t GB_read16(struct GB_Core* gb, uint16_t addr) {
+uint16_t GB_read16(struct GB_Core* gb, uint16_t addr)
+{
     const uint8_t lo = GB_read8(gb, addr + 0);
     const uint8_t hi = GB_read8(gb, addr + 1);
 
     return (hi << 8) | lo;
 }
 
-void GB_write16(struct GB_Core* gb, uint16_t addr, uint16_t value) {
+void GB_write16(struct GB_Core* gb, uint16_t addr, uint16_t value)
+{
     GB_write8(gb, addr + 0, value & 0xFF);
     GB_write8(gb, addr + 1, value >> 8);
 }
 
-void GB_update_rom_banks(struct GB_Core* gb) {
+void GB_update_rom_banks(struct GB_Core* gb)
+{
     const struct MBC_RomBankInfo rom_bank0 = gb->cart.get_rom_bank(gb, 0);
     const struct MBC_RomBankInfo rom_bankx = gb->cart.get_rom_bank(gb, 1);
 
@@ -366,28 +408,33 @@ void GB_update_rom_banks(struct GB_Core* gb) {
     gb->mmap[0x7] = rom_bankx.entries[3];
 }
 
-void GB_update_ram_banks(struct GB_Core* gb) {
+void GB_update_ram_banks(struct GB_Core* gb)
+{
     const struct MBC_RamBankInfo ram = gb->cart.get_ram_bank(gb);
 
     gb->mmap[0xA] = ram.entries[0];
     gb->mmap[0xB] = ram.entries[1];
 }
 
-void GB_update_vram_banks(struct GB_Core* gb) {
+void GB_update_vram_banks(struct GB_Core* gb)
+{
     gb->mmap[0x8].mask = 0x0FFF;
     gb->mmap[0x9].mask = 0x0FFF;
 
-    if (GB_is_system_gbc(gb) == true) {
+    if (GB_is_system_gbc(gb) == true)
+    {
         gb->mmap[0x8].ptr = gb->ppu.vram[IO_VBK] + 0x0000;
         gb->mmap[0x9].ptr = gb->ppu.vram[IO_VBK] + 0x1000;
     }
-    else {
+    else
+    {
         gb->mmap[0x8].ptr = gb->ppu.vram[0] + 0x0000;
         gb->mmap[0x9].ptr = gb->ppu.vram[0] + 0x1000;
     }
 }
 
-void GB_update_wram_banks(struct GB_Core* gb) {
+void GB_update_wram_banks(struct GB_Core* gb)
+{
     gb->mmap[0xC].mask = 0x0FFF;
     gb->mmap[0xD].mask = 0x0FFF;
     gb->mmap[0xE].mask = 0x0FFF;
@@ -396,17 +443,20 @@ void GB_update_wram_banks(struct GB_Core* gb) {
     gb->mmap[0xC].ptr = gb->wram[0];
     gb->mmap[0xE].ptr = gb->wram[0];
 
-    if (GB_is_system_gbc(gb) == true) {
+    if (GB_is_system_gbc(gb) == true)
+    {
         gb->mmap[0xD].ptr = gb->wram[IO_SVBK];
         gb->mmap[0xF].ptr = gb->wram[IO_SVBK];
     }
-    else {
+    else
+    {
         gb->mmap[0xD].ptr = gb->wram[1];
         gb->mmap[0xF].ptr = gb->wram[1];
     }
 }
 
-void GB_setup_mmap(struct GB_Core* gb) {
+void GB_setup_mmap(struct GB_Core* gb)
+{
     GB_update_rom_banks(gb);
     GB_update_ram_banks(gb);
     GB_update_vram_banks(gb);
