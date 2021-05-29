@@ -382,7 +382,7 @@ static struct GBC_Sprites gbc_sprite_fetch(const struct GB_Core* gb)
     const uint8_t sprite_size = GB_get_sprite_size(gb);
     const uint8_t ly = IO_LY;
 
-    for (int i = 0; i < GB_ARR_SIZE(gb->ppu.oam); i += 4)
+    for (size_t i = 0; i < GB_ARR_SIZE(gb->ppu.oam); i += 4)
     {
         struct GBC_Sprite* sprite = &sprites.sprite[sprites.count];
 

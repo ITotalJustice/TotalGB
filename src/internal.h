@@ -142,10 +142,90 @@ void GB_rtc_tick_frame(struct GB_Core* gb);
 
 uint8_t GB_ioread(struct GB_Core* gb, uint16_t addr);
 void GB_iowrite(struct GB_Core* gb, uint16_t addr, uint8_t value);
+
+#ifdef GB_FAST_RW
+
+static inline uint8_t GB_read8(struct GB_Core* gb, const uint16_t addr)
+{
+    if (LIKELY(addr < 0xFE00))
+    {
+        const struct GB_MemMapEntry entry = gb->mmap[(addr >> 12)];
+        return entry.ptr[addr & entry.mask];
+    }
+    else if (addr <= 0xFE9F)
+    {
+        return gb->ppu.oam[addr & 0xFF];
+    }
+    else if (addr >= 0xFF00 && addr <= 0xFF7F)
+    {
+        return GB_ioread(gb, addr);
+    }
+    else if (addr >= 0xFF80)
+    {
+        return gb->hram[addr & 0x7F];
+    }
+
+    // unused section in address area.
+    return 0xFF;
+}
+
+static inline void GB_write8(struct GB_Core* gb, uint16_t addr, uint8_t value)
+{
+    if (LIKELY(addr < 0xFE00))
+    {
+        switch ((addr >> 12) & 0xF)
+        {
+            case 0x0: case 0x1: case 0x2: case 0x3: case 0x4:
+            case 0x5: case 0x6: case 0x7: case 0xA: case 0xB:
+                gb->cart.write(gb, addr, value);
+                break;
+
+            case 0x8: case 0x9:
+                gb->ppu.vram[IO_VBK][addr & 0x1FFF] = value;
+                break;
+
+            case 0xC: case 0xE:
+                gb->wram[0][addr & 0x0FFF] = value;
+                break;
+
+            case 0xD: case 0xF:
+                gb->wram[IO_SVBK][addr & 0x0FFF] = value;
+                break;
+        }
+    }
+    else if (addr <= 0xFE9F)
+    {
+        gb->ppu.oam[addr & 0xFF] = value;
+    }
+    else if (addr >= 0xFF00 && addr <= 0xFF7F)
+    {
+        GB_iowrite(gb, addr, value);
+    }
+    else if (addr >= 0xFF80)
+    {
+        gb->hram[addr & 0x7F] = value;
+    }
+}
+
+static inline uint16_t GB_read16(struct GB_Core* gb, uint16_t addr)
+{
+    const uint8_t lo = GB_read8(gb, addr + 0);
+    const uint8_t hi = GB_read8(gb, addr + 1);
+
+    return (hi << 8) | lo;
+}
+
+static inline void GB_write16(struct GB_Core* gb, uint16_t addr, uint16_t value)
+{
+    GB_write8(gb, addr + 0, value & 0xFF);
+    GB_write8(gb, addr + 1, value >> 8);
+}
+#else
 uint8_t GB_read8(struct GB_Core* gb, const uint16_t addr);
 void GB_write8(struct GB_Core* gb, uint16_t addr, uint8_t value);
 uint16_t GB_read16(struct GB_Core* gb, uint16_t addr);
 void GB_write16(struct GB_Core* gb, uint16_t addr, uint16_t value);
+#endif // GB_FAST_RW
 
 void GB_on_lcdc_write(struct GB_Core* gb, const uint8_t value);
 

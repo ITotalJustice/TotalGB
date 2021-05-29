@@ -1,4 +1,5 @@
 #include <stdbool.h>
+#include <stdint.h>
 #include <gb.h>
 #include <SDL.h>
 
@@ -73,6 +74,8 @@ static void on_key_event(const SDL_KeyboardEvent* e)
             case SDL_SCANCODE_9:
                 speed = (e->keysym.scancode - SDL_SCANCODE_1) + 1;
                 break;
+
+            default: break; // silence enum warning
         }
 
         return;
@@ -96,6 +99,8 @@ static void on_key_event(const SDL_KeyboardEvent* e)
         case SDL_SCANCODE_I:
             GB_cpu_enable_log(down);
             break;
+
+        default: break; // silence enum warning
     }
 }
 
@@ -121,6 +126,8 @@ static void events()
 
 static void core_on_vblank(struct GB_Core* gb, void* user)
 {
+    (void)gb; (void)user;
+
     ++frameskip_counter;
 
     if (frameskip_counter >= speed)
@@ -142,16 +149,26 @@ static void render()
     SDL_RenderPresent(renderer);
 }
 
+static void cleanup()
+{
+    if (rom_data)   { SDL_free(rom_data); }
+    if (texture)    { SDL_DestroyTexture(texture); }
+    if (renderer)   { SDL_DestroyRenderer(renderer); }
+    if (window)     { SDL_DestroyWindow(window); }
+
+    SDL_Quit();
+}
+
 int main(int argc, char** argv)
 {
     if (argc < 2)
     {
-        return -1;
+        goto fail;
     }
 
     if (!GB_init(&gameboy))
     {
-        return -1;
+        goto fail;
     }
 
     GB_set_vblank_callback(&gameboy, core_on_vblank, NULL);
@@ -165,12 +182,17 @@ int main(int argc, char** argv)
 
     if (!GB_loadrom(&gameboy, rom_data, rom_size))
     {
-        return -1;
+        goto fail;
     }
 
     struct GB_CartName rom_name = {0};
 
     GB_get_rom_name(&gameboy, &rom_name);
+
+    if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_EVENTS))
+    {
+        goto fail;
+    }
 
     window = SDL_CreateWindow(rom_name.name, SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, WIDTH * scale, HEIGHT * scale, SDL_WINDOW_ALLOW_HIGHDPI);
 
@@ -203,15 +225,13 @@ int main(int argc, char** argv)
         render();
     }
 
-    SDL_free(rom_data);
-    SDL_DestroyTexture(texture);
-    SDL_DestroyRenderer(renderer);
-    SDL_DestroyWindow(window);
-    SDL_Quit();
+    cleanup();
 
     return 0;
 
 fail:
     SDL_LogError(SDL_LOG_CATEGORY_ERROR, "%s\n", SDL_GetError());
+    cleanup();
+
     return -1;
 }

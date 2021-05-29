@@ -158,7 +158,7 @@ static struct DMG_Sprites dmg_sprite_fetch(const struct GB_Core* gb)
     const uint8_t sprite_size = GB_get_sprite_size(gb);
     const uint8_t ly = IO_LY;
 
-    for (int i = 0; i < GB_ARR_SIZE(gb->ppu.oam); i += 4)
+    for (size_t i = 0; i < GB_ARR_SIZE(gb->ppu.oam); i += 4)
     {
         struct DMG_Sprite* sprite = &sprites.sprite[sprites.count];
 
@@ -195,7 +195,7 @@ static struct DMG_Sprites dmg_sprite_fetch(const struct GB_Core* gb)
         {
             unsorted = false;
 
-            for (size_t i = 0; i < sprites.count - 1; ++i)
+            for (int i = 0; i < sprites.count - 1; ++i)
             {
                 if (sprites.sprite[i].x > sprites.sprite[i + 1].x)
                 {
