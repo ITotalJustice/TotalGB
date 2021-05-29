@@ -4,7 +4,6 @@
 
 #include <assert.h>
 #include <string.h>
-#include <stdio.h>
 
 
 // store a 1 when bg / win writes to the screen
@@ -12,7 +11,8 @@
 // the bg always has priority.
 // if it does, then it checks this buffer for a 1
 // at the same xpos, if its 1, rendering that pixel is skipped.
-struct PrioBuf {
+struct PrioBuf
+{
     // 1 = prio, 0 = no prio
     bool prio[GB_SCREEN_WIDTH];
     // 0-3
@@ -20,39 +20,48 @@ struct PrioBuf {
 };
 
 
-static inline bool is_bcps_auto_increment(const struct GB_Core* gb) {
+static inline bool is_bcps_auto_increment(const struct GB_Core* gb)
+{
     return (IO_BCPS & 0x80) > 0;
 }
 
-static inline bool is_ocps_auto_increment(const struct GB_Core* gb) {
+static inline bool is_ocps_auto_increment(const struct GB_Core* gb)
+{
     return (IO_OCPS & 0x80) > 0;
 }
 
-static inline uint8_t get_bcps_index(const struct GB_Core* gb) {
+static inline uint8_t get_bcps_index(const struct GB_Core* gb)
+{
     return IO_BCPS & 0x3F;
 }
 
-static inline uint8_t get_ocps_index(const struct GB_Core* gb) {
+static inline uint8_t get_ocps_index(const struct GB_Core* gb)
+{
     return IO_OCPS & 0x3F;
 }
 
-static inline void bcps_increment(struct GB_Core* gb) {
-    if (is_bcps_auto_increment(gb) == true) {
+static inline void bcps_increment(struct GB_Core* gb)
+{
+    if (is_bcps_auto_increment(gb) == true)
+    {
         // only increment the lower 5 bits.
         // set back the increment bit after.
         IO_BCPS = ((IO_BCPS + 1) & 0x3F) | (0xC0);
     }
 }
 
-static inline void ocps_increment(struct GB_Core* gb) {
-    if (is_ocps_auto_increment(gb) == true) {
+static inline void ocps_increment(struct GB_Core* gb)
+{
+    if (is_ocps_auto_increment(gb) == true)
+    {
         // only increment the lower 5 bits.
         // set back the increment bit after.
         IO_OCPS = ((IO_OCPS + 1) & 0x3F) | (0xC0);
     }
 }
 
-void GB_bcpd_write(struct GB_Core* gb, uint8_t value) {
+void GB_bcpd_write(struct GB_Core* gb, uint8_t value)
+{
     const uint8_t index = get_bcps_index(gb);
 
     // this is 0-7
@@ -63,17 +72,20 @@ void GB_bcpd_write(struct GB_Core* gb, uint8_t value) {
     bcps_increment(gb);
 }
 
-uint8_t GBC_bcpd_read(struct GB_Core* gb) {
+uint8_t GBC_bcpd_read(struct GB_Core* gb)
+{
     const uint8_t index = get_bcps_index(gb);
     return gb->ppu.bg_palette[index];
 }
 
-uint8_t GBC_ocpd_read(struct GB_Core* gb) {
+uint8_t GBC_ocpd_read(struct GB_Core* gb)
+{
     const uint8_t index = get_ocps_index(gb);
     return gb->ppu.obj_palette[index];
 }
 
-void GB_ocpd_write(struct GB_Core* gb, uint8_t value) {
+void GB_ocpd_write(struct GB_Core* gb, uint8_t value)
+{
     const uint8_t index = get_ocps_index(gb);
 
     // this is 0-7
@@ -84,29 +96,32 @@ void GB_ocpd_write(struct GB_Core* gb, uint8_t value) {
     ocps_increment(gb);
 }
 
-bool GB_is_hdma_active(const struct GB_Core* gb) {
+bool GB_is_hdma_active(const struct GB_Core* gb)
+{
     return gb->ppu.hdma_length > 0;
 }
 
-uint8_t hdma_read(const struct GB_Core* gb, const uint16_t addr) {
+uint8_t hdma_read(const struct GB_Core* gb, const uint16_t addr)
+{
     const struct GB_MemMapEntry entry = gb->mmap[(addr >> 12)];
     return entry.ptr[addr & entry.mask];
 }
 
-void hdma_write(struct GB_Core* gb,
-    const uint16_t addr, const uint8_t value
-) {
+void hdma_write(struct GB_Core* gb, const uint16_t addr, const uint8_t value)
+{
     gb->ppu.vram[IO_VBK][(addr) & 0x1FFF] = value;
 }
 
-void perform_hdma(struct GB_Core* gb) {
+void perform_hdma(struct GB_Core* gb)
+{
     assert(GB_is_hdma_active(gb) == true);
 
     // perform 16-block transfer
-    for (uint16_t i = 0; i < 0x10; ++i) {
+    for (uint16_t i = 0; i < 0x10; ++i)
+    {
         hdma_write(gb,
-            gb->ppu.hdma_dst_addr + i, // dst
-            hdma_read(gb, gb->ppu.hdma_src_addr + i) // value
+            gb->ppu.hdma_dst_addr + i,
+            hdma_read(gb, gb->ppu.hdma_src_addr + i)
         );
     }
 
@@ -117,18 +132,21 @@ void perform_hdma(struct GB_Core* gb) {
     --IO_HDMA5;
 
     // finished!
-    if (gb->ppu.hdma_length == 0) {
+    if (gb->ppu.hdma_length == 0)
+    {
         gb->ppu.hdma_length = 0;
 
         IO_HDMA5 = 0xFF;
     }
 }
 
-uint8_t GB_hdma5_read(const struct GB_Core* gb) {
+uint8_t GB_hdma5_read(const struct GB_Core* gb)
+{
     return IO_HDMA5;
 }
 
-void GB_hdma5_write(struct GB_Core* gb, uint8_t value) {
+void GB_hdma5_write(struct GB_Core* gb, uint8_t value)
+{
     // the lower 4-bits of both address are ignored
     const uint16_t dma_src = ((IO_HDMA1 << 8) | IO_HDMA2) & 0xFFF0;
     const uint16_t dma_dst = ((IO_HDMA3 << 8) | IO_HDMA4) & 0x7FF0;
@@ -139,26 +157,29 @@ void GB_hdma5_write(struct GB_Core* gb, uint8_t value) {
     // by checking bit-7 of value, it returns the type of dma to perform.
     const uint8_t mode = value & 0x80;
 
-    enum GB_HDMA5Mode {
+    enum GB_HDMA5Mode
+    {
         GDMA = 0x00,
         HDMA = 0x80
     };
 
-    if (mode == GDMA) {
+    if (mode == GDMA)
+    {
         // setting bit-7 = 0 whilst a HDMA is currently active
         // actually disables that transfer
-        if (GB_is_hdma_active(gb) == true) {
+        if (GB_is_hdma_active(gb) == true)
+        {
             IO_HDMA5 = ((gb->ppu.hdma_length >> 4) - 1) | 0x80;
             gb->ppu.hdma_length = 0;
 
             // do not perform GDMA after, this only cancels the active
             // transfer and sets HDMA5.
-            printf("cancle\n");
             return;
         }
 
         // GDMA are performed immediately
-        for (uint16_t i = 0; i < dma_len; ++i) {
+        for (uint16_t i = 0; i < dma_len; ++i)
+        {
             hdma_write(gb, dma_dst + i, hdma_read(gb, dma_src + i));
         }
 
@@ -168,7 +189,8 @@ void GB_hdma5_write(struct GB_Core* gb, uint8_t value) {
         // HDMA5 is, but not sure about the rest.
         IO_HDMA5 = 0xFF;
     }
-    else {
+    else
+    {
         gb->ppu.hdma_src_addr = dma_src;
         gb->ppu.hdma_dst_addr = dma_dst;
         gb->ppu.hdma_length = dma_len;
@@ -195,7 +217,8 @@ static inline void render_scanline_bg(struct GB_Core* gb,
     struct GB_Pixels pixels = get_pixels_at_scanline(gb, scanline);
 
 
-    for (uint8_t tile_x = 0; tile_x <= 20; ++tile_x) {
+    for (uint8_t tile_x = 0; tile_x <= 20; ++tile_x)
+    {
         // calc the map index
         const uint8_t map_x = ((base_tile_x + tile_x) & 31);
 
@@ -214,9 +237,12 @@ static inline void render_scanline_bg(struct GB_Core* gb,
 
         const uint8_t* bit = attributes.xflip ? PIXEL_BIT_GROW : PIXEL_BIT_SHRINK;
 
-        for (uint8_t x = 0; x < 8; ++x) {
+        for (uint8_t x = 0; x < 8; ++x)
+        {
             const uint8_t pixel_x = ((tile_x << 3) + x - sub_tile_x) & 0xFF;
-            if (pixel_x >= GB_SCREEN_WIDTH) {
+
+            if (pixel_x >= GB_SCREEN_WIDTH)
+            {
                 continue;
             }
 
@@ -233,7 +259,8 @@ static inline void render_scanline_bg(struct GB_Core* gb,
 
 static inline void render_scanline_win(struct GB_Core* gb,
     struct PrioBuf* prio_buffer
-) {
+)
+{
     const uint8_t scanline = IO_LY;
     const uint8_t base_tile_x = 20 - (IO_WX >> 3);
     const int16_t sub_tile_x = IO_WX - 7;
@@ -249,7 +276,8 @@ static inline void render_scanline_win(struct GB_Core* gb,
     struct GB_Pixels pixels = get_pixels_at_scanline(gb, scanline);
 
 
-    for (uint8_t tile_x = 0; tile_x <= base_tile_x; ++tile_x) {
+    for (uint8_t tile_x = 0; tile_x <= base_tile_x; ++tile_x)
+    {
 
         // fetch the tile number and attributes
         const uint8_t tile_num = vram_map[tile_x];
@@ -265,9 +293,12 @@ static inline void render_scanline_win(struct GB_Core* gb,
 
         const uint8_t* bit = attributes.xflip ? PIXEL_BIT_GROW :  PIXEL_BIT_SHRINK;
 
-        for (uint8_t x = 0; x < 8; ++x) {
+        for (uint8_t x = 0; x < 8; ++x)
+        {
             const uint8_t pixel_x = ((tile_x << 3) + x + sub_tile_x) & 0xFF;
-            if (pixel_x >= GB_SCREEN_WIDTH) {
+
+            if (pixel_x >= GB_SCREEN_WIDTH)
+            {
                 continue;
             }
 
@@ -283,7 +314,8 @@ static inline void render_scanline_win(struct GB_Core* gb,
         }
     }
 
-    if (did_draw) {
+    if (did_draw)
+    {
         ++gb->ppu.window_line;
     }
 }
@@ -307,14 +339,19 @@ static inline void render_scanline_obj(struct GB_Core* gb,
     // been written to from a previous oam entry!
     bool oam_priority[GB_SCREEN_WIDTH] = {0};
 
-    for (uint8_t i = 0, sprite_total = 0; i < 40 && sprite_total < 10; ++i) {
+    for (uint8_t i = 0, sprite_total = 0; i < 40 && sprite_total < 10; ++i)
+    {
         const int16_t spy = (int16_t)sprites[i].y - 16;
         const int16_t spx = (int16_t)sprites[i].x - 8;
 
-        if (scanline >= spy && scanline < (spy + (sprite_size))) {
+        if (scanline >= spy && scanline < (spy + (sprite_size)))
+        {
             ++sprite_total;
 
-            if ((spx + 8) == 0 || spx >= GB_SCREEN_WIDTH) {
+            // check if the sprite has a chance of being on screen
+            // + 8 because thats the width of each sprite (8 pixels)
+            if ((sprite->x + 8) <= 0 || sprite->x >= GB_SCREEN_WIDTH)
+            {
                 continue;
             }
 
@@ -328,36 +365,49 @@ static inline void render_scanline_obj(struct GB_Core* gb,
 
             const uint8_t* bit = sprites[i].flag.xflip ? PIXEL_BIT_GROW : PIXEL_BIT_SHRINK;
 
-            for (int8_t x = 0; x < 8; ++x) {
+            for (int8_t x = 0; x < 8; ++x)
+            {
                 const int16_t x_index = spx + x;
 
+                // sprite is offscreen, exit loop now
+                if (x_index >= GB_SCREEN_WIDTH)
+                {
+                    break;
+                }
+
                 // ensure that we are in bounds
-                if (x_index < 0 || x_index >= GB_SCREEN_WIDTH) {
+                if (x_index < 0)
+                {
                     continue;
                 }
 
                 // check if this has already been written to
                 // from a previous oam entry
-                if (oam_priority[x_index]) {
+                if (oam_priority[x_index])
+                {
                     continue;
                 }
 
                 const uint8_t colour_id = ((!!(byte_b & bit[x])) << 1) | (!!(byte_a & bit[x]));
 
                 // this tests if the obj is transparrent
-                if (colour_id == 0) {
+                if (colour_id == 0)
+                {
                     continue;
                 }
 
-                if (bg_prio == 1) {
+                if (bg_prio == 1)
+                {
                     // this tests if bg always has priority over obj
-                    if (prio_buffer->prio[x_index] && prio_buffer->colour_id[x_index]) {
+                    if (prio_buffer->prio[x_index] && prio_buffer->colour_id[x_index])
+                    {
                         continue;
                     }
 
                     // this tests if bg col 1-3 has priority,
                     // then checks if the col is non-zero, if yes, skip
-                    if (sprites[i].flag.priority && prio_buffer->colour_id[x_index]) {
+                    if (sprites[i].flag.priority && prio_buffer->colour_id[x_index])
+                    {
                         continue;
                     }
                 }
@@ -376,11 +426,14 @@ static inline void render_scanline_obj(struct GB_Core* gb,
 static inline void update_colours(
     bool dirty[8], uint32_t map[8][4], const uint8_t palette_mem[64]
 ) {
-    for (uint8_t palette = 0; palette < 8; ++palette) {
-        if (dirty[palette] == true) {
+    for (uint8_t palette = 0; palette < 8; ++palette)
+    {
+        if (dirty[palette] == true)
+        {
             dirty[palette] = false;
 
-            for (uint8_t colours = 0, pos = 0; colours < 4; colours++, pos += 2) {
+            for (uint8_t colours = 0, pos = 0; colours < 4; colours++, pos += 2)
+            {
 
                 const uint8_t col_a = palette_mem[(palette << 3) + pos];
                 const uint8_t col_b = palette_mem[(palette << 3) + pos + 1];
@@ -400,7 +453,8 @@ static inline void update_colours(
 }
 
 
-void GBC_render_scanline(struct GB_Core* gb) {
+void GBC_render_scanline(struct GB_Core* gb)
+{
     struct PrioBuf prio_buffer = {0};
 
     // update the bg colour palettes
@@ -408,19 +462,24 @@ void GBC_render_scanline(struct GB_Core* gb) {
     // update the obj colour palettes
     update_colours(gb->ppu.dirty_obj, gb->ppu.obj_colours, gb->ppu.obj_palette);
 
-    if (LIKELY(GB_is_render_layer_enabled(gb, GB_RENDER_LAYER_CONFIG_BG))) {
+    if (LIKELY(GB_is_render_layer_enabled(gb, GB_RENDER_LAYER_CONFIG_BG)))
+    {
         render_scanline_bg(gb, &prio_buffer);
     }
 
     // WX=0..166, WY=0..143
-    if ((GB_is_win_enabled(gb)) && (IO_WX <= 166) && (IO_WY <= 143) && (IO_WY <= IO_LY)) {
-        if (LIKELY(GB_is_render_layer_enabled(gb, GB_RENDER_LAYER_CONFIG_WIN))) {
+    if ((GB_is_win_enabled(gb)) && (IO_WX <= 166) && (IO_WY <= 143) && (IO_WY <= IO_LY))
+    {
+        if (LIKELY(GB_is_render_layer_enabled(gb, GB_RENDER_LAYER_CONFIG_WIN)))
+        {
             render_scanline_win(gb, &prio_buffer);
         }
     }
 
-    if (LIKELY(GB_is_obj_enabled(gb))) {
-        if (LIKELY(GB_is_render_layer_enabled(gb, GB_RENDER_LAYER_CONFIG_OBJ))) {
+    if (LIKELY(GB_is_obj_enabled(gb)))
+    {
+        if (LIKELY(GB_is_render_layer_enabled(gb, GB_RENDER_LAYER_CONFIG_OBJ)))
+        {
             render_scanline_obj(gb, &prio_buffer);
         }
     }
