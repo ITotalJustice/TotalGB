@@ -27,23 +27,6 @@ extern "C" {
 #include <stdint.h>
 
 
-#define GB_LITTLE_ENDIAN 1
-#define GB_BIG_ENDIAN 2
-
-// todo: add more compilers endianess detection.
-#ifndef GB_ENDIAN
-#if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
-#define GB_ENDIAN GB_LITTLE_ENDIAN
-#elif __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
-#define GB_ENDIAN GB_BIG_ENDIAN
-#endif
-#endif /* GB_ENDIAN */
-
-#ifndef GB_ENDIAN
-#error GB_ENDIAN IS NOT SET! UNABLE TO DEDUCE PLATFORM ENDIANESS
-#endif /* GB_ENDIAN */
-
-
 // fwd declare structs
 struct GB_Core;
 struct GB_Rtc;
@@ -377,50 +360,6 @@ struct GB_RomInfo {
     uint32_t rom_size;
     uint32_t ram_size;
     uint8_t mbc_flags; /* flags ored together */
-};
-
-struct GB_BgAttributes {
-#if GB_ENDIAN == GB_LITTLE_ENDIAN
-    uint8_t pal:3;
-    uint8_t bank:1;
-    uint8_t _pad:1;
-    uint8_t xflip:1;
-    uint8_t yflip:1;
-    uint8_t priority:1;
-#else
-    uint8_t priority:1;
-    uint8_t yflip:1;
-    uint8_t xflip:1;
-    uint8_t _pad[1];
-    uint8_t bank:1;
-    uint8_t pal:3;
-#endif /* GB_ENDIAN */
-};
-
-// todo: ensure packed to 4 bytes.
-struct GB_Sprite {
-    uint8_t y;
-    uint8_t x;
-    uint8_t num;
-#if GB_ENDIAN == GB_LITTLE_ENDIAN
-    struct {
-        uint8_t pal_gbc:3;
-        uint8_t bank:1;
-        uint8_t pal_gb:1;
-        uint8_t xflip:1;
-        uint8_t yflip:1;
-        uint8_t priority:1;
-    } flag;
-#else
-    struct {
-        uint8_t priority:1;
-        uint8_t yflip:1;
-        uint8_t xflip:1;
-        uint8_t pal_gb:1;
-        uint8_t bank:1;
-        uint8_t pal_gbc:3;
-    } flag;
-#endif /* GB_ENDIAN */
 };
 
 struct GB_Rtc {
