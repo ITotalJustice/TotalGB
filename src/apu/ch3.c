@@ -79,12 +79,11 @@ void on_wave_trigger(struct GB_Core* gb)
 
     if (WAVE_CHANNEL.length_counter == 0)
     {
-        // TODO: this fails blarggs audio test2, so diabling for now...
-        // if (IO_NR34.length_enable && is_next_frame_sequencer_step_not_len(gb))
-        // {
-        //     WAVE_CHANNEL.length_counter = 255;
-        // }
-        // else
+        if (IO_NR34.length_enable && is_next_frame_sequencer_step_not_len(gb))
+        {
+            WAVE_CHANNEL.length_counter = 255;
+        }
+        else
         {
             WAVE_CHANNEL.length_counter = 256;
         }

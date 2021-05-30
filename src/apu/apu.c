@@ -40,14 +40,14 @@ static inline void clock_vol(struct GB_Core* gb)
 bool is_next_frame_sequencer_step_not_len(const struct GB_Core* gb)
 {
     // check if the current counter is the len clock, the next one won't be!
-    return gb->apu.frame_sequencer_counter == 0 || gb->apu.frame_sequencer_counter == 2 || gb->apu.frame_sequencer_counter == 4 || gb->apu.frame_sequencer_counter == 6;
+    return gb->apu.frame_sequencer_counter == 1 || gb->apu.frame_sequencer_counter == 3 || gb->apu.frame_sequencer_counter == 5 || gb->apu.frame_sequencer_counter == 7;
 }
 
 // this is used when channels 1,2,4 are triggered
 bool is_next_frame_sequencer_step_vol(const struct GB_Core* gb)
 {
     // check if the current counter is the len clock, the next one won't be!
-    return gb->apu.frame_sequencer_counter == 6;
+    return gb->apu.frame_sequencer_counter == 7;
 }
 
 // this runs at 512hz

@@ -151,15 +151,18 @@ void on_square1_trigger(struct GB_Core* gb)
 
     if (SQUARE1_CHANNEL.length_counter == 0)
     {
-        // TODO: this fails blarggs audio test2, so diabling for now...
-        // if (IO_NR14.length_enable && is_next_frame_sequencer_step_not_len(gb))
-        // {
-        //     SQUARE1_CHANNEL.length_counter = 63;
-        // }
-        // else
+        if (IO_NR14.length_enable && is_next_frame_sequencer_step_not_len(gb))
+        {
+            SQUARE1_CHANNEL.length_counter = 63;
+        }
+        else
         {
             SQUARE1_CHANNEL.length_counter = 64;
         }
+    }
+    if (IO_NR14.length_enable == false)
+    {
+        SQUARE1_CHANNEL.length_counter = 64;
     }
 
     SQUARE1_CHANNEL.disable_env = false;

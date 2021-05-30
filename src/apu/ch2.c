@@ -91,12 +91,11 @@ void on_square2_trigger(struct GB_Core* gb)
 
     if (SQUARE2_CHANNEL.length_counter == 0)
     {
-        // TODO: this fails blarggs audio test2, so diabling for now...
-        // if (IO_NR24.length_enable && is_next_frame_sequencer_step_not_len(gb))
-        // {
-        //     SQUARE2_CHANNEL.length_counter = 63;
-        // }
-        // else
+        if (IO_NR24.length_enable && is_next_frame_sequencer_step_not_len(gb))
+        {
+            SQUARE2_CHANNEL.length_counter = 63;
+        }
+        else
         {
             SQUARE2_CHANNEL.length_counter = 64;
         }
