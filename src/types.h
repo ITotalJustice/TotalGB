@@ -161,31 +161,6 @@ enum GB_Button
     GB_BUTTON_DIRECTIONAL = GB_BUTTON_XAXIS | GB_BUTTON_YAXIS,
 };
 
-enum GB_Interrupts
-{
-    GB_INTERRUPT_VBLANK     = 0x01,
-    GB_INTERRUPT_LCD_STAT   = 0x02,
-    GB_INTERRUPT_TIMER      = 0x04,
-    GB_INTERRUPT_SERIAL     = 0x08,
-    GB_INTERRUPT_JOYPAD     = 0x10,
-};
-
-enum GB_StatusModes
-{
-    STATUS_MODE_HBLANK      = 0,
-    STATUS_MODE_VBLANK      = 1,
-    STATUS_MODE_SPRITE      = 2,
-    STATUS_MODE_TRANSFER    = 3
-};
-
-enum GB_StatIntModes
-{
-    STAT_INT_MODE_0             = 0x08,
-    STAT_INT_MODE_1             = 0x10,
-    STAT_INT_MODE_2             = 0x20,
-    STAT_INT_MODE_COINCIDENCE   = 0x40
-};
-
 // the system type is set based on the game that is loaded
 // for example, if a gbc ONLY game is loaded, the system type is
 // set to GBC.
@@ -309,35 +284,31 @@ struct GB_ErrorData
 };
 
 // user-set callbacks
-typedef void(*GB_apu_callback_t)(struct GB_Core* gb, void* user,
-    const struct GB_ApuCallbackData* data
-);
-
-typedef void(*GB_error_callback_t)(struct GB_Core* gb, void* user,
-    struct GB_ErrorData* e
-);
-
-typedef void(*GB_vblank_callback_t)(struct GB_Core* gb, void* user);
-typedef void(*GB_hblank_callback_t)(struct GB_Core* gb, void* user);
-typedef void(*GB_dma_callback_t)(struct GB_Core* gb, void* user);
-typedef void(*GB_halt_callback_t)(struct GB_Core* gb, void* user);
-typedef void(*GB_stop_callback_t)(struct GB_Core* gb, void* user);
+typedef void (*GB_apu_callback_t)(void* user, struct GB_ApuCallbackData* data);
+typedef void (*GB_error_callback_t)(void* user, struct GB_ErrorData* e);
+typedef void (*GB_vblank_callback_t)(void* user);
+typedef void (*GB_hblank_callback_t)(void* user);
+typedef void (*GB_dma_callback_t)(void* user);
+typedef void (*GB_halt_callback_t)(void* user);
+typedef void (*GB_stop_callback_t)(void* user);
 
 
-enum GB_AudioCallbackMode
+struct GB_UserCallbacks
 {
-    /* sample buffer is first filled, then callback is called */
-    AUDIO_CALLBACK_FILL_SAMPLES,
-    /* this will push 1 sample at a time, as fast as possible */
-    AUDIO_CALLBACK_PUSH_ALL,
-};
-
-struct GB_AudioCallbackData
-{
-    GB_apu_callback_t cb;
     void* user_data;
-    enum GB_AudioCallbackMode mode;
-    int freq;
+
+    GB_apu_callback_t       apu;
+    GB_error_callback_t     error;
+    GB_vblank_callback_t    vblank;
+    GB_hblank_callback_t    hblank;
+    GB_dma_callback_t       dma;
+    GB_halt_callback_t      halt;
+    GB_stop_callback_t      stop;
+
+    struct
+    {
+        unsigned freq;
+    } apu_data;
 };
 
 enum GB_LinkTransferType
@@ -506,223 +477,128 @@ struct GB_Timer
     int16_t next_cycles;
 };
 
-// TODO: REMOVE ALL BITFIELDS!
-struct GB_ApuSquare1
+struct GB_ApuCh1
 {
-    struct
-    {
-        uint8_t sweep_period : 3;
-        uint8_t negate : 1;
-        uint8_t shift : 3;
-    } nr10;
-
-    struct
-    {
-        uint8_t duty : 2;
-        uint8_t length_load : 6;
-    } nr11;
-
-    struct
-    {
-        uint8_t starting_vol : 4;
-        uint8_t env_add_mode : 1;
-        uint8_t period : 3;
-    } nr12;
-
-    struct
-    {
-        uint8_t freq_lsb : 8;
-    } nr13;
-
-    struct
-    {
-        uint8_t trigger : 1;
-        uint8_t length_enable : 1;
-        uint8_t freq_msb : 3;
-    } nr14;
+    uint8_t sweep_period;
+    bool sweep_negate;
+    uint8_t sweep_shift;
+    uint8_t duty;
+    uint8_t length_load;
+    uint8_t starting_vol;
+    bool env_add_mode;
+    uint8_t period;
+    uint8_t freq_lsb;
+    uint8_t freq_msb;
+    bool length_enable;
 
     uint16_t freq_shadow_register;
     uint8_t internal_enable_flag;
 
     int16_t timer;
     int8_t volume_timer;
-    uint8_t duty_index : 3;
-    uint8_t volume : 4;
-    bool disable_env : 1;
+    uint8_t duty_index;
+    uint8_t volume;
+    bool disable_env;
 
     int8_t sweep_timer;
 
     uint8_t length_counter;
 };
 
-struct GB_ApuSquare2
+struct GB_ApuCh2
 {
-    struct
-    {
-        uint8_t duty : 2;
-        uint8_t length_load : 6;
-    } nr21;
-
-    struct
-    {
-        uint8_t starting_vol : 4;
-        uint8_t env_add_mode : 1;
-        uint8_t period : 3;
-    } nr22;
-
-    struct
-    {
-        uint8_t freq_lsb : 8;
-    } nr23;
-
-    struct
-    {
-        uint8_t trigger : 1;
-        uint8_t length_enable : 1;
-        uint8_t freq_msb : 3;
-    } nr24;
+    uint8_t sweep_period;
+    bool sweep_negate;
+    uint8_t sweep_shift;
+    uint8_t duty;
+    uint8_t length_load;
+    uint8_t starting_vol;
+    bool env_add_mode;
+    uint8_t period;
+    uint8_t freq_lsb;
+    uint8_t freq_msb;
+    bool length_enable;
 
     int16_t timer;
     int8_t volume_timer;
-    uint8_t duty_index : 3;
-    uint8_t volume : 4;
-    bool disable_env : 1;
+    uint8_t duty_index;
+    uint8_t volume;
+    bool disable_env;
 
     uint8_t length_counter;
 };
 
-struct GB_ApuWave
+struct GB_ApuCh3
 {
-    struct
-    {
-        uint8_t DAC_power : 1;
-    } nr30;
-
-    struct
-    {
-        uint8_t length_load : 8;
-    } nr31;
-
-    struct
-    {
-        uint8_t vol_code : 2;
-    } nr32;
-
-    struct
-    {
-        uint8_t freq_lsb : 8;
-    } nr33;
-
-    struct
-    {
-        uint8_t trigger : 1;
-        uint8_t length_enable : 1;
-        uint8_t freq_msb : 3;
-    } nr34;
+    bool dac_power;
+    uint8_t length_load;
+    uint8_t vol_code;
+    uint8_t freq_lsb;
+    uint8_t freq_msb;
+    bool length_enable;
 
     uint8_t wave_ram[0x10];
 
-    uint16_t length_counter : 9;
+    uint16_t length_counter;
     uint8_t sample_buffer;
-    uint8_t position_counter : 6;
+    uint8_t position_counter;
 
     int16_t timer;
 };
 
-struct GB_ApuNoise
+struct GB_ApuCh4
 {
-    struct
-    {
-        uint8_t length_load : 6;
-    } nr41;
+    uint8_t length_load;
+    uint8_t starting_vol;
+    bool env_add_mode;
 
-    struct
-    {
-        uint8_t starting_vol : 4;
-        uint8_t env_add_mode : 1;
-        uint8_t period : 3;
-    } nr42;
-
-    struct
-    {
-        uint8_t clock_shift : 4;
-        uint8_t width_mode : 1;
-        uint8_t divisor_code : 3;
-    } nr43;
-
-    struct
-    {
-        uint8_t trigger : 1;
-        uint8_t length_enable : 1;
-    } nr44;
+    uint8_t period;
+    uint8_t clock_shift;
+    bool width_mode;
+    uint8_t divisor_code;
+    
+    bool length_enable;
 
     int32_t timer;
 
-    uint16_t LFSR : 15;
+    uint16_t lfsr;
 
     int8_t volume_timer;
-    uint8_t volume : 4;
-    bool disable_env : 1;
+    uint8_t volume;
+    bool disable_env;
 
     uint8_t length_counter;
 };
 
 struct GB_ApuControl
 {
-    struct
-    {
-        uint8_t vin_l : 1;
-        uint8_t left_vol : 3;
-        uint8_t vin_r : 1;
-        uint8_t right_vol : 3;
-    } nr50;
-
-    struct
-    {
-        uint8_t noise_left : 1;
-        uint8_t wave_left : 1;
-        uint8_t square2_left : 1;
-        uint8_t square1_left : 1;
-
-        uint8_t noise_right : 1;
-        uint8_t wave_right : 1;
-        uint8_t square2_right : 1;
-        uint8_t square1_right : 1;
-    } nr51;
-
-    struct
-    {
-        uint8_t power : 1;
-        uint8_t noise : 1;
-        uint8_t wave : 1;
-        uint8_t square2 : 1;
-        uint8_t square1 : 1;
-    } nr52;
+    bool vin_l;
+    bool vin_r;
+    uint8_t left_vol;
+    uint8_t right_vol;
+   
+    bool ch1_left;
+    bool ch1_right;
+    bool ch2_left;
+    bool ch2_right;
+    bool ch3_left;
+    bool ch3_right;
+    bool ch4_left;
+    bool ch4_right;
+    
+    bool power;
+    bool ch1_on;
+    bool ch2_on;
+    bool ch3_on;
+    bool ch4_on;
 };
 
 struct GB_ApuCallbackData
 {
-    // type
-    union
-    {
-        struct
-        {
-            // 2 because of stereo
-            int8_t ch1[2];
-            int8_t ch2[2];
-            int8_t ch3[2];
-            int8_t ch4[2];
-        } samples;
-
-        struct
-        {
-            // 512 samples * sterero
-            int8_t ch1[512 * 2];
-            int8_t ch2[512 * 2];
-            int8_t ch3[512 * 2];
-            int8_t ch4[512 * 2];
-        } buffers;
-    } data;
+    int8_t ch1[2];
+    int8_t ch2[2];
+    int8_t ch3[2];
+    int8_t ch4[2];
 };
 
 struct GB_Apu
@@ -730,17 +606,13 @@ struct GB_Apu
     uint16_t next_frame_sequencer_cycles;
     uint16_t next_sample_cycles;
 
-    struct GB_ApuSquare1 square1;
-    struct GB_ApuSquare2 square2;
-    struct GB_ApuWave wave;
-    struct GB_ApuNoise noise;
+    struct GB_ApuCh1 ch1; // square 1
+    struct GB_ApuCh2 ch2; // square 2
+    struct GB_ApuCh3 ch3; // wave
+    struct GB_ApuCh4 ch4; // noise
     struct GB_ApuControl control;
 
-    uint8_t frame_sequencer_counter : 3;
-
-    struct GB_ApuCallbackData samples;
-    uint16_t samples_count;
-    enum GB_AudioCallbackMode sample_mode;
+    uint8_t frame_sequencer_counter;
 };
 
 // TODO: this struct needs to be re-organised.
@@ -773,32 +645,12 @@ struct GB_Core
     void* pixels;
     uint32_t pitch;
 
-    // TODO: only have 1 user data ptr, not per callback!!!
-    GB_apu_callback_t apu_cb;
-    void* apu_cb_user_data;
-
+    // todo: does this need it's own user data?
     GB_serial_transfer_t link_cable;
     void* link_cable_user_data;
     bool is_master;
 
-    // callbacks + user_data
-    GB_vblank_callback_t vblank_cb;
-    void* vblank_cb_user_data;
-
-    GB_hblank_callback_t hblank_cb;
-    void* hblank_cb_user_data;
-
-    GB_dma_callback_t dma_cb;
-    void* dma_cb_user_data;
-
-    GB_halt_callback_t halt_cb;
-    void* halt_cb_user_data;
-
-    GB_stop_callback_t stop_cb;
-    void* stop_cb_user_data;
-
-    GB_error_callback_t error_cb;
-    void* error_cb_user_data;
+    struct GB_UserCallbacks callback;
 };
 
 // i decided that the ram usage / statefile size is less important
@@ -857,7 +709,7 @@ struct GB_SaveData
     uint32_t size; // is filled internally
     uint8_t data[GB_SAVE_SIZE_MAX];
     struct GB_Rtc rtc;
-    bool has_rtc : 1; // is filled internally
+    bool has_rtc; // is filled internally
 };
 
 struct GB_CartName

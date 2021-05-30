@@ -7,20 +7,13 @@
 
 const bool SQUARE_DUTY_CYCLES[4][8] =
 {
-    [0] =
-    { 0, 0, 0, 0, 0, 0, 0, 1 },
-    [1] =
-    { 1, 0, 0, 0, 0, 0, 0, 1 },
-    [2] =
-    { 0, 0, 0, 0, 0, 1, 1, 1 },
-    [3] =
-    { 0, 1, 1, 1, 1, 1, 1, 0 },
+    [0] = { 0, 0, 0, 0, 0, 0, 0, 1 },
+    [1] = { 1, 0, 0, 0, 0, 0, 0, 1 },
+    [2] = { 0, 0, 0, 0, 0, 1, 1, 1 },
+    [3] = { 0, 1, 1, 1, 1, 1, 1, 0 },
 };
 
-const uint8_t PERIOD_TABLE[8] =
-{
-    8, 1, 2, 3, 4, 5, 6, 7,
-};
+const uint8_t PERIOD_TABLE[8] = { 8, 1, 2, 3, 4, 5, 6, 7 };
 
 
 static inline void clock_len(struct GB_Core* gb)
@@ -94,7 +87,7 @@ static inline void step_frame_sequencer(struct GB_Core* gb)
             break;
     }
 
-    ++gb->apu.frame_sequencer_counter;
+    gb->apu.frame_sequencer_counter = (gb->apu.frame_sequencer_counter + 1) % 8;
 }
 
 struct MixerResult
@@ -143,7 +136,7 @@ static inline void sample_channels(struct GB_Core* gb)
 {
     // check if we have any callbacks set, if not, avoid
     // doing all the hardwork below!
-    if (gb->apu_cb == NULL)
+    if (gb->callback.apu == NULL)
     {
         return;
     }
@@ -154,63 +147,42 @@ static inline void sample_channels(struct GB_Core* gb)
         .ch1 =
         {
             .sample = sample_square1(gb) * is_square1_enabled(gb),
-            .left = IO_NR51.square1_left,
-            .right = IO_NR51.square1_right
+            .left = IO_NR51.ch1_left,
+            .right = IO_NR51.ch1_right
         },
         .ch2 =
         {
             .sample = sample_square2(gb) * is_square2_enabled(gb),
-            .left = IO_NR51.square2_left,
-            .right = IO_NR51.square2_right
+            .left = IO_NR51.ch2_left,
+            .right = IO_NR51.ch2_right
         },
         .ch3 =
         {
             .sample = sample_wave(gb) * is_wave_enabled(gb),
-            .left = IO_NR51.wave_left,
-            .right = IO_NR51.wave_right
+            .left = IO_NR51.ch3_left,
+            .right = IO_NR51.ch3_right
         },
         .ch4 =
         {
             .sample = sample_noise(gb) * is_noise_enabled(gb),
-            .left = IO_NR51.noise_left,
-            .right = IO_NR51.noise_right
+            .left = IO_NR51.ch4_left,
+            .right = IO_NR51.ch4_right
         },
-        .left_master = CONTROL_CHANNEL.nr50.left_vol,
-        .right_master = CONTROL_CHANNEL.nr50.right_vol
+        .left_master = IO_NR50.left_vol,
+        .right_master = IO_NR50.right_vol
     };
 
     const struct MixerResult r = mixer(&mixer_data);
 
-    struct GB_ApuCallbackData* samples = &gb->apu.samples;
-    const uint32_t sample_count = gb->apu.samples_count;
-
-    samples->data.buffers.ch1[sample_count + 0] = r.ch1[0];
-    samples->data.buffers.ch1[sample_count + 1] = r.ch1[1];
-    samples->data.buffers.ch2[sample_count + 0] = r.ch2[0];
-    samples->data.buffers.ch2[sample_count + 1] = r.ch2[1];
-    samples->data.buffers.ch3[sample_count + 0] = r.ch3[0];
-    samples->data.buffers.ch3[sample_count + 1] = r.ch3[1];
-    samples->data.buffers.ch4[sample_count + 0] = r.ch4[0];
-    samples->data.buffers.ch4[sample_count + 1] = r.ch4[1];
-
-    // fill the samples based on the mode!
-    switch (gb->apu.sample_mode)
+    struct GB_ApuCallbackData samples =
     {
-        case AUDIO_CALLBACK_FILL_SAMPLES:
-            gb->apu.samples_count += 2;
+        .ch1 = { r.ch1[0], r.ch1[1] },
+        .ch2 = { r.ch2[0], r.ch2[1] },
+        .ch3 = { r.ch3[0], r.ch3[1] },
+        .ch4 = { r.ch4[0], r.ch4[1] },
+    };
 
-            // check if we filled the buffer
-            if (gb->apu.samples_count >= 512*2)
-            {
-                gb->apu.samples_count = 0;
-                gb->apu_cb(gb, gb->apu_cb_user_data, samples);
-            }
-            break;
-
-        case AUDIO_CALLBACK_PUSH_ALL:
-            gb->apu_cb(gb, gb->apu_cb_user_data, samples);
-            break;
-    }
+    gb->callback.apu(gb->callback.user_data, &samples);
 }
 
 void GB_apu_run(struct GB_Core* gb, uint16_t cycles)
@@ -226,14 +198,14 @@ void GB_apu_run(struct GB_Core* gb, uint16_t cycles)
         while (SQUARE1_CHANNEL.timer <= 0)
         {
             SQUARE1_CHANNEL.timer += get_square1_freq(gb);
-            ++SQUARE1_CHANNEL.duty_index;
+            SQUARE1_CHANNEL.duty_index = (SQUARE1_CHANNEL.duty_index + 1) % 8;
         }
 
         SQUARE2_CHANNEL.timer -= cycles;
         while (SQUARE2_CHANNEL.timer <= 0)
         {
             SQUARE2_CHANNEL.timer += get_square2_freq(gb);
-            ++SQUARE2_CHANNEL.duty_index;
+            SQUARE2_CHANNEL.duty_index = (SQUARE2_CHANNEL.duty_index + 1) % 8;
         }
 
         WAVE_CHANNEL.timer -= cycles;
@@ -270,24 +242,17 @@ void GB_apu_run(struct GB_Core* gb, uint16_t cycles)
     // a fixed silence value, rather than fake-creating samples for
     // no reason.
 
-    switch (gb->apu.sample_mode)
-    {
-        case AUDIO_CALLBACK_FILL_SAMPLES:
-            gb->apu.next_sample_cycles += cycles;
-            while (gb->apu.next_sample_cycles >= SAMPLE_RATE)
-            {
-                gb->apu.next_sample_cycles -= SAMPLE_RATE;
-                sample_channels(gb);
-            }
-            break;
+    gb->apu.next_sample_cycles += cycles;
 
-        case AUDIO_CALLBACK_PUSH_ALL:
-            gb->apu.next_sample_cycles += cycles;
-            while (gb->apu.next_sample_cycles >= 8)
-            {
-                gb->apu.next_sample_cycles -= 8;
-                sample_channels(gb);
-            }
-            break;
+    while (gb->apu.next_sample_cycles >= CALC_CALLBACK_FREQ(gb->callback.apu_data.freq))
+    {
+        gb->apu.next_sample_cycles -= CALC_CALLBACK_FREQ(gb->callback.apu_data.freq);
+        sample_channels(gb);
     }
+
+    // while (gb->apu.next_sample_cycles >= 4)
+    // {
+    //     gb->apu.next_sample_cycles -= 4;
+    //     sample_channels(gb);
+    // }
 }

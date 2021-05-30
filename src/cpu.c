@@ -74,8 +74,10 @@ enum FlagMasks {
 
 
 // [API] not used by the cpu core
-void GB_cpu_set_flag(struct GB_Core* gb, enum GB_CpuFlags flag, bool value) {
-    switch (flag) {
+void GB_cpu_set_flag(struct GB_Core* gb, enum GB_CpuFlags flag, bool value)
+{
+    switch (flag)
+    {
         case GB_CPU_FLAG_C: SET_FLAG_C(value); break;
         case GB_CPU_FLAG_H: SET_FLAG_H(value); break;
         case GB_CPU_FLAG_N: SET_FLAG_N(value); break;
@@ -83,8 +85,10 @@ void GB_cpu_set_flag(struct GB_Core* gb, enum GB_CpuFlags flag, bool value) {
     }
 }
 
-bool GB_cpu_get_flag(const struct GB_Core* gb, enum GB_CpuFlags flag) {
-    switch (flag) {
+bool GB_cpu_get_flag(const struct GB_Core* gb, enum GB_CpuFlags flag)
+{
+    switch (flag)
+    {
         case GB_CPU_FLAG_C: return FLAG_C;
         case GB_CPU_FLAG_H: return FLAG_H;
         case GB_CPU_FLAG_N: return FLAG_N;
@@ -94,8 +98,10 @@ bool GB_cpu_get_flag(const struct GB_Core* gb, enum GB_CpuFlags flag) {
     GB_UNREACHABLE(false);
 }
 
-void GB_cpu_set_register(struct GB_Core* gb, enum GB_CpuRegisters reg, uint8_t value) {
-    switch (reg) {
+void GB_cpu_set_register(struct GB_Core* gb, enum GB_CpuRegisters reg, uint8_t value)
+{
+    switch (reg)
+    {
         case GB_CPU_REGISTER_B: REG_B = value; break;
         case GB_CPU_REGISTER_C: REG_C = value; break;
         case GB_CPU_REGISTER_D: REG_D = value; break;
@@ -107,8 +113,10 @@ void GB_cpu_set_register(struct GB_Core* gb, enum GB_CpuRegisters reg, uint8_t v
     }
 }
 
-uint8_t GB_cpu_get_register(const struct GB_Core* gb, enum GB_CpuRegisters reg) {
-    switch (reg) {
+uint8_t GB_cpu_get_register(const struct GB_Core* gb, enum GB_CpuRegisters reg)
+{
+    switch (reg)
+    {
         case GB_CPU_REGISTER_B: return REG_B;
         case GB_CPU_REGISTER_C: return REG_C;
         case GB_CPU_REGISTER_D: return REG_D;
@@ -122,8 +130,10 @@ uint8_t GB_cpu_get_register(const struct GB_Core* gb, enum GB_CpuRegisters reg) 
     GB_UNREACHABLE(0xFF);
 }
 
-void GB_cpu_set_register_pair(struct GB_Core* gb, enum GB_CpuRegisterPairs pair, uint16_t value) {
-    switch (pair) {
+void GB_cpu_set_register_pair(struct GB_Core* gb, enum GB_CpuRegisterPairs pair, uint16_t value)
+{
+    switch (pair)
+    {
         case GB_CPU_REGISTER_PAIR_BC: SET_REG_BC(value); break;
         case GB_CPU_REGISTER_PAIR_DE: SET_REG_DE(value); break;
         case GB_CPU_REGISTER_PAIR_HL: SET_REG_HL(value); break;
@@ -133,8 +143,10 @@ void GB_cpu_set_register_pair(struct GB_Core* gb, enum GB_CpuRegisterPairs pair,
     }
 }
 
-uint16_t GB_cpu_get_register_pair(const struct GB_Core* gb, enum GB_CpuRegisterPairs pair) {
-    switch (pair) {
+uint16_t GB_cpu_get_register_pair(const struct GB_Core* gb, enum GB_CpuRegisterPairs pair)
+{
+    switch (pair)
+    {
         case GB_CPU_REGISTER_PAIR_BC: return REG_BC;
         case GB_CPU_REGISTER_PAIR_DE: return REG_DE;
         case GB_CPU_REGISTER_PAIR_HL: return REG_HL;
@@ -179,12 +191,14 @@ uint16_t GB_cpu_get_register_pair(const struct GB_Core* gb, enum GB_CpuRegisterP
 static inline void GB_execute(struct GB_Core* gb);
 static inline void GB_execute_cb(struct GB_Core* gb);
 
-static inline void GB_PUSH(struct GB_Core* gb, uint16_t value) {
+static inline void GB_PUSH(struct GB_Core* gb, uint16_t value)
+{
     write8(--REG_SP, (value >> 8) & 0xFF);
     write8(--REG_SP, value & 0xFF);
 }
 
-static inline uint16_t GB_POP(struct GB_Core* gb) {
+static inline uint16_t GB_POP(struct GB_Core* gb)
+{
     const uint16_t result = read16(REG_SP);
     REG_SP += 2;
     return result;
@@ -821,10 +835,6 @@ static inline uint16_t GB_POP(struct GB_Core* gb) {
 // TODO: add halt bug, thunderbirds relies on it...
 static inline void HALT(struct GB_Core* gb) {
     gb->cpu.halt = true;
-
-    if (gb->halt_cb != NULL) {
-        gb->halt_cb(gb, gb->halt_cb_user_data);
-    }
 }
 
 static inline void STOP(struct GB_Core* gb) {
@@ -839,21 +849,22 @@ static inline void STOP(struct GB_Core* gb) {
             // or normal speed mode.
             IO_KEY1 = (gb->cpu.double_speed << 7);
         }
-        // if stop was called and speed-switch wasn't set, then
-        // something has gone wrong, report this via callback
-        else {
-            if (gb->stop_cb != NULL) {
-                gb->stop_cb(gb, gb->stop_cb_user_data);
-            }
-        }
+        // TODO: replace stop callback with error callback!!
+        // // if stop was called and speed-switch wasn't set, then
+        // // something has gone wrong, report this via callback
+        // else {
+        //     if (gb->stop_cb != NULL) {
+        //         gb->stop_cb(gb->stop_cb_user_data);
+        //     }
+        // }
     }
-    // the game should never try to stop if it's a normal DMG game
-    // should this happen, call the error callback
-    else {
-        if (gb->stop_cb != NULL) {
-            gb->stop_cb(gb, gb->stop_cb_user_data);
-        }
-    }
+    // // the game should never try to stop if it's a normal DMG game
+    // // should this happen, call the error callback
+    // else {
+    //     if (gb->stop_cb != NULL) {
+    //         gb->stop_cb(gb->stop_cb_user_data);
+    //     }
+    // }
 
     // STOP is a 2-byte instruction, 0x10 | 0x00
     const uint8_t next_byte = read8(REG_PC++);
@@ -867,13 +878,13 @@ static inline void STOP(struct GB_Core* gb) {
 }
 
 static void UNK_OP(struct GB_Core* gb, uint8_t opcode, bool cb_prefix) {
-    if (gb->error_cb != NULL) {
+    if (gb->callback.error != NULL) {
         struct GB_ErrorData data = {0};
         data.type = GB_ERROR_TYPE_UNKNOWN_INSTRUCTION;
         data.data.unk_instruction.cb_prefix = cb_prefix;
         data.data.unk_instruction.opcode = opcode;
 
-        gb->error_cb(gb, gb->error_cb_user_data, &data);
+        gb->callback.error(gb->callback.user_data, &data);
     }
 }
 
@@ -1264,7 +1275,8 @@ static inline void GB_execute_cb(struct GB_Core* gb) {
     gb->cpu.cycles += CYCLE_TABLE_CB[opcode];
 }
 
-uint16_t GB_cpu_run(struct GB_Core* gb, uint16_t cycles) {
+uint16_t GB_cpu_run(struct GB_Core* gb, uint16_t cycles)
+{
     GB_UNUSED(cycles);
 
     // reset cycles counter
@@ -1275,14 +1287,16 @@ uint16_t GB_cpu_run(struct GB_Core* gb, uint16_t cycles) {
 
     // if halted, return early
     // todo: need accurate cycles elapsed.
-    if (UNLIKELY(gb->cpu.halt)) {
-        return 8;
+    if (UNLIKELY(gb->cpu.halt))
+    {
+        return 4;
     }
 
     GB_execute(gb);
 
     #ifdef GB_DEBUG
-    if (CPU_LOG) {
+    if (CPU_LOG)
+    {
         ++CPU_DEBUG_CYCLYES;
     }
     #endif // GB_DEBUG

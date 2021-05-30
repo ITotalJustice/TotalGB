@@ -25,23 +25,23 @@ bool is_noise_dac_enabled(const struct GB_Core* gb)
 
 bool is_noise_enabled(const struct GB_Core* gb)
 {
-    return IO_NR52.noise > 0;
+    return IO_NR52.ch4_on;
 }
 
 void noise_enable(struct GB_Core* gb)
 {
-    IO_NR52.noise = 1;
+    IO_NR52.ch4_on = true;
 }
 
 void noise_disable(struct GB_Core* gb)
 {
-    IO_NR52.noise = 0;
+    IO_NR52.ch4_on = false;
 }
 
 int8_t sample_noise(struct GB_Core* gb)
 {
     // docs say that it's bit-0 INVERTED
-    const bool bit = !(NOISE_CHANNEL.LFSR & 0x1);
+    const bool bit = !(NOISE_CHANNEL.lfsr & 0x1);
     if (bit == 1)
     {
         return NOISE_CHANNEL.volume;
@@ -79,7 +79,8 @@ void clock_noise_vol(struct GB_Core* gb)
                 if (IO_NR42.env_add_mode == ADD)
                 {
                     ++new_vol;
-                } else
+                }
+                else
                 {
                     --new_vol;
                 }
@@ -87,7 +88,8 @@ void clock_noise_vol(struct GB_Core* gb)
                 if (new_vol <= 15)
                 {
                     NOISE_CHANNEL.volume = new_vol;
-                } else
+                }
+                else
                 {
                     NOISE_CHANNEL.disable_env = true;
                 }
@@ -98,22 +100,22 @@ void clock_noise_vol(struct GB_Core* gb)
 
 void step_noise_lfsr(struct GB_Core* gb)
 {
-    const uint8_t bit0 = NOISE_CHANNEL.LFSR & 0x1;
-    const uint8_t bit1 = (NOISE_CHANNEL.LFSR >> 1) & 0x1;
+    const uint8_t bit0 = NOISE_CHANNEL.lfsr & 0x1;
+    const uint8_t bit1 = (NOISE_CHANNEL.lfsr >> 1) & 0x1;
     const uint8_t result = bit1 ^ bit0;
 
     // now we shift the lfsr BEFORE setting the value!
-    NOISE_CHANNEL.LFSR >>= 1;
+    NOISE_CHANNEL.lfsr >>= 1;
 
     // now set bit 15
-    NOISE_CHANNEL.LFSR |= (result << 14);
+    NOISE_CHANNEL.lfsr |= (result << 14);
 
     // set bit-6 if the width is half-mode
     if (IO_NR43.width_mode == WIDTH_7_BITS)
     {
         // unset it first!
-        NOISE_CHANNEL.LFSR &= ~(1 << 6);
-        NOISE_CHANNEL.LFSR |= (result << 6);
+        NOISE_CHANNEL.lfsr &= ~(1 << 6);
+        NOISE_CHANNEL.lfsr |= (result << 6);
     }
 }
 
@@ -123,10 +125,12 @@ void on_noise_trigger(struct GB_Core* gb)
 
     if (NOISE_CHANNEL.length_counter == 0)
     {
-        if (IO_NR44.length_enable && is_next_frame_sequencer_step_not_len(gb))
-        {
-            NOISE_CHANNEL.length_counter = 63;
-        } else
+        // TODO: this fails blarggs audio test2, so diabling for now...
+        // if (IO_NR44.length_enable && is_next_frame_sequencer_step_not_len(gb))
+        // {
+        //     NOISE_CHANNEL.length_counter = 63;
+        // }
+        // else
         {
             NOISE_CHANNEL.length_counter = 64;
         }
@@ -143,7 +147,7 @@ void on_noise_trigger(struct GB_Core* gb)
     // reload the volume
     NOISE_CHANNEL.volume = IO_NR42.starting_vol;
     // set all bits of the lfsr to 1
-    NOISE_CHANNEL.LFSR = 0x7FFF;
+    NOISE_CHANNEL.lfsr = 0x7FFF;
 
     NOISE_CHANNEL.timer = get_noise_freq(gb);
 

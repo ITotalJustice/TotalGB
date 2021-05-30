@@ -12,10 +12,10 @@ add_library(TotalGB
     ppu/sgb_renderer.c
     apu/apu.c
     apu/io.c
-    apu/square1.c
-    apu/square2.c
-    apu/wave.c
-    apu/noise.c
+    apu/ch1.c
+    apu/ch2.c
+    apu/ch3.c
+    apu/ch4.c
     mbc/mbc.c
     mbc/mbc_0.c
     mbc/mbc_1.c

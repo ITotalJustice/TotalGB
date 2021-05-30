@@ -62,8 +62,6 @@ GBAPI uint16_t GB_run_step(struct GB_Core* gb);
 /* run until the end of a frame */
 GBAPI void GB_run_frame(struct GB_Core* gb);
 
-GBAPI void GB_set_render_palette_layer_config(struct GB_Core* gb, enum GB_RenderLayerConfig layer);
-
 GBAPI enum GB_SystemType GB_get_system_type(const struct GB_Core* gb);
 
 // calls GB_get_system_type(gb) and compares the result
@@ -83,34 +81,30 @@ GBAPI void GB_get_rom_info(const struct GB_Core* gb, struct GB_RomInfo* info);
 GBAPI int GB_get_rom_name(const struct GB_Core* gb, struct GB_CartName* name);
 GBAPI int GB_get_rom_name_from_header(const struct GB_CartHeader* header, struct GB_CartName* name);
 
+/* set the user_data that's passed to the callbacks */
+GBAPI void gb_set_userdata(struct GB_Core* gb, void* user_data);
+
 /* set a callback which will be called when apu has filled 512 stero samples. */
 /* not setting this callback is valid, just that you won't have audio... */
-/* set the cb param to NULL to remove the callback */
-GBAPI void GB_set_apu_callback(struct GB_Core* gb, struct GB_AudioCallbackData* data);
+GBAPI void GB_set_apu_callback(struct GB_Core* gb, GB_apu_callback_t cb, int freq);
 
 /* set a callback which will be called when vblank happens. */
-/* set the cb param to NULL to remove the callback */
-GBAPI void GB_set_vblank_callback(struct GB_Core* gb, GB_vblank_callback_t cb, void* user_data);
+GBAPI void GB_set_vblank_callback(struct GB_Core* gb, GB_vblank_callback_t cb);
 
 /* set a callback which will be called when hblank happens. */
-/* set the cb param to NULL to remove the callback */
-GBAPI void GB_set_hblank_callback(struct GB_Core* gb, GB_hblank_callback_t cb, void* user_data);
+GBAPI void GB_set_hblank_callback(struct GB_Core* gb, GB_hblank_callback_t cb);
 
 /* set a callback which will be called when dma happens. */
-/* set the cb param to NULL to remove the callback */
-GBAPI void GB_set_dma_callback(struct GB_Core* gb, GB_dma_callback_t cb, void* user_data);
+GBAPI void GB_set_dma_callback(struct GB_Core* gb, GB_dma_callback_t cb);
 
 /* set a callback which will be called when halt happens. */
-/* set the cb param to NULL to remove the callback */
-GBAPI void GB_set_halt_callback(struct GB_Core* gb, GB_halt_callback_t cb, void* user_data);
+GBAPI void GB_set_halt_callback(struct GB_Core* gb, GB_halt_callback_t cb);
 
 /* set a callback which will be called when stop happens. */
-/* set the cb param to NULL to remove the callback */
-GBAPI void GB_set_stop_callback(struct GB_Core* gb, GB_stop_callback_t cb, void* user_data);
+GBAPI void GB_set_stop_callback(struct GB_Core* gb, GB_stop_callback_t cb);
 
 /* set a callback which will be called when error happens. */
-/* set the cb param to NULL to remove the callback */
-GBAPI void GB_set_error_callback(struct GB_Core* gb, GB_error_callback_t cb, void* user_data);
+GBAPI void GB_set_error_callback(struct GB_Core* gb, GB_error_callback_t cb);
 
 /* set a callback which will be called when link transfer happens. */
 /* set the cb param to NULL to remove the callback */
@@ -121,6 +115,13 @@ GBAPI void GB_connect_link_cable(struct GB_Core* gb, GB_serial_transfer_t cb, vo
 // WARNING: this will overwrite the exisitng link_cable_cb and user_data!
 GBAPI void GB_connect_link_cable_builtin(struct GB_Core* gb, struct GB_Core* gb2);
 
+// this can be used to set multiple buttons down or up
+// at once, or can set just 1.
+GBAPI void GB_set_buttons(struct GB_Core* gb, uint8_t buttons, bool is_down);
+GBAPI uint8_t GB_get_buttons(const struct GB_Core* gb);
+GBAPI bool GB_is_button_down(const struct GB_Core* gb, enum GB_Button button);
+
+// make this a seperate header, gb_adv.h, add these there
 GBAPI bool GB_get_rom_palette_hash_from_header(const struct GB_CartHeader* header, uint8_t* hash, uint8_t* forth);
 
 GBAPI bool GB_get_rom_palette_hash(const struct GB_Core* gb, uint8_t* hash, uint8_t* forth);
@@ -129,16 +130,12 @@ GBAPI bool GB_set_palette_from_table_entry(struct GB_Core* gb, uint8_t table, ui
 
 GBAPI bool GB_set_palette_from_hash(struct GB_Core* gb, uint8_t hash);
 
+// todo: show button table here or link to the table!
 GBAPI bool GB_set_palette_from_buttons(struct GB_Core* gb, uint8_t buttons);
 
+// todo: check if this still needs to be bgr555
 /* set a custom palette, must be BGR555 format */
 GBAPI bool GB_set_palette_from_palette(struct GB_Core* gb, const struct GB_PaletteEntry* palette);
-
-// this can be used to set multiple buttons down or up
-// at once, or can set just 1.
-GBAPI void GB_set_buttons(struct GB_Core* gb, uint8_t buttons, bool is_down);
-GBAPI uint8_t GB_get_buttons(const struct GB_Core* gb);
-GBAPI bool GB_is_button_down(const struct GB_Core* gb, enum GB_Button button);
 
 GBAPI void GB_cpu_set_flag(struct GB_Core* gb, enum GB_CpuFlags flag, bool value);
 GBAPI bool GB_cpu_get_flag(const struct GB_Core* gb, enum GB_CpuFlags flag);

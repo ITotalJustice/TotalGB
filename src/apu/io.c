@@ -9,7 +9,7 @@ uint8_t GB_apu_ioread(const struct GB_Core* gb, const uint16_t addr)
     switch (addr & 0x7F)
     {
         case 0x10:
-            return 0x80 | (IO_NR10.sweep_period << 4) | (IO_NR10.negate << 3) | IO_NR10.shift;
+            return 0x80 | (IO_NR10.sweep_period << 4) | (IO_NR10.sweep_negate << 3) | IO_NR10.sweep_shift;
 
         case 0x11:
             return 0x3F | (IO_NR11.duty << 6);
@@ -30,7 +30,7 @@ uint8_t GB_apu_ioread(const struct GB_Core* gb, const uint16_t addr)
             return 0xBF | (IO_NR24.length_enable << 6);
 
         case 0x1A:
-            return 0x7F |  (IO_NR30.DAC_power << 7);
+            return 0x7F |  (IO_NR30.dac_power << 7);
 
         case 0x1C:
             return 0x9F | (IO_NR32.vol_code << 5);
@@ -51,10 +51,15 @@ uint8_t GB_apu_ioread(const struct GB_Core* gb, const uint16_t addr)
             return (IO_NR50.vin_l << 7) | (IO_NR50.left_vol << 4) | (IO_NR50.vin_r << 3) | IO_NR50.right_vol;
 
         case 0x25:
-            return (IO_NR51.noise_left << 7) | (IO_NR51.wave_left << 6) | (IO_NR51.square1_left << 5) | (IO_NR51.square2_left << 4) | (IO_NR51.noise_right << 3) | (IO_NR51.wave_right << 2) | (IO_NR51.square1_right << 1) | IO_NR51.square2_right;
+            return (IO_NR51.ch4_left << 7) | (IO_NR51.ch3_left << 6) | (IO_NR51.ch1_left << 5) | (IO_NR51.ch2_left << 4) | (IO_NR51.ch4_right << 3) | (IO_NR51.ch3_right << 2) | (IO_NR51.ch1_right << 1) | IO_NR51.ch2_right;
 
         case 0x26:
-            return 0x70 | (IO_NR52.power << 7) | (IO_NR52.noise << 3) | (IO_NR52.wave << 2) | (IO_NR52.square2 << 1) | (IO_NR52.square1);
+            return 0x70 |
+                (IO_NR52.power << 7) |
+                (IO_NR52.ch4_on << 3) |
+                (IO_NR52.ch3_on << 2) |
+                (IO_NR52.ch2_on << 1) |
+                (IO_NR52.ch1_on << 0);
 
         case 0x30: case 0x31: case 0x32: case 0x33:
         case 0x34: case 0x35: case 0x36: case 0x37:
@@ -77,8 +82,8 @@ void GB_apu_iowrite(struct GB_Core* gb, const uint16_t addr, const uint8_t value
     {
         case 0x10:
             IO_NR10.sweep_period = (value >> 4) & 0x7;
-            IO_NR10.negate = (value >> 3) & 0x1;
-            IO_NR10.shift = value & 0x7;
+            IO_NR10.sweep_negate = (value >> 3) & 0x1;
+            IO_NR10.sweep_shift = value & 0x7;
             break;
 
         case 0x11:
@@ -102,11 +107,10 @@ void GB_apu_iowrite(struct GB_Core* gb, const uint16_t addr, const uint8_t value
             break;
 
         case 0x14:
-            IO_NR14.trigger = (value >> 7) & 0x1;
             IO_NR14.length_enable = (value >> 6) & 0x1;
             IO_NR14.freq_msb = value & 0x7;
 
-            if (IO_NR14.trigger)
+            if (value & 0x80)
             {
                 on_square1_trigger(gb);
             }
@@ -133,18 +137,17 @@ void GB_apu_iowrite(struct GB_Core* gb, const uint16_t addr, const uint8_t value
             break;
 
         case 0x19:
-            IO_NR24.trigger = (value >> 7) & 0x1;
             IO_NR24.length_enable = (value >> 6) & 0x1;
             IO_NR24.freq_msb = value & 0x7;
 
-            if (IO_NR24.trigger)
+            if (value & 0x80)
             {
                 on_square2_trigger(gb);
             }
             break;
 
         case 0x1A:
-            IO_NR30.DAC_power = value >> 7;
+            IO_NR30.dac_power = value >> 7;
             if (is_wave_dac_enabled(gb) == false)
             {
                 wave_disable(gb);
@@ -165,11 +168,10 @@ void GB_apu_iowrite(struct GB_Core* gb, const uint16_t addr, const uint8_t value
             break;
 
         case 0x1E:
-            IO_NR34.trigger = (value >> 7) & 0x1;
             IO_NR34.length_enable = (value >> 6) & 0x1;
             IO_NR34.freq_msb = value & 0x7;
 
-            if (IO_NR34.trigger)
+            if (value & 0x80)
             {
                 on_wave_trigger(gb);
             }
@@ -197,10 +199,9 @@ void GB_apu_iowrite(struct GB_Core* gb, const uint16_t addr, const uint8_t value
             break;
 
         case 0x23:
-            IO_NR44.trigger = (value >> 7) & 0x1;
             IO_NR44.length_enable = (value >> 6) & 0x1;
 
-            if (IO_NR44.trigger)
+            if (value & 0x80)
             {
                 on_noise_trigger(gb);
             }
@@ -214,14 +215,14 @@ void GB_apu_iowrite(struct GB_Core* gb, const uint16_t addr, const uint8_t value
             break;
 
         case 0x25:
-            IO_NR51.noise_left = value >> 7;
-            IO_NR51.wave_left = (value >> 6) & 0x1;
-            IO_NR51.square2_left = (value >> 5) & 0x1;
-            IO_NR51.square1_left = (value >> 4) & 0x1;
-            IO_NR51.noise_right = (value >> 3) & 0x1;
-            IO_NR51.wave_right = (value >> 2) & 0x1;
-            IO_NR51.square2_right = (value >> 1) & 0x1;
-            IO_NR51.square1_right = value & 0x1;
+            IO_NR51.ch4_left = value >> 7;
+            IO_NR51.ch3_left = (value >> 6) & 0x1;
+            IO_NR51.ch2_left = (value >> 5) & 0x1;
+            IO_NR51.ch1_left = (value >> 4) & 0x1;
+            IO_NR51.ch4_right = (value >> 3) & 0x1;
+            IO_NR51.ch3_right = (value >> 2) & 0x1;
+            IO_NR51.ch2_right = (value >> 1) & 0x1;
+            IO_NR51.ch1_right = value & 0x1;
             break;
 
         case 0x26:

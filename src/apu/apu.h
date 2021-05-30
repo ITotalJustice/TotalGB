@@ -40,21 +40,13 @@ extern "C" {
 // NR51 FF25 NW21 NW21 Left enables, Right enables
 // NR52 FF26 P--- NW21 Power control/status, Channel length statuses
 
-#define SQUARE1_CHANNEL gb->apu.square1
-#define SQUARE2_CHANNEL gb->apu.square2
-#define WAVE_CHANNEL gb->apu.wave
-#define NOISE_CHANNEL gb->apu.noise
+#define SQUARE1_CHANNEL gb->apu.ch1
+#define SQUARE2_CHANNEL gb->apu.ch2
+#define WAVE_CHANNEL gb->apu.ch3
+#define NOISE_CHANNEL gb->apu.ch4
 #define CONTROL_CHANNEL gb->apu.control
 
-#ifndef GB_AUDIO_FREQUENCY
-#define GB_AUDIO_FREQUENCY 22050
-#endif
-
-#ifdef GB_SDL_AUDIO_CALLBACK_STREAM
-#define SAMPLE_RATE 4
-#else
-#define SAMPLE_RATE (4213440 / GB_AUDIO_FREQUENCY)
-#endif
+#define CALC_CALLBACK_FREQ(freq) (4213440 / freq)
 
 // clocked at 512hz
 #define FRAME_SEQUENCER_CLOCK 512

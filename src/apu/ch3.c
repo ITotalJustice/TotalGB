@@ -10,30 +10,30 @@ uint16_t get_wave_freq(const struct GB_Core* gb)
 
 bool is_wave_dac_enabled(const struct GB_Core* gb)
 {
-    return IO_NR30.DAC_power > 0;
+    return IO_NR30.dac_power > 0;
 }
 
 bool is_wave_enabled(const struct GB_Core* gb)
 {
-    return IO_NR52.wave > 0;
+    return IO_NR52.ch3_on;
 }
 
 void wave_enable(struct GB_Core* gb)
 {
-    IO_NR52.wave = 1;
+    IO_NR52.ch3_on = true;
 }
 
 void wave_disable(struct GB_Core* gb)
 {
-    IO_NR52.wave = 0;
+    IO_NR52.ch3_on = false;
 }
 
 int8_t sample_wave(struct GB_Core* gb)
 {
-    static const int8_t test_table[15] =
+    static const int8_t test_table[16] =
     {
         -7, -6, -5, -4, -3, -2, -1,
-        +0,
+        -0, +0,
         +1, +2, +3, +4, +5, +6, +7
     };
 
@@ -79,10 +79,12 @@ void on_wave_trigger(struct GB_Core* gb)
 
     if (WAVE_CHANNEL.length_counter == 0)
     {
-        if (IO_NR34.length_enable && is_next_frame_sequencer_step_not_len(gb))
-        {
-            WAVE_CHANNEL.length_counter = 255;
-        } else
+        // TODO: this fails blarggs audio test2, so diabling for now...
+        // if (IO_NR34.length_enable && is_next_frame_sequencer_step_not_len(gb))
+        // {
+        //     WAVE_CHANNEL.length_counter = 255;
+        // }
+        // else
         {
             WAVE_CHANNEL.length_counter = 256;
         }

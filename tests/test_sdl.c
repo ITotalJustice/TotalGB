@@ -7,6 +7,8 @@
 #define WIDTH 160
 #define HEIGHT 144
 
+#define AUDIO_FREQ 48000
+
 static struct GB_Core gameboy;
 static uint16_t core_pixels[144][160];
 static void* rom_data = NULL;
@@ -19,6 +21,7 @@ static int frameskip_counter = 0;
 static SDL_Window* window = NULL;
 static SDL_Renderer* renderer = NULL;
 static SDL_Texture* texture = NULL;
+static SDL_AudioDeviceID audio_device = 0;
 
 
 static void run()
@@ -124,9 +127,39 @@ static void events()
     } 
 }
 
-static void core_on_vblank(struct GB_Core* gb, void* user)
+static void core_on_apu(void* user, struct GB_ApuCallbackData* data)
 {
-    (void)gb; (void)user;
+    while (SDL_GetQueuedAudioSize(audio_device) > (1024 * 8)) {
+        SDL_Delay(1);
+    }
+
+    uint8_t buffer[2] = {0};
+
+    SDL_MixAudioFormat(buffer, (const uint8_t*)data->ch1, AUDIO_S8, sizeof(data->ch1), SDL_MIX_MAXVOLUME/8);
+    SDL_MixAudioFormat(buffer, (const uint8_t*)data->ch2, AUDIO_S8, sizeof(data->ch2), SDL_MIX_MAXVOLUME/8);
+    SDL_MixAudioFormat(buffer, (const uint8_t*)data->ch3, AUDIO_S8, sizeof(data->ch3), SDL_MIX_MAXVOLUME/8);
+    SDL_MixAudioFormat(buffer, (const uint8_t*)data->ch4, AUDIO_S8, sizeof(data->ch4), SDL_MIX_MAXVOLUME/8);
+
+    switch (SDL_GetAudioDeviceStatus(audio_device)) {
+        case SDL_AUDIO_STOPPED:
+            // std::printf("[SDL2-AUDIO] stopped\n");
+            break;
+
+        case SDL_AUDIO_PAUSED:
+            // std::printf("[SDL2-AUDIO] paused\n");
+            break;
+
+        case SDL_AUDIO_PLAYING:
+            SDL_QueueAudio(audio_device, buffer, sizeof(buffer));
+            break;
+    }
+
+    // SDL_QueueAudio(audio_device, data->samples, sizeof(data->samples));
+}
+
+static void core_on_vblank(void* user)
+{
+    (void)user;
 
     ++frameskip_counter;
 
@@ -151,10 +184,11 @@ static void render()
 
 static void cleanup()
 {
-    if (rom_data)   { SDL_free(rom_data); }
-    if (texture)    { SDL_DestroyTexture(texture); }
-    if (renderer)   { SDL_DestroyRenderer(renderer); }
-    if (window)     { SDL_DestroyWindow(window); }
+    if (audio_device)   { SDL_CloseAudioDevice(audio_device); }
+    if (rom_data)       { SDL_free(rom_data); }
+    if (texture)        { SDL_DestroyTexture(texture); }
+    if (renderer)       { SDL_DestroyRenderer(renderer); }
+    if (window)         { SDL_DestroyWindow(window); }
 
     SDL_Quit();
 }
@@ -171,7 +205,8 @@ int main(int argc, char** argv)
         goto fail;
     }
 
-    GB_set_vblank_callback(&gameboy, core_on_vblank, NULL);
+    GB_set_apu_callback(&gameboy, core_on_apu, AUDIO_FREQ+256);
+    GB_set_vblank_callback(&gameboy, core_on_vblank);
 
     rom_data = SDL_LoadFile(argv[1], &rom_size);
 
@@ -189,7 +224,7 @@ int main(int argc, char** argv)
 
     GB_get_rom_name(&gameboy, &rom_name);
 
-    if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_EVENTS))
+    if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO))
     {
         goto fail;
     }
@@ -215,6 +250,27 @@ int main(int argc, char** argv)
         goto fail;
     }
 
+
+    const SDL_AudioSpec wanted = {
+        .freq = AUDIO_FREQ,
+        .format = AUDIO_S8,
+        .channels = 2,
+        .silence = 0, // calculated
+        .samples = 512, // 512 * 2 (because stereo)
+        .padding = 0,
+        .size = 0, // calculated
+        .callback = NULL,
+        .userdata = NULL,
+    };
+
+    audio_device = SDL_OpenAudioDevice(NULL, 0, &wanted, NULL, 0);
+
+    if (audio_device == 0)
+    {
+        goto fail;
+    }
+
+    SDL_PauseAudioDevice(audio_device, 0);
 
     GB_set_pixels(&gameboy, core_pixels, GB_SCREEN_WIDTH);
 

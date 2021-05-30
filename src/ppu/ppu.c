@@ -152,9 +152,9 @@ void GB_change_status_mode(struct GB_Core* gb,
             gb->ppu.next_cycles += 146;
             GB_draw_scanline(gb);
 
-            if (gb->hblank_cb != NULL)
+            if (gb->callback.hblank != NULL)
             {
-                gb->hblank_cb(gb, gb->hblank_cb_user_data);
+                gb->callback.hblank(gb->callback.user_data);
             }
             break;
 
@@ -163,9 +163,9 @@ void GB_change_status_mode(struct GB_Core* gb,
             GB_enable_interrupt(gb, GB_INTERRUPT_VBLANK);
             gb->ppu.next_cycles += 456;
 
-            if (gb->vblank_cb != NULL)
+            if (gb->callback.vblank != NULL)
             {
-                gb->vblank_cb(gb, gb->vblank_cb_user_data);
+                gb->callback.vblank(gb->callback.user_data);
             }
             break;
 

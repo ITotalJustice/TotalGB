@@ -10,14 +10,14 @@
 
 void GB_throw_error(const struct GB_Core* gb, enum GB_ErrorDataType type, const char* message)
 {
-    if (gb->error_cb != NULL)
+    if (gb->callback.error != NULL)
     {
         struct GB_ErrorData e = {0};
         e.type = GB_ERROR_TYPE_ERROR;
         e.data.error.type = type;
         // todo: handle possible string overflow...
         strcpy(e.data.error.message, message);
-        gb->error_cb((struct GB_Core*)gb, gb->error_cb_user_data, &e);
+        gb->callback.error(gb->callback.user_data, &e);
     }
 }
 
@@ -131,6 +131,11 @@ void GB_reset(struct GB_Core* gb)
             IO_75 = 0x00;
             break;
     }
+}
+
+void gb_set_userdata(struct GB_Core* gb, void* user_data)
+{
+    gb->callback.user_data = user_data;
 }
 
 void GB_skip_next_frame(struct GB_Core* gb)
@@ -737,54 +742,40 @@ void GB_disable_interrupt(struct GB_Core* gb, const enum GB_Interrupts interrupt
     IO_IF &= ~(interrupt);
 }
 
-void GB_set_apu_callback(struct GB_Core* gb, struct GB_AudioCallbackData* data)
+void GB_set_apu_callback(struct GB_Core* gb, GB_apu_callback_t cb, int freq)
 {
-    // if NULL, cb is disabled
-    if (!data)
-    {
-        gb->apu_cb = NULL;
-    }
-    else {
-        gb->apu_cb = data->cb;
-        gb->apu_cb_user_data = data->user_data;
-        gb->apu.sample_mode = data->mode;
-    }
+    gb->callback.apu = cb;
+    gb->callback.apu_data.freq = freq;
 }
 
-void GB_set_vblank_callback(struct GB_Core* gb, GB_vblank_callback_t cb, void* user_data)
+void GB_set_vblank_callback(struct GB_Core* gb, GB_vblank_callback_t cb)
 {
-    gb->vblank_cb = cb;
-    gb->vblank_cb_user_data = user_data;
+    gb->callback.vblank = cb;
 }
 
-void GB_set_hblank_callback(struct GB_Core* gb, GB_hblank_callback_t cb, void* user_data)
+void GB_set_hblank_callback(struct GB_Core* gb, GB_hblank_callback_t cb)
 {
-    gb->hblank_cb = cb;
-    gb->hblank_cb_user_data = user_data;
+    gb->callback.hblank = cb;
 }
 
-void GB_set_dma_callback(struct GB_Core* gb, GB_dma_callback_t cb, void* user_data)
+void GB_set_dma_callback(struct GB_Core* gb, GB_dma_callback_t cb)
 {
-    gb->dma_cb = cb;
-    gb->dma_cb_user_data = user_data;
+    gb->callback.dma = cb;
 }
 
-void GB_set_halt_callback(struct GB_Core* gb, GB_halt_callback_t cb, void* user_data)
+void GB_set_halt_callback(struct GB_Core* gb, GB_halt_callback_t cb)
 {
-    gb->halt_cb = cb;
-    gb->halt_cb_user_data = user_data;
+    gb->callback.halt = cb;
 }
 
-void GB_set_stop_callback(struct GB_Core* gb, GB_stop_callback_t cb, void* user_data)
+void GB_set_stop_callback(struct GB_Core* gb, GB_stop_callback_t cb)
 {
-    gb->stop_cb = cb;
-    gb->stop_cb_user_data = user_data;
+    gb->callback.stop = cb;
 }
 
-void GB_set_error_callback(struct GB_Core* gb, GB_error_callback_t cb, void* user_data)
+void GB_set_error_callback(struct GB_Core* gb, GB_error_callback_t cb)
 {
-    gb->error_cb = cb;
-    gb->error_cb_user_data = user_data;
+    gb->callback.error = cb;
 }
 
 uint16_t GB_run_step(struct GB_Core* gb)

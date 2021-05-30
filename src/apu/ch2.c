@@ -15,22 +15,22 @@ bool is_square2_dac_enabled(const struct GB_Core* gb)
 
 bool is_square2_enabled(const struct GB_Core* gb)
 {
-    return IO_NR52.square2 > 0;
+    return IO_NR52.ch2_on;
 }
 
 void square2_enable(struct GB_Core* gb)
 {
-    IO_NR52.square2 = 1;
+    IO_NR52.ch2_on = true;
 }
 
 void square2_disable(struct GB_Core* gb)
 {
-    IO_NR52.square2 = 0;
+    IO_NR52.ch2_on = false;
 }
 
 int8_t sample_square2(struct GB_Core* gb)
 {
-    if (SQUARE_DUTY_CYCLES[SQUARE2_CHANNEL.nr21.duty][SQUARE2_CHANNEL.duty_index])
+    if (SQUARE_DUTY_CYCLES[IO_NR21.duty][SQUARE2_CHANNEL.duty_index])
     {
         return SQUARE2_CHANNEL.volume;
     }
@@ -66,14 +66,18 @@ void clock_square2_vol(struct GB_Core* gb)
                 if (IO_NR22.env_add_mode == ADD)
                 {
                     ++new_vol;
-                } else {
+                }
+                else
+                {
                     --new_vol;
                 }
 
                 if (new_vol <= 15)
                 {
                     SQUARE2_CHANNEL.volume = new_vol;
-                } else {
+                }
+                else
+                {
                     SQUARE2_CHANNEL.disable_env = true;
                 }
             }
@@ -87,10 +91,13 @@ void on_square2_trigger(struct GB_Core* gb)
 
     if (SQUARE2_CHANNEL.length_counter == 0)
     {
-        if (IO_NR24.length_enable && is_next_frame_sequencer_step_not_len(gb))
+        // TODO: this fails blarggs audio test2, so diabling for now...
+        // if (IO_NR24.length_enable && is_next_frame_sequencer_step_not_len(gb))
+        // {
+        //     SQUARE2_CHANNEL.length_counter = 63;
+        // }
+        // else
         {
-            SQUARE2_CHANNEL.length_counter = 63;
-        } else {
             SQUARE2_CHANNEL.length_counter = 64;
         }
     }

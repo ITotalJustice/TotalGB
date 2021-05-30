@@ -15,22 +15,22 @@ bool is_square1_dac_enabled(const struct GB_Core* gb)
 
 bool is_square1_enabled(const struct GB_Core* gb)
 {
-    return IO_NR52.square1 > 0;
+    return IO_NR52.ch1_on;
 }
 
 void square1_enable(struct GB_Core* gb)
 {
-    IO_NR52.square1 = 1;
+    IO_NR52.ch1_on = true;
 }
 
 void square1_disable(struct GB_Core* gb)
 {
-    IO_NR52.square1 = 0;
+    IO_NR52.ch1_on = false;
 }
 
 int8_t sample_square1(struct GB_Core* gb)
 {
-    if (SQUARE_DUTY_CYCLES[SQUARE1_CHANNEL.nr11.duty][SQUARE1_CHANNEL.duty_index])
+    if (SQUARE_DUTY_CYCLES[IO_NR11.duty][SQUARE1_CHANNEL.duty_index])
     {
         return SQUARE1_CHANNEL.volume;
     }
@@ -66,14 +66,18 @@ void clock_square1_vol(struct GB_Core* gb)
                 if (IO_NR12.env_add_mode == ADD)
                 {
                     ++new_vol;
-                } else {
+                }
+                else
+                {
                     --new_vol;
                 }
 
                 if (new_vol <= 15)
                 {
                     SQUARE1_CHANNEL.volume = new_vol;
-                } else {
+                }
+                else
+                {
                     SQUARE1_CHANNEL.disable_env = true;
                 }
             }
@@ -83,12 +87,14 @@ void clock_square1_vol(struct GB_Core* gb)
 
 static uint16_t get_new_sweep_freq(const struct GB_Core* gb)
 {
-    const uint16_t new_freq = SQUARE1_CHANNEL.freq_shadow_register >> IO_NR10.shift;
+    const uint16_t new_freq = SQUARE1_CHANNEL.freq_shadow_register >> IO_NR10.sweep_shift;
 
-    if (IO_NR10.negate)
+    if (IO_NR10.sweep_negate)
     {
         return SQUARE1_CHANNEL.freq_shadow_register - new_freq;
-    } else {
+    }
+    else
+    {
         return SQUARE1_CHANNEL.freq_shadow_register + new_freq;
     }
 }
@@ -112,7 +118,9 @@ void do_freq_sweep_calc(struct GB_Core* gb)
                 square1_disable(gb);
             }
 
-        } else { // overflow...
+        }
+        else
+        { // overflow...
             square1_disable(gb);
         }
     }
@@ -143,10 +151,13 @@ void on_square1_trigger(struct GB_Core* gb)
 
     if (SQUARE1_CHANNEL.length_counter == 0)
     {
-        if (IO_NR14.length_enable && is_next_frame_sequencer_step_not_len(gb))
+        // TODO: this fails blarggs audio test2, so diabling for now...
+        // if (IO_NR14.length_enable && is_next_frame_sequencer_step_not_len(gb))
+        // {
+        //     SQUARE1_CHANNEL.length_counter = 63;
+        // }
+        // else
         {
-            SQUARE1_CHANNEL.length_counter = 63;
-        } else {
             SQUARE1_CHANNEL.length_counter = 64;
         }
     }
@@ -173,9 +184,9 @@ void on_square1_trigger(struct GB_Core* gb)
     // the freq is loaded into the shadow_freq_reg
     SQUARE1_CHANNEL.freq_shadow_register = (IO_NR14.freq_msb << 8) | IO_NR13.freq_lsb;
     // internal flag is set is period or shift is non zero
-    SQUARE1_CHANNEL.internal_enable_flag = (IO_NR10.sweep_period != 0) || (IO_NR10.shift != 0);
+    SQUARE1_CHANNEL.internal_enable_flag = (IO_NR10.sweep_period != 0) || (IO_NR10.sweep_shift != 0);
     // if shift is non zero, then calc is performed...
-    if (IO_NR10.shift != 0)
+    if (IO_NR10.sweep_shift != 0)
     {
         do_freq_sweep_calc(gb);
     }
