@@ -125,7 +125,6 @@ void perform_hdma(struct GB_Core* gb)
         );
     }
 
-    gb->cpu.cycles += 8;
     gb->ppu.hdma_length -= 0x10;
     gb->ppu.hdma_src_addr += 0x10;
     gb->ppu.hdma_dst_addr += 0x10;
@@ -182,8 +181,6 @@ void GB_hdma5_write(struct GB_Core* gb, uint8_t value)
         {
             hdma_write(gb, dma_dst + i, hdma_read(gb, dma_src + i));
         }
-
-        gb->cpu.cycles += (value & 0x7F) + 1;
 
         // it's unclear if all HDMA regs are set to 0xFF post transfer,
         // HDMA5 is, but not sure about the rest.

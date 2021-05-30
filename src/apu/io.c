@@ -107,6 +107,19 @@ void GB_apu_iowrite(struct GB_Core* gb, const uint16_t addr, const uint8_t value
             break;
 
         case 0x14:
+            // if next is not len and len is NOW enabled, it is clocked
+            if (is_next_frame_sequencer_step_not_len(gb) && SQUARE1_CHANNEL.length_counter && !IO_NR14.length_enable && (value >> 6) & 0x1)
+            {
+                --SQUARE1_CHANNEL.length_counter;
+
+                GB_log("APU: edge case: extra len clock!\n");
+                // if this makes the result 0, and trigger is clear, disbale channel
+                if (!SQUARE1_CHANNEL.length_counter && !(value & 0x80))
+                {
+                    square1_disable(gb);
+                }
+            }
+
             IO_NR14.length_enable = (value >> 6) & 0x1;
             IO_NR14.freq_msb = value & 0x7;
 
@@ -137,6 +150,19 @@ void GB_apu_iowrite(struct GB_Core* gb, const uint16_t addr, const uint8_t value
             break;
 
         case 0x19:
+            // if next is not len and len is NOW enabled, it is clocked
+            if (is_next_frame_sequencer_step_not_len(gb) && SQUARE2_CHANNEL.length_counter && !IO_NR24.length_enable && (value >> 6) & 0x1)
+            {
+                --SQUARE2_CHANNEL.length_counter;
+
+                GB_log("APU - edge case: extra len clock!\n");
+                // if this makes the result 0, and trigger is clear, disbale channel
+                if (!SQUARE2_CHANNEL.length_counter && !(value & 0x80))
+                {
+                    square2_disable(gb);
+                }
+            }
+
             IO_NR24.length_enable = (value >> 6) & 0x1;
             IO_NR24.freq_msb = value & 0x7;
 
@@ -168,6 +194,19 @@ void GB_apu_iowrite(struct GB_Core* gb, const uint16_t addr, const uint8_t value
             break;
 
         case 0x1E:
+            // if next is not len and len is NOW enabled, it is clocked
+            if (is_next_frame_sequencer_step_not_len(gb) && WAVE_CHANNEL.length_counter && !IO_NR34.length_enable && (value >> 6) & 0x1)
+            {
+                --WAVE_CHANNEL.length_counter;
+
+                GB_log("APU: edge case: extra len clock!\n");
+                // if this makes the result 0, and trigger is clear, disbale channel
+                if (!WAVE_CHANNEL.length_counter && !(value & 0x80))
+                {
+                    wave_disable(gb);
+                }
+            }
+
             IO_NR34.length_enable = (value >> 6) & 0x1;
             IO_NR34.freq_msb = value & 0x7;
 
@@ -199,6 +238,19 @@ void GB_apu_iowrite(struct GB_Core* gb, const uint16_t addr, const uint8_t value
             break;
 
         case 0x23:
+            // if next is not len and len is NOW enabled, it is clocked
+            if (is_next_frame_sequencer_step_not_len(gb) && NOISE_CHANNEL.length_counter && !IO_NR44.length_enable && (value >> 6) & 0x1)
+            {
+                --NOISE_CHANNEL.length_counter;
+
+                GB_log("APU: edge case: extra len clock!\n");
+                // if this makes the result 0, and trigger is clear, disbale channel
+                if (!NOISE_CHANNEL.length_counter && !(value & 0x80))
+                {
+                    noise_disable(gb);
+                }
+            }
+
             IO_NR44.length_enable = (value >> 6) & 0x1;
 
             if (value & 0x80)
