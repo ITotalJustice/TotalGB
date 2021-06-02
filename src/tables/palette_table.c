@@ -30,17 +30,22 @@ static const struct GB_PaletteEntry PALETTE_CUSTOM_TABLE[] = {
     [GB_CUSTOM_PALETTE_GREY] = {
         .BG =   { C(0xFFFFFF), C(0xB6B6B6), C(0x676767), C(0x000000) },
         .OBJ0 = { C(0xFFFFFF), C(0xB6B6B6), C(0x676767), C(0x000000) },
-        .OBJ1 = { C(0xFFFFFF), C(0xB6B6B6), C(0x676767), C(0x000000) }
+        .OBJ1 = { C(0xFFFFFF), C(0xB6B6B6), C(0x676767), C(0x000000) },
     },
     [GB_CUSTOM_PALETTE_GREEN] = {
         .BG =   { C(0xE3EEC0), C(0xAEBA89), C(0x5E6745), C(0x202020) },
         .OBJ0 = { C(0xE3EEC0), C(0xAEBA89), C(0x5E6745), C(0x202020) },
-        .OBJ1 = { C(0xE3EEC0), C(0xAEBA89), C(0x5E6745), C(0x202020) }
+        .OBJ1 = { C(0xE3EEC0), C(0xAEBA89), C(0x5E6745), C(0x202020) },
     },
     [GB_CUSTOM_PALETTE_CREAM] = {
         .BG =   { C(0xF7E7C6), C(0xD68E49), C(0xA63725), C(0x331E50) },
         .OBJ0 = { C(0xF7E7C6), C(0xD68E49), C(0xA63725), C(0x331E50) },
-        .OBJ1 = { C(0xF7E7C6), C(0xD68E49), C(0xA63725), C(0x331E50) }
+        .OBJ1 = { C(0xF7E7C6), C(0xD68E49), C(0xA63725), C(0x331E50) },
+    },
+    [GB_CUSTOM_PALETTE_KGREEN] = {
+        .BG =   { C(0x818F38), C(0x647D43), C(0x566D3F), C(0x314A2D) },
+        .OBJ0 = { C(0x818F38), C(0x647D43), C(0x566D3F), C(0x314A2D) },
+        .OBJ1 = { C(0x818F38), C(0x647D43), C(0x566D3F), C(0x314A2D) },
     }
 };
 
@@ -1703,10 +1708,6 @@ int GB_palette_fill_from_table_entry(
     uint8_t table, uint8_t entry, /* keys */
     struct GB_PaletteEntry* palette
 ) {
-    assert(palette);
-    assert(table <= GB_PALETTE_TABLE_MAX);
-    assert(entry <= GB_PALETTE_ENTRY_MAX);
-
     if (!palette) {
         return -1;
     }
@@ -1725,8 +1726,6 @@ int GB_palette_fill_from_hash(
     uint8_t forth_byte, /* key */
     struct GB_PaletteEntry* palette
 ) {
-    assert(palette);
-
     if (!palette) {
         return -1;
     }
@@ -1758,8 +1757,6 @@ int GB_palette_fill_from_buttons(
     struct GB_PaletteEntry* palette,
     struct GB_PalettePreviewShades* preview /* optional (can be NULL) */
 ) {
-    assert(palette);
-
     if (!palette) {
         return -1;
     }
@@ -1787,9 +1784,6 @@ int GB_Palette_fill_from_custom(
     enum GB_CustomPalette custom, /* key */
     struct GB_PaletteEntry* palette
 ) {
-    assert(palette);
-    assert(custom < GB_CUSTOM_PALETTE_MAX && custom > 0);
-
     if (custom >= GB_CUSTOM_PALETTE_MAX || custom < 0) {
         return -1;
     }

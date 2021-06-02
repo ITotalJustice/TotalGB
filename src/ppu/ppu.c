@@ -7,10 +7,12 @@
 
 
 // these are extern, used for dmg / gbc / sgb render functions
-const uint8_t PIXEL_BIT_SHRINK[] = {
+const uint8_t PIXEL_BIT_SHRINK[] =
+{
     0x80, 0x40, 0x20, 0x10, 0x08, 0x04, 0x02, 0x01
 };
-const uint8_t PIXEL_BIT_GROW[] = {
+const uint8_t PIXEL_BIT_GROW[] =
+{
     0x01, 0x02, 0x04, 0x08, 0x10, 0x20, 0x40, 0x80
 };
 
@@ -214,8 +216,8 @@ void GB_on_lcdc_write(struct GB_Core* gb, const uint8_t value)
     // check if the game wants to re-enable the lcd
     else if (!GB_is_lcd_enabled(gb) && (value & 0x80))
     {
-        // i think the ppu starts again in vblank
-        IO_STAT |= STATUS_MODE_VBLANK;
+        gb->ppu.next_cycles = 0;
+        GB_set_status_mode(gb, STATUS_MODE_TRANSFER);
         GB_compare_LYC(gb);
         GB_log("enabling ppu!\n");
     }
@@ -335,7 +337,7 @@ void GB_draw_scanline(struct GB_Core* gb)
 
     if (gb->skip_next_frame)
     {
-        return;
+        // return;
     }
 
     switch (GB_get_system_type(gb))

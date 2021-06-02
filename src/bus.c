@@ -90,6 +90,9 @@ static inline void GB_iowrite_gbc(struct GB_Core* gb, uint16_t addr, uint8_t val
 
 uint8_t GB_ioread(struct GB_Core* gb, uint16_t addr)
 {
+    // soon (tm)
+    // return IO[addr & 0x7F];
+
     switch (addr & 0x7F)
     {
         case 0x00:
@@ -316,7 +319,6 @@ void GB_iowrite(struct GB_Core* gb, uint16_t addr, uint8_t value)
     }
 }
 
-#ifndef GB_FAST_RW
 uint8_t GB_read8(struct GB_Core* gb, const uint16_t addr)
 {
     if (LIKELY(addr < 0xFE00))
@@ -392,7 +394,6 @@ void GB_write16(struct GB_Core* gb, uint16_t addr, uint16_t value)
     GB_write8(gb, addr + 0, value & 0xFF);
     GB_write8(gb, addr + 1, value >> 8);
 }
-#endif // GB_FAST_RW
 
 void GB_update_rom_banks(struct GB_Core* gb)
 {

@@ -85,7 +85,7 @@ extern "C" {
 #define IO_NR32 gb->apu.ch3
 #define IO_NR33 gb->apu.ch3
 #define IO_NR34 gb->apu.ch3
-#define IO_WAVE_TABLE gb->apu.ch3.wave_ram
+#define IO_WAVE_TABLE (IO + 0x30)
 // APU (noise)
 #define IO_NR41 gb->apu.ch4
 #define IO_NR42 gb->apu.ch4
@@ -176,8 +176,8 @@ void GB_write16(struct GB_Core* gb, uint16_t addr, uint16_t value);
 
 void GB_on_lcdc_write(struct GB_Core* gb, const uint8_t value);
 
-uint8_t GB_apu_ioread(const struct GB_Core* gb, const uint16_t addr);
-void GB_apu_iowrite(struct GB_Core* gb, const uint16_t addr, const uint8_t value);
+uint8_t GB_apu_ioread(const struct GB_Core* gb, uint16_t addr);
+void GB_apu_iowrite(struct GB_Core* gb, uint16_t addr, uint8_t value);
 
 uint8_t GB_serial_sb_read(const struct GB_Core* gb);
 void GB_serial_sc_write(struct GB_Core* gb, const uint8_t data);

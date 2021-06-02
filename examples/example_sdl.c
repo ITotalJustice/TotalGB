@@ -4,10 +4,17 @@
 #include <SDL.h>
 
 
-#define WIDTH 160
-#define HEIGHT 144
+enum
+{
+    WIDTH = 160,
+    HEIGHT = 144,
 
-#define AUDIO_FREQ 48000
+    VOLUME = SDL_MIX_MAXVOLUME/16,
+    SAMPLES = 1024,
+    SDL_AUDIO_FREQ = 48000,
+    GB_AUDIO_FREQ = (SDL_AUDIO_FREQ),
+};
+
 
 static struct GB_Core gameboy;
 static uint16_t core_pixels[144][160];
@@ -127,34 +134,81 @@ static void events()
     } 
 }
 
+// TODO: fix starved audio buffer...
 static void core_on_apu(void* user, struct GB_ApuCallbackData* data)
 {
-    while (SDL_GetQueuedAudioSize(audio_device) > (1024 * 8)) {
-        SDL_Delay(1);
+    // using buffers because pushing 1 sample at a time seems to
+    // cause popping sounds (on my chromebook).
+    static uint8_t buffer1[SAMPLES * 2];
+    static uint8_t buffer2[SAMPLES * 2];
+    static uint8_t buffer3[SAMPLES * 2];
+    static uint8_t buffer4[SAMPLES * 2];
+    static size_t buffer_count = 0;
+
+    // if speedup is enabled, skip x many samples in order to not fill the
+    // audio buffer!
+    if (speed > 1)
+    {
+        static size_t skipped_samples = 0;
+
+        if (skipped_samples < speed - 1)
+        {
+            ++skipped_samples;
+            return;
+        }     
+
+        skipped_samples = 0;   
     }
 
-    uint8_t buffer[2] = {0};
+    // check if we are running ahead, if so, skip sample.
+    const int audio_queue_size = SDL_GetQueuedAudioSize(audio_device);
 
-    SDL_MixAudioFormat(buffer, (const uint8_t*)data->ch1, AUDIO_S8, sizeof(data->ch1), SDL_MIX_MAXVOLUME/8);
-    SDL_MixAudioFormat(buffer, (const uint8_t*)data->ch2, AUDIO_S8, sizeof(data->ch2), SDL_MIX_MAXVOLUME/8);
-    SDL_MixAudioFormat(buffer, (const uint8_t*)data->ch3, AUDIO_S8, sizeof(data->ch3), SDL_MIX_MAXVOLUME/8);
-    SDL_MixAudioFormat(buffer, (const uint8_t*)data->ch4, AUDIO_S8, sizeof(data->ch4), SDL_MIX_MAXVOLUME/8);
-
-    switch (SDL_GetAudioDeviceStatus(audio_device)) {
-        case SDL_AUDIO_STOPPED:
-            // std::printf("[SDL2-AUDIO] stopped\n");
-            break;
-
-        case SDL_AUDIO_PAUSED:
-            // std::printf("[SDL2-AUDIO] paused\n");
-            break;
-
-        case SDL_AUDIO_PLAYING:
-            SDL_QueueAudio(audio_device, buffer, sizeof(buffer));
-            break;
+    // enable this if vsync is enabled!
+    #if 0
+    if (audio_queue_size > sizeof(buffer1) * 4)
+    {
+        return;
     }
+    #endif
 
-    // SDL_QueueAudio(audio_device, data->samples, sizeof(data->samples));
+    buffer1[buffer_count + 0] = data->ch1[0];
+    buffer1[buffer_count + 1] = data->ch1[1];
+
+    buffer2[buffer_count + 0] = data->ch2[0];
+    buffer2[buffer_count + 1] = data->ch2[1];
+
+    buffer3[buffer_count + 0] = data->ch3[0];
+    buffer3[buffer_count + 1] = data->ch3[1];
+
+    buffer4[buffer_count + 0] = data->ch4[0];
+    buffer4[buffer_count + 1] = data->ch4[1];
+
+    buffer_count += 2;
+
+    if (buffer_count == sizeof(buffer1))
+    {
+        buffer_count = 0;
+
+        // this is a lazy way of mixing the channels together, along
+        // with volume control.
+        // it seems to sound okay for now...
+        uint8_t samples[sizeof(buffer1)] = {0};
+
+        SDL_MixAudioFormat(samples, (const uint8_t*)buffer1, AUDIO_S8, sizeof(buffer1), VOLUME);
+        SDL_MixAudioFormat(samples, (const uint8_t*)buffer2, AUDIO_S8, sizeof(buffer2), VOLUME);
+        SDL_MixAudioFormat(samples, (const uint8_t*)buffer3, AUDIO_S8, sizeof(buffer3), VOLUME);
+        SDL_MixAudioFormat(samples, (const uint8_t*)buffer4, AUDIO_S8, sizeof(buffer4), VOLUME);
+
+        // enable this if sync with audio
+        #if 1
+        while (SDL_GetQueuedAudioSize(audio_device) > (sizeof(buffer1) * 4))
+        {
+            SDL_Delay(1);
+        }
+        #endif
+
+        SDL_QueueAudio(audio_device, samples, sizeof(samples));
+    }
 }
 
 static void core_on_vblank(void* user)
@@ -205,7 +259,7 @@ int main(int argc, char** argv)
         goto fail;
     }
 
-    GB_set_apu_callback(&gameboy, core_on_apu, AUDIO_FREQ+256);
+    GB_set_apu_callback(&gameboy, core_on_apu, GB_AUDIO_FREQ);
     GB_set_vblank_callback(&gameboy, core_on_vblank);
 
     rom_data = SDL_LoadFile(argv[1], &rom_size);
@@ -224,6 +278,8 @@ int main(int argc, char** argv)
 
     GB_get_rom_name(&gameboy, &rom_name);
 
+    // SDL_setenv("SDL_AUDIODRIVER", "sndio", 1);
+
     if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO))
     {
         goto fail;
@@ -236,7 +292,7 @@ int main(int argc, char** argv)
         goto fail;
     }
 
-    renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC);
+    renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED);
 
     if (!renderer)
     {
@@ -250,25 +306,33 @@ int main(int argc, char** argv)
         goto fail;
     }
 
-
     const SDL_AudioSpec wanted = {
-        .freq = AUDIO_FREQ,
+        .freq = SDL_AUDIO_FREQ,
         .format = AUDIO_S8,
         .channels = 2,
-        .silence = 0, // calculated
-        .samples = 512, // 512 * 2 (because stereo)
+        .silence = 0,
+        .samples = SAMPLES,
         .padding = 0,
-        .size = 0, // calculated
+        .size = 0,
         .callback = NULL,
         .userdata = NULL,
     };
 
-    audio_device = SDL_OpenAudioDevice(NULL, 0, &wanted, NULL, 0);
+    SDL_AudioSpec aspec_got = {0};
+
+    audio_device = SDL_OpenAudioDevice(NULL, 0, &wanted, &aspec_got, /*SDL_AUDIO_ALLOW_ANY_CHANGE*/0);
 
     if (audio_device == 0)
     {
         goto fail;
     }
+
+    printf("SDL_AUDIO_SPEC\n");
+    printf("\tfreq: %u\n", aspec_got.freq);
+    printf("\tformat: %u\n", aspec_got.format);
+    printf("\tchannels: %u\n", aspec_got.channels);
+    printf("\tsamples: %u\n", aspec_got.samples);
+    printf("\tsize: %u\n", aspec_got.size);
 
     SDL_PauseAudioDevice(audio_device, 0);
 

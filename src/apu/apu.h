@@ -40,10 +40,10 @@ extern "C" {
 // NR51 FF25 NW21 NW21 Left enables, Right enables
 // NR52 FF26 P--- NW21 Power control/status, Channel length statuses
 
-#define SQUARE1_CHANNEL gb->apu.ch1
-#define SQUARE2_CHANNEL gb->apu.ch2
-#define WAVE_CHANNEL gb->apu.ch3
-#define NOISE_CHANNEL gb->apu.ch4
+#define CH1 gb->apu.ch1
+#define CH2 gb->apu.ch2
+#define CH3 gb->apu.ch3
+#define CH4 gb->apu.ch4
 #define CONTROL_CHANNEL gb->apu.control
 
 #define CALC_CALLBACK_FREQ(freq) (4213440 / freq)
@@ -60,54 +60,54 @@ enum EnvelopeMode {
 };
 
 // defined in core/apu/apu.c
-extern const bool SQUARE_DUTY_CYCLES[4][8];
+extern const int8_t SQUARE_DUTY_CYCLES[4][8];
 
 // defined in core/apu/apu.c
 extern const uint8_t PERIOD_TABLE[8];
 
 
-uint16_t get_square1_freq(const struct GB_Core* gb);
-bool is_square1_dac_enabled(const struct GB_Core* gb);
-bool is_square1_enabled(const struct GB_Core* gb);
-void square1_enable(struct GB_Core* gb);
-void square1_disable(struct GB_Core* gb);
-int8_t sample_square1(struct GB_Core* gb);
-void clock_square1_len(struct GB_Core* gb);
-void clock_square1_vol(struct GB_Core* gb);
+uint16_t get_ch1_freq(const struct GB_Core* gb);
+bool is_ch1_dac_enabled(const struct GB_Core* gb);
+bool is_ch1_enabled(const struct GB_Core* gb);
+void ch1_enable(struct GB_Core* gb);
+void ch1_disable(struct GB_Core* gb);
+int8_t sample_ch1(struct GB_Core* gb);
+void clock_ch1_len(struct GB_Core* gb);
+void clock_ch1_vol(struct GB_Core* gb);
 void do_freq_sweep_calc(struct GB_Core* gb);
-void on_square1_sweep(struct GB_Core* gb);
-void on_square1_trigger(struct GB_Core* gb);
+void on_ch1_sweep(struct GB_Core* gb);
+void on_ch1_trigger(struct GB_Core* gb);
 
-uint16_t get_square2_freq(const struct GB_Core* gb);
-bool is_square2_dac_enabled(const struct GB_Core* gb);
-bool is_square2_enabled(const struct GB_Core* gb);
-void square2_enable(struct GB_Core* gb);
-void square2_disable(struct GB_Core* gb);
-int8_t sample_square2(struct GB_Core* gb);
-void clock_square2_len(struct GB_Core* gb);
-void clock_square2_vol(struct GB_Core* gb);
-void on_square2_trigger(struct GB_Core* gb);
+uint16_t get_ch2_freq(const struct GB_Core* gb);
+bool is_ch2_dac_enabled(const struct GB_Core* gb);
+bool is_ch2_enabled(const struct GB_Core* gb);
+void ch2_enable(struct GB_Core* gb);
+void ch2_disable(struct GB_Core* gb);
+int8_t sample_ch2(struct GB_Core* gb);
+void clock_ch2_len(struct GB_Core* gb);
+void clock_ch2_vol(struct GB_Core* gb);
+void on_ch2_trigger(struct GB_Core* gb);
 
-uint16_t get_wave_freq(const struct GB_Core* gb);
-bool is_wave_dac_enabled(const struct GB_Core* gb);
-bool is_wave_enabled(const struct GB_Core* gb);
-void wave_enable(struct GB_Core* gb);
-void wave_disable(struct GB_Core* gb);
-int8_t sample_wave(struct GB_Core* gb);
-void clock_wave_len(struct GB_Core* gb);
-void advance_wave_position_counter(struct GB_Core* gb);
-void on_wave_trigger(struct GB_Core* gb);
+uint16_t get_ch3_freq(const struct GB_Core* gb);
+bool is_ch3_dac_enabled(const struct GB_Core* gb);
+bool is_ch3_enabled(const struct GB_Core* gb);
+void ch3_enable(struct GB_Core* gb);
+void ch3_disable(struct GB_Core* gb);
+int8_t sample_ch3(struct GB_Core* gb);
+void clock_ch3_len(struct GB_Core* gb);
+void advance_ch3_position_counter(struct GB_Core* gb);
+void on_ch3_trigger(struct GB_Core* gb);
 
-uint32_t get_noise_freq(const struct GB_Core* gb);
-bool is_noise_dac_enabled(const struct GB_Core* gb);
-bool is_noise_enabled(const struct GB_Core* gb);
-void noise_enable(struct GB_Core* gb);
-void noise_disable(struct GB_Core* gb);
-int8_t sample_noise(struct GB_Core* gb);
-void clock_noise_len(struct GB_Core* gb);
-void clock_noise_vol(struct GB_Core* gb);
-void step_noise_lfsr(struct GB_Core* gb);
-void on_noise_trigger(struct GB_Core* gb);
+uint32_t get_ch4_freq(const struct GB_Core* gb);
+bool is_ch4_dac_enabled(const struct GB_Core* gb);
+bool is_ch4_enabled(const struct GB_Core* gb);
+void ch4_enable(struct GB_Core* gb);
+void ch4_disable(struct GB_Core* gb);
+int8_t sample_ch4(struct GB_Core* gb);
+void clock_ch4_len(struct GB_Core* gb);
+void clock_ch4_vol(struct GB_Core* gb);
+void step_ch4_lfsr(struct GB_Core* gb);
+void on_ch4_trigger(struct GB_Core* gb);
 
 bool is_next_frame_sequencer_step_not_len(const struct GB_Core* gb);
 bool is_next_frame_sequencer_step_vol(const struct GB_Core* gb);

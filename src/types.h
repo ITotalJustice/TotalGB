@@ -234,10 +234,7 @@ struct GB_Config
 enum GB_ErrorType
 {
     GB_ERROR_TYPE_UNKNOWN_INSTRUCTION,
-    GB_ERROR_TYPE_INFO,
-    GB_ERROR_TYPE_WARN,
     GB_ERROR_TYPE_ERROR,
-    GB_ERROR_TYPE_UNK
 };
 
 struct GB_UnkownInstructionTypeData
@@ -255,16 +252,6 @@ enum GB_ErrorDataType
     GB_ERROR_DATA_TYPE_SAVE,
 };
 
-struct GB_InfoTypeData
-{
-    char message[0x200]; // NULL terminated string
-};
-
-struct GB_WarnTypeData
-{
-    char message[0x200]; // NULL terminated string
-};
-
 struct GB_ErrorTypeData
 {
     enum GB_ErrorDataType type;
@@ -277,8 +264,6 @@ struct GB_ErrorData
     union
     {
         struct GB_UnkownInstructionTypeData unk_instruction;
-        struct GB_InfoTypeData info;
-        struct GB_WarnTypeData warn;
         struct GB_ErrorTypeData error;
     } data;
 };
@@ -507,9 +492,6 @@ struct GB_ApuCh1
 
 struct GB_ApuCh2
 {
-    uint8_t sweep_period;
-    bool sweep_negate;
-    uint8_t sweep_shift;
     uint8_t duty;
     uint8_t length_load;
     uint8_t starting_vol;
@@ -536,8 +518,6 @@ struct GB_ApuCh3
     uint8_t freq_lsb;
     uint8_t freq_msb;
     bool length_enable;
-
-    uint8_t wave_ram[0x10];
 
     uint16_t length_counter;
     uint8_t sample_buffer;

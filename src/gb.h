@@ -81,12 +81,15 @@ GBAPI void GB_get_rom_info(const struct GB_Core* gb, struct GB_RomInfo* info);
 GBAPI int GB_get_rom_name(const struct GB_Core* gb, struct GB_CartName* name);
 GBAPI int GB_get_rom_name_from_header(const struct GB_CartHeader* header, struct GB_CartName* name);
 
+GBAPI unsigned gb_get_apu_freq(const struct GB_Core* gb);
+GBAPI void gb_set_apu_freq(struct GB_Core* gb, unsigned freq);
+
 /* set the user_data that's passed to the callbacks */
 GBAPI void gb_set_userdata(struct GB_Core* gb, void* user_data);
 
 /* set a callback which will be called when apu has filled 512 stero samples. */
 /* not setting this callback is valid, just that you won't have audio... */
-GBAPI void GB_set_apu_callback(struct GB_Core* gb, GB_apu_callback_t cb, int freq);
+GBAPI void GB_set_apu_callback(struct GB_Core* gb, GB_apu_callback_t cb, unsigned freq);
 
 /* set a callback which will be called when vblank happens. */
 GBAPI void GB_set_vblank_callback(struct GB_Core* gb, GB_vblank_callback_t cb);

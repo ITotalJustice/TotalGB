@@ -36,7 +36,7 @@ void GB_update_all_colours_gb(struct GB_Core* gb)
     gb->ppu.dirty_obj[1] = true;
 }
 
-static inline void render_scanline_bg(struct GB_Core* gb)
+static void dmg_render_scanline_bg(struct GB_Core* gb)
 {
     const uint8_t scanline = IO_LY;
     const uint8_t base_tile_x = IO_SCX >> 3;
@@ -74,7 +74,7 @@ static inline void render_scanline_bg(struct GB_Core* gb)
     }
 }
 
-static inline void render_scanline_win(struct GB_Core* gb)
+static void dmg_render_scanline_win(struct GB_Core* gb)
 {
     const uint8_t scanline = IO_LY;
     const uint8_t base_tile_x = 20 - (IO_WX >> 3);
@@ -214,7 +214,7 @@ static struct DMG_Sprites dmg_sprite_fetch(const struct GB_Core* gb)
     return sprites;
 }
 
-static inline void render_scanline_obj(struct GB_Core* gb)
+static void dmg_render_scanline_obj(struct GB_Core* gb)
 {
     const uint8_t scanline = IO_LY;
     const uint8_t sprite_size = GB_get_sprite_size(gb);
@@ -302,7 +302,7 @@ void DMG_render_scanline(struct GB_Core* gb)
     {
         if (LIKELY(GB_is_render_layer_enabled(gb, GB_RENDER_LAYER_CONFIG_BG)))
         {
-            render_scanline_bg(gb);
+            dmg_render_scanline_bg(gb);
         }
 
         // WX=0..166, WY=0..143
@@ -310,7 +310,7 @@ void DMG_render_scanline(struct GB_Core* gb)
         {
             if (LIKELY(GB_is_render_layer_enabled(gb, GB_RENDER_LAYER_CONFIG_WIN)))
             {
-                render_scanline_win(gb);
+                dmg_render_scanline_win(gb);
             }
         }
     }
@@ -319,7 +319,7 @@ void DMG_render_scanline(struct GB_Core* gb)
     {
         if (LIKELY(GB_is_render_layer_enabled(gb, GB_RENDER_LAYER_CONFIG_OBJ)))
         {
-            render_scanline_obj(gb);
+            dmg_render_scanline_obj(gb);
         }
     }
 }

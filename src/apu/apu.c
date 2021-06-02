@@ -5,12 +5,12 @@
 #include <string.h>
 
 
-const bool SQUARE_DUTY_CYCLES[4][8] =
+const int8_t SQUARE_DUTY_CYCLES[4][8] =
 {
-    [0] = { 0, 0, 0, 0, 0, 0, 0, 1 },
-    [1] = { 1, 0, 0, 0, 0, 0, 0, 1 },
-    [2] = { 0, 0, 0, 0, 0, 1, 1, 1 },
-    [3] = { 0, 1, 1, 1, 1, 1, 1, 0 },
+    [0] = { -1, -1, -1, -1, -1, -1, -1, +1 },
+    [1] = { +1, -1, -1, -1, -1, -1, -1, +1 },
+    [2] = { -1, -1, -1, -1, -1, +1, +1, +1 },
+    [3] = { -1, +1, +1, +1, +1, +1, +1, -1 },
 };
 
 const uint8_t PERIOD_TABLE[8] = { 8, 1, 2, 3, 4, 5, 6, 7 };
@@ -18,22 +18,22 @@ const uint8_t PERIOD_TABLE[8] = { 8, 1, 2, 3, 4, 5, 6, 7 };
 
 static inline void clock_len(struct GB_Core* gb)
 {
-    clock_square1_len(gb);
-    clock_square2_len(gb);
-    clock_wave_len(gb);
-    clock_noise_len(gb);
+    clock_ch1_len(gb);
+    clock_ch2_len(gb);
+    clock_ch3_len(gb);
+    clock_ch4_len(gb);
 }
 
 static inline void clock_sweep(struct GB_Core* gb)
 {
-    on_square1_sweep(gb);
+    on_ch1_sweep(gb);
 }
 
 static inline void clock_vol(struct GB_Core* gb)
 {
-    clock_square1_vol(gb);
-    clock_square2_vol(gb);
-    clock_noise_vol(gb);
+    clock_ch1_vol(gb);
+    clock_ch2_vol(gb);
+    clock_ch4_vol(gb);
 }
 
 // this is used when a channel is triggered
@@ -146,25 +146,25 @@ static inline void sample_channels(struct GB_Core* gb)
     {
         .ch1 =
         {
-            .sample = sample_square1(gb) * is_square1_enabled(gb),
+            .sample = sample_ch1(gb) * is_ch1_enabled(gb),
             .left = IO_NR51.ch1_left,
             .right = IO_NR51.ch1_right
         },
         .ch2 =
         {
-            .sample = sample_square2(gb) * is_square2_enabled(gb),
+            .sample = sample_ch2(gb) * is_ch2_enabled(gb),
             .left = IO_NR51.ch2_left,
             .right = IO_NR51.ch2_right
         },
         .ch3 =
         {
-            .sample = sample_wave(gb) * is_wave_enabled(gb),
+            .sample = sample_ch3(gb) * is_ch3_enabled(gb),
             .left = IO_NR51.ch3_left,
             .right = IO_NR51.ch3_right
         },
         .ch4 =
         {
-            .sample = sample_noise(gb) * is_noise_enabled(gb),
+            .sample = sample_ch4(gb) * is_ch4_enabled(gb),
             .left = IO_NR51.ch4_left,
             .right = IO_NR51.ch4_right
         },
@@ -194,35 +194,35 @@ void GB_apu_run(struct GB_Core* gb, uint16_t cycles)
         // nothing else should tick i dont think?
         // not sure if when apu is disabled, do all regs reset?
         // what happens when apu is re-enabled? do they all trigger?
-        SQUARE1_CHANNEL.timer -= cycles;
-        while (SQUARE1_CHANNEL.timer <= 0)
+        CH1.timer -= cycles;
+        while (CH1.timer <= 0)
         {
-            SQUARE1_CHANNEL.timer += get_square1_freq(gb);
-            SQUARE1_CHANNEL.duty_index = (SQUARE1_CHANNEL.duty_index + 1) % 8;
+            CH1.timer += get_ch1_freq(gb);
+            CH1.duty_index = (CH1.duty_index + 1) % 8;
         }
 
-        SQUARE2_CHANNEL.timer -= cycles;
-        while (SQUARE2_CHANNEL.timer <= 0)
+        CH2.timer -= cycles;
+        while (CH2.timer <= 0)
         {
-            SQUARE2_CHANNEL.timer += get_square2_freq(gb);
-            SQUARE2_CHANNEL.duty_index = (SQUARE2_CHANNEL.duty_index + 1) % 8;
+            CH2.timer += get_ch2_freq(gb);
+            CH2.duty_index = (CH2.duty_index + 1) % 8;
         }
 
-        WAVE_CHANNEL.timer -= cycles;
-        while (WAVE_CHANNEL.timer <= 0)
+        CH3.timer -= cycles;
+        while (CH3.timer <= 0)
         {
-            WAVE_CHANNEL.timer += get_wave_freq(gb);
-            advance_wave_position_counter(gb);
+            CH3.timer += get_ch3_freq(gb);
+            advance_ch3_position_counter(gb);
         }
 
-        // NOTE: noise lfsr is ONLY clocked if clock shift is not 14 or 15
+        // NOTE: ch4 lfsr is ONLY clocked if clock shift is not 14 or 15
         if (IO_NR43.clock_shift != 14 && IO_NR43.clock_shift != 15)
         {
-            NOISE_CHANNEL.timer -= cycles;
-            while (NOISE_CHANNEL.timer <= 0)
+            CH4.timer -= cycles;
+            while (CH4.timer <= 0)
             {
-                NOISE_CHANNEL.timer += get_noise_freq(gb);
-                step_noise_lfsr(gb);
+                CH4.timer += get_ch4_freq(gb);
+                step_ch4_lfsr(gb);
             }
         }
 
@@ -249,10 +249,4 @@ void GB_apu_run(struct GB_Core* gb, uint16_t cycles)
         gb->apu.next_sample_cycles -= CALC_CALLBACK_FREQ(gb->callback.apu_data.freq);
         sample_channels(gb);
     }
-
-    // while (gb->apu.next_sample_cycles >= 4)
-    // {
-    //     gb->apu.next_sample_cycles -= 4;
-    //     sample_channels(gb);
-    // }
 }

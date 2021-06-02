@@ -947,7 +947,7 @@ static inline void GB_execute(struct GB_Core* gb) {
     #ifdef GB_DEBUG
     if (CPU_LOG) {
         const opcode_t debug_op = CYCLE_TABLE_DEBUG[opcode];
-        GB_log("[CPU] [OP_CODE 0x%02X] %s %s %s\n", opcode, debug_op.name, debug_op.group, debug_op.flags);
+        GB_log("[CPU] [OP_CODE 0x%02X] %s %s %s\t\tREG_PC: 0x%04X\n", opcode, debug_op.name, debug_op.group, debug_op.flags, REG_PC);
         if (opcode == 0x20) {
             putchar('\n');
         }

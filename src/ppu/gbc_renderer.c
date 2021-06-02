@@ -237,7 +237,7 @@ static struct GBC_BgAttributes gbc_fetch_bg_attr(const struct GB_Core* gb, uint1
     return attrs;
 }
 
-static inline void gbc_render_scanline_bg(struct GB_Core* gb,
+static void gbc_render_scanline_bg(struct GB_Core* gb,
     struct PrioBuf* prio_buffer
 ) {
     const uint8_t scanline = IO_LY;
@@ -294,7 +294,7 @@ static inline void gbc_render_scanline_bg(struct GB_Core* gb,
     }
 }
 
-static inline void gbc_render_scanline_win(struct GB_Core* gb,
+static void gbc_render_scanline_win(struct GB_Core* gb,
     struct PrioBuf* prio_buffer
 )
 {
@@ -404,7 +404,7 @@ static struct GBC_Sprites gbc_sprite_fetch(const struct GB_Core* gb)
     return sprites;
 }
 
-static inline void gbc_render_scanline_obj(struct GB_Core* gb,
+static void gbc_render_scanline_obj(struct GB_Core* gb,
     const struct PrioBuf* prio_buffer
 ) {
     const uint8_t scanline = IO_LY;

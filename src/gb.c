@@ -343,7 +343,7 @@ static void GB_setup_palette(struct GB_Core* gb, const struct GB_CartHeader* hea
 
     if (gb->config.palette_config == GB_PALETTE_CONFIG_NONE)
     {
-        GB_Palette_fill_from_custom(GB_CUSTOM_PALETTE_CREAM, &gb->palette);
+        GB_Palette_fill_from_custom(GB_CUSTOM_PALETTE_KGREEN, &gb->palette);
     }
     else if (gb->config.palette_config == GB_PALETTE_CONFIG_USE_CUSTOM)
     {
@@ -366,7 +366,7 @@ static void GB_setup_palette(struct GB_Core* gb, const struct GB_CartHeader* hea
             }
             // otherwise use default palette...
             else {
-                GB_Palette_fill_from_custom(GB_CUSTOM_PALETTE_CREAM, &gb->palette);
+                GB_Palette_fill_from_custom(GB_CUSTOM_PALETTE_KGREEN, &gb->palette);
             }
         }
         else {
@@ -516,7 +516,7 @@ bool GB_loadrom(struct GB_Core* gb, const uint8_t* data, size_t size)
     else {
         // TODO: remove this!
         // this is for testing...
-        GB_Palette_fill_from_custom(GB_CUSTOM_PALETTE_CREAM, &gb->palette);
+        GB_Palette_fill_from_custom(GB_CUSTOM_PALETTE_KGREEN, &gb->palette);
     }
 
     return true;
@@ -742,10 +742,25 @@ void GB_disable_interrupt(struct GB_Core* gb, const enum GB_Interrupts interrupt
     IO_IF &= ~(interrupt);
 }
 
-void GB_set_apu_callback(struct GB_Core* gb, GB_apu_callback_t cb, int freq)
+unsigned gb_get_apu_freq(const struct GB_Core* gb)
+{
+    return gb->callback.apu_data.freq;
+}
+
+void gb_set_apu_freq(struct GB_Core* gb, unsigned freq)
+{
+    gb->callback.apu_data.freq = freq;
+
+    if (gb->callback.apu_data.freq == 0)
+    {
+        gb->callback.apu_data.freq = 4;
+    }
+}
+
+void GB_set_apu_callback(struct GB_Core* gb, GB_apu_callback_t cb, unsigned freq)
 {
     gb->callback.apu = cb;
-    gb->callback.apu_data.freq = freq;
+    gb_set_apu_freq(gb, freq);
 }
 
 void GB_set_vblank_callback(struct GB_Core* gb, GB_vblank_callback_t cb)
