@@ -93,6 +93,51 @@ bool gb_is_apu_enabled(const struct GB_Core* gb)
     return (IO_NR52 & 0x80) > 0;
 }
 
+void gb_apu_on_enabled(struct GB_Core* gb)
+{
+    GB_log("[APU] enabling...\n");
+
+    CH1.duty = 0;
+    CH1.duty_index = 0;
+
+    CH2.duty = 0;
+    CH2.duty_index = 0;
+}
+
+void gb_apu_on_disabled(struct GB_Core* gb)
+{
+    GB_log("[APU] disabling...\n");
+
+    IO_NR52 &= ~0xF;
+
+    memset(IO + 0x10, 0xFF, 0x15);
+
+    memset(&IO_NR10, 0, sizeof(IO_NR10));
+    memset(&IO_NR11, 0, sizeof(IO_NR11));
+    memset(&IO_NR12, 0, sizeof(IO_NR12));
+    memset(&IO_NR13, 0, sizeof(IO_NR13));
+    memset(&IO_NR14, 0, sizeof(IO_NR14));
+
+    memset(&IO_NR21, 0, sizeof(IO_NR21));
+    memset(&IO_NR22, 0, sizeof(IO_NR22));
+    memset(&IO_NR23, 0, sizeof(IO_NR23));
+    memset(&IO_NR22, 0, sizeof(IO_NR22));
+
+    memset(&IO_NR30, 0, sizeof(IO_NR30));
+    memset(&IO_NR31, 0, sizeof(IO_NR31));
+    memset(&IO_NR32, 0, sizeof(IO_NR32));
+    memset(&IO_NR33, 0, sizeof(IO_NR33));
+    memset(&IO_NR34, 0, sizeof(IO_NR34));
+
+    memset(&IO_NR41, 0, sizeof(IO_NR41));
+    memset(&IO_NR42, 0, sizeof(IO_NR42));
+    memset(&IO_NR43, 0, sizeof(IO_NR43));
+    memset(&IO_NR44, 0, sizeof(IO_NR44));
+
+    memset(&IO_NR50, 0, sizeof(IO_NR50));
+    memset(&IO_NR51, 0, sizeof(IO_NR51));
+}
+
 // this is used when a channel is triggered
 bool is_next_frame_sequencer_step_not_len(const struct GB_Core* gb)
 {

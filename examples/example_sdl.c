@@ -32,7 +32,7 @@ static SDL_Window* window = NULL;
 static SDL_Renderer* renderer = NULL;
 static SDL_Texture* texture = NULL;
 static SDL_AudioDeviceID audio_device = 0;
-
+static SDL_Rect rect = {0};
 
 static void run()
 {
@@ -48,10 +48,61 @@ static void run()
     }
 }
 
-static void resize_screen()
+static bool is_fullscreen()
+{
+    const int flags = SDL_GetWindowFlags(window);
+
+    // check if we are already in fullscreen mode
+    if (flags & (SDL_WINDOW_FULLSCREEN | SDL_WINDOW_FULLSCREEN_DESKTOP))
+    {
+        return true;
+    }
+    else
+    {
+        return false;
+    }
+}
+
+static void setup_rect(int w, int h)
+{
+    if (!w || !h)
+    {
+        return;
+    }
+    
+    const int scale_w = w / WIDTH;
+    const int scale_h = h / HEIGHT;
+
+    // get the min scale
+    const int min_scale = scale_w < scale_h ? scale_w : scale_h;
+
+    rect.w = WIDTH * min_scale;
+    rect.h = HEIGHT * min_scale;
+    rect.x = (w - rect.w);
+    rect.y = (h - rect.h);
+
+    // don't divide by zero!
+    if (rect.x > 0) rect.x /= 2;
+    if (rect.y > 0) rect.y /= 2;
+}
+
+static void scale_screen()
 {
     SDL_SetWindowSize(window, WIDTH * scale, HEIGHT * scale);
     SDL_SetWindowPosition(window, SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED);
+}
+
+static void toggle_fullscreen()
+{
+    // check if we are already in fullscreen mode
+    if (is_fullscreen())
+    {
+        SDL_SetWindowFullscreen(window, 0);
+    }
+    else
+    {
+        SDL_SetWindowFullscreen(window, SDL_WINDOW_FULLSCREEN_DESKTOP);
+    }
 }
 
 static void on_key_event(const SDL_KeyboardEvent* e)
@@ -66,14 +117,14 @@ static void on_key_event(const SDL_KeyboardEvent* e)
             case SDL_SCANCODE_EQUALS:
             case SDL_SCANCODE_KP_PLUS:
                 ++scale;
-                resize_screen();
+                scale_screen();
                 break;
 
             case SDL_SCANCODE_MINUS:
             case SDL_SCANCODE_KP_PLUSMINUS:
             case SDL_SCANCODE_KP_MINUS:
                 scale = scale > 0 ? scale - 1 : 1;
-                resize_screen();
+                scale_screen();
                 break;
 
             case SDL_SCANCODE_1:
@@ -86,6 +137,10 @@ static void on_key_event(const SDL_KeyboardEvent* e)
             case SDL_SCANCODE_8:
             case SDL_SCANCODE_9:
                 speed = (e->keysym.scancode - SDL_SCANCODE_1) + 1;
+                break;
+
+            case SDL_SCANCODE_F:
+                toggle_fullscreen();
                 break;
 
             default: break; // silence enum warning
@@ -117,6 +172,53 @@ static void on_key_event(const SDL_KeyboardEvent* e)
     }
 }
 
+static void on_window_event(const SDL_WindowEvent* e) {
+    switch (e->event) {
+        case SDL_WINDOWEVENT_SHOWN:
+        case SDL_WINDOWEVENT_EXPOSED:
+        case SDL_WINDOWEVENT_RESTORED:
+            break;
+
+        case SDL_WINDOWEVENT_MINIMIZED:
+        case SDL_WINDOWEVENT_HIDDEN:
+            break;
+
+        case SDL_WINDOWEVENT_MOVED:
+            break;
+
+        case SDL_WINDOWEVENT_RESIZED:
+        case SDL_WINDOWEVENT_SIZE_CHANGED:
+            setup_rect(e->data1, e->data2);
+            break;
+
+        case SDL_WINDOWEVENT_MAXIMIZED:
+            break;
+
+        case SDL_WINDOWEVENT_ENTER:
+            break;
+
+        case SDL_WINDOWEVENT_LEAVE:
+            break;
+
+        case SDL_WINDOWEVENT_FOCUS_GAINED:
+            break;
+
+        case SDL_WINDOWEVENT_FOCUS_LOST:
+            break;
+
+        case SDL_WINDOWEVENT_CLOSE:
+            break;
+
+#if SDL_VERSION_ATLEAST(2, 0, 5)
+        case SDL_WINDOWEVENT_TAKE_FOCUS:
+            break;
+
+        case SDL_WINDOWEVENT_HIT_TEST:
+            break;
+#endif // SDL_VERSION_ATLEAST(2, 0, 5)
+    }
+}
+
 static void events()
 {
     SDL_Event e;
@@ -132,6 +234,10 @@ static void events()
             case SDL_KEYDOWN:
             case SDL_KEYUP:
                 on_key_event(&e.key);
+                break;
+        
+            case SDL_WINDOWEVENT:
+                on_window_event(&e.window);
                 break;
         }
     } 
@@ -235,7 +341,7 @@ static void core_on_vblank(void* user)
 static void render()
 {
     SDL_RenderClear(renderer);
-    SDL_RenderCopy(renderer, texture, NULL, NULL);
+    SDL_RenderCopy(renderer, texture, NULL, &rect);
     SDL_RenderPresent(renderer);
 }
 
@@ -308,6 +414,8 @@ int main(int argc, char** argv)
     {
         goto fail;
     }
+
+    setup_rect(WIDTH * scale, HEIGHT * scale);
 
     const SDL_AudioSpec wanted = {
         .freq = SDL_AUDIO_FREQ,

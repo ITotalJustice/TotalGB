@@ -14,6 +14,21 @@ void GB_apu_iowrite(struct GB_Core* gb, uint16_t addr, uint8_t value)
     // on // off reg is always writable
     if (addr == 0x26)
     {
+        if (IO_NR52 & 0x80)
+        {
+            if ((value & 0x80) == 0)
+            {
+                gb_apu_on_disabled(gb);
+            }
+        }
+        else
+        {
+            if (value & 0x80)
+            {
+                gb_apu_on_enabled(gb);
+            }
+        }
+
         // todo: should reset the apu reg values here i think, maybe even
         // trigger some registers???
         IO_NR52 &= ~0x80;

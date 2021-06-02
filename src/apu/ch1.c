@@ -159,10 +159,6 @@ void on_ch1_trigger(struct GB_Core* gb)
             CH1.length_counter = 64;
         }
     }
-    if (IO_NR14.length_enable == false)
-    {
-        CH1.length_counter = 64;
-    }
 
     CH1.disable_env = false;
 

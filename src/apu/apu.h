@@ -109,6 +109,9 @@ GB_INLINE void clock_ch4_vol(struct GB_Core* gb);
 GB_INLINE void step_ch4_lfsr(struct GB_Core* gb);
 GB_INLINE void on_ch4_trigger(struct GB_Core* gb);
 
+GB_STATIC void gb_apu_on_enabled(struct GB_Core* gb);
+GB_STATIC void gb_apu_on_disabled(struct GB_Core* gb);
+
 GB_INLINE bool gb_is_apu_enabled(const struct GB_Core* gb);
 GB_INLINE bool is_next_frame_sequencer_step_not_len(const struct GB_Core* gb);
 GB_INLINE bool is_next_frame_sequencer_step_vol(const struct GB_Core* gb);
