@@ -15,17 +15,17 @@ bool is_ch3_dac_enabled(const struct GB_Core* gb)
 
 bool is_ch3_enabled(const struct GB_Core* gb)
 {
-    return IO_NR52.ch3_on;
+    return (IO_NR52 & 0x04) > 0;
 }
 
 void ch3_enable(struct GB_Core* gb)
 {
-    IO_NR52.ch3_on = true;
+    IO_NR52 |= 0x04;
 }
 
 void ch3_disable(struct GB_Core* gb)
 {
-    IO_NR52.ch3_on = false;
+    IO_NR52 &= ~0x04;
 }
 
 int8_t sample_ch3(struct GB_Core* gb)

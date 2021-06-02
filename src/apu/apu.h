@@ -109,6 +109,7 @@ void clock_ch4_vol(struct GB_Core* gb);
 void step_ch4_lfsr(struct GB_Core* gb);
 void on_ch4_trigger(struct GB_Core* gb);
 
+bool gb_is_apu_enabled(const struct GB_Core* gb);
 bool is_next_frame_sequencer_step_not_len(const struct GB_Core* gb);
 bool is_next_frame_sequencer_step_vol(const struct GB_Core* gb);
 

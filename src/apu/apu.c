@@ -16,6 +16,56 @@ const int8_t SQUARE_DUTY_CYCLES[4][8] =
 const uint8_t PERIOD_TABLE[8] = { 8, 1, 2, 3, 4, 5, 6, 7 };
 
 
+static inline uint8_t volume_left(const struct GB_Core* gb)
+{
+    return (IO_NR50 >> 4) & 0x7;
+}
+
+static inline uint8_t volume_right(const struct GB_Core* gb)
+{
+    return (IO_NR50 >> 0) & 0x7;
+}
+
+static inline bool ch1_left_output(const struct GB_Core* gb)
+{
+    return (IO_NR51 >> 4) & 0x1;
+}
+
+static inline bool ch2_left_output(const struct GB_Core* gb)
+{
+    return (IO_NR51 >> 5) & 0x1;
+}
+
+static inline bool ch3_left_output(const struct GB_Core* gb)
+{
+    return (IO_NR51 >> 6) & 0x1;
+}
+
+static inline bool ch4_left_output(const struct GB_Core* gb)
+{
+    return (IO_NR51 >> 7) & 0x1;
+}
+
+static inline bool ch1_right_output(const struct GB_Core* gb)
+{
+    return (IO_NR51 >> 0) & 0x1;
+}
+
+static inline bool ch2_right_output(const struct GB_Core* gb)
+{
+    return (IO_NR51 >> 1) & 0x1;
+}
+
+static inline bool ch3_right_output(const struct GB_Core* gb)
+{
+    return (IO_NR51 >> 2) & 0x1;
+}
+
+static inline bool ch4_right_output(const struct GB_Core* gb)
+{
+    return (IO_NR51 >> 3) & 0x1;
+}
+
 static inline void clock_len(struct GB_Core* gb)
 {
     clock_ch1_len(gb);
@@ -34,6 +84,11 @@ static inline void clock_vol(struct GB_Core* gb)
     clock_ch1_vol(gb);
     clock_ch2_vol(gb);
     clock_ch4_vol(gb);
+}
+
+bool gb_is_apu_enabled(const struct GB_Core* gb)
+{
+    return (IO_NR52 & 0x80) > 0;
 }
 
 // this is used when a channel is triggered
@@ -147,29 +202,29 @@ static inline void sample_channels(struct GB_Core* gb)
         .ch1 =
         {
             .sample = sample_ch1(gb) * is_ch1_enabled(gb),
-            .left = IO_NR51.ch1_left,
-            .right = IO_NR51.ch1_right
+            .left = ch1_left_output(gb),
+            .right = ch1_right_output(gb)
         },
         .ch2 =
         {
             .sample = sample_ch2(gb) * is_ch2_enabled(gb),
-            .left = IO_NR51.ch2_left,
-            .right = IO_NR51.ch2_right
+            .left = ch2_left_output(gb),
+            .right = ch2_right_output(gb)
         },
         .ch3 =
         {
             .sample = sample_ch3(gb) * is_ch3_enabled(gb),
-            .left = IO_NR51.ch3_left,
-            .right = IO_NR51.ch3_right
+            .left = ch3_left_output(gb),
+            .right = ch3_right_output(gb)
         },
         .ch4 =
         {
             .sample = sample_ch4(gb) * is_ch4_enabled(gb),
-            .left = IO_NR51.ch4_left,
-            .right = IO_NR51.ch4_right
+            .left = ch4_left_output(gb),
+            .right = ch4_right_output(gb)
         },
-        .left_master = IO_NR50.left_vol,
-        .right_master = IO_NR50.right_vol
+        .left_master = volume_left(gb),
+        .right_master = volume_right(gb)
     };
 
     const struct MixerResult r = mixer(&mixer_data);
@@ -188,7 +243,7 @@ static inline void sample_channels(struct GB_Core* gb)
 void GB_apu_run(struct GB_Core* gb, uint16_t cycles)
 {
     // todo: handle if the apu is disabled!
-    if (IO_NR52.power != 0)
+    if (gb_is_apu_enabled(gb))
     {
         // still tick samples but fill empty
         // nothing else should tick i dont think?

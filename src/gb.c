@@ -65,6 +65,10 @@ void GB_reset(struct GB_Core* gb)
     GB_cpu_set_register_pair(gb, GB_CPU_REGISTER_PAIR_SP, 0xFFFE);
     GB_cpu_set_register_pair(gb, GB_CPU_REGISTER_PAIR_PC, 0x0100);
 
+    // TODO: have the user set which system it wants to emulate (dmg / gbc)
+    // the effects some registers below, for example, a dmg game running on a
+    // gbc will be able to access some of the gbc registers.
+
     // IO
     IO_TIMA = 0x00;
     IO_TMA = 0x00;
@@ -96,9 +100,6 @@ void GB_reset(struct GB_Core* gb)
             GB_cpu_set_register_pair(gb, GB_CPU_REGISTER_PAIR_HL, 0x014D);
             IO_SVBK = 0x01;
             IO_VBK = 0x00;
-            IO_BCPS = 0xFF;
-            IO_OCPS = 0xFF;
-            IO_KEY1 = 0x00;
             break;
 
         case GB_SYSTEM_TYPE_SGB:
@@ -108,9 +109,6 @@ void GB_reset(struct GB_Core* gb)
             GB_cpu_set_register_pair(gb, GB_CPU_REGISTER_PAIR_HL, 0xC060);
             IO_SVBK = 0x01;
             IO_VBK = 0x00;
-            IO_BCPS = 0xFF;
-            IO_OCPS = 0xFF;
-            IO_KEY1 = 0x00;
             break;
 
         case GB_SYSTEM_TYPE_GBC:
@@ -122,13 +120,14 @@ void GB_reset(struct GB_Core* gb)
             IO_VBK = 0x00;
             IO_BCPS = 0x00;
             IO_OCPS = 0x00;
-            IO_OPRI = 0x00;
+            IO_OPRI = 0xFE;
             IO_KEY1 = 0x7E;
-            // undoc
             IO_72 = 0x00;
             IO_73 = 0x00;
             IO_74 = 0x00;
-            IO_75 = 0x00;
+            IO_75 = 0x8F;
+            IO_76 = 0x00;
+            IO_77 = 0x00;
             break;
     }
 }

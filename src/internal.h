@@ -92,9 +92,9 @@ extern "C" {
 #define IO_NR43 gb->apu.ch4
 #define IO_NR44 gb->apu.ch4
 // APU (control)
-#define IO_NR50 gb->apu.control
-#define IO_NR51 gb->apu.control
-#define IO_NR52 gb->apu.control
+#define IO_NR50 IO[0x24]
+#define IO_NR51 IO[0x25]
+#define IO_NR52 IO[0x26]
 // PPU
 #define IO_LCDC IO[0x40]
 #define IO_STAT IO[0x41]
@@ -116,9 +116,9 @@ extern "C" {
 #define IO_HDMA5 IO[0x55]
 #define IO_RP IO[0x56] // (GBC) infrared
 #define IO_BCPS IO[0x68]
-// #define IO_BCPD IO[0x69]
+#define IO_BCPD IO[0x69]
 #define IO_OCPS IO[0x6A]
-// #define IO_OCPD IO[0x6B]
+#define IO_OCPD IO[0x6B]
 #define IO_OPRI IO[0x6C] // (GBC) object priority
 // MISC
 #define IO_SVBK IO[0x70]
@@ -131,6 +131,8 @@ extern "C" {
 #define IO_73 IO[0x73]
 #define IO_74 IO[0x74]
 #define IO_75 IO[0x75] // only bit 4-6 are usable
+#define IO_76 IO[0x76]
+#define IO_77 IO[0x77]
 
 
 enum GB_Interrupts
@@ -167,8 +169,6 @@ void GB_throw_error(const struct GB_Core* gb, enum GB_ErrorDataType type, const 
 
 void GB_rtc_tick_frame(struct GB_Core* gb);
 
-uint8_t GB_ioread(struct GB_Core* gb, uint16_t addr);
-void GB_iowrite(struct GB_Core* gb, uint16_t addr, uint8_t value);
 uint8_t GB_read8(struct GB_Core* gb, const uint16_t addr);
 void GB_write8(struct GB_Core* gb, uint16_t addr, uint8_t value);
 uint16_t GB_read16(struct GB_Core* gb, uint16_t addr);
@@ -176,7 +176,6 @@ void GB_write16(struct GB_Core* gb, uint16_t addr, uint16_t value);
 
 void GB_on_lcdc_write(struct GB_Core* gb, const uint8_t value);
 
-uint8_t GB_apu_ioread(const struct GB_Core* gb, uint16_t addr);
 void GB_apu_iowrite(struct GB_Core* gb, uint16_t addr, uint8_t value);
 
 uint8_t GB_serial_sb_read(const struct GB_Core* gb);
@@ -184,9 +183,6 @@ void GB_serial_sc_write(struct GB_Core* gb, const uint8_t data);
 
 void GB_bcpd_write(struct GB_Core* gb, uint8_t value);
 void GB_ocpd_write(struct GB_Core* gb, uint8_t value);
-
-uint8_t GBC_bcpd_read(struct GB_Core* gb);
-uint8_t GBC_ocpd_read(struct GB_Core* gb);
 
 uint8_t GB_hdma5_read(const struct GB_Core* gb);
 void GB_hdma5_write(struct GB_Core* gb, uint8_t value);

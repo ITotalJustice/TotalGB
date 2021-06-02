@@ -550,29 +550,6 @@ struct GB_ApuCh4
     uint8_t length_counter;
 };
 
-struct GB_ApuControl
-{
-    bool vin_l;
-    bool vin_r;
-    uint8_t left_vol;
-    uint8_t right_vol;
-   
-    bool ch1_left;
-    bool ch1_right;
-    bool ch2_left;
-    bool ch2_right;
-    bool ch3_left;
-    bool ch3_right;
-    bool ch4_left;
-    bool ch4_right;
-    
-    bool power;
-    bool ch1_on;
-    bool ch2_on;
-    bool ch3_on;
-    bool ch4_on;
-};
-
 struct GB_ApuCallbackData
 {
     int8_t ch1[2];
@@ -590,7 +567,6 @@ struct GB_Apu
     struct GB_ApuCh2 ch2; // square 2
     struct GB_ApuCh3 ch3; // wave
     struct GB_ApuCh4 ch4; // noise
-    struct GB_ApuControl control;
 
     uint8_t frame_sequencer_counter;
 };

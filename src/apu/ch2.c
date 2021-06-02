@@ -15,17 +15,17 @@ bool is_ch2_dac_enabled(const struct GB_Core* gb)
 
 bool is_ch2_enabled(const struct GB_Core* gb)
 {
-    return IO_NR52.ch2_on;
+    return (IO_NR52 & 0x02) > 0;
 }
 
 void ch2_enable(struct GB_Core* gb)
 {
-    IO_NR52.ch2_on = true;
+    IO_NR52 |= 0x02;
 }
 
 void ch2_disable(struct GB_Core* gb)
 {
-    IO_NR52.ch2_on = false;
+    IO_NR52 &= ~0x02;
 }
 
 int8_t sample_ch2(struct GB_Core* gb)

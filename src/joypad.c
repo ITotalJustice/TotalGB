@@ -64,13 +64,6 @@ bool GB_is_button_down(const struct GB_Core* gb, enum GB_Button button)
     return (gb->joypad.var & button) == 0;
 }
 
-// [core]
-uint8_t GB_joypad_read(const struct GB_Core* gb)
-{
-    // todo: no need for this function anymore, can read from io array.
-    return IO_JYP | 0xC0;
-}
-
 void GB_joypad_write(struct GB_Core* gb, uint8_t value)
 {
     // if (GB_get_system_type(gb) == GB_SYSTEM_TYPE_SGB)

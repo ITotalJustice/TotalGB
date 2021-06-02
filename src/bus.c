@@ -1,5 +1,6 @@
 #include "gb.h"
 #include "internal.h"
+#include "tables/io_read_table.h"
 
 #include <assert.h>
 
@@ -18,9 +19,6 @@ static inline void GB_iowrite_gbc(struct GB_Core* gb, uint16_t addr, uint8_t val
         case 0x4F: // (VBK)
             IO_VBK = value & 1;
             GB_update_vram_banks(gb);
-            break;
-
-        case 0x50: // unused (bootrom?)
             break;
 
         case 0x51: // (HDMA1)
@@ -44,7 +42,7 @@ static inline void GB_iowrite_gbc(struct GB_Core* gb, uint16_t addr, uint8_t val
             break;
 
         case 0x68: // BCPS
-            IO_BCPS = value | 0x40;
+            IO_BCPS = value;
             break;
 
         case 0x69: // BCPD
@@ -52,7 +50,7 @@ static inline void GB_iowrite_gbc(struct GB_Core* gb, uint16_t addr, uint8_t val
             break;
 
         case 0x6A: // OCPS
-            IO_OCPS = value | 0x40;
+            IO_OCPS = value;
             break;
 
         case 0x6B: // OCPD
@@ -60,8 +58,7 @@ static inline void GB_iowrite_gbc(struct GB_Core* gb, uint16_t addr, uint8_t val
             break;
 
         case 0x6C: // OPRI
-            assert(0&&"opri");
-            IO_OPRI = value & 1;
+            IO_OPRI = value;
             GB_log("[INFO] IO_OPRI %d\n", value & 1);
             break;
 
@@ -82,133 +79,18 @@ static inline void GB_iowrite_gbc(struct GB_Core* gb, uint16_t addr, uint8_t val
             IO_74 = value;
             break;
 
-        case 0x75: // only bits 4-6 are useable
-            IO_75 = value & 0x70;
+        case 0x75:
+            IO_75 = value;
             break;
     }
 }
 
-uint8_t GB_ioread(struct GB_Core* gb, uint16_t addr)
-{
-    // soon (tm)
-    // return IO[addr & 0x7F];
-
-    switch (addr & 0x7F)
-    {
-        case 0x00:
-            return GB_joypad_read(gb);
-
-        case 0x01:
-            return 0xFF;
-            // return GB_serial_sb_read(gb);
-
-        case 0x02: // SC
-            return 0x7C; // all zeros apart from unused bits
-
-        case 0x03:
-            return 0xFF;
-
-        case 0x10: case 0x11: case 0x12: case 0x13:
-        case 0x14: case 0x15: case 0x16: case 0x17:
-        case 0x18: case 0x19: case 0x1A: case 0x1B:
-        case 0x1C: case 0x1D: case 0x1E: case 0x20:
-        case 0x21: case 0x22: case 0x23: case 0x24:
-        case 0x25: case 0x26:
-        case 0x30: case 0x31: case 0x32: case 0x33:
-        case 0x34: case 0x35: case 0x36: case 0x37:
-        case 0x38: case 0x39: case 0x3A: case 0x3B:
-        case 0x3C: case 0x3D: case 0x3E: case 0x3F:
-            return GB_apu_ioread(gb, addr);
-
-        case 0x27: case 0x28: case 0x29: case 0x2A:
-        case 0x2B: case 0x2C: case 0x2D: case 0x2E:
-        case 0x2F: case 0x1F: // unused
-            return 0xFF;
-
-        case 0x4D:
-            if (GB_is_system_gbc(gb) == true)
-            {
-                return 0x7E | IO_KEY1;
-            }
-            else
-            {
-                return 0xFF;
-            }
-
-        case 0x4F: // (GBC) VBK
-            if (GB_is_system_gbc(gb) == true)
-            {
-                return IO_VBK;
-            }
-            else
-            {
-                return 0xFF;
-            }
-
-
-        case 0x55: // (GBC) HDMA5
-            if (GB_is_system_gbc(gb) == true)
-            {
-                return GB_hdma5_read(gb);
-            }
-            else
-            {
-                return 0xFF;
-            }
-
-        case 0x56:
-            if (GB_is_system_gbc(gb) == true)
-            {
-                GB_log("reading from infrared port\n");
-                return 0x00;
-            }
-            else
-            {
-                return 0xFF;
-            }
-
-        case 0x68: // BCPS
-            return IO_BCPS;
-
-        case 0x6A: // OCPS
-            return IO_OCPS;
-
-        case 0x69:
-            if (GB_is_system_gbc(gb) == true)
-            {
-                return GBC_bcpd_read(gb);
-            }
-            else
-            {
-                return 0xFF;
-            }
-
-        case 0x6B:
-            if (GB_is_system_gbc(gb) == true)
-            {
-                return GBC_ocpd_read(gb);
-            }
-            else
-            {
-                return 0xFF;
-            }
-
-        case 0x70: // (GBC) SVBK
-            if (GB_is_system_gbc(gb) == true)
-            {
-                return IO_SVBK;
-            }
-            else
-            {
-                return 0xFF;
-            }
-
-        default:
-            return IO[addr & 0x7F];
-    }
+static inline uint8_t GB_ioread(struct GB_Core* gb, uint16_t addr)
+{    
+    return IO[addr & 0x7F] | IO_READ_TABLE[addr & 0x7F];
 }
 
-void GB_iowrite(struct GB_Core* gb, uint16_t addr, uint8_t value)
+static inline void GB_iowrite(struct GB_Core* gb, uint16_t addr, uint8_t value)
 {
     switch (addr & 0x7F)
     {
@@ -224,9 +106,6 @@ void GB_iowrite(struct GB_Core* gb, uint16_t addr, uint8_t value)
             GB_serial_sc_write(gb, value);
             break;
 
-        case 0x03: // IO_DIV lower, non writeable
-            break;
-
         case 0x04:
             IO_DIV_UPPER = IO_DIV_LOWER = 0;
             break;
@@ -240,19 +119,21 @@ void GB_iowrite(struct GB_Core* gb, uint16_t addr, uint8_t value)
             break;
 
         case 0x07:
-            IO_TAC = (value | 248);
+            IO_TAC = value;
             break;
 
         case 0x0F:
-            IO_IF = (value | 224);
+            IO_IF = value;
             break;
 
         case 0x10: case 0x11: case 0x12: case 0x13:
-        case 0x14: case 0x16: case 0x17: case 0x18:
-        case 0x19: case 0x1A: case 0x1B: case 0x1C:
-        case 0x1D: case 0x1E: case 0x20: case 0x21:
-        case 0x22: case 0x23: case 0x24: case 0x25:
-        case 0x26:
+        case 0x14: case 0x15: case 0x16: case 0x17:
+        case 0x18: case 0x19: case 0x1A: case 0x1B:
+        case 0x1C: case 0x1D: case 0x1E: case 0x1F:
+        case 0x20: case 0x21: case 0x22: case 0x23:
+        case 0x24: case 0x25: case 0x26: case 0x27:
+        case 0x28: case 0x29: case 0x2A: case 0x2B:
+        case 0x2C: case 0x2D: case 0x2E: case 0x2F:
         case 0x30: case 0x31: case 0x32: case 0x33:
         case 0x34: case 0x35: case 0x36: case 0x37:
         case 0x38: case 0x39: case 0x3A: case 0x3B:
@@ -265,7 +146,7 @@ void GB_iowrite(struct GB_Core* gb, uint16_t addr, uint8_t value)
             break;
 
         case 0x41:
-            IO_STAT = (IO_STAT & 0x7) | (value & 0x78) | 0x80;
+            IO_STAT = (IO_STAT & 0x7) | (value & 0x78);
             GB_compare_LYC(gb);
             break;
 
@@ -310,8 +191,11 @@ void GB_iowrite(struct GB_Core* gb, uint16_t addr, uint8_t value)
             IO_WX = value;
             break;
 
+        case 0x50: // unused (bootrom?)
+            break;
+
         default:
-            if (GB_is_system_gbc(gb) == true)
+            if (GB_is_system_gbc(gb))
             {
                 GB_iowrite_gbc(gb, addr, value);
             }

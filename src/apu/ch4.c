@@ -9,62 +9,6 @@ enum NoiseChannelShiftWidth
     WIDTH_7_BITS = 1,
 };
 
-struct Sweep
-{
-    uint16_t freq_shadow_register;
-    uint8_t internal_enable_flag;
-    uint8_t shift;
-    bool negate;
-};
-
-struct Timer
-{
-    uint32_t freq;
-    int32_t timer;
-    uint8_t duty;
-};
-
-struct LengthCounter
-{
-    uint8_t length_load;
-    uint8_t counter;
-    bool enable;
-};
-
-struct Envelope
-{
-    uint8_t period;
-    uint8_t volume;
-    uint8_t starting_volume;
-    bool add_mode;
-    bool disable;
-};
-
-
-#define CH1_ gb->apu.ch1
-#define CH2_ gb->apu.ch2
-#define CH3_ gb->apu.ch3
-#define CH4_ gb->apu.ch4
-
-#define CH(num) CH##num##_
-#define IS_CHANNEL_ON(num) (CONTROL_CHANNEL.ch##num##_on)
-
-#define ENABLE_CHANNEL(num) CONTROL_CHANNEL.ch##num##_on = true
-#define DISABLE_CHANNEL(num) CONTROL_CHANNEL.ch##num##_on = false
-
-#define CLOCK_CHANNEL_LEN(num) do { \
-    if (CH(num).length_enable && CH(num).length_counter > 0) \
-    { \
-        --CH(num).length_counter; \
-        /* disable channel if we hit zero... */ \
-        if (CH(num).length_counter == 0) \
-        { \
-            DISABLE_CHANNEL(num); \
-        } \
-    } \
-} while(0)
-
-
 uint32_t get_ch4_freq(const struct GB_Core* gb)
 {
     // indexed using the noise divisor code
@@ -80,17 +24,17 @@ bool is_ch4_dac_enabled(const struct GB_Core* gb)
 
 bool is_ch4_enabled(const struct GB_Core* gb)
 {
-    return IO_NR52.ch4_on;
+    return (IO_NR52 & 0x08) > 0;
 }
 
 void ch4_enable(struct GB_Core* gb)
 {
-    IO_NR52.ch4_on = true;
+    IO_NR52 |= 0x08;
 }
 
 void ch4_disable(struct GB_Core* gb)
 {
-    IO_NR52.ch4_on = false;
+    IO_NR52 &= ~0x08;
 }
 
 int8_t sample_ch4(struct GB_Core* gb)

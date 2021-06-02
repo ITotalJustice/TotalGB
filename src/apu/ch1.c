@@ -15,17 +15,17 @@ bool is_ch1_dac_enabled(const struct GB_Core* gb)
 
 bool is_ch1_enabled(const struct GB_Core* gb)
 {
-    return IO_NR52.ch1_on;
+    return (IO_NR52 & 0x01) > 0;
 }
 
 void ch1_enable(struct GB_Core* gb)
 {
-    IO_NR52.ch1_on = true;
+    IO_NR52 |= 0x01;
 }
 
 void ch1_disable(struct GB_Core* gb)
 {
-    IO_NR52.ch1_on = false;
+    IO_NR52 &= ~0x01;
 }
 
 int8_t sample_ch1(struct GB_Core* gb)
