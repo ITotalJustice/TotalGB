@@ -97,9 +97,10 @@ void GB_set_coincidence_flag(struct GB_Core* gb, const bool n)
     IO_STAT = n ? IO_STAT | 0x04 : IO_STAT & ~0x04;
 }
 
-void GB_set_status_mode(struct GB_Core* gb, const enum GB_StatusModes mode)
+void GB_set_status_mode(struct GB_Core* gb, enum GB_StatusModes mode)
 {
-    IO_STAT = (IO_STAT & 252) | mode;
+    IO_STAT &= ~0x3;
+    IO_STAT |= mode;
 }
 
 enum GB_StatusModes GB_get_status_mode(const struct GB_Core* gb)
@@ -147,11 +148,12 @@ void GB_change_status_mode(struct GB_Core* gb,
 {
     GB_set_status_mode(gb, new_mode);
 
+    // TODO: check what the timing should actually be for ppu modes!
     switch (new_mode)
     {
         case STATUS_MODE_HBLANK:
             GB_raise_if_enabled(gb, STAT_INT_MODE_0);
-            gb->ppu.next_cycles += 146;
+            gb->ppu.next_cycles += 207;
             GB_draw_scanline(gb);
 
             if (gb->callback.hblank != NULL)
@@ -177,7 +179,7 @@ void GB_change_status_mode(struct GB_Core* gb,
             break;
 
         case STATUS_MODE_TRANSFER:
-            gb->ppu.next_cycles += 230;
+            gb->ppu.next_cycles += 175;
             break;
     }
 }
