@@ -7,7 +7,7 @@
 #include <assert.h>
 
 
-void GB_mbc5_write(struct GB_Core* gb, uint16_t addr, uint8_t value)
+void mbc5_write(struct GB_Core* gb, uint16_t addr, uint8_t value)
 {
     switch ((addr >> 12) & 0xF)
     {
@@ -56,7 +56,7 @@ void GB_mbc5_write(struct GB_Core* gb, uint16_t addr, uint8_t value)
     }
 }
 
-struct MBC_RomBankInfo GB_mbc5_get_rom_bank(struct GB_Core* gb, uint8_t bank)
+struct MBC_RomBankInfo mbc5_get_rom_bank(struct GB_Core* gb, uint8_t bank)
 {
     struct MBC_RomBankInfo info = {0};
     const uint8_t* ptr = NULL;
@@ -79,7 +79,7 @@ struct MBC_RomBankInfo GB_mbc5_get_rom_bank(struct GB_Core* gb, uint8_t bank)
     return info;
 }
 
-struct MBC_RamBankInfo GB_mbc5_get_ram_bank(struct GB_Core* gb)
+struct MBC_RamBankInfo mbc5_get_ram_bank(struct GB_Core* gb)
 {
     if (!(gb->cart.flags & MBC_FLAGS_RAM) || !gb->cart.ram_enabled)
     {

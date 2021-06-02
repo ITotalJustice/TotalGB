@@ -1,5 +1,6 @@
 #include "gb.h"
 #include "internal.h"
+#include "mbc/mbc.h"
 
 #if GB_SRC_INCLUDE
 
@@ -238,7 +239,7 @@ void GB_write8(struct GB_Core* gb, uint16_t addr, uint8_t value)
         {
             case 0x0: case 0x1: case 0x2: case 0x3: case 0x4:
             case 0x5: case 0x6: case 0x7: case 0xA: case 0xB:
-                gb->cart.write(gb, addr, value);
+                mbc_write(gb, addr, value);
                 break;
 
             case 0x8: case 0x9:
@@ -284,8 +285,8 @@ void GB_write16(struct GB_Core* gb, uint16_t addr, uint16_t value)
 
 void GB_update_rom_banks(struct GB_Core* gb)
 {
-    const struct MBC_RomBankInfo rom_bank0 = gb->cart.get_rom_bank(gb, 0);
-    const struct MBC_RomBankInfo rom_bankx = gb->cart.get_rom_bank(gb, 1);
+    const struct MBC_RomBankInfo rom_bank0 = mbc_get_rom_bank(gb, 0);
+    const struct MBC_RomBankInfo rom_bankx = mbc_get_rom_bank(gb, 1);
 
     gb->mmap[0x0] = rom_bank0.entries[0];
     gb->mmap[0x1] = rom_bank0.entries[1];
@@ -300,7 +301,7 @@ void GB_update_rom_banks(struct GB_Core* gb)
 
 void GB_update_ram_banks(struct GB_Core* gb)
 {
-    const struct MBC_RamBankInfo ram = gb->cart.get_ram_bank(gb);
+    const struct MBC_RamBankInfo ram = mbc_get_ram_bank(gb);
 
     gb->mmap[0xA] = ram.entries[0];
     gb->mmap[0xB] = ram.entries[1];

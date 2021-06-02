@@ -98,7 +98,7 @@ bool GB_cpu_get_flag(const struct GB_Core* gb, enum GB_CpuFlags flag)
         case GB_CPU_FLAG_Z: return FLAG_Z;
     }
 
-    GB_UNREACHABLE(false);
+    UNREACHABLE(false);
 }
 
 void GB_cpu_set_register(struct GB_Core* gb, enum GB_CpuRegisters reg, uint8_t value)
@@ -130,7 +130,7 @@ uint8_t GB_cpu_get_register(const struct GB_Core* gb, enum GB_CpuRegisters reg)
         case GB_CPU_REGISTER_F: return REG_F_GET();
     }
 
-    GB_UNREACHABLE(0xFF);
+    UNREACHABLE(0xFF);
 }
 
 void GB_cpu_set_register_pair(struct GB_Core* gb, enum GB_CpuRegisterPairs pair, uint16_t value)
@@ -158,7 +158,7 @@ uint16_t GB_cpu_get_register_pair(const struct GB_Core* gb, enum GB_CpuRegisterP
         case GB_CPU_REGISTER_PAIR_PC: return REG_PC;
     }
 
-    GB_UNREACHABLE(0xFF);
+    UNREACHABLE(0xFF);
 }
 
 #define SET_FLAGS_HN(h,n) \

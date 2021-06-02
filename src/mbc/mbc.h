@@ -8,27 +8,32 @@ extern "C" {
 #include "../types.h"
 
 
+GB_INLINE void mbc_write(struct GB_Core *gb, uint16_t addr, uint8_t value);
+GB_INLINE struct MBC_RomBankInfo mbc_get_rom_bank(struct GB_Core *gb, uint8_t bank);
+GB_INLINE struct MBC_RamBankInfo mbc_get_ram_bank(struct GB_Core *gb);
+
+
 GB_STATIC struct MBC_RamBankInfo mbc_setup_empty_ram(void);
 
-GB_STATIC void GB_mbc0_write(struct GB_Core* gb, uint16_t addr, uint8_t value);
-GB_STATIC struct MBC_RomBankInfo GB_mbc0_get_rom_bank(struct GB_Core* gb, uint8_t bank);
-GB_STATIC struct MBC_RamBankInfo GB_mbc0_get_ram_bank(struct GB_Core* gb);
+GB_INLINE void mbc0_write(struct GB_Core* gb, uint16_t addr, uint8_t value);
+GB_STATIC struct MBC_RomBankInfo mbc0_get_rom_bank(struct GB_Core* gb, uint8_t bank);
+GB_STATIC struct MBC_RamBankInfo mbc0_get_ram_bank(struct GB_Core* gb);
 
-GB_STATIC void GB_mbc1_write(struct GB_Core* gb, uint16_t addr, uint8_t value);
-GB_STATIC struct MBC_RomBankInfo GB_mbc1_get_rom_bank(struct GB_Core* gb, uint8_t bank);
-GB_STATIC struct MBC_RamBankInfo GB_mbc1_get_ram_bank(struct GB_Core* gb);
+GB_INLINE void mbc1_write(struct GB_Core* gb, uint16_t addr, uint8_t value);
+GB_STATIC struct MBC_RomBankInfo mbc1_get_rom_bank(struct GB_Core* gb, uint8_t bank);
+GB_STATIC struct MBC_RamBankInfo mbc1_get_ram_bank(struct GB_Core* gb);
 
-GB_STATIC void GB_mbc2_write(struct GB_Core* gb, uint16_t addr, uint8_t value);
-GB_STATIC struct MBC_RomBankInfo GB_mbc2_get_rom_bank(struct GB_Core* gb, uint8_t bank);
-GB_STATIC struct MBC_RamBankInfo GB_mbc2_get_ram_bank(struct GB_Core* gb);
+GB_INLINE void mbc2_write(struct GB_Core* gb, uint16_t addr, uint8_t value);
+GB_STATIC struct MBC_RomBankInfo mbc2_get_rom_bank(struct GB_Core* gb, uint8_t bank);
+GB_STATIC struct MBC_RamBankInfo mbc2_get_ram_bank(struct GB_Core* gb);
 
-GB_STATIC void GB_mbc3_write(struct GB_Core* gb, uint16_t addr, uint8_t value);
-GB_STATIC struct MBC_RomBankInfo GB_mbc3_get_rom_bank(struct GB_Core* gb, uint8_t bank);
-GB_STATIC struct MBC_RamBankInfo GB_mbc3_get_ram_bank(struct GB_Core* gb);
+GB_INLINE void mbc3_write(struct GB_Core* gb, uint16_t addr, uint8_t value);
+GB_STATIC struct MBC_RomBankInfo mbc3_get_rom_bank(struct GB_Core* gb, uint8_t bank);
+GB_STATIC struct MBC_RamBankInfo mbc3_get_ram_bank(struct GB_Core* gb);
 
-GB_STATIC void GB_mbc5_write(struct GB_Core* gb, uint16_t addr, uint8_t value);
-GB_STATIC struct MBC_RomBankInfo GB_mbc5_get_rom_bank(struct GB_Core* gb, uint8_t bank);
-GB_STATIC struct MBC_RamBankInfo GB_mbc5_get_ram_bank(struct GB_Core* gb);
+GB_INLINE void mbc5_write(struct GB_Core* gb, uint16_t addr, uint8_t value);
+GB_STATIC struct MBC_RomBankInfo mbc5_get_rom_bank(struct GB_Core* gb, uint8_t bank);
+GB_STATIC struct MBC_RamBankInfo mbc5_get_ram_bank(struct GB_Core* gb);
 
 #ifdef __cplusplus
 }

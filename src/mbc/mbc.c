@@ -9,44 +9,76 @@
 #include <assert.h>
 
 
-struct GB_MbcInterface
+struct MbcInfo
 {
-    // function callbacks
-    void (*write)(struct GB_Core *gb, uint16_t addr, uint8_t value);
-    struct MBC_RomBankInfo (*get_rom_bank)(struct GB_Core *gb, uint8_t bank);
-    struct MBC_RamBankInfo (*get_ram_bank)(struct GB_Core *gb);
-    // all normal mbc's start we rombank == 1
-    // however, other mbcs (HUC1) seem to start at 0
-    uint8_t starting_rom_bank;
-    // ram, rtc, battery etc...
+    uint8_t type;
     uint8_t flags;
 };
 
-// this data is indexed using the [cart_type] member from the
-// cart header struct.
-static const struct GB_MbcInterface MBC_SETUP_DATA[0x100] =
+void mbc_write(struct GB_Core *gb, uint16_t addr, uint8_t value)
+{
+    switch (gb->cart.type)
+    {
+        case GB_MbcType_0: mbc0_write(gb, addr, value); break;
+        case GB_MbcType_1: mbc1_write(gb, addr, value); break;
+        case GB_MbcType_2: mbc2_write(gb, addr, value); break;
+        case GB_MbcType_3: mbc3_write(gb, addr, value); break;
+        case GB_MbcType_5: mbc5_write(gb, addr, value); break;
+    }
+}
+
+struct MBC_RomBankInfo mbc_get_rom_bank(struct GB_Core *gb, uint8_t bank)
+{
+    switch (gb->cart.type)
+    {
+        case GB_MbcType_0: return mbc0_get_rom_bank(gb, bank);
+        case GB_MbcType_1: return mbc1_get_rom_bank(gb, bank);
+        case GB_MbcType_2: return mbc2_get_rom_bank(gb, bank);
+        case GB_MbcType_3: return mbc3_get_rom_bank(gb, bank);
+        case GB_MbcType_5: return mbc5_get_rom_bank(gb, bank);
+    }
+
+    UNREACHABLE((struct MBC_RomBankInfo){0});
+}
+
+struct MBC_RamBankInfo mbc_get_ram_bank(struct GB_Core *gb)
+{
+    switch (gb->cart.type)
+    {
+        case GB_MbcType_0: return mbc0_get_ram_bank(gb);
+        case GB_MbcType_1: return mbc1_get_ram_bank(gb);
+        case GB_MbcType_2: return mbc2_get_ram_bank(gb);
+        case GB_MbcType_3: return mbc3_get_ram_bank(gb);
+        case GB_MbcType_5: return mbc5_get_ram_bank(gb);
+    }
+
+    UNREACHABLE((struct MBC_RamBankInfo){0});
+}
+
+// NOTE: this assumes that the rest of the entries will be zero init!
+static const struct MbcInfo MBC_INFO[0x100] =
 {
     // MBC0
-    [0x00] = {GB_mbc0_write, GB_mbc0_get_rom_bank, GB_mbc0_get_ram_bank, 0, MBC_FLAGS_NONE},
+    [0x00] = { .type = GB_MbcType_0, .flags = MBC_FLAGS_NONE},
     // MBC1
-    [0x01] = {GB_mbc1_write, GB_mbc1_get_rom_bank, GB_mbc1_get_ram_bank, 1, MBC_FLAGS_NONE},
-    [0x02] = {GB_mbc1_write, GB_mbc1_get_rom_bank, GB_mbc1_get_ram_bank, 1, MBC_FLAGS_RAM},
-    [0x03] = {GB_mbc1_write, GB_mbc1_get_rom_bank, GB_mbc1_get_ram_bank, 1, MBC_FLAGS_RAM | MBC_FLAGS_BATTERY},
+    [0x01] = { .type = GB_MbcType_1, .flags = MBC_FLAGS_NONE},
+    [0x02] = { .type = GB_MbcType_1, .flags = MBC_FLAGS_RAM},
+    [0x03] = { .type = GB_MbcType_1, .flags = MBC_FLAGS_RAM | MBC_FLAGS_BATTERY},
     // MBC2
-    [0x05] = {GB_mbc2_write, GB_mbc2_get_rom_bank, GB_mbc2_get_ram_bank, 1, MBC_FLAGS_RAM},
-    [0x06] = {GB_mbc2_write, GB_mbc2_get_rom_bank, GB_mbc2_get_ram_bank, 1, MBC_FLAGS_RAM | MBC_FLAGS_BATTERY},
+    [0x05] = { .type = GB_MbcType_2, .flags = MBC_FLAGS_RAM},
+    [0x06] = { .type = GB_MbcType_2, .flags = MBC_FLAGS_RAM | MBC_FLAGS_BATTERY},
     // MBC3
-    [0x0F] = {GB_mbc3_write, GB_mbc3_get_rom_bank, GB_mbc3_get_ram_bank, 1, MBC_FLAGS_BATTERY | MBC_FLAGS_RTC},
-    [0x10] = {GB_mbc3_write, GB_mbc3_get_rom_bank, GB_mbc3_get_ram_bank, 1, MBC_FLAGS_RAM | MBC_FLAGS_BATTERY | MBC_FLAGS_RTC},
-    [0x11] = {GB_mbc3_write, GB_mbc3_get_rom_bank, GB_mbc3_get_ram_bank, 1, MBC_FLAGS_NONE},
-    [0x13] = {GB_mbc3_write, GB_mbc3_get_rom_bank, GB_mbc3_get_ram_bank, 1, MBC_FLAGS_RAM | MBC_FLAGS_BATTERY},
+    [0x0F] = { .type = GB_MbcType_3, .flags = MBC_FLAGS_BATTERY | MBC_FLAGS_RTC},
+    [0x10] = { .type = GB_MbcType_3, .flags = MBC_FLAGS_RAM | MBC_FLAGS_BATTERY | MBC_FLAGS_RTC},
+    [0x11] = { .type = GB_MbcType_3, .flags = MBC_FLAGS_NONE},
+    [0x13] = { .type = GB_MbcType_3, .flags = MBC_FLAGS_RAM | MBC_FLAGS_BATTERY},
     // MBC5
-    [0x19] = {GB_mbc5_write, GB_mbc5_get_rom_bank, GB_mbc5_get_ram_bank, 1, MBC_FLAGS_NONE},
-    [0x1A] = {GB_mbc5_write, GB_mbc5_get_rom_bank, GB_mbc5_get_ram_bank, 1, MBC_FLAGS_RAM},
-    [0x1B] = {GB_mbc5_write, GB_mbc5_get_rom_bank, GB_mbc5_get_ram_bank, 1, MBC_FLAGS_RAM | MBC_FLAGS_BATTERY},
-    [0x1C] = {GB_mbc5_write, GB_mbc5_get_rom_bank, GB_mbc5_get_ram_bank, 1, MBC_FLAGS_RUMBLE},
-    [0x1D] = {GB_mbc5_write, GB_mbc5_get_rom_bank, GB_mbc5_get_ram_bank, 1, MBC_FLAGS_RAM | MBC_FLAGS_RUMBLE},
-    [0x1E] = {GB_mbc5_write, GB_mbc5_get_rom_bank, GB_mbc5_get_ram_bank, 1, MBC_FLAGS_RAM | MBC_FLAGS_BATTERY},
+    [0x19] = { .type = GB_MbcType_5, .flags = MBC_FLAGS_NONE},
+    [0x1A] = { .type = GB_MbcType_5, .flags = MBC_FLAGS_RAM},
+    [0x1B] = { .type = GB_MbcType_5, .flags = MBC_FLAGS_RAM | MBC_FLAGS_BATTERY},
+    [0x1C] = { .type = GB_MbcType_5, .flags = MBC_FLAGS_RUMBLE},
+    [0x1D] = { .type = GB_MbcType_5, .flags = MBC_FLAGS_RAM | MBC_FLAGS_RUMBLE},
+    [0x1E] = { .type = GB_MbcType_5, .flags = MBC_FLAGS_RAM | MBC_FLAGS_BATTERY},
 };
 
 struct MBC_RamBankInfo mbc_setup_empty_ram(void)
@@ -134,7 +166,7 @@ bool GB_get_cart_ram_size(uint8_t type, uint32_t* size)
 
     if (type == 5)
     {
-        printf("ram is of type GB_SAVE_SIZE_5, finally found a game that uses this!\n");
+        GB_log("ram is of type GB_SAVE_SIZE_5, finally found a game that uses this!\n");
         assert(type != 5);
         return false;
     }
@@ -152,24 +184,30 @@ bool GB_setup_mbc(struct GB_Cart* mbc, const struct GB_CartHeader* header)
 
     // this won't fail because the type is 8-bit and theres 0x100 entries.
     // though the data inside can be NULL, but this is checked next...
-    const struct GB_MbcInterface* data = &MBC_SETUP_DATA[header->cart_type];
+    const struct MbcInfo* info = &MBC_INFO[header->cart_type];
 
-    // this is a check to see if we have data.
-    // i could check only 1 func, but just in case i check all 3.
-    if (!data->write || !data->get_rom_bank || !data->get_ram_bank)
+    // types start at > 0, if 0, then this mbc is invalid
+    if (!info->type)
     {
-        printf("MBC NOT IMPLEMENTED: 0x%02X\n", header->cart_type);
+        GB_log("MBC NOT IMPLEMENTED: 0x%02X\n", header->cart_type);
         assert(0);
         return false;
     }
 
-    // set the function ptr's and flags!
-    mbc->write = data->write;
-    mbc->get_rom_bank = data->get_rom_bank;
-    mbc->get_ram_bank = data->get_ram_bank;
-    mbc->rom_bank = data->starting_rom_bank;
-    mbc->rom_bank_lo = data->starting_rom_bank;
-    mbc->flags = data->flags;
+    mbc->type = info->type;
+    mbc->flags = info->flags;
+
+    // todo: create mbcx_init() functions
+    if (mbc->type == GB_MbcType_0)
+    {
+        mbc->rom_bank = 0;
+        mbc->rom_bank_lo = 0;
+    }
+    else
+    {
+         mbc->rom_bank = 1;
+        mbc->rom_bank_lo = 1;
+    }
 
     // setup max rom banks
     // this can never be 0 as rom size is already set before.
@@ -187,7 +225,7 @@ bool GB_setup_mbc(struct GB_Cart* mbc, const struct GB_CartHeader* header)
         // otherwise get the ram size via a LUT
         else if (!GB_get_cart_ram_size(header->ram_size, &mbc->ram_size))
         {
-            printf("rom has ram but the size entry in header is invalid! %u\n", header->ram_size);
+            GB_log("rom has ram but the size entry in header is invalid! %u\n", header->ram_size);
             return false;
         }
         else
@@ -200,7 +238,7 @@ bool GB_setup_mbc(struct GB_Cart* mbc, const struct GB_CartHeader* header)
         // this can be set by the user, using build flags!
         if (mbc->ram_size > GB_SAVE_SIZE_MAX)
         {
-            printf("cart-ram size is too big for the maximum size set! got: %u max: %d", mbc->ram_size, GB_SAVE_SIZE_MAX);
+            GB_log("cart-ram size is too big for the maximum size set! got: %u max: %d", mbc->ram_size, GB_SAVE_SIZE_MAX);
             return false;
         }
     }

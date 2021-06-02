@@ -114,6 +114,15 @@ enum GB_SaveSizes
 #endif
 };
 
+enum GB_MbcType
+{
+    GB_MbcType_0 = 1,
+    GB_MbcType_1,
+    GB_MbcType_2,
+    GB_MbcType_3,
+    GB_MbcType_5,
+};
+
 enum GB_MbcFlags
 {
     MBC_FLAGS_NONE      = 0,
@@ -446,11 +455,6 @@ struct MBC_RamBankInfo
 // todo: remove all bitfields, there's no reason to be using them!
 struct GB_Cart
 {
-    void (*write)(struct GB_Core* gb, uint16_t addr, uint8_t val);
-
-    struct MBC_RomBankInfo (*get_rom_bank)(struct GB_Core* gb, uint8_t bank);
-    struct MBC_RamBankInfo (*get_ram_bank)(struct GB_Core* gb);
-
     const uint8_t* rom;
 
     uint8_t ram[GB_SAVE_SIZE_MAX];
@@ -473,6 +477,7 @@ struct GB_Cart
     bool ram_enabled;
     bool in_ram;
 
+    enum GB_MbcType type;
     uint8_t flags;
 };
 

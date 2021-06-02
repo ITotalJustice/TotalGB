@@ -21,9 +21,9 @@ extern "C" {
 #endif // __has_builtin(__builtin_expect)
 
 #if GB_HAS_BUILTIN(__builtin_unreachable)
-#define GB_UNREACHABLE(ret) __builtin_unreachable()
+#define UNREACHABLE(ret) __builtin_unreachable()
 #else
-#define GB_UNREACHABLE(ret) return ret
+#define UNREACHABLE(ret) return ret
 #endif // __has_builtin(__builtin_unreachable)
 
 // used mainly in debugging when i want to quickly silence

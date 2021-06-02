@@ -82,7 +82,7 @@ void GB_rtc_tick_frame(struct GB_Core* gb)
     }
 }
 
-static inline void GB_mbc3_rtc_write(struct GB_Core* gb, uint8_t value)
+static inline void mbc3_rtc_write(struct GB_Core* gb, uint8_t value)
 {
     // TODO: cap the values so they aren't invalid!
     switch (gb->cart.rtc_mapped_reg)
@@ -114,7 +114,7 @@ static inline void GB_speed_hack_map_rtc_reg(struct GB_Core* gb)
     gb->mmap[0xB].mask = 0;
 }
 
-void GB_mbc3_write(struct GB_Core* gb, uint16_t addr, uint8_t value)
+void mbc3_write(struct GB_Core* gb, uint16_t addr, uint8_t value)
 {
     switch ((addr >> 12) & 0xF)
     {
@@ -162,14 +162,14 @@ void GB_mbc3_write(struct GB_Core* gb, uint16_t addr, uint8_t value)
                 }
                 else if (GB_has_mbc_flags(gb, MBC_FLAGS_RTC))
                 {
-                    GB_mbc3_rtc_write(gb, value);
+                    mbc3_rtc_write(gb, value);
                 }
             }
             break;
     }
 }
 
-struct MBC_RomBankInfo GB_mbc3_get_rom_bank(struct GB_Core* gb, uint8_t bank)
+struct MBC_RomBankInfo mbc3_get_rom_bank(struct GB_Core* gb, uint8_t bank)
 {
     struct MBC_RomBankInfo info = {0};
     const uint8_t* ptr = NULL;
@@ -192,7 +192,7 @@ struct MBC_RomBankInfo GB_mbc3_get_rom_bank(struct GB_Core* gb, uint8_t bank)
     return info;
 }
 
-struct MBC_RamBankInfo GB_mbc3_get_ram_bank(struct GB_Core* gb)
+struct MBC_RamBankInfo mbc3_get_ram_bank(struct GB_Core* gb)
 {
     if (!(gb->cart.flags & MBC_FLAGS_RAM) || !gb->cart.ram_enabled || !gb->cart.in_ram)
     {

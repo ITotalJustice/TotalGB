@@ -6,12 +6,12 @@
 #include <assert.h>
 
 
-void GB_mbc0_write(struct GB_Core* gb, uint16_t addr, uint8_t value)
+void mbc0_write(struct GB_Core* gb, uint16_t addr, uint8_t value)
 {
     GB_UNUSED(gb); GB_UNUSED(addr); GB_UNUSED(value);
 }
 
-struct MBC_RomBankInfo GB_mbc0_get_rom_bank(struct GB_Core* gb, uint8_t bank)
+struct MBC_RomBankInfo mbc0_get_rom_bank(struct GB_Core* gb, uint8_t bank)
 {
     struct MBC_RomBankInfo info = {0};
     const uint8_t* ptr = NULL;
@@ -34,7 +34,7 @@ struct MBC_RomBankInfo GB_mbc0_get_rom_bank(struct GB_Core* gb, uint8_t bank)
     return info;
 }
 
-struct MBC_RamBankInfo GB_mbc0_get_ram_bank(struct GB_Core* gb)
+struct MBC_RamBankInfo mbc0_get_ram_bank(struct GB_Core* gb)
 {
     GB_UNUSED(gb);
 
