@@ -2,15 +2,20 @@
 #include "internal.h"
 
 
+static inline bool GB_is_directional(const struct GB_Core* gb)
+{
+    return !(IO_JYP & 0x10);
+}
+
 static inline bool GB_is_button(const struct GB_Core* gb)
 {
-    return !!(IO_JYP & 0x20);
+    return !(IO_JYP & 0x20);
 }
 
 // [API]
 void GB_set_buttons(struct GB_Core* gb, uint8_t buttons, bool is_down)
 {
-    // the pins go LO when pressed!
+    // the pins go LOW when pressed!
     if (is_down)
     {
         gb->joypad.var &= ~buttons;
@@ -56,31 +61,72 @@ uint8_t GB_get_buttons(const struct GB_Core* gb)
 
 bool GB_is_button_down(const struct GB_Core* gb, enum GB_Button button)
 {
-    return (gb->joypad.var & button) > 0;
+    return (gb->joypad.var & button) == 0;
 }
 
 // [core]
 uint8_t GB_joypad_read(const struct GB_Core* gb)
 {
-    if (GB_get_system_type(gb) == GB_SYSTEM_TYPE_SGB)
-    {
-        uint8_t data = 0;
-        // check if we handled it
-        if (SGB_handle_joyp_read(gb, &data))
-        {
-            return data;
-        }
-    }
-    return (0xC0 | (IO_JYP & 0x30) | ((gb->joypad.var >> (GB_is_button(gb) << 2)) & 0xF));
+    // todo: no need for this function anymore, can read from io array.
+    return IO_JYP | 0xC0;
 }
 
 void GB_joypad_write(struct GB_Core* gb, uint8_t value)
 {
-    if (GB_get_system_type(gb) == GB_SYSTEM_TYPE_SGB)
-    {
-        SGB_handle_joyp_write(gb, value);
-    }
+    // if (GB_get_system_type(gb) == GB_SYSTEM_TYPE_SGB)
+    // {
+    //     SGB_handle_joyp_write(gb, value);
+    // }
 
-    IO_JYP &= ~(0x30);
-    IO_JYP |= 0x30 & value;
+    // unset p14 and p15
+    IO_JYP &= ~0x30;
+    // only p14 and p15 are writable, also OR in unused bits
+    IO_JYP |= 0xCF | (0x30 & value);
+    
+    // CREDIT: thanks to Calindro for the below code.
+    // turns out that both p14 and p15 can be low (selected),
+    // in which case, reading pulls from both button and directional
+    // lines.
+
+    // for example, if A is low and RIGHT is high, reading will be low.
+    // this was noticed in [bomberman GB] where both p14 and p15 were low.
+    // SEE: https://github.com/ITotalJustice/TotalGB/issues/41
+
+    if ((GB_is_button(gb))) {
+        if (GB_is_button_down(gb, GB_BUTTON_A))
+        {
+            IO_JYP &= ~0x01;
+        }
+        if (GB_is_button_down(gb, GB_BUTTON_B))
+        {
+            IO_JYP &= ~0x02;
+        }
+        if (GB_is_button_down(gb, GB_BUTTON_SELECT))
+        {
+            IO_JYP &= ~0x04;
+        }
+        if (GB_is_button_down(gb, GB_BUTTON_START))
+        {
+            IO_JYP &= ~0x08;
+        }
+    }
+    
+    if ((GB_is_directional(gb))) {
+        if (GB_is_button_down(gb, GB_BUTTON_RIGHT))
+        {
+            IO_JYP &= ~0x01;
+        }
+        if (GB_is_button_down(gb, GB_BUTTON_LEFT))
+        {
+            IO_JYP &= ~0x02;
+        }
+        if (GB_is_button_down(gb, GB_BUTTON_UP))
+        {
+            IO_JYP &= ~0x04;
+        }
+        if (GB_is_button_down(gb, GB_BUTTON_DOWN))
+        {
+            IO_JYP &= ~0x08;
+        }
+    }
 }
