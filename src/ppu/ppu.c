@@ -144,9 +144,7 @@ void GB_compare_LYC(struct GB_Core* gb)
     }
 }
 
-void GB_change_status_mode(struct GB_Core* gb,
-    const uint8_t new_mode
-)
+void GB_change_status_mode(struct GB_Core* gb, const uint8_t new_mode)
 {
     GB_set_status_mode(gb, new_mode);
 
@@ -155,7 +153,7 @@ void GB_change_status_mode(struct GB_Core* gb,
     {
         case STATUS_MODE_HBLANK:
             GB_raise_if_enabled(gb, STAT_INT_MODE_0);
-            gb->ppu.next_cycles += 207;
+            gb->ppu.next_cycles += 204;
             GB_draw_scanline(gb);
 
             if (gb->callback.hblank != NULL)
@@ -181,7 +179,7 @@ void GB_change_status_mode(struct GB_Core* gb,
             break;
 
         case STATUS_MODE_TRANSFER:
-            gb->ppu.next_cycles += 175;
+            gb->ppu.next_cycles += 172;
             break;
     }
 }
