@@ -2,6 +2,7 @@
 #include "apu.h"
 
 
+#if GB_SRC_INCLUDE
 
 uint16_t get_ch1_freq(const struct GB_Core* gb)
 {
@@ -197,3 +198,5 @@ void on_ch1_trigger(struct GB_Core* gb)
         ch1_disable(gb);
     }
 }
+
+#endif // GB_SRC_INCLUDE

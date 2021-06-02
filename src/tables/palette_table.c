@@ -3,6 +3,8 @@
 
 #ifndef GB_NO_BUILTIN_PALETTE
 
+#if GB_SRC_INCLUDE
+
 #include <assert.h>
 
 #define ARRAY_SIZE(array) (sizeof(array) / sizeof(array[0]))
@@ -1833,4 +1835,5 @@ int GB_Palette_fill_from_custom(
     return -1;
 }
 
-#endif // #ifndef GB_NO_BUILTIN_PALETTE
+#endif // GB_SRC_INCLUDE
+#endif // GB_NO_BUILTIN_PALETTE

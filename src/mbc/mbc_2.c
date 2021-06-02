@@ -1,6 +1,8 @@
 #include "../internal.h"
 #include "mbc.h"
 
+#if GB_SRC_INCLUDE
+
 #include <assert.h>
 
 
@@ -82,3 +84,5 @@ struct MBC_RamBankInfo GB_mbc2_get_ram_bank(struct GB_Core* gb)
 
     return info;
 }
+
+#endif // GB_SRC_INCLUDE

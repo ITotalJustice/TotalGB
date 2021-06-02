@@ -12,7 +12,10 @@ enum
     VOLUME = SDL_MIX_MAXVOLUME/16,
     SAMPLES = 1024,
     SDL_AUDIO_FREQ = 48000,
-    GB_AUDIO_FREQ = (SDL_AUDIO_FREQ),
+    GB_AUDIO_FREQ = SDL_AUDIO_FREQ,
+
+    // AUDIO_SLEEP = SDL_AUDIO_FREQ / (SAMPLES * 2) / 4,
+    AUDIO_SLEEP = 2,
 };
 
 
@@ -203,7 +206,7 @@ static void core_on_apu(void* user, struct GB_ApuCallbackData* data)
         #if 1
         while (SDL_GetQueuedAudioSize(audio_device) > (sizeof(buffer1) * 4))
         {
-            SDL_Delay(1);
+            SDL_Delay(AUDIO_SLEEP);
         }
         #endif
 

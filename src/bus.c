@@ -1,5 +1,8 @@
 #include "gb.h"
 #include "internal.h"
+
+#if GB_SRC_INCLUDE
+
 #include "tables/io_read_table.h"
 
 #include <assert.h>
@@ -349,3 +352,5 @@ void GB_setup_mmap(struct GB_Core* gb)
     GB_update_vram_banks(gb);
     GB_update_wram_banks(gb);
 }
+
+#endif // GB_SRC_INCLUDE

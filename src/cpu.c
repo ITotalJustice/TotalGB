@@ -1,5 +1,8 @@
 #include "gb.h"
 #include "internal.h"
+
+#if GB_SRC_INCLUDE
+
 #include "tables/cycle_table.h"
 #ifdef GB_DEBUG
 #include "tables/cycle_table_debug.h"
@@ -1305,3 +1308,5 @@ uint16_t GB_cpu_run(struct GB_Core* gb, uint16_t cycles)
 
     return gb->cpu.cycles;
 }
+
+#endif // GB_SRC_INCLUDE

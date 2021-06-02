@@ -2,6 +2,8 @@
 #include "../internal.h"
 #include "../gb.h"
 
+#if GB_SRC_INCLUDE
+
 #include <assert.h>
 #include <string.h>
 
@@ -493,7 +495,7 @@ static void gbc_render_scanline_obj(struct GB_Core* gb,
     }
 }
 
-static inline void update_colours(
+static inline void gbc_update_colours(
     bool dirty[8], uint32_t map[8][4], const uint8_t palette_mem[64]
 ) {
     for (uint8_t palette = 0; palette < 8; ++palette)
@@ -528,9 +530,9 @@ void GBC_render_scanline(struct GB_Core* gb)
     struct PrioBuf prio_buffer = {0};
 
     // update the bg colour palettes
-    update_colours(gb->ppu.dirty_bg, gb->ppu.bg_colours, gb->ppu.bg_palette);
+    gbc_update_colours(gb->ppu.dirty_bg, gb->ppu.bg_colours, gb->ppu.bg_palette);
     // update the obj colour palettes
-    update_colours(gb->ppu.dirty_obj, gb->ppu.obj_colours, gb->ppu.obj_palette);
+    gbc_update_colours(gb->ppu.dirty_obj, gb->ppu.obj_colours, gb->ppu.obj_palette);
 
     if (LIKELY(GB_is_render_layer_enabled(gb, GB_RENDER_LAYER_CONFIG_BG)))
     {
@@ -554,3 +556,5 @@ void GBC_render_scanline(struct GB_Core* gb)
         }
     }
 }
+
+#endif // GB_SRC_INCLUDE

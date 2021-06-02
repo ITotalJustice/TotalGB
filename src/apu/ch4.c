@@ -2,6 +2,9 @@
 #include "apu.h"
 
 
+#if GB_SRC_INCLUDE
+
+
 // used for LFSR shifter
 enum NoiseChannelShiftWidth
 {
@@ -154,3 +157,5 @@ void on_ch4_trigger(struct GB_Core* gb)
         ch4_disable(gb);
     }
 }
+
+#endif // GB_SRC_INCLUDE

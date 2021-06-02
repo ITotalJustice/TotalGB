@@ -2,6 +2,8 @@
 #include "../internal.h"
 #include "../gb.h"
 
+#if GB_SRC_INCLUDE
+
 #include <string.h>
 #include <assert.h>
 
@@ -23,13 +25,13 @@ struct GB_Pixels get_pixels_at_scanline(struct GB_Core* gb, uint8_t ly)
     assert(ly <= 144);
 
     return (struct GB_Pixels){
-#if GB_PIXEL_STRIDE == 8
-    ((uint8_t*)gb->pixels) + (gb->pitch * ly)
-#elif GB_PIXEL_STRIDE == 16
-    ((uint16_t*)gb->pixels) + (gb->pitch * ly)
-#elif GB_PIXEL_STRIDE == 32
-    ((uint32_t*)gb->pixels) + (gb->pitch * ly)
-#endif
+        #if GB_PIXEL_STRIDE == 8
+            ((uint8_t*)gb->pixels) + (gb->pitch * ly)
+        #elif GB_PIXEL_STRIDE == 16
+            ((uint16_t*)gb->pixels) + (gb->pitch * ly)
+        #elif GB_PIXEL_STRIDE == 32
+            ((uint32_t*)gb->pixels) + (gb->pitch * ly)
+        #endif
     };
 }
 
@@ -184,21 +186,6 @@ void GB_change_status_mode(struct GB_Core* gb,
     }
 }
 
-/*
-FF41 - STAT - LCDC Status (R/W)
-
-  Bit 6 - LYC=LY Coincidence Interrupt (1=Enable) (Read/Write)
-  Bit 5 - Mode 2 OAM Interrupt         (1=Enable) (Read/Write)
-  Bit 4 - Mode 1 V-Blank Interrupt     (1=Enable) (Read/Write)
-  Bit 3 - Mode 0 H-Blank Interrupt     (1=Enable) (Read/Write)
-  Bit 2 - Coincidence Flag  (0:LYC<>LY, 1:LYC=LY) (Read Only)
-  Bit 1-0 - Mode Flag       (Mode 0-3, see below) (Read Only)
-            0: During H-Blank
-            1: During V-Blank
-            2: During Searching OAM-RAM
-            3: During Transfering Data to LCD Driver
-
-*/
 void GB_on_lcdc_write(struct GB_Core* gb, const uint8_t value)
 {
     // check if the game wants to disable the ppu
@@ -235,7 +222,8 @@ void GB_ppu_run(struct GB_Core* gb, uint16_t cycles)
     }
 
     gb->ppu.next_cycles -= cycles;
-    if (((gb->ppu.next_cycles) > 0))
+    
+    if (UNLIKELY(((gb->ppu.next_cycles) > 0)))
     {
         return;
     }
@@ -357,3 +345,5 @@ void GB_draw_scanline(struct GB_Core* gb)
             break;
     }
 }
+
+#endif // GB_SRC_INCLUDE

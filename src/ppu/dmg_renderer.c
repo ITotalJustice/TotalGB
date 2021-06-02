@@ -2,6 +2,8 @@
 #include "../internal.h"
 #include "../gb.h"
 
+#if GB_SRC_INCLUDE
+
 #include <string.h>
 #include <assert.h>
 
@@ -11,7 +13,7 @@ static inline uint16_t calculate_col_from_palette(const uint8_t palette, const u
     return ((palette >> (colour << 1)) & 3);
 }
 
-static inline void update_colours(uint32_t colours[4], const uint32_t pal_colours[4], const uint8_t palette, bool* dirty)
+static inline void dmg_update_colours(uint32_t colours[4], const uint32_t pal_colours[4], const uint8_t palette, bool* dirty)
 {
     assert(colours && pal_colours && dirty);
 
@@ -294,9 +296,9 @@ static void dmg_render_scanline_obj(struct GB_Core* gb)
 void DMG_render_scanline(struct GB_Core* gb)
 {
     // update the DMG colour palettes
-    update_colours(gb->ppu.bg_colours[0], gb->palette.BG, IO_BGP, &gb->ppu.dirty_bg[0]);
-    update_colours(gb->ppu.obj_colours[0], gb->palette.OBJ0, IO_OBP0, &gb->ppu.dirty_obj[0]);
-    update_colours(gb->ppu.obj_colours[1], gb->palette.OBJ1, IO_OBP1, &gb->ppu.dirty_obj[1]);
+    dmg_update_colours(gb->ppu.bg_colours[0], gb->palette.BG, IO_BGP, &gb->ppu.dirty_bg[0]);
+    dmg_update_colours(gb->ppu.obj_colours[0], gb->palette.OBJ0, IO_OBP0, &gb->ppu.dirty_obj[0]);
+    dmg_update_colours(gb->ppu.obj_colours[1], gb->palette.OBJ1, IO_OBP1, &gb->ppu.dirty_obj[1]);
 
     if (LIKELY(GB_is_bg_enabled(gb)))
     {
@@ -323,3 +325,5 @@ void DMG_render_scanline(struct GB_Core* gb)
         }
     }
 }
+
+#endif // GB_SRC_INCLUDE

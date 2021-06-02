@@ -2,6 +2,8 @@
 #include "../internal.h"
 #include "mbc.h"
 
+#if GB_SRC_INCLUDE
+
 #include <stdio.h>
 #include <string.h>
 #include <assert.h>
@@ -205,3 +207,5 @@ bool GB_setup_mbc(struct GB_Cart* mbc, const struct GB_CartHeader* header)
 
     return true;
 }
+
+#endif // GB_SRC_INCLUDE

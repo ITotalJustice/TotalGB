@@ -2,6 +2,8 @@
 #include "../gb.h"
 #include "apu.h"
 
+#if GB_SRC_INCLUDE
+
 #include <string.h>
 
 
@@ -243,28 +245,28 @@ static inline void sample_channels(struct GB_Core* gb)
 void GB_apu_run(struct GB_Core* gb, uint16_t cycles)
 {
     // todo: handle if the apu is disabled!
-    if (gb_is_apu_enabled(gb))
+    if (LIKELY(gb_is_apu_enabled(gb)))
     {
         // still tick samples but fill empty
         // nothing else should tick i dont think?
         // not sure if when apu is disabled, do all regs reset?
         // what happens when apu is re-enabled? do they all trigger?
         CH1.timer -= cycles;
-        while (CH1.timer <= 0)
+        while (UNLIKELY(CH1.timer <= 0))
         {
             CH1.timer += get_ch1_freq(gb);
             CH1.duty_index = (CH1.duty_index + 1) % 8;
         }
 
         CH2.timer -= cycles;
-        while (CH2.timer <= 0)
+        while (UNLIKELY(CH2.timer <= 0))
         {
             CH2.timer += get_ch2_freq(gb);
             CH2.duty_index = (CH2.duty_index + 1) % 8;
         }
 
         CH3.timer -= cycles;
-        while (CH3.timer <= 0)
+        while (UNLIKELY(CH3.timer <= 0))
         {
             CH3.timer += get_ch3_freq(gb);
             advance_ch3_position_counter(gb);
@@ -274,7 +276,7 @@ void GB_apu_run(struct GB_Core* gb, uint16_t cycles)
         if (IO_NR43.clock_shift != 14 && IO_NR43.clock_shift != 15)
         {
             CH4.timer -= cycles;
-            while (CH4.timer <= 0)
+            while (UNLIKELY(CH4.timer <= 0))
             {
                 CH4.timer += get_ch4_freq(gb);
                 step_ch4_lfsr(gb);
@@ -283,7 +285,7 @@ void GB_apu_run(struct GB_Core* gb, uint16_t cycles)
 
         // check if we need to tick the frame sequencer!
         gb->apu.next_frame_sequencer_cycles += cycles;
-        while (gb->apu.next_frame_sequencer_cycles >= FRAME_SEQUENCER_STEP_RATE)
+        while (UNLIKELY(gb->apu.next_frame_sequencer_cycles >= FRAME_SEQUENCER_STEP_RATE))
         {
             gb->apu.next_frame_sequencer_cycles -= FRAME_SEQUENCER_STEP_RATE;
             step_frame_sequencer(gb);
@@ -299,9 +301,11 @@ void GB_apu_run(struct GB_Core* gb, uint16_t cycles)
 
     gb->apu.next_sample_cycles += cycles;
 
-    while (gb->apu.next_sample_cycles >= CALC_CALLBACK_FREQ(gb->callback.apu_data.freq))
+    while (UNLIKELY(gb->apu.next_sample_cycles >= CALC_CALLBACK_FREQ(gb->callback.apu_data.freq)))
     {
         gb->apu.next_sample_cycles -= CALC_CALLBACK_FREQ(gb->callback.apu_data.freq);
         sample_channels(gb);
     }
 }
+
+#endif // GB_SRC_INCLUDE

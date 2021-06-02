@@ -9,7 +9,7 @@ project(TotalGB
 )
 
 
-option(GB_FAST_RW "" OFF)
+option(GB_SINGLE_FILE "include all src in single.c" OFF)
 option(GB_DEBUG "enable debug" OFF)
 option(GB_DEV "enables debug and sanitizers" OFF)
 

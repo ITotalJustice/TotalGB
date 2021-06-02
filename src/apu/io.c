@@ -4,6 +4,8 @@
 
 #include <assert.h>
 
+#if GB_SRC_INCLUDE
+
 
 void GB_apu_iowrite(struct GB_Core* gb, uint16_t addr, uint8_t value)
 {
@@ -17,7 +19,7 @@ void GB_apu_iowrite(struct GB_Core* gb, uint16_t addr, uint8_t value)
         IO_NR52 &= ~0x80;
         IO_NR52 |= value & 0x80;
     }
-    else if (gb_is_apu_enabled(gb) == false)
+    else if (UNLIKELY(gb_is_apu_enabled(gb) == false))
     {
         return;
     }
@@ -241,3 +243,5 @@ void GB_apu_iowrite(struct GB_Core* gb, uint16_t addr, uint8_t value)
         }
     }
 }
+
+#endif // GB_SRC_INCLUDE

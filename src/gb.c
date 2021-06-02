@@ -1,6 +1,8 @@
 #include "gb.h"
 #include "internal.h"
 
+#if GB_SRC_INCLUDE
+
 #include <stdio.h>
 #include <string.h>
 #include <assert.h>
@@ -845,3 +847,5 @@ void GB_run_frame(struct GB_Core* gb)
         }
     }
 }
+
+#endif // GB_SRC_INCLUDE

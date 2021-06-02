@@ -5,6 +5,12 @@
 extern "C" {
 #endif
 
+#if defined __has_builtin
+    #define GB_HAS_BUILTIN(x) __has_builtin(x)
+#else
+    #define GB_HAS_BUILTIN(x) (0)
+#endif // __has_builtin
+
 #if defined _WIN32 || defined __CYGWIN__
   #ifdef BUILDING_LIB
     #define GBAPI __declspec(dllexport)
@@ -19,6 +25,19 @@ extern "C" {
   #endif
 #endif
 
+#ifndef GB_SINGLE_FILE
+#define GB_SINGLE_FILE 0
+#endif
+
+#if GB_SINGLE_FILE
+    #define GB_STATIC static
+    #define GB_INLINE static inline
+    #define GB_SRC_INCLUDE 0
+#else
+    #define GB_STATIC
+    #define GB_INLINE
+    #define GB_SRC_INCLUDE 1
+#endif // GB_SINGLE_FILE
 
 #include "tables/palette_table.h"
 
