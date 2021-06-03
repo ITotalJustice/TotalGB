@@ -1,8 +1,6 @@
 #include "gb.h"
 #include "internal.h"
 
-#if GB_SRC_INCLUDE
-
 #include <stdio.h>
 #include <string.h>
 #include <assert.h>
@@ -794,6 +792,50 @@ void GB_set_error_callback(struct GB_Core* gb, GB_error_callback_t cb)
     gb->callback.error = cb;
 }
 
+void GB_set_read_callback(struct GB_Core* gb, GB_read_callback_t cb)
+{
+    gb->callback.read = cb;
+}
+
+void GB_set_write_callback(struct GB_Core* gb, GB_write_callback_t cb)
+{
+    gb->callback.write = cb;
+}
+
+uint8_t gb_read(struct GB_Core* gb, uint16_t addr)
+{
+    return GB_read8(gb, addr);
+}
+
+void gb_write(struct GB_Core* gb, uint16_t addr, uint8_t value)
+{
+    GB_write8(gb, addr, value);
+}
+
+uint8_t gb_get_ram_bank(struct GB_Core* gb)
+{
+    return gb->cart.ram_bank;
+}
+
+uint8_t gb_get_wram_bank(struct GB_Core* gb)
+{
+    return IO_SVBK;
+}
+
+void gb_set_ram_bank(struct GB_Core* gb, uint8_t bank)
+{
+    gb->cart.ram_bank = bank;
+
+    GB_update_ram_banks(gb);
+}
+
+void gb_set_wram_bank(struct GB_Core* gb, uint8_t bank)
+{
+    IO_SVBK = bank;
+
+    GB_update_wram_banks(gb);
+}
+
 uint16_t GB_run_step(struct GB_Core* gb)
 {
     uint16_t cycles = GB_cpu_run(gb, 0 /*unused*/);
@@ -847,5 +889,3 @@ void GB_run_frame(struct GB_Core* gb)
         }
     }
 }
-
-#endif // GB_SRC_INCLUDE

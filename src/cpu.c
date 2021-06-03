@@ -1,19 +1,14 @@
 #include "gb.h"
 #include "internal.h"
-
-#if GB_SRC_INCLUDE
-
 #include "tables/cycle_table.h"
-#ifdef GB_DEBUG
-#include "tables/cycle_table_debug.h"
-#endif // GB_DEBUG
 
 #include <assert.h>
 
 
-#ifdef GB_DEBUG
-static bool CPU_LOG = false;
-static size_t CPU_DEBUG_CYCLYES = 0;
+#if GB_DEBUG
+    #include "tables/cycle_table_debug.h"
+    static bool CPU_LOG = false;
+    static size_t CPU_DEBUG_CYCLYES = 0;
 #endif // GB_DEBUG
 
 
@@ -933,7 +928,7 @@ static inline void GB_interrupt_handler(struct GB_Core* gb) {
 }
 
 void GB_cpu_enable_log(const bool enable) {
-    #ifdef GB_DEBUG
+    #if GB_DEBUG
         CPU_LOG = enable;
         if (CPU_LOG) {
             // reset the cycles
@@ -947,14 +942,14 @@ void GB_cpu_enable_log(const bool enable) {
 static inline void GB_execute(struct GB_Core* gb) {
     const uint8_t opcode = read8(REG_PC++);
 
-    #ifdef GB_DEBUG
-    if (CPU_LOG) {
-        const opcode_t debug_op = CYCLE_TABLE_DEBUG[opcode];
-        GB_log("[CPU] [OP_CODE 0x%02X] %s %s %s\t\tREG_PC: 0x%04X\n", opcode, debug_op.name, debug_op.group, debug_op.flags, REG_PC);
-        if (opcode == 0x20) {
-            putchar('\n');
+    #if GB_DEBUG
+        if (CPU_LOG) {
+            const opcode_t debug_op = CYCLE_TABLE_DEBUG[opcode];
+            GB_log("[CPU] [OP_CODE 0x%02X] %s %s %s\t\tREG_PC: 0x%04X\n", opcode, debug_op.name, debug_op.group, debug_op.flags, REG_PC);
+            if (opcode == 0x20) {
+                putchar('\n');
+            }
         }
-    }
     #endif // GB_DEBUG
 
 
@@ -1126,11 +1121,11 @@ static inline void GB_execute(struct GB_Core* gb) {
 static inline void GB_execute_cb(struct GB_Core* gb) {
     const uint8_t opcode = read8(REG_PC++);
 
-    #ifdef GB_DEBUG
-    if (CPU_LOG) {
-        const opcode_t debug_op = CYCLE_TABLE_DEBUG[opcode];
-        GB_log("[CPU] [OP_CODE 0x%02X] %s %s %s\n", opcode, debug_op.name, debug_op.group, debug_op.flags);
-    }
+    #if GB_DEBUG
+        if (CPU_LOG) {
+            const opcode_t debug_op = CYCLE_TABLE_DEBUG[opcode];
+            GB_log("[CPU] [OP_CODE 0x%02X] %s %s %s\n", opcode, debug_op.name, debug_op.group, debug_op.flags);
+        }
     #endif // GB_DEBUG
 
 
@@ -1297,16 +1292,14 @@ uint16_t GB_cpu_run(struct GB_Core* gb, uint16_t cycles)
 
     GB_execute(gb);
 
-    #ifdef GB_DEBUG
-    if (CPU_LOG)
-    {
-        ++CPU_DEBUG_CYCLYES;
-    }
+    #if GB_DEBUG
+        if (CPU_LOG)
+        {
+            ++CPU_DEBUG_CYCLYES;
+        }
     #endif // GB_DEBUG
 
     assert(gb->cpu.cycles != 0);
 
     return gb->cpu.cycles;
 }
-
-#endif // GB_SRC_INCLUDE

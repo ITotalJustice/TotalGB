@@ -1,8 +1,6 @@
 #include "gb.h"
 #include "internal.h"
 
-#if GB_SRC_INCLUDE
-
 #include <assert.h>
 #include <stdio.h>
 
@@ -148,5 +146,3 @@ void GB_serial_sc_write(struct GB_Core* gb, const uint8_t data) {
         printf("failed to do transfer...\n");
     }
 }
-
-#endif //GB_SRC_INCLUDE

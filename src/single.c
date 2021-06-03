@@ -4,9 +4,6 @@
 
 // GB_SINGLE_FILE
 #if GB_SINGLE_FILE
-    #undef GB_SRC_INCLUDE
-    #define GB_SRC_INCLUDE 1
-
     #include "gb.c"
     #include "cpu.c"
     #include "bus.c"

@@ -5,6 +5,10 @@
 extern "C" {
 #endif
 
+#ifndef GB_DEBUG
+    #define GB_DEBUG 0
+#endif
+
 #if defined __has_builtin
     #define GB_HAS_BUILTIN(x) __has_builtin(x)
 #else
@@ -26,17 +30,15 @@ extern "C" {
 #endif
 
 #ifndef GB_SINGLE_FILE
-#define GB_SINGLE_FILE 0
+    #define GB_SINGLE_FILE 0
 #endif
 
 #if GB_SINGLE_FILE
     #define GB_STATIC static
     #define GB_INLINE static inline
-    #define GB_SRC_INCLUDE 0
 #else
     #define GB_STATIC
     #define GB_INLINE
-    #define GB_SRC_INCLUDE 1
 #endif // GB_SINGLE_FILE
 
 #include "tables/palette_table.h"
@@ -305,6 +307,19 @@ typedef void (*GB_dma_callback_t)(void* user);
 typedef void (*GB_halt_callback_t)(void* user);
 typedef void (*GB_stop_callback_t)(void* user);
 
+// read / write handles to mitm memory access
+// this is useful for adding cheat devices as well as
+// adding mem access watch points.
+
+// the BIG downside is that this slows all r/w access due
+// to doing if (has_handle) on every access.
+// i need to test if an "if" if faster than a function call
+// if it is, ill keep it as it is, if the function call is faster,
+// then internally, reads will use this func ptr, until the user wants to
+// set their own, then the ptr will be changed to a diff function
+typedef bool (*GB_read_callback_t)(void* user, uint16_t addr, uint8_t* v);
+typedef void (*GB_write_callback_t)(void* user, uint16_t addr, uint8_t* v);
+
 
 struct GB_UserCallbacks
 {
@@ -317,7 +332,9 @@ struct GB_UserCallbacks
     GB_dma_callback_t       dma;
     GB_halt_callback_t      halt;
     GB_stop_callback_t      stop;
-
+    GB_read_callback_t      read;
+    GB_write_callback_t     write;
+    
     struct
     {
         unsigned freq;

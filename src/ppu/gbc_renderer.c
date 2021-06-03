@@ -2,8 +2,6 @@
 #include "../internal.h"
 #include "../gb.h"
 
-#if GB_SRC_INCLUDE
-
 #include <assert.h>
 #include <string.h>
 
@@ -556,5 +554,3 @@ void GBC_render_scanline(struct GB_Core* gb)
         }
     }
 }
-
-#endif // GB_SRC_INCLUDE

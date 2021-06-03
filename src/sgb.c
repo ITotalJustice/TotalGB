@@ -1,8 +1,6 @@
 #include "gb.h"
 #include "internal.h"
 
-#if GB_SRC_INCLUDE
-
 #include <stdio.h>
 #include <string.h>
 #include <assert.h>
@@ -461,5 +459,3 @@ void SGB_handle_joyp_write(struct GB_Core* gb, uint8_t value) {
             break;
     }
 }
-
-#endif // GB_SRC_INCLUDE

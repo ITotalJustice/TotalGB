@@ -1,13 +1,12 @@
 #include "gb.h"
 #include "internal.h"
 
-#if GB_SRC_INCLUDE
-
-static const uint16_t TAC_FREQ[4] = { 1024, 16, 64, 256 };
 
 
 void GB_timer_run(struct GB_Core* gb, uint16_t cycles)
 {
+    static const uint16_t TAC_FREQ[4] = { 1024, 16, 64, 256 };
+    
     // DIV is a 16-bit register
     // reads return the upper byte, but the lower byte
     // gets ticked every 4-T cycles (1M)
@@ -43,5 +42,3 @@ void GB_timer_run(struct GB_Core* gb, uint16_t cycles)
         }
     }
 }
-
-#endif // GB_SRC_INCLUDE

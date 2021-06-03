@@ -2,9 +2,6 @@
 #include "../internal.h"
 #include "../gb.h"
 
-#if GB_SRC_INCLUDE
-
-
 #include <stdio.h>
 #include <string.h>
 
@@ -264,5 +261,3 @@ void GB_connect_printer(struct GB_Core* gb, struct GB_Printer* printer, GB_print
         gb->link_cable_user_data = printer;
     }
 }
-
-#endif // GB_SRC_INCLUDE

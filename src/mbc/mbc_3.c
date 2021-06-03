@@ -2,8 +2,6 @@
 #include "../gb.h" // for has flags functions
 #include "mbc.h"
 
-#if GB_SRC_INCLUDE
-
 #include <assert.h>
 
 /*
@@ -211,5 +209,3 @@ struct MBC_RamBankInfo mbc3_get_ram_bank(struct GB_Core* gb)
 
     return info;
 }
-
-#endif // GB_SRC_INCLUDE

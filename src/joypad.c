@@ -1,7 +1,6 @@
 #include "gb.h"
 #include "internal.h"
 
-#if GB_SRC_INCLUDE
 
 static inline bool GB_is_directional(const struct GB_Core* gb)
 {
@@ -124,5 +123,3 @@ void GB_joypad_write(struct GB_Core* gb, uint8_t value)
         }
     }
 }
-
-#endif // GB_SRC_INCLUDE

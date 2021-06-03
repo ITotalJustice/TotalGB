@@ -1,9 +1,6 @@
 #include "gb.h"
 #include "internal.h"
 #include "mbc/mbc.h"
-
-#if GB_SRC_INCLUDE
-
 #include "tables/io_read_table.h"
 
 #include <assert.h>
@@ -209,6 +206,18 @@ static inline void GB_iowrite(struct GB_Core* gb, uint16_t addr, uint8_t value)
 
 uint8_t GB_read8(struct GB_Core* gb, const uint16_t addr)
 {
+    #if GB_DEBUG
+        if (UNLIKELY(gb->callback.read != NULL))
+        {
+            uint8_t r = 0;
+
+            if (UNLIKELY(gb->callback.read(gb->callback.user_data, addr, &r)))
+            {
+                return r;
+            }
+        }
+    #endif
+
     if (LIKELY(addr < 0xFE00))
     {
         const struct GB_MemMapEntry entry = gb->mmap[(addr >> 12)];
@@ -233,6 +242,13 @@ uint8_t GB_read8(struct GB_Core* gb, const uint16_t addr)
 
 void GB_write8(struct GB_Core* gb, uint16_t addr, uint8_t value)
 {
+    #if GB_DEBUG
+        if (UNLIKELY(gb->callback.write != NULL))
+        {
+            gb->callback.write(gb->callback.user_data, addr, &value);
+        }
+    #endif
+
     if (LIKELY(addr < 0xFE00))
     {
         switch ((addr >> 12) & 0xF)
@@ -353,5 +369,3 @@ void GB_setup_mmap(struct GB_Core* gb)
     GB_update_vram_banks(gb);
     GB_update_wram_banks(gb);
 }
-
-#endif // GB_SRC_INCLUDE

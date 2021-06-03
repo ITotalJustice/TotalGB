@@ -109,6 +109,14 @@ GBAPI void GB_set_stop_callback(struct GB_Core* gb, GB_stop_callback_t cb);
 /* set a callback which will be called when error happens. */
 GBAPI void GB_set_error_callback(struct GB_Core* gb, GB_error_callback_t cb);
 
+#if GB_DEBUG
+/* set a callback which will be called when cpu read happens. */
+GBAPI void GB_set_read_callback(struct GB_Core* gb, GB_read_callback_t cb);
+
+/* set a callback which will be called when cpu write happens. */
+GBAPI void GB_set_write_callback(struct GB_Core* gb, GB_write_callback_t cb);
+#endif
+
 /* set a callback which will be called when link transfer happens. */
 /* set the cb param to NULL to remove the callback */
 GBAPI void GB_connect_link_cable(struct GB_Core* gb, GB_serial_transfer_t cb, void* user_data);
@@ -123,6 +131,15 @@ GBAPI void GB_connect_link_cable_builtin(struct GB_Core* gb, struct GB_Core* gb2
 GBAPI void GB_set_buttons(struct GB_Core* gb, uint8_t buttons, bool is_down);
 GBAPI uint8_t GB_get_buttons(const struct GB_Core* gb);
 GBAPI bool GB_is_button_down(const struct GB_Core* gb, enum GB_Button button);
+
+GBAPI uint8_t gb_read(struct GB_Core* gb, uint16_t addr);
+GBAPI void gb_write(struct GB_Core* gb, uint16_t addr, uint8_t value);
+
+GBAPI uint8_t gb_get_ram_bank(struct GB_Core* gb);
+GBAPI uint8_t gb_get_wram_bank(struct GB_Core* gb);
+
+GBAPI void gb_set_ram_bank(struct GB_Core* gb, uint8_t bank);
+GBAPI void gb_set_wram_bank(struct GB_Core* gb, uint8_t bank);
 
 // make this a seperate header, gb_adv.h, add these there
 GBAPI bool GB_get_rom_palette_hash_from_header(const struct GB_CartHeader* header, uint8_t* hash, uint8_t* forth);

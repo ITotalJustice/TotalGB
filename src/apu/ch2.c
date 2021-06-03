@@ -2,8 +2,6 @@
 #include "apu.h"
 
 
-#if GB_SRC_INCLUDE
-
 uint16_t get_ch2_freq(const struct GB_Core* gb)
 {
     return (2048 - ((IO_NR24.freq_msb << 8) | IO_NR23.freq_lsb)) << 2;
@@ -120,5 +118,3 @@ void on_ch2_trigger(struct GB_Core* gb)
         ch2_disable(gb);
     }
 }
-
-#endif // GB_SRC_INCLUDE

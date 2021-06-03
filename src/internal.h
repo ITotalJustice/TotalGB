@@ -13,17 +13,17 @@ extern "C" {
 // msvc prepro has a hard time with (macro && macro), so they have to be
 // split into different if, else chains...
 #if GB_HAS_BUILTIN(__builtin_expect)
-#define LIKELY(c) (__builtin_expect(c,1))
-#define UNLIKELY(c) (__builtin_expect(c,0))
+    #define LIKELY(c) (__builtin_expect(c,1))
+    #define UNLIKELY(c) (__builtin_expect(c,0))
 #else
-#define LIKELY(c) ((c))
-#define UNLIKELY(c) ((c))
+    #define LIKELY(c) ((c))
+    #define UNLIKELY(c) ((c))
 #endif // __has_builtin(__builtin_expect)
 
 #if GB_HAS_BUILTIN(__builtin_unreachable)
-#define UNREACHABLE(ret) __builtin_unreachable()
+    #define UNREACHABLE(ret) __builtin_unreachable()
 #else
-#define UNREACHABLE(ret) return ret
+    #define UNREACHABLE(ret) return ret
 #endif // __has_builtin(__builtin_unreachable)
 
 // used mainly in debugging when i want to quickly silence
@@ -33,13 +33,13 @@ extern "C" {
 // ONLY use this for C-arrays, not pointers, not structs
 #define GB_ARR_SIZE(array) (sizeof(array) / sizeof(array[0]))
 
-#ifdef GB_DEBUG
-#include <stdio.h>
-#define GB_log(...) fprintf(stdout, __VA_ARGS__)
-#define GB_log_err(...) fprintf(stderr, __VA_ARGS__)
+#if GB_DEBUG
+    #include <stdio.h>
+    #define GB_log(...) fprintf(stdout, __VA_ARGS__)
+    #define GB_log_err(...) fprintf(stderr, __VA_ARGS__)
 #else
-#define GB_log(...)
-#define GB_log_err(...)
+    #define GB_log(...)
+    #define GB_log_err(...)
 #endif // NES_DEBUG
 
 // 4-mhz
@@ -156,7 +156,7 @@ enum GB_StatIntModes
 // struct to the error callback.
 // this function is still marked const because it is often called
 // in const functions.
-GB_STATIC void GB_throw_error(const struct GB_Core* gb, enum GB_ErrorDataType type, const char* message);
+void GB_throw_error(const struct GB_Core* gb, enum GB_ErrorDataType type, const char* message);
 
 GB_STATIC void GB_rtc_tick_frame(struct GB_Core* gb);
 
@@ -213,8 +213,8 @@ GB_INLINE bool GB_is_bg_enabled(const struct GB_Core* gb);
 
 
 // SGB stuff
-GB_STATIC bool SGB_handle_joyp_read(const struct GB_Core* gb, uint8_t* data_out);
-GB_STATIC void SGB_handle_joyp_write(struct GB_Core* gb, uint8_t value);
+/*GB_STATIC*/ bool SGB_handle_joyp_read(const struct GB_Core* gb, uint8_t* data_out);
+/*GB_STATIC*/ void SGB_handle_joyp_write(struct GB_Core* gb, uint8_t value);
 
 #ifdef __cplusplus
 }

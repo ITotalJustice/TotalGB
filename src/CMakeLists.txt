@@ -1,33 +1,41 @@
 cmake_minimum_required(VERSION 3.13.4)
 
-add_library(TotalGB
-    gb.c
-    cpu.c
-    bus.c
-    joypad.c
-    ppu/ppu.c
-    ppu/dmg_renderer.c
-    ppu/gbc_renderer.c
-    ppu/sgb_renderer.c
-    apu/apu.c
-    apu/io.c
-    apu/ch1.c
-    apu/ch2.c
-    apu/ch3.c
-    apu/ch4.c
-    mbc/mbc.c
-    mbc/mbc_0.c
-    mbc/mbc_1.c
-    mbc/mbc_2.c
-    mbc/mbc_3.c
-    mbc/mbc_5.c
-    timers.c
-    serial.c
-    sgb.c
-    accessories/printer.c
-    tables/palette_table.c
-    single.c
-)
+if (GB_SINGLE_FILE)
+    add_library(TotalGB single.c)
+
+    target_compile_definitions(TotalGB PRIVATE GB_SINGLE_FILE=1)
+else()
+    add_library(TotalGB
+        gb.c
+        cpu.c
+        bus.c
+        joypad.c
+        ppu/ppu.c
+        ppu/dmg_renderer.c
+        ppu/gbc_renderer.c
+        ppu/sgb_renderer.c
+        apu/apu.c
+        apu/io.c
+        apu/ch1.c
+        apu/ch2.c
+        apu/ch3.c
+        apu/ch4.c
+        mbc/mbc.c
+        mbc/mbc_0.c
+        mbc/mbc_1.c
+        mbc/mbc_2.c
+        mbc/mbc_3.c
+        mbc/mbc_5.c
+        timers.c
+        serial.c
+        sgb.c
+        accessories/printer.c
+        tables/palette_table.c
+        single.c
+    )
+
+    target_compile_definitions(TotalGB PRIVATE GB_SINGLE_FILE=0)
+endif()
 
 target_include_directories(TotalGB PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 
@@ -35,8 +43,6 @@ set(CMAKE_C_STANDARD 99)
 set(CMAKE_C_STANDARD_REQUIRED True)
 
 if (GB_DEV)
-    set(GB_DEBUG ON)
-
     list(APPEND _flags
         -Wall
         -Wextra
@@ -100,20 +106,11 @@ if (GB_DEBUG)
     target_compile_definitions(TotalGB PRIVATE GB_DEBUG=1)
 endif()
 
-if (GB_FAST_RW)
-    target_compile_definitions(TotalGB PRIVATE GB_FAST_RW=1)
-endif()
-
-# target_compile_options(TotalGB PUBLIC -flto)
-# target_compile_options(TotalGB PUBLIC -Ofast)
-
 # TODO: learn how to have this be set by parent cmakefile
 # thats including this cmakelist
-
-if (GB_SINGLE_FILE)
-    target_compile_definitions(TotalGB PRIVATE GB_SINGLE_FILE=1)
-else()
-    target_compile_definitions(TotalGB PRIVATE GB_SINGLE_FILE=0)
-endif()
-
 target_compile_definitions(TotalGB PRIVATE GB_PIXEL_STRIDE=16)
+
+if (GB_GAMESHARK)
+    target_compile_definitions(TotalGB INTERFACE GB_GAMESHARK=1)
+    target_link_libraries(TotalGB INTERFACE gameshark)
+endif()

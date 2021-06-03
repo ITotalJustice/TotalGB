@@ -1,8 +1,6 @@
 #include "../internal.h"
 #include "apu.h"
 
-#if GB_SRC_INCLUDE
-
 
 uint16_t get_ch3_freq(const struct GB_Core* gb)
 {
@@ -102,5 +100,3 @@ void on_ch3_trigger(struct GB_Core* gb)
         ch3_disable(gb);
     }
 }
-
-#endif // GB_SRC_INCLUDE

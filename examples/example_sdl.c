@@ -2,7 +2,9 @@
 #include <stdint.h>
 #include <gb.h>
 #include <SDL.h>
-
+#ifdef GB_GAMESHARK
+#include <gameshark.h>
+#endif
 
 enum
 {
@@ -33,6 +35,52 @@ static SDL_Renderer* renderer = NULL;
 static SDL_Texture* texture = NULL;
 static SDL_AudioDeviceID audio_device = 0;
 static SDL_Rect rect = {0};
+
+#ifdef GB_GAMESHARK
+static struct Gameshark gameshark = {0};
+#endif
+
+
+uint8_t core_wrapper_on_read(void* user, uint16_t addr)
+{
+    return gb_read((struct GB_Core*)user, addr);
+}
+
+void core_wrapper_on_write(void* user, uint16_t addr, uint8_t value)
+{
+    gb_write((struct GB_Core*)user, addr, value);
+}
+
+uint8_t core_wrapper_on_get_ram_bank(void* user)
+{
+    return gb_get_ram_bank((struct GB_Core*)user);
+}
+
+uint8_t core_wrapper_on_get_wram_bank(void* user)
+{
+    return gb_get_wram_bank((struct GB_Core*)user);
+}
+
+void core_wrapper_on_set_ram_bank(void* user, uint8_t bank)
+{
+    gb_set_ram_bank((struct GB_Core*)user, bank);
+}
+
+void core_wrapper_on_set_wram_bank(void* user, uint8_t bank)
+{
+    gb_set_wram_bank((struct GB_Core*)user, bank);
+}
+
+bool apply_cheats_at_vblank()
+{
+    #ifdef GB_GAMESHARK
+        gameshark_on_vblank(&gameshark, &gameboy,
+            core_wrapper_on_write,
+            core_wrapper_on_set_ram_bank,
+            core_wrapper_on_set_wram_bank
+        );
+    #endif
+}
 
 static void run()
 {
@@ -324,6 +372,8 @@ static void core_on_vblank(void* user)
 {
     (void)user;
 
+    apply_cheats_at_vblank();
+
     ++frameskip_counter;
 
     if (frameskip_counter >= speed)
@@ -347,6 +397,10 @@ static void render()
 
 static void cleanup()
 {
+    #ifdef GAMESHARK
+        gameshark_exit(&gameshark);
+    #endif
+
     if (audio_device)   { SDL_CloseAudioDevice(audio_device); }
     if (rom_data)       { SDL_free(rom_data); }
     if (texture)        { SDL_DestroyTexture(texture); }
@@ -370,6 +424,11 @@ int main(int argc, char** argv)
 
     GB_set_apu_callback(&gameboy, core_on_apu, GB_AUDIO_FREQ);
     GB_set_vblank_callback(&gameboy, core_on_vblank);
+
+    #ifdef GB_GAMESHARK
+        gameshark_add_cheat(&gameshark, "01FF55D3");
+        gameshark_add_cheat(&gameshark, "010138CD");
+    #endif
 
     rom_data = SDL_LoadFile(argv[1], &rom_size);
 

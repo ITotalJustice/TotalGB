@@ -2,8 +2,6 @@
 #include "../gb.h"
 #include "apu.h"
 
-#if GB_SRC_INCLUDE
-
 #include <string.h>
 
 
@@ -352,5 +350,3 @@ void GB_apu_run(struct GB_Core* gb, uint16_t cycles)
         sample_channels(gb);
     }
 }
-
-#endif // GB_SRC_INCLUDE

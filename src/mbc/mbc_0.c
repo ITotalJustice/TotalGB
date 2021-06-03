@@ -1,10 +1,6 @@
 #include "../internal.h"
 #include "mbc.h"
 
-#if GB_SRC_INCLUDE
-
-#include <assert.h>
-
 
 void mbc0_write(struct GB_Core* gb, uint16_t addr, uint8_t value)
 {
@@ -40,5 +36,3 @@ struct MBC_RamBankInfo mbc0_get_ram_bank(struct GB_Core* gb)
 
     return mbc_setup_empty_ram();
 }
-
-#endif // GB_SRC_INCLUDE
