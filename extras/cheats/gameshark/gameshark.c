@@ -4,19 +4,19 @@
 #include <string.h>
 
 
-bool gameshark_init(struct Gameshark* gs)
+bool gameshark_init(struct GameShark* gs)
 {
     if (!gs)
     {
         return false;
     }
 
-    memset(gs, 0, sizeof(struct Gameshark));
+    memset(gs, 0, sizeof(struct GameShark));
 
     return true;
 }
 
-void gameshark_exit(struct Gameshark* gs)
+void gameshark_exit(struct GameShark* gs)
 {
     gameshark_reset(gs);
 }
@@ -41,7 +41,7 @@ static uint8_t hex(char c)
     return 0xFF;
 }
 
-gameshark_id_t gameshark_add_cheat(struct Gameshark* gs, const char* s)
+gameshark_id_t gameshark_add_cheat(struct GameShark* gs, const char* s)
 {
     const size_t len = strlen(s);
 
@@ -71,9 +71,9 @@ gameshark_id_t gameshark_add_cheat(struct Gameshark* gs, const char* s)
         }
     }
 
-    const uint8_t   type    = hexv[1] << 4 | hexv[0];
+    const uint8_t   type    = hexv[0] << 4 | hexv[1];
     const uint8_t   bank    = hexv[1];
-    const uint8_t   value   = hexv[3] << 4 | hexv[2];
+    const uint8_t   value   = hexv[2] << 4 | hexv[3];
     const uint16_t  addr    = hexv[6] << 12 | hexv[7] << 8 | hexv[4] << 4 | hexv[5];
 
     gameshark_id_t id = 0;
@@ -83,7 +83,7 @@ gameshark_id_t gameshark_add_cheat(struct Gameshark* gs, const char* s)
         id |= hexv[i] << (i * 4);
     } 
 
-    struct CheatEntry entry = {0};
+    struct GameSharkEntry entry = {0};
     entry.addr = addr;
     entry.bank = bank;
     entry.value = value;
@@ -108,7 +108,7 @@ gameshark_id_t gameshark_add_cheat(struct Gameshark* gs, const char* s)
         return GAMESHARK_INAVLID_ID;
     }
 
-    struct CheatEntry* new_entry = (struct CheatEntry*)malloc(sizeof(struct CheatEntry));
+    struct GameSharkEntry* new_entry = (struct GameSharkEntry*)malloc(sizeof(struct GameSharkEntry));
     *new_entry = entry;
 
     if (gs->entries == NULL)
@@ -117,7 +117,7 @@ gameshark_id_t gameshark_add_cheat(struct Gameshark* gs, const char* s)
     }
     else
     {
-        struct CheatEntry* entry = gs->entries;
+        struct GameSharkEntry* entry = gs->entries;
 
         while (entry->next)
         {
@@ -132,10 +132,10 @@ gameshark_id_t gameshark_add_cheat(struct Gameshark* gs, const char* s)
     return id;
 }
 
-void gameshark_remove_cheat(struct Gameshark* gs, gameshark_id_t id)
+void gameshark_remove_cheat(struct GameShark* gs, gameshark_id_t id)
 {
-    struct CheatEntry* prev = gs->entries;
-    struct CheatEntry* entry = gs->entries;
+    struct GameSharkEntry* prev = gs->entries;
+    struct GameSharkEntry* entry = gs->entries;
 
     while (entry != NULL)
     {
@@ -159,23 +159,23 @@ void gameshark_remove_cheat(struct Gameshark* gs, gameshark_id_t id)
     }
 }
 
-void gameshark_reset(struct Gameshark* gs)
+void gameshark_reset(struct GameShark* gs)
 {
-    struct CheatEntry* entry = gs->entries;
+    struct GameSharkEntry* entry = gs->entries;
 
     while (entry != NULL)
     {
-        struct CheatEntry* next = entry->next;
+        struct GameSharkEntry* next = entry->next;
         free(entry);
         entry = next;
     }
 
-    memset(gs, 0, sizeof(struct Gameshark));
+    memset(gs, 0, sizeof(struct GameShark));
 }
 
-static bool toggle_cheat(struct Gameshark* gs, gameshark_id_t id, bool enable)
+static bool toggle_cheat(struct GameShark* gs, gameshark_id_t id, bool enable)
 {
-    struct CheatEntry* entry = gs->entries;
+    struct GameSharkEntry* entry = gs->entries;
 
     while (entry != NULL)
     {
@@ -193,22 +193,22 @@ static bool toggle_cheat(struct Gameshark* gs, gameshark_id_t id, bool enable)
     return false;
 }
 
-bool gameshark_enable_cheat(struct Gameshark* gs, gameshark_id_t id)
+bool gameshark_enable_cheat(struct GameShark* gs, gameshark_id_t id)
 {
     return toggle_cheat(gs, id, true);
 }
 
-bool gameshark_disable_cheat(struct Gameshark* gs, gameshark_id_t id)
+bool gameshark_disable_cheat(struct GameShark* gs, gameshark_id_t id)
 {
     return toggle_cheat(gs, id, false);
 }
 
-void gameshark_on_vblank(struct Gameshark* gs, void* user,
+void gameshark_on_vblank(struct GameShark* gs, void* user,
     gs_write_t write,
     gs_set_ram_bank_t set_ram_bank,
     gs_set_wram_bank_t set_wram_bank
 ) {
-    struct CheatEntry* entry = gs->entries;
+    struct GameSharkEntry* entry = gs->entries;
 
     while (entry != NULL)
     {

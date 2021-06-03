@@ -14,6 +14,7 @@ option(GB_DEBUG "enable debug" OFF)
 option(GB_DEV "enables debug and sanitizers" OFF)
 
 option(GB_GAMESHARK "enables gameshark cheats (uses malloc,free)" OFF)
+option(GB_CODEBREAKER "enables codebreaker cheats (uses malloc,free)" OFF)
 option(GB_ENABLE_CHEATS "enables all cheats" OFF)
 
 option(GB_EXAMPLE_SDL "build basic sdl2 example" OFF)
@@ -24,6 +25,7 @@ option(GB_TEST_ALL "build all tests" OFF)
 
 if (GB_ENABLE_CHEATS)
     set(GB_GAMESHARK ON)
+    set(GB_CODEBREAKER ON)
 endif()
 
 if (GB_DEV)

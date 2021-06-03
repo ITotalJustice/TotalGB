@@ -3,7 +3,10 @@
 #include <gb.h>
 #include <SDL.h>
 #ifdef GB_GAMESHARK
-#include <gameshark.h>
+    #include <gameshark.h>
+#endif
+#ifdef GB_CODEBREAKER
+    #include <codebreaker.h>
 #endif
 
 enum
@@ -37,7 +40,10 @@ static SDL_AudioDeviceID audio_device = 0;
 static SDL_Rect rect = {0};
 
 #ifdef GB_GAMESHARK
-static struct Gameshark gameshark = {0};
+    static struct GameShark gameshark = {0};
+#endif
+#ifdef GB_CODEBREAKER
+    static struct CodeBreaker codebreaker = {0};
 #endif
 
 
@@ -78,6 +84,12 @@ bool apply_cheats_at_vblank()
             core_wrapper_on_write,
             core_wrapper_on_set_ram_bank,
             core_wrapper_on_set_wram_bank
+        );
+    #endif
+
+    #ifdef GB_CODEBREAKER
+        codebreaker_on_vblank(&codebreaker, &gameboy,
+            core_wrapper_on_write
         );
     #endif
 }
@@ -397,8 +409,12 @@ static void render()
 
 static void cleanup()
 {
-    #ifdef GAMESHARK
+    #ifdef GB_GAMESHARK
         gameshark_exit(&gameshark);
+    #endif
+
+    #ifdef GB_CODEBREAKER
+        codebreaker_exit(&codebreaker);
     #endif
 
     if (audio_device)   { SDL_CloseAudioDevice(audio_device); }
@@ -426,8 +442,13 @@ int main(int argc, char** argv)
     GB_set_vblank_callback(&gameboy, core_on_vblank);
 
     #ifdef GB_GAMESHARK
+        // all badges (try set ff to another value and see what happens)
         gameshark_add_cheat(&gameshark, "01FF55D3");
-        gameshark_add_cheat(&gameshark, "010138CD");
+    #endif
+
+    #ifdef GB_CODEBREAKER
+        // inf PP slot 1 (set FF to any value)
+        codebreaker_add_cheat(&codebreaker, "01FFD187");
     #endif
 
     rom_data = SDL_LoadFile(argv[1], &rom_size);

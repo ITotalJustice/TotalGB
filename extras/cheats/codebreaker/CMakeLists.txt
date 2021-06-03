@@ -1,8 +1,8 @@
 cmake_minimum_required(VERSION 3.13.4)
 
-add_library(gameshark gameshark.c)
+add_library(codebreaker codebreaker.c)
 
-target_include_directories(gameshark PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
+target_include_directories(codebreaker PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 
 set(CMAKE_C_STANDARD 99)
 set(CMAKE_C_STANDARD_REQUIRED True)
@@ -53,15 +53,15 @@ if (GB_DEV)
     foreach (flag IN LISTS _flags)
         # check_c_compiler_flag(${flag} CHECK_FLAG_${flag})
         # if (CHECK_FLAG_${flag})
-            target_compile_options(gameshark PRIVATE ${flag})
+            target_compile_options(codebreaker PRIVATE ${flag})
         # endif()
     endforeach()
 
     foreach (flag IN LISTS _sanitizers)
         # check_c_compiler_flag(${flag} CHECK_FLAG_${flag})
         # if (CHECK_FLAG_${flag})
-            target_compile_options(gameshark PRIVATE ${flag})
-            target_link_options(gameshark INTERFACE ${flag})
+            target_compile_options(codebreaker PRIVATE ${flag})
+            target_link_options(codebreaker INTERFACE ${flag})
         # endif()
     endforeach()
 

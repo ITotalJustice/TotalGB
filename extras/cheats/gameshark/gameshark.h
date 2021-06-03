@@ -23,9 +23,9 @@ enum GamesharkType
     GamesharkType_WRITE_WITH_WRAM_BANK_CHANGE,
 };
 
-struct CheatEntry
+struct GameSharkEntry
 {
-    struct CheatEntry* next;
+    struct GameSharkEntry* next;
     gameshark_id_t id;
     enum GamesharkType type;
 
@@ -36,9 +36,9 @@ struct CheatEntry
     bool enabled;
 };
 
-struct Gameshark
+struct GameShark
 {
-    struct CheatEntry* entries;
+    struct GameSharkEntry* entries;
     size_t count;
 };
 
@@ -50,18 +50,18 @@ typedef void    (*gs_set_ram_bank_t)(void* user, uint8_t bank);
 typedef void    (*gs_set_wram_bank_t)(void* user, uint8_t bank);
 
 
-bool gameshark_init(struct Gameshark* gs);
-void gameshark_exit(struct Gameshark* gs);
+bool gameshark_init(struct GameShark* gs);
+void gameshark_exit(struct GameShark* gs);
 
-gameshark_id_t gameshark_add_cheat(struct Gameshark* gs, const char* s);
-void gameshark_remove_cheat(struct Gameshark* gs, gameshark_id_t id);
-void gameshark_reset(struct Gameshark* gs);
+gameshark_id_t gameshark_add_cheat(struct GameShark* gs, const char* s);
+void gameshark_remove_cheat(struct GameShark* gs, gameshark_id_t id);
+void gameshark_reset(struct GameShark* gs);
 
-bool gameshark_enable_cheat(struct Gameshark* gs, gameshark_id_t id);
-bool gameshark_disable_cheat(struct Gameshark* gs, gameshark_id_t id);
+bool gameshark_enable_cheat(struct GameShark* gs, gameshark_id_t id);
+bool gameshark_disable_cheat(struct GameShark* gs, gameshark_id_t id);
 
 // gameshark cheats are applied at vblank
-void gameshark_on_vblank(struct Gameshark* gs, void* user,
+void gameshark_on_vblank(struct GameShark* gs, void* user,
     gs_write_t write,
     gs_set_ram_bank_t set_ram_bank,
     gs_set_wram_bank_t set_wram_bank

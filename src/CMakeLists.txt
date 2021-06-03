@@ -114,3 +114,8 @@ if (GB_GAMESHARK)
     target_compile_definitions(TotalGB INTERFACE GB_GAMESHARK=1)
     target_link_libraries(TotalGB INTERFACE gameshark)
 endif()
+
+if (GB_CODEBREAKER)
+    target_compile_definitions(TotalGB INTERFACE GB_CODEBREAKER=1)
+    target_link_libraries(TotalGB INTERFACE codebreaker)
+endif()
