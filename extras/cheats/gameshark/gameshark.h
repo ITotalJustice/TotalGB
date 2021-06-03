@@ -14,7 +14,7 @@ extern "C" {
 
 
 typedef uint32_t gameshark_id_t;
-enum { GAMESHARK_INAVLID_ID = 0 };
+enum { GAMESHARK_INVALID_ID = 0 };
 
 enum GamesharkType
 {
@@ -42,10 +42,7 @@ struct GameShark
     size_t count;
 };
 
-// typedef uint8_t (*gs_read_t)(void* user, uint16_t addr);
 typedef void    (*gs_write_t)(void* user, uint16_t addr, uint8_t value);
-// typedef uint8_t (*gs_get_ram_bank_t)(void* user);
-// typedef uint8_t (*gs_get_wram_bank_t)(void* user);
 typedef void    (*gs_set_ram_bank_t)(void* user, uint8_t bank);
 typedef void    (*gs_set_wram_bank_t)(void* user, uint8_t bank);
 

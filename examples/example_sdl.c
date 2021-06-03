@@ -8,6 +8,10 @@
 #ifdef GB_CODEBREAKER
     #include <codebreaker.h>
 #endif
+#ifdef GB_GAMEGENIE
+    #include <gamegenie.h>
+#endif
+
 
 enum
 {
@@ -44,6 +48,9 @@ static SDL_Rect rect = {0};
 #endif
 #ifdef GB_CODEBREAKER
     static struct CodeBreaker codebreaker = {0};
+#endif
+#ifdef GB_GAMEGENIE
+    static struct GameGenie gamegenie = {0};
 #endif
 
 
@@ -417,6 +424,10 @@ static void cleanup()
         codebreaker_exit(&codebreaker);
     #endif
 
+    #ifdef GB_GAMEGENIE
+        gamegenie_exit(&gamegenie);
+    #endif
+
     if (audio_device)   { SDL_CloseAudioDevice(audio_device); }
     if (rom_data)       { SDL_free(rom_data); }
     if (texture)        { SDL_DestroyTexture(texture); }
@@ -440,16 +451,6 @@ int main(int argc, char** argv)
 
     GB_set_apu_callback(&gameboy, core_on_apu, GB_AUDIO_FREQ);
     GB_set_vblank_callback(&gameboy, core_on_vblank);
-
-    #ifdef GB_GAMESHARK
-        // all badges (try set ff to another value and see what happens)
-        gameshark_add_cheat(&gameshark, "01FF55D3");
-    #endif
-
-    #ifdef GB_CODEBREAKER
-        // inf PP slot 1 (set FF to any value)
-        codebreaker_add_cheat(&codebreaker, "01FFD187");
-    #endif
 
     rom_data = SDL_LoadFile(argv[1], &rom_size);
 
@@ -528,6 +529,18 @@ int main(int argc, char** argv)
     SDL_PauseAudioDevice(audio_device, 0);
 
     GB_set_pixels(&gameboy, core_pixels, GB_SCREEN_WIDTH);
+
+    #ifdef GB_GAMESHARK
+        gameshark_init(&gameshark);
+    #endif
+
+    #ifdef GB_CODEBREAKER
+        codebreaker_init(&codebreaker);
+    #endif
+
+    #ifdef GB_GAMEGENIE
+        gamegenie_init(&gamegenie);
+    #endif
 
     while (running)
     {

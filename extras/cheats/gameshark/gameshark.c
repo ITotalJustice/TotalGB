@@ -48,7 +48,7 @@ gameshark_id_t gameshark_add_cheat(struct GameShark* gs, const char* s)
     // invalid length!
     if (len != 8)
     {
-        return GAMESHARK_INAVLID_ID;
+        return GAMESHARK_INVALID_ID;
     }
 
     // 0B,VV,AAAA
@@ -67,7 +67,7 @@ gameshark_id_t gameshark_add_cheat(struct GameShark* gs, const char* s)
         // so any number greater than 0xF is invalid.
         if (hexv[i] > 0xF)
         {
-            return GAMESHARK_INAVLID_ID;
+            return GAMESHARK_INVALID_ID;
         }
     }
 
@@ -105,7 +105,7 @@ gameshark_id_t gameshark_add_cheat(struct GameShark* gs, const char* s)
     }
     else
     {
-        return GAMESHARK_INAVLID_ID;
+        return GAMESHARK_INVALID_ID;
     }
 
     struct GameSharkEntry* new_entry = (struct GameSharkEntry*)malloc(sizeof(struct GameSharkEntry));
@@ -117,14 +117,14 @@ gameshark_id_t gameshark_add_cheat(struct GameShark* gs, const char* s)
     }
     else
     {
-        struct GameSharkEntry* entry = gs->entries;
+        struct GameSharkEntry* _entry = gs->entries;
 
-        while (entry->next)
+        while (_entry->next)
         {
-            entry = entry->next;
+            _entry = _entry->next;
         }
 
-        entry->next = new_entry;
+        _entry->next = new_entry;
     }
 
     gs->count++;

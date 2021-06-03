@@ -14,7 +14,7 @@ extern "C" {
 
 
 typedef uint32_t codebreaker_id_t;
-enum { CODEBREAKER_INAVLID_ID = 0 };
+enum { CODEBREAKER_INVALID_ID = 0 };
 
 struct CodeBreakerEntry
 {

@@ -48,7 +48,7 @@ codebreaker_id_t codebreaker_add_cheat(struct CodeBreaker* cb, const char* s)
     // invalid length!
     if (len != 8)
     {
-        return CODEBREAKER_INAVLID_ID;
+        return CODEBREAKER_INVALID_ID;
     }
 
     // 01,VV,AAAA
@@ -66,7 +66,7 @@ codebreaker_id_t codebreaker_add_cheat(struct CodeBreaker* cb, const char* s)
         // so any number greater than 0xF is invalid.
         if (hexv[i] > 0xF)
         {
-            return CODEBREAKER_INAVLID_ID;
+            return CODEBREAKER_INVALID_ID;
         }
     }
 
@@ -101,14 +101,14 @@ codebreaker_id_t codebreaker_add_cheat(struct CodeBreaker* cb, const char* s)
     }
     else
     {
-        struct CodeBreakerEntry* entry = cb->entries;
+        struct CodeBreakerEntry* _entry = cb->entries;
 
-        while (entry->next)
+        while (_entry->next)
         {
-            entry = entry->next;
+            _entry = _entry->next;
         }
 
-        entry->next = new_entry;
+        _entry->next = new_entry;
     }
 
     cb->count++;

@@ -9,3 +9,8 @@ if (GB_CODEBREAKER)
     message(STATUS "CodeBreaker support enabled!")
     add_subdirectory(codebreaker)
 endif()
+
+if (GB_GAMEGENIE)
+    message(STATUS "GameGenie support enabled!")
+    add_subdirectory(gamegenie)
+endif()

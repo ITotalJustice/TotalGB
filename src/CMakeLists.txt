@@ -119,3 +119,8 @@ if (GB_CODEBREAKER)
     target_compile_definitions(TotalGB INTERFACE GB_CODEBREAKER=1)
     target_link_libraries(TotalGB INTERFACE codebreaker)
 endif()
+
+if (GB_GAMEGENIE)
+    target_compile_definitions(TotalGB INTERFACE GB_GAMEGENIE=1)
+    target_link_libraries(TotalGB INTERFACE gamegenie)
+endif()
