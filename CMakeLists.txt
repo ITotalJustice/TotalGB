@@ -18,6 +18,11 @@ option(GB_CODEBREAKER "enables codebreaker cheats (uses malloc,free)" OFF)
 option(GB_GAMEGENIE "enables gamegenie cheats (uses malloc,free)" OFF)
 option(GB_ENABLE_CHEATS "enables all cheats" OFF)
 
+option(GB_IPS "enables ips" OFF)
+option(GB_UPS "enables ups" OFF)
+# option(GB_BPS "enables bps" OFF)
+option(GB_ENABLE_PATCHES "enables all patches" OFF)
+
 option(GB_EXAMPLE_SDL "build basic sdl2 example" OFF)
 
 option(GB_TEST_SANITY "build test that ensures the lib can be built" OFF)
@@ -28,6 +33,12 @@ if (GB_ENABLE_CHEATS)
     set(GB_GAMESHARK ON)
     set(GB_CODEBREAKER ON)
     set(GB_GAMEGENIE ON)
+endif()
+
+if (GB_ENABLE_PATCHES)
+    set(GB_IPS ON)
+    set(GB_UPS ON)
+    # set(GB_BPS ON)
 endif()
 
 if (GB_DEV)

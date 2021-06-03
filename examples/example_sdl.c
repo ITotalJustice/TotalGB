@@ -84,7 +84,7 @@ void core_wrapper_on_set_wram_bank(void* user, uint8_t bank)
     gb_set_wram_bank((struct GB_Core*)user, bank);
 }
 
-bool apply_cheats_at_vblank()
+void apply_cheats_at_vblank()
 {
     #ifdef GB_GAMESHARK
         gameshark_on_vblank(&gameshark, &gameboy,
@@ -313,6 +313,8 @@ static void events()
 // TODO: fix starved audio buffer...
 static void core_on_apu(void* user, struct GB_ApuCallbackData* data)
 {
+    (void)user;
+
     // using buffers because pushing 1 sample at a time seems to
     // cause popping sounds (on my chromebook).
     static uint8_t buffer1[SAMPLES * 2];
@@ -325,7 +327,7 @@ static void core_on_apu(void* user, struct GB_ApuCallbackData* data)
     // audio buffer!
     if (speed > 1)
     {
-        static size_t skipped_samples = 0;
+        static int skipped_samples = 0;
 
         if (skipped_samples < speed - 1)
         {
@@ -345,6 +347,8 @@ static void core_on_apu(void* user, struct GB_ApuCallbackData* data)
     {
         return;
     }
+    #else
+    (void)audio_queue_size;
     #endif
 
     buffer1[buffer_count + 0] = data->ch1[0];

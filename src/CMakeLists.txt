@@ -38,9 +38,7 @@ else()
 endif()
 
 target_include_directories(TotalGB PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
-
-set(CMAKE_C_STANDARD 99)
-set(CMAKE_C_STANDARD_REQUIRED True)
+target_compile_features(TotalGB PRIVATE c_std_99)
 
 if (GB_DEV)
     list(APPEND _flags
@@ -123,4 +121,19 @@ endif()
 if (GB_GAMEGENIE)
     target_compile_definitions(TotalGB INTERFACE GB_GAMEGENIE=1)
     target_link_libraries(TotalGB INTERFACE gamegenie)
+endif()
+
+if (GB_IPS)
+    target_compile_definitions(TotalGB INTERFACE GB_IPS=1)
+    target_link_libraries(TotalGB INTERFACE ips)
+endif()
+
+if (GB_BPS)
+    target_compile_definitions(TotalGB INTERFACE GB_BPS=1)
+    target_link_libraries(TotalGB INTERFACE bps)
+endif()
+
+if (GB_BPS)
+    target_compile_definitions(TotalGB INTERFACE GB_BPS=1)
+    target_link_libraries(TotalGB INTERFACE bps)
 endif()
