@@ -1,3 +1,6 @@
+// this is a small-ish example of how you would use my gb_core
+// and how to write a basic "frontend".
+
 #include <stdbool.h>
 #include <stdint.h>
 #include <gb.h>
@@ -23,10 +26,15 @@ enum
     SDL_AUDIO_FREQ = 48000,
     GB_AUDIO_FREQ = SDL_AUDIO_FREQ,
 
-    // AUDIO_SLEEP = SDL_AUDIO_FREQ / (SAMPLES * 2) / 4,
     AUDIO_SLEEP = 2,
 };
 
+
+enum RunMode
+{
+    RunMode_NORMAL,
+    RunMode_STEP,
+};
 
 static struct GB_Core gameboy;
 static uint16_t core_pixels[144][160];
@@ -36,6 +44,8 @@ static bool running = true;
 static int scale = 2;
 static int speed = 1;
 static int frameskip_counter = 0;
+static enum RunMode run_mode = RunMode_NORMAL;
+static bool step = false;
 
 static SDL_Window* window = NULL;
 static SDL_Renderer* renderer = NULL;
@@ -103,15 +113,30 @@ void apply_cheats_at_vblank()
 
 static void run()
 {
-    for (int i = 0; i < speed; ++i)
+    switch (run_mode)
     {
-        // check if we should skip next frame
-        if (i + 1 != speed)
-        {
-            GB_skip_next_frame(&gameboy);
-        }
+        case RunMode_NORMAL:
+            for (int i = 0; i < speed; ++i)
+            {
+                // check if we should skip next frame
+                if (i + 1 != speed)
+                {
+                    GB_skip_next_frame(&gameboy);
+                }
 
-        GB_run_frame(&gameboy);
+                GB_run_frame(&gameboy);
+            }
+            break;
+
+        case RunMode_STEP:
+            if (step)
+            {
+                GB_run_frame(&gameboy);
+                // we've handled the step!
+                step = false;
+            }
+            SDL_Delay(16);
+            break;
     }
 }
 
@@ -172,6 +197,16 @@ static void toggle_fullscreen()
     }
 }
 
+static void on_step_mode_set()
+{
+    // SDL_PauseAudioDevice(audio_device, 1);
+}
+
+static void on_run_mode_set()
+{
+    // SDL_PauseAudioDevice(audio_device, 0);
+}
+
 static void on_key_event(const SDL_KeyboardEvent* e)
 {
     const bool down = e->type == SDL_KEYDOWN;
@@ -210,6 +245,24 @@ static void on_key_event(const SDL_KeyboardEvent* e)
                 toggle_fullscreen();
                 break;
 
+            // break into step mode
+            case SDL_SCANCODE_B:
+                run_mode = RunMode_STEP;
+                on_step_mode_set();
+                break;
+
+            case SDL_SCANCODE_R:
+                run_mode = RunMode_NORMAL;
+                on_run_mode_set();
+                break;
+
+            case SDL_SCANCODE_S:
+                if (run_mode == RunMode_STEP)
+                {
+                    step = true;
+                }
+                break;
+
             default: break; // silence enum warning
         }
 
@@ -233,6 +286,7 @@ static void on_key_event(const SDL_KeyboardEvent* e)
 
         case SDL_SCANCODE_I:
             GB_cpu_enable_log(down);
+            printf("\n\n\t----NEWLINE----\n\n");
             break;
 
         default: break; // silence enum warning
@@ -471,8 +525,6 @@ int main(int argc, char** argv)
     struct GB_CartName rom_name = {0};
 
     GB_get_rom_name(&gameboy, &rom_name);
-
-    // SDL_setenv("SDL_AUDIODRIVER", "sndio", 1);
 
     if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO))
     {

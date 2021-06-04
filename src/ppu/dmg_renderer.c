@@ -6,6 +6,12 @@
 #include <assert.h>
 
 
+struct PrioBuf
+{
+    // 0-3
+    uint8_t colour_id[GB_SCREEN_WIDTH];
+};
+
 static inline uint16_t calculate_col_from_palette(const uint8_t palette, const uint8_t colour)
 {
     return ((palette >> (colour << 1)) & 3);
@@ -36,7 +42,7 @@ void GB_update_all_colours_gb(struct GB_Core* gb)
     gb->ppu.dirty_obj[1] = true;
 }
 
-static void dmg_render_scanline_bg(struct GB_Core* gb)
+static void dmg_render_scanline_bg(struct GB_Core* gb, struct PrioBuf* prio)
 {
     const uint8_t scanline = IO_LY;
     const uint8_t base_tile_x = IO_SCX >> 3;
@@ -69,12 +75,15 @@ static void dmg_render_scanline_bg(struct GB_Core* gb)
             }
 
             const uint8_t pixel = ((!!(byte_b & bit[x])) << 1) | (!!(byte_a & bit[x]));
+            
+            prio->colour_id[pixel_x] = pixel;
+
             pixels.p[pixel_x] = gb->ppu.bg_colours[0][pixel];
         }
     }
 }
 
-static void dmg_render_scanline_win(struct GB_Core* gb)
+static void dmg_render_scanline_win(struct GB_Core* gb, struct PrioBuf* prio)
 {
     const uint8_t scanline = IO_LY;
     const uint8_t base_tile_x = 20 - (IO_WX >> 3);
@@ -108,6 +117,9 @@ static void dmg_render_scanline_win(struct GB_Core* gb)
             did_draw |= true;
 
             const uint8_t pixel = ((!!(byte_b & bit[x])) << 1) | (!!(byte_a & bit[x]));
+            
+            prio->colour_id[pixel_x] = pixel;
+
             pixels.p[pixel_x] = gb->ppu.bg_colours[0][pixel];
         }
     }
@@ -214,11 +226,10 @@ static struct DMG_Sprites dmg_sprite_fetch(const struct GB_Core* gb)
     return sprites;
 }
 
-static void dmg_render_scanline_obj(struct GB_Core* gb)
+static void dmg_render_scanline_obj(struct GB_Core* gb, const struct PrioBuf* prio)
 {
     const uint8_t scanline = IO_LY;
     const uint8_t sprite_size = GB_get_sprite_size(gb);
-    const uint16_t bg_trans_col = gb->ppu.bg_colours[0][0];
     struct GB_Pixels pixels = get_pixels_at_scanline(gb, scanline);
 
     // keep track of when an oam entry has already been written.
@@ -268,15 +279,15 @@ static void dmg_render_scanline_obj(struct GB_Core* gb)
                 continue;
             }
 
-            // handle prio
-            if (sprite->a.prio && pixels.p[x_index] != bg_trans_col)
+            const uint8_t pixel = ((!!(byte_b & bit[x])) << 1) | (!!(byte_a & bit[x]));
+
+            if (pixel == 0)
             {
                 continue;
             }
 
-            const uint8_t pixel = ((!!(byte_b & bit[x])) << 1) | (!!(byte_a & bit[x]));
-
-            if (pixel == 0)
+            // handle prio
+            if (sprite->a.prio && prio->colour_id[x_index])
             {
                 continue;
             }
@@ -293,6 +304,8 @@ static void dmg_render_scanline_obj(struct GB_Core* gb)
 
 void DMG_render_scanline(struct GB_Core* gb)
 {
+    struct PrioBuf prio_buf = {0};
+
     // update the DMG colour palettes
     dmg_update_colours(gb->ppu.bg_colours[0], gb->palette.BG, IO_BGP, &gb->ppu.dirty_bg[0]);
     dmg_update_colours(gb->ppu.obj_colours[0], gb->palette.OBJ0, IO_OBP0, &gb->ppu.dirty_obj[0]);
@@ -302,7 +315,7 @@ void DMG_render_scanline(struct GB_Core* gb)
     {
         if (LIKELY(GB_is_render_layer_enabled(gb, GB_RENDER_LAYER_CONFIG_BG)))
         {
-            dmg_render_scanline_bg(gb);
+            dmg_render_scanline_bg(gb, &prio_buf);
         }
 
         // WX=0..166, WY=0..143
@@ -310,7 +323,7 @@ void DMG_render_scanline(struct GB_Core* gb)
         {
             if (LIKELY(GB_is_render_layer_enabled(gb, GB_RENDER_LAYER_CONFIG_WIN)))
             {
-                dmg_render_scanline_win(gb);
+                dmg_render_scanline_win(gb, &prio_buf);
             }
         }
     }
@@ -319,7 +332,7 @@ void DMG_render_scanline(struct GB_Core* gb)
     {
         if (LIKELY(GB_is_render_layer_enabled(gb, GB_RENDER_LAYER_CONFIG_OBJ)))
         {
-            dmg_render_scanline_obj(gb);
+            dmg_render_scanline_obj(gb, &prio_buf);
         }
     }
 }

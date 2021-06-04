@@ -31,7 +31,6 @@ else()
         sgb.c
         accessories/printer.c
         tables/palette_table.c
-        single.c
     )
 
     target_compile_definitions(TotalGB PRIVATE GB_SINGLE_FILE=0)
