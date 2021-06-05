@@ -342,11 +342,14 @@ void GB_apu_run(struct GB_Core* gb, uint16_t cycles)
     // a fixed silence value, rather than fake-creating samples for
     // no reason.
 
-    gb->apu.next_sample_cycles += cycles;
-
-    while (UNLIKELY(gb->apu.next_sample_cycles >= CALC_CALLBACK_FREQ(gb->callback.apu_data.freq)))
+    if (gb->callback.apu && gb->callback.apu_data.freq)
     {
-        gb->apu.next_sample_cycles -= CALC_CALLBACK_FREQ(gb->callback.apu_data.freq);
-        sample_channels(gb);
+        gb->apu.next_sample_cycles += cycles;
+
+        while (UNLIKELY(gb->apu.next_sample_cycles >= CALC_CALLBACK_FREQ(gb->callback.apu_data.freq)))
+        {
+            gb->apu.next_sample_cycles -= CALC_CALLBACK_FREQ(gb->callback.apu_data.freq);
+            sample_channels(gb);
+        }
     }
 }

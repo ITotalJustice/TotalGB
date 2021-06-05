@@ -23,11 +23,20 @@ option(GB_UPS "enables ups" OFF)
 # option(GB_BPS "enables bps" OFF)
 option(GB_ENABLE_PATCHES "enables all patches" OFF)
 
+option(GB_EXAMPLE_MMAP "build example that shows how to use mmap" OFF)
 option(GB_EXAMPLE_SDL "build basic sdl2 example" OFF)
+option(GB_EXAMPLE_ALL "builds all examples" OFF)
 
 option(GB_TEST_SANITY "build test that ensures the lib can be built" OFF)
 option(GB_TEST_BENCH "" OFF)
 option(GB_TEST_ALL "build all tests" OFF)
+
+
+if (GB_EXAMPLE_ALL)
+    set(GB_EXAMPLE_SDL ON)
+    set(GB_EXAMPLE_MMAP ON)
+endif()
+
 
 if (GB_ENABLE_CHEATS)
     set(GB_GAMESHARK ON)

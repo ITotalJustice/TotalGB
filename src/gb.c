@@ -403,6 +403,9 @@ void GB_set_sram(struct GB_Core* gb, uint8_t* ram, size_t size)
 
 bool GB_get_rom_info(const uint8_t* data, size_t size, struct GB_RomInfo* info_out)
 {
+    // todo: should ensure the romsize is okay!
+    (void)size;
+    
     const struct GB_CartHeader* header = GB_get_rom_header_ptr_from_data(data);
 
     info_out->rom_size = ROM_SIZE_MULT << header->rom_size;
