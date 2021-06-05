@@ -152,12 +152,6 @@ enum GB_StatIntModes
 };
 
 
-// these internally discard the const when passing the gb
-// struct to the error callback.
-// this function is still marked const because it is often called
-// in const functions.
-void GB_throw_error(const struct GB_Core* gb, enum GB_ErrorDataType type, const char* message);
-
 GB_STATIC void GB_rtc_tick_frame(struct GB_Core* gb);
 
 GB_INLINE uint8_t GB_read8(struct GB_Core* gb, const uint16_t addr);
@@ -177,6 +171,8 @@ GB_INLINE void GB_ocpd_write(struct GB_Core* gb, uint8_t value);
 GB_STATIC void GB_hdma5_write(struct GB_Core* gb, uint8_t value);
 
 // these should also be static
+GB_STATIC bool GB_get_mbc_flags(uint8_t cart_type, uint8_t* flags_out);
+GB_STATIC bool GB_get_cart_ram_size(uint8_t type, uint32_t* size);
 GB_STATIC bool GB_setup_mbc(struct GB_Cart* mbc, const struct GB_CartHeader* header);
 GB_STATIC void GB_setup_mmap(struct GB_Core* gb);
 GB_STATIC void GB_update_rom_banks(struct GB_Core* gb);

@@ -14,7 +14,13 @@ GBAPI void GB_reset(struct GB_Core* gb);
 
 // set the pixels that the game will render to
 // IMPORTANT: if pixels == NULL, then no rendering will happen!
-GBAPI void GB_set_pixels(struct GB_Core* gb, void* pixels, uint32_t pitch);
+GBAPI void GB_set_pixels(struct GB_Core* gb, void* pixels, uint32_t stride, uint8_t bpp);
+
+// todo: explain this function
+GBAPI void GB_set_sram(struct GB_Core* gb, uint8_t* ram, size_t size);
+
+// todo: explain this function
+GBAPI bool GB_get_rom_info(const uint8_t* data, size_t size, struct GB_RomInfo* info_out);
 
 // pass the fully loaded rom data.
 // this memory is NOT owned.
@@ -75,17 +81,15 @@ GBAPI bool GB_get_rom_header(const struct GB_Core* gb, struct GB_CartHeader* hea
 // useful for if you plan to save the rom after to a new file.
 GBAPI struct GB_CartHeader* GB_get_rom_header_ptr(const struct GB_Core* gb);
 
-GBAPI void GB_get_rom_info(const struct GB_Core* gb, struct GB_RomInfo* info);
-
 /*  */
 GBAPI int GB_get_rom_name(const struct GB_Core* gb, struct GB_CartName* name);
 GBAPI int GB_get_rom_name_from_header(const struct GB_CartHeader* header, struct GB_CartName* name);
 
-GBAPI unsigned gb_get_apu_freq(const struct GB_Core* gb);
-GBAPI void gb_set_apu_freq(struct GB_Core* gb, unsigned freq);
+GBAPI unsigned GB_get_apu_freq(const struct GB_Core* gb);
+GBAPI void GB_set_apu_freq(struct GB_Core* gb, unsigned freq);
 
 /* set the user_data that's passed to the callbacks */
-GBAPI void gb_set_userdata(struct GB_Core* gb, void* user_data);
+GBAPI void GB_set_userdata(struct GB_Core* gb, void* user_data);
 
 /* set a callback which will be called when apu has filled 512 stero samples. */
 /* not setting this callback is valid, just that you won't have audio... */
@@ -106,8 +110,7 @@ GBAPI void GB_set_halt_callback(struct GB_Core* gb, GB_halt_callback_t cb);
 /* set a callback which will be called when stop happens. */
 GBAPI void GB_set_stop_callback(struct GB_Core* gb, GB_stop_callback_t cb);
 
-/* set a callback which will be called when error happens. */
-GBAPI void GB_set_error_callback(struct GB_Core* gb, GB_error_callback_t cb);
+GBAPI void GB_set_colour_callback(struct GB_Core* gb, GB_colour_callback_t cb);
 
 #if GB_DEBUG
 /* set a callback which will be called when cpu read happens. */
@@ -132,14 +135,14 @@ GBAPI void GB_set_buttons(struct GB_Core* gb, uint8_t buttons, bool is_down);
 GBAPI uint8_t GB_get_buttons(const struct GB_Core* gb);
 GBAPI bool GB_is_button_down(const struct GB_Core* gb, enum GB_Button button);
 
-GBAPI uint8_t gb_read(struct GB_Core* gb, uint16_t addr);
-GBAPI void gb_write(struct GB_Core* gb, uint16_t addr, uint8_t value);
+GBAPI uint8_t GB_read(struct GB_Core* gb, uint16_t addr);
+GBAPI void GB_write(struct GB_Core* gb, uint16_t addr, uint8_t value);
 
-GBAPI uint8_t gb_get_ram_bank(struct GB_Core* gb);
-GBAPI uint8_t gb_get_wram_bank(struct GB_Core* gb);
+GBAPI uint8_t GB_get_ram_bank(struct GB_Core* gb);
+GBAPI uint8_t GB_get_wram_bank(struct GB_Core* gb);
 
-GBAPI void gb_set_ram_bank(struct GB_Core* gb, uint8_t bank);
-GBAPI void gb_set_wram_bank(struct GB_Core* gb, uint8_t bank);
+GBAPI void GB_set_ram_bank(struct GB_Core* gb, uint8_t bank);
+GBAPI void GB_set_wram_bank(struct GB_Core* gb, uint8_t bank);
 
 // make this a seperate header, gb_adv.h, add these there
 GBAPI bool GB_get_rom_palette_hash_from_header(const struct GB_CartHeader* header, uint8_t* hash, uint8_t* forth);
@@ -153,8 +156,7 @@ GBAPI bool GB_set_palette_from_hash(struct GB_Core* gb, uint8_t hash);
 // todo: show button table here or link to the table!
 GBAPI bool GB_set_palette_from_buttons(struct GB_Core* gb, uint8_t buttons);
 
-// todo: check if this still needs to be bgr555
-/* set a custom palette, must be BGR555 format */
+/* set a custom palette */
 GBAPI bool GB_set_palette_from_palette(struct GB_Core* gb, const struct GB_PaletteEntry* palette);
 
 GBAPI void GB_cpu_set_flag(struct GB_Core* gb, enum GB_CpuFlags flag, bool value);

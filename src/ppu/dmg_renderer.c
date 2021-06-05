@@ -6,7 +6,7 @@
 #include <assert.h>
 
 
-struct PrioBuf
+struct DmgPrioBuf
 {
     // 0-3
     uint8_t colour_id[GB_SCREEN_WIDTH];
@@ -42,7 +42,7 @@ void GB_update_all_colours_gb(struct GB_Core* gb)
     gb->ppu.dirty_obj[1] = true;
 }
 
-static void dmg_render_scanline_bg(struct GB_Core* gb, struct PrioBuf* prio)
+static void dmg_render_scanline_bg(struct GB_Core* gb, struct DmgPrioBuf* prio)
 {
     const uint8_t scanline = IO_LY;
     const uint8_t base_tile_x = IO_SCX >> 3;
@@ -53,7 +53,6 @@ static void dmg_render_scanline_bg(struct GB_Core* gb, struct PrioBuf* prio)
 
     const uint8_t* bit = PIXEL_BIT_SHRINK;
     const uint8_t *vram_map = &gb->ppu.vram[0][(GB_get_bg_map_select(gb) + (tile_y << 5)) & 0x1FFF];
-    struct GB_Pixels pixels = get_pixels_at_scanline(gb, scanline);
 
     for (uint8_t tile_x = 0; tile_x <= 20; ++tile_x)
     {
@@ -67,23 +66,25 @@ static void dmg_render_scanline_bg(struct GB_Core* gb, struct PrioBuf* prio)
 
         for (uint8_t x = 0; x < 8; ++x)
         {
-            const uint8_t pixel_x = ((tile_x << 3) + x - sub_tile_x) & 0xFF;
+            const uint8_t x_index = ((tile_x << 3) + x - sub_tile_x) & 0xFF;
 
-            if (pixel_x >= GB_SCREEN_WIDTH)
+            if (x_index >= GB_SCREEN_WIDTH)
             {
                 continue;
             }
 
-            const uint8_t pixel = ((!!(byte_b & bit[x])) << 1) | (!!(byte_a & bit[x]));
+            const uint8_t colour_id = ((!!(byte_b & bit[x])) << 1) | (!!(byte_a & bit[x]));
             
-            prio->colour_id[pixel_x] = pixel;
+            prio->colour_id[x_index] = colour_id;
 
-            pixels.p[pixel_x] = gb->ppu.bg_colours[0][pixel];
+            const uint32_t colour = gb->ppu.bg_colours[0][colour_id];
+
+            ppu_write_pixel(gb, colour, x_index, scanline);
         }
     }
 }
 
-static void dmg_render_scanline_win(struct GB_Core* gb, struct PrioBuf* prio)
+static void dmg_render_scanline_win(struct GB_Core* gb, struct DmgPrioBuf* prio)
 {
     const uint8_t scanline = IO_LY;
     const uint8_t base_tile_x = 20 - (IO_WX >> 3);
@@ -96,7 +97,6 @@ static void dmg_render_scanline_win(struct GB_Core* gb, struct PrioBuf* prio)
 
     const uint8_t* bit = PIXEL_BIT_SHRINK;
     const uint8_t *vram_map = &gb->ppu.vram[0][(GB_get_win_map_select(gb) + (tile_y << 5)) & 0x1FFF];
-    struct GB_Pixels pixels = get_pixels_at_scanline(gb, scanline);
 
     for (uint8_t tile_x = 0; tile_x <= base_tile_x; ++tile_x)
     {
@@ -108,19 +108,22 @@ static void dmg_render_scanline_win(struct GB_Core* gb, struct PrioBuf* prio)
 
         for (uint8_t x = 0; x < 8; ++x)
         {
-            const uint8_t pixel_x = ((tile_x << 3) + x + sub_tile_x) & 0xFF;
-            if (pixel_x >= GB_SCREEN_WIDTH)
+            const uint8_t x_index = ((tile_x << 3) + x + sub_tile_x) & 0xFF;
+            
+            if (x_index >= GB_SCREEN_WIDTH)
             {
                 continue;
             }
 
             did_draw |= true;
 
-            const uint8_t pixel = ((!!(byte_b & bit[x])) << 1) | (!!(byte_a & bit[x]));
+            const uint8_t colour_id = ((!!(byte_b & bit[x])) << 1) | (!!(byte_a & bit[x]));
             
-            prio->colour_id[pixel_x] = pixel;
+            prio->colour_id[x_index] = colour_id;
 
-            pixels.p[pixel_x] = gb->ppu.bg_colours[0][pixel];
+            const uint32_t colour = gb->ppu.bg_colours[0][colour_id];
+
+            ppu_write_pixel(gb, colour, x_index, scanline);
         }
     }
 
@@ -226,11 +229,10 @@ static struct DMG_Sprites dmg_sprite_fetch(const struct GB_Core* gb)
     return sprites;
 }
 
-static void dmg_render_scanline_obj(struct GB_Core* gb, const struct PrioBuf* prio)
+static void dmg_render_scanline_obj(struct GB_Core* gb, const struct DmgPrioBuf* prio)
 {
     const uint8_t scanline = IO_LY;
     const uint8_t sprite_size = GB_get_sprite_size(gb);
-    struct GB_Pixels pixels = get_pixels_at_scanline(gb, scanline);
 
     // keep track of when an oam entry has already been written.
     bool oam_priority[GB_SCREEN_WIDTH] = {0};
@@ -279,9 +281,9 @@ static void dmg_render_scanline_obj(struct GB_Core* gb, const struct PrioBuf* pr
                 continue;
             }
 
-            const uint8_t pixel = ((!!(byte_b & bit[x])) << 1) | (!!(byte_a & bit[x]));
+            const uint8_t colour_id = ((!!(byte_b & bit[x])) << 1) | (!!(byte_a & bit[x]));
 
-            if (pixel == 0)
+            if (colour_id == 0)
             {
                 continue;
             }
@@ -295,7 +297,9 @@ static void dmg_render_scanline_obj(struct GB_Core* gb, const struct PrioBuf* pr
             // keep track of the sprite pixel that was written (so we don't overlap it!)
             oam_priority[x_index] = true;
 
-            pixels.p[x_index] = gb->ppu.obj_colours[sprite->a.pal][pixel];
+            const uint32_t colour = gb->ppu.obj_colours[sprite->a.pal][colour_id];
+
+            ppu_write_pixel(gb, colour, x_index, scanline);
         }
     }
 }
@@ -304,7 +308,7 @@ static void dmg_render_scanline_obj(struct GB_Core* gb, const struct PrioBuf* pr
 
 void DMG_render_scanline(struct GB_Core* gb)
 {
-    struct PrioBuf prio_buf = {0};
+    struct DmgPrioBuf prio_buf = {0};
 
     // update the DMG colour palettes
     dmg_update_colours(gb->ppu.bg_colours[0], gb->palette.BG, IO_BGP, &gb->ppu.dirty_bg[0]);

@@ -103,10 +103,6 @@ if (GB_DEBUG)
     target_compile_definitions(TotalGB PRIVATE GB_DEBUG=1)
 endif()
 
-# TODO: learn how to have this be set by parent cmakefile
-# thats including this cmakelist
-target_compile_definitions(TotalGB PRIVATE GB_PIXEL_STRIDE=16)
-
 if (GB_GAMESHARK)
     target_compile_definitions(TotalGB INTERFACE GB_GAMESHARK=1)
     target_link_libraries(TotalGB INTERFACE gameshark)

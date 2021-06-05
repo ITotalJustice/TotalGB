@@ -172,6 +172,20 @@ bool GB_get_cart_ram_size(uint8_t type, uint32_t* size)
     return true;
 }
 
+bool GB_get_mbc_flags(uint8_t cart_type, uint8_t* flags_out)
+{
+    const struct MbcInfo* info = &MBC_INFO[cart_type];
+
+    if (!info->type)
+    {
+        return false;
+    }
+
+    *flags_out = info->flags;
+
+    return true;
+}
+
 bool GB_setup_mbc(struct GB_Cart* mbc, const struct GB_CartHeader* header)
 {
     if (!mbc || !header)
@@ -230,6 +244,11 @@ bool GB_setup_mbc(struct GB_Cart* mbc, const struct GB_CartHeader* header)
             mbc->ram_bank_max = mbc->ram_size / 0x2000;
         }
 
+        // this is a check for ram size.
+        // this check should still be performed, but not sure when...
+        // the user should be allowed to set the cart ram when loading rom
+        // 
+        #if 0
         // check that the size (if any) returned is within range of the
         // maximum ram size.
         // this can be set by the user, using build flags!
@@ -238,6 +257,7 @@ bool GB_setup_mbc(struct GB_Cart* mbc, const struct GB_CartHeader* header)
             GB_log("cart-ram size is too big for the maximum size set! got: %u max: %d", mbc->ram_size, GB_SAVE_SIZE_MAX);
             return false;
         }
+        #endif
     }
 
     return true;

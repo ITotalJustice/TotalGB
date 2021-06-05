@@ -11,26 +11,31 @@ const uint8_t PIXEL_BIT_SHRINK[] =
 {
     0x80, 0x40, 0x20, 0x10, 0x08, 0x04, 0x02, 0x01
 };
+
 const uint8_t PIXEL_BIT_GROW[] =
 {
     0x01, 0x02, 0x04, 0x08, 0x10, 0x20, 0x40, 0x80
 };
 
 
-struct GB_Pixels get_pixels_at_scanline(struct GB_Core* gb, uint8_t ly)
+void ppu_write_pixel(struct GB_Core* gb, uint32_t c, uint8_t x, uint8_t y)
 {
-    assert(gb && gb->pixels && gb->pitch);
-    assert(ly <= 144);
+    switch (gb->bpp)
+    {
+        case 8:
+            ((uint8_t*)gb->pixels)[gb->stride * y + x] = c;
+            break;
 
-    return (struct GB_Pixels){
-        #if GB_PIXEL_STRIDE == 8
-            ((uint8_t*)gb->pixels) + (gb->pitch * ly)
-        #elif GB_PIXEL_STRIDE == 16
-            ((uint16_t*)gb->pixels) + (gb->pitch * ly)
-        #elif GB_PIXEL_STRIDE == 32
-            ((uint32_t*)gb->pixels) + (gb->pitch * ly)
-        #endif
-    };
+        case 15:
+        case 16:
+            ((uint16_t*)gb->pixels)[gb->stride * y + x] = c;
+            break;
+
+        case 24:
+        case 32:
+            ((uint32_t*)gb->pixels)[gb->stride * y + x] = c;
+            break;
+    }
 }
 
 uint8_t GB_vram_read(const struct GB_Core* gb,
@@ -316,7 +321,7 @@ bool GB_is_render_layer_enabled(const struct GB_Core* gb,
 void GB_draw_scanline(struct GB_Core* gb)
 {
     // check if the user has set any pixels, if not, skip rendering!
-    if (!gb->pixels || !gb->pitch)
+    if (!gb->pixels || !gb->stride)
     {
         return;
     }

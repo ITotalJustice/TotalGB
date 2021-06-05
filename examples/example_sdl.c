@@ -1,19 +1,10 @@
-// this is a small-ish example of how you would use my gb_core
+// this is a small-ish example of how you would use my GB_core
 // and how to write a basic "frontend".
 
 #include <stdbool.h>
 #include <stdint.h>
 #include <gb.h>
 #include <SDL.h>
-#ifdef GB_GAMESHARK
-    #include <gameshark.h>
-#endif
-#ifdef GB_CODEBREAKER
-    #include <codebreaker.h>
-#endif
-#ifdef GB_GAMEGENIE
-    #include <gamegenie.h>
-#endif
 
 
 enum
@@ -37,8 +28,9 @@ enum RunMode
 };
 
 static struct GB_Core gameboy;
-static uint16_t core_pixels[144][160];
-static void* rom_data = NULL;
+static uint32_t core_pixels[144][160];
+static uint8_t sram_data[GB_SAVE_SIZE_MAX];
+static uint8_t* rom_data = NULL;
 static size_t rom_size = 0;
 static bool running = true;
 static int scale = 2;
@@ -52,64 +44,8 @@ static SDL_Renderer* renderer = NULL;
 static SDL_Texture* texture = NULL;
 static SDL_AudioDeviceID audio_device = 0;
 static SDL_Rect rect = {0};
+static SDL_PixelFormat* pixel_format = NULL;
 
-#ifdef GB_GAMESHARK
-    static struct GameShark gameshark = {0};
-#endif
-#ifdef GB_CODEBREAKER
-    static struct CodeBreaker codebreaker = {0};
-#endif
-#ifdef GB_GAMEGENIE
-    static struct GameGenie gamegenie = {0};
-#endif
-
-
-uint8_t core_wrapper_on_read(void* user, uint16_t addr)
-{
-    return gb_read((struct GB_Core*)user, addr);
-}
-
-void core_wrapper_on_write(void* user, uint16_t addr, uint8_t value)
-{
-    gb_write((struct GB_Core*)user, addr, value);
-}
-
-uint8_t core_wrapper_on_get_ram_bank(void* user)
-{
-    return gb_get_ram_bank((struct GB_Core*)user);
-}
-
-uint8_t core_wrapper_on_get_wram_bank(void* user)
-{
-    return gb_get_wram_bank((struct GB_Core*)user);
-}
-
-void core_wrapper_on_set_ram_bank(void* user, uint8_t bank)
-{
-    gb_set_ram_bank((struct GB_Core*)user, bank);
-}
-
-void core_wrapper_on_set_wram_bank(void* user, uint8_t bank)
-{
-    gb_set_wram_bank((struct GB_Core*)user, bank);
-}
-
-void apply_cheats_at_vblank()
-{
-    #ifdef GB_GAMESHARK
-        gameshark_on_vblank(&gameshark, &gameboy,
-            core_wrapper_on_write,
-            core_wrapper_on_set_ram_bank,
-            core_wrapper_on_set_wram_bank
-        );
-    #endif
-
-    #ifdef GB_CODEBREAKER
-        codebreaker_on_vblank(&codebreaker, &gameboy,
-            core_wrapper_on_write
-        );
-    #endif
-}
 
 static void run()
 {
@@ -197,16 +133,6 @@ static void toggle_fullscreen()
     }
 }
 
-static void on_step_mode_set()
-{
-    // SDL_PauseAudioDevice(audio_device, 1);
-}
-
-static void on_run_mode_set()
-{
-    // SDL_PauseAudioDevice(audio_device, 0);
-}
-
 static void on_key_event(const SDL_KeyboardEvent* e)
 {
     const bool down = e->type == SDL_KEYDOWN;
@@ -248,12 +174,10 @@ static void on_key_event(const SDL_KeyboardEvent* e)
             // break into step mode
             case SDL_SCANCODE_B:
                 run_mode = RunMode_STEP;
-                on_step_mode_set();
                 break;
 
             case SDL_SCANCODE_R:
                 run_mode = RunMode_NORMAL;
-                on_run_mode_set();
                 break;
 
             case SDL_SCANCODE_S:
@@ -295,48 +219,9 @@ static void on_key_event(const SDL_KeyboardEvent* e)
 
 static void on_window_event(const SDL_WindowEvent* e) {
     switch (e->event) {
-        case SDL_WINDOWEVENT_SHOWN:
-        case SDL_WINDOWEVENT_EXPOSED:
-        case SDL_WINDOWEVENT_RESTORED:
-            break;
-
-        case SDL_WINDOWEVENT_MINIMIZED:
-        case SDL_WINDOWEVENT_HIDDEN:
-            break;
-
-        case SDL_WINDOWEVENT_MOVED:
-            break;
-
-        case SDL_WINDOWEVENT_RESIZED:
         case SDL_WINDOWEVENT_SIZE_CHANGED:
             setup_rect(e->data1, e->data2);
             break;
-
-        case SDL_WINDOWEVENT_MAXIMIZED:
-            break;
-
-        case SDL_WINDOWEVENT_ENTER:
-            break;
-
-        case SDL_WINDOWEVENT_LEAVE:
-            break;
-
-        case SDL_WINDOWEVENT_FOCUS_GAINED:
-            break;
-
-        case SDL_WINDOWEVENT_FOCUS_LOST:
-            break;
-
-        case SDL_WINDOWEVENT_CLOSE:
-            break;
-
-#if SDL_VERSION_ATLEAST(2, 0, 5)
-        case SDL_WINDOWEVENT_TAKE_FOCUS:
-            break;
-
-        case SDL_WINDOWEVENT_HIT_TEST:
-            break;
-#endif // SDL_VERSION_ATLEAST(2, 0, 5)
     }
 }
 
@@ -445,11 +330,40 @@ static void core_on_apu(void* user, struct GB_ApuCallbackData* data)
     }
 }
 
-static void core_on_vblank(void* user)
+static uint32_t core_on_colour(void* user, enum GB_ColourCallbackType type, uint8_t r, uint8_t g, uint8_t b)
 {
     (void)user;
 
-    apply_cheats_at_vblank();
+    // SOURCE: https://near.sh/articles/video/color-emulation
+
+    uint32_t R = 0, G = 0, B = 0;
+
+    switch (type)
+    {
+        case GB_ColourCallbackType_DMG:
+            R = r << 3;
+            G = g << 3;
+            B = b << 3;
+            break;
+
+        case GB_ColourCallbackType_GBC:
+            #define min(a, b) a < b ? a : b
+            R = (r * 26 + g *  4 + b *  2);
+            G = (         g * 24 + b *  8);
+            B = (r *  6 + g *  4 + b * 22);
+            R = min(960, R) >> 2;
+            G = min(960, G) >> 2;
+            B = min(960, B) >> 2;
+            #undef min
+            break;
+    }
+
+    return SDL_MapRGB(pixel_format, R, G, B);
+}
+
+static void core_on_vblank(void* user)
+{
+    (void)user;
 
     ++frameskip_counter;
 
@@ -474,18 +388,7 @@ static void render()
 
 static void cleanup()
 {
-    #ifdef GB_GAMESHARK
-        gameshark_exit(&gameshark);
-    #endif
-
-    #ifdef GB_CODEBREAKER
-        codebreaker_exit(&codebreaker);
-    #endif
-
-    #ifdef GB_GAMEGENIE
-        gamegenie_exit(&gamegenie);
-    #endif
-
+    if (pixel_format)   { SDL_free(pixel_format); }
     if (audio_device)   { SDL_CloseAudioDevice(audio_device); }
     if (rom_data)       { SDL_free(rom_data); }
     if (texture)        { SDL_DestroyTexture(texture); }
@@ -502,41 +405,28 @@ int main(int argc, char** argv)
         goto fail;
     }
 
-    if (!GB_init(&gameboy))
-    {
-        goto fail;
-    }
-
-    GB_set_apu_callback(&gameboy, core_on_apu, GB_AUDIO_FREQ);
-    GB_set_vblank_callback(&gameboy, core_on_vblank);
-
-    rom_data = SDL_LoadFile(argv[1], &rom_size);
-
-    if (!rom_data)
-    {
-        goto fail;
-    }
-
-    if (!GB_loadrom(&gameboy, rom_data, rom_size))
-    {
-        goto fail;
-    }
-
-    struct GB_CartName rom_name = {0};
-
-    GB_get_rom_name(&gameboy, &rom_name);
-
     if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO))
     {
         goto fail;
     }
 
-    window = SDL_CreateWindow(rom_name.name, SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, WIDTH * scale, HEIGHT * scale, SDL_WINDOW_ALLOW_HIGHDPI);
+    window = SDL_CreateWindow("TotalGB", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, WIDTH * scale, HEIGHT * scale, SDL_WINDOW_ALLOW_HIGHDPI | SDL_WINDOW_RESIZABLE);
 
     if (!window)
     {
         goto fail;
     }
+
+    // this doesn't seem to work on chromebook...
+    SDL_SetWindowMinimumSize(window, WIDTH, HEIGHT);
+
+    // save the window pixel format, we will use this to create texure
+    // with the native window format so that sdl does not have to do
+    // any converting behind the scenes.
+    // also, this format will be used for setting the dmg palette as well
+    // as the gbc colours.
+    const uint32_t pixel_format_enum = SDL_GetWindowPixelFormat(window);
+    pixel_format = SDL_AllocFormat(pixel_format_enum);
 
     renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED);
 
@@ -545,7 +435,7 @@ int main(int argc, char** argv)
         goto fail;
     }
 
-    texture = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_BGR555, SDL_TEXTUREACCESS_STREAMING, WIDTH, HEIGHT);
+    texture = SDL_CreateTexture(renderer, pixel_format_enum, SDL_TEXTUREACCESS_STREAMING, WIDTH, HEIGHT);
 
     if (!texture)
     {
@@ -554,7 +444,8 @@ int main(int argc, char** argv)
 
     setup_rect(WIDTH * scale, HEIGHT * scale);
 
-    const SDL_AudioSpec wanted = {
+    const SDL_AudioSpec wanted =
+    {
         .freq = SDL_AUDIO_FREQ,
         .format = AUDIO_S8,
         .channels = 2,
@@ -568,35 +459,48 @@ int main(int argc, char** argv)
 
     SDL_AudioSpec aspec_got = {0};
 
-    audio_device = SDL_OpenAudioDevice(NULL, 0, &wanted, &aspec_got, /*SDL_AUDIO_ALLOW_ANY_CHANGE*/0);
+    audio_device = SDL_OpenAudioDevice(NULL, 0, &wanted, &aspec_got, 0);
 
     if (audio_device == 0)
     {
         goto fail;
     }
 
-    printf("SDL_AUDIO_SPEC\n");
-    printf("\tfreq: %u\n", aspec_got.freq);
-    printf("\tformat: %u\n", aspec_got.format);
-    printf("\tchannels: %u\n", aspec_got.channels);
-    printf("\tsamples: %u\n", aspec_got.samples);
-    printf("\tsize: %u\n", aspec_got.size);
-
     SDL_PauseAudioDevice(audio_device, 0);
 
-    GB_set_pixels(&gameboy, core_pixels, GB_SCREEN_WIDTH);
+    if (!GB_init(&gameboy))
+    {
+        goto fail;
+    }
 
-    #ifdef GB_GAMESHARK
-        gameshark_init(&gameshark);
-    #endif
+    GB_set_apu_callback(&gameboy, core_on_apu, GB_AUDIO_FREQ);
+    GB_set_vblank_callback(&gameboy, core_on_vblank);
+    GB_set_colour_callback(&gameboy, core_on_colour);
+    GB_set_pixels(&gameboy, core_pixels, GB_SCREEN_WIDTH, 32);
 
-    #ifdef GB_CODEBREAKER
-        codebreaker_init(&codebreaker);
-    #endif
+    rom_data = (uint8_t*)SDL_LoadFile(argv[1], &rom_size);
 
-    #ifdef GB_GAMEGENIE
-        gamegenie_init(&gamegenie);
-    #endif
+    if (!rom_data)
+    {
+        goto fail;
+    }
+
+    struct GB_RomInfo rom_info = {0};
+
+    if (!GB_get_rom_info(rom_data, rom_size, &rom_info))
+    {
+        goto fail;
+    }
+
+    if (rom_info.ram_size > 0)
+    {
+        GB_set_sram(&gameboy, sram_data, sizeof(sram_data));
+    }
+
+    if (!GB_loadrom(&gameboy, rom_data, rom_size))
+    {
+        goto fail;
+    }
 
     while (running)
     {

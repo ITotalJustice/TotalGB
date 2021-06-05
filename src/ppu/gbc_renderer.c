@@ -11,7 +11,7 @@
 // the bg always has priority.
 // if it does, then it checks this buffer for a 1
 // at the same xpos, if its 1, rendering that pixel is skipped.
-struct PrioBuf
+struct GbcPrioBuf
 {
     // 1 = prio, 0 = no prio
     bool prio[GB_SCREEN_WIDTH];
@@ -230,7 +230,7 @@ static struct GBC_BgAttributes gbc_fetch_bg_attr(const struct GB_Core* gb, uint1
 }
 
 static void gbc_render_scanline_bg(struct GB_Core* gb,
-    struct PrioBuf* prio_buffer
+    struct GbcPrioBuf* prio_buffer
 ) {
     const uint8_t scanline = IO_LY;
     const uint8_t base_tile_x = IO_SCX >> 3;
@@ -242,9 +242,6 @@ static void gbc_render_scanline_bg(struct GB_Core* gb,
     // array maps
     const uint8_t* vram_map = &gb->ppu.vram[0][(GB_get_bg_map_select(gb) + (tile_y << 5)) & 0x1FFF];
     const struct GBC_BgAttributes attr_map = gbc_fetch_bg_attr(gb, GB_get_bg_map_select(gb), tile_y);
-
-    struct GB_Pixels pixels = get_pixels_at_scanline(gb, scanline);
-
 
     for (uint8_t tile_x = 0; tile_x <= 20; ++tile_x)
     {
@@ -268,9 +265,9 @@ static void gbc_render_scanline_bg(struct GB_Core* gb,
 
         for (uint8_t x = 0; x < 8; ++x)
         {
-            const uint8_t pixel_x = ((tile_x << 3) + x - sub_tile_x) & 0xFF;
+            const uint8_t x_index = ((tile_x << 3) + x - sub_tile_x) & 0xFF;
 
-            if (pixel_x >= GB_SCREEN_WIDTH)
+            if (x_index >= GB_SCREEN_WIDTH)
             {
                 continue;
             }
@@ -278,16 +275,18 @@ static void gbc_render_scanline_bg(struct GB_Core* gb,
             const uint8_t colour_id = ((!!(byte_b & bit[x])) << 1) | (!!(byte_a & bit[x]));
 
             // set priority
-            prio_buffer->prio[pixel_x] = attr.prio;
-            prio_buffer->colour_id[pixel_x] = colour_id;
+            prio_buffer->prio[x_index] = attr.prio;
+            prio_buffer->colour_id[x_index] = colour_id;
 
-            pixels.p[pixel_x] = gb->ppu.bg_colours[attr.pal][colour_id];
+            const uint32_t colour = gb->ppu.bg_colours[attr.pal][colour_id];
+
+            ppu_write_pixel(gb, colour, x_index, scanline);
         }
     }
 }
 
 static void gbc_render_scanline_win(struct GB_Core* gb,
-    struct PrioBuf* prio_buffer
+    struct GbcPrioBuf* prio_buffer
 )
 {
     const uint8_t scanline = IO_LY;
@@ -302,12 +301,8 @@ static void gbc_render_scanline_win(struct GB_Core* gb,
     const uint8_t *vram_map = &gb->ppu.vram[0][(GB_get_win_map_select(gb) + (tile_y << 5)) & 0x1FFF];
     const struct GBC_BgAttributes attr_map = gbc_fetch_bg_attr(gb, GB_get_win_map_select(gb), tile_y);
 
-    struct GB_Pixels pixels = get_pixels_at_scanline(gb, scanline);
-
-
     for (uint8_t tile_x = 0; tile_x <= base_tile_x; ++tile_x)
     {
-
         // fetch the tile number and attributes
         const uint8_t tile_num = vram_map[tile_x];
         const struct GBC_BgAttribute attr = attr_map.a[tile_x];
@@ -324,9 +319,9 @@ static void gbc_render_scanline_win(struct GB_Core* gb,
 
         for (uint8_t x = 0; x < 8; ++x)
         {
-            const uint8_t pixel_x = ((tile_x << 3) + x + sub_tile_x) & 0xFF;
+            const uint8_t x_index = ((tile_x << 3) + x + sub_tile_x) & 0xFF;
 
-            if (pixel_x >= GB_SCREEN_WIDTH)
+            if (x_index >= GB_SCREEN_WIDTH)
             {
                 continue;
             }
@@ -336,10 +331,12 @@ static void gbc_render_scanline_win(struct GB_Core* gb,
             const uint8_t colour_id = ((!!(byte_b & bit[x])) << 1) | (!!(byte_a & bit[x]));
 
             // set priority
-            prio_buffer->prio[pixel_x] = attr.prio;
-            prio_buffer->colour_id[pixel_x] = colour_id;
+            prio_buffer->prio[x_index] = attr.prio;
+            prio_buffer->colour_id[x_index] = colour_id;
 
-            pixels.p[pixel_x] = gb->ppu.bg_colours[attr.pal][colour_id];
+            const uint32_t colour = gb->ppu.bg_colours[attr.pal][colour_id];
+
+            ppu_write_pixel(gb, colour, x_index, scanline);
         }
     }
 
@@ -397,16 +394,13 @@ static struct GBC_Sprites gbc_sprite_fetch(const struct GB_Core* gb)
 }
 
 static void gbc_render_scanline_obj(struct GB_Core* gb,
-    const struct PrioBuf* prio_buffer
+    const struct GbcPrioBuf* prio_buffer
 ) {
     const uint8_t scanline = IO_LY;
     const uint8_t sprite_size = GB_get_sprite_size(gb);
 
     // check if the bg always has prio over obj
     const bool bg_prio = (IO_LCDC & 0x1) > 0;
-
-    //
-    struct GB_Pixels pixels = get_pixels_at_scanline(gb, scanline);
 
     const struct GBC_Sprites sprites = gbc_sprite_fetch(gb);
 
@@ -487,13 +481,14 @@ static void gbc_render_scanline_obj(struct GB_Core* gb,
             // oam entries cannot overwrite this pixel!
             oam_priority[x_index] = true;
 
-            // write the pixel (finally!)
-            pixels.p[x_index] = gb->ppu.obj_colours[sprite->a.pal][colour_id];
+            const uint32_t colour = gb->ppu.obj_colours[sprite->a.pal][colour_id];
+
+            ppu_write_pixel(gb, colour, x_index, scanline);
         }
     }
 }
 
-static inline void gbc_update_colours(
+static inline void gbc_update_colours(struct GB_Core* gb,
     bool dirty[8], uint32_t map[8][4], const uint8_t palette_mem[64]
 ) {
     for (uint8_t palette = 0; palette < 8; ++palette)
@@ -504,19 +499,24 @@ static inline void gbc_update_colours(
 
             for (uint8_t colours = 0, pos = 0; colours < 4; colours++, pos += 2)
             {
-
                 const uint8_t col_a = palette_mem[(palette << 3) + pos];
                 const uint8_t col_b = palette_mem[(palette << 3) + pos + 1];
+             
                 const uint16_t pair = (col_b << 8) | col_a;
 
-                #if 1
-                map[palette][colours] = pair;
-                #else
-                // needed for when using
-                // GL_BGBA AND GL_UNSIGNED_SHORT_5_5_5_1,
-                // this also probably depends on the sys endian
-                map[palette][colours] = (pair << 1) | 1;
-                #endif
+                // check if the user has set a callback to set their own colour
+                if (gb->callback.colour)
+                {
+                    const uint8_t r = (pair >> 0x0) & 0x1F; 
+                    const uint8_t g = (pair >> 0x5) & 0x1F; 
+                    const uint8_t b = (pair >> 0xA) & 0x1F; 
+
+                    map[palette][colours] = gb->callback.colour(gb->callback.user_data, GB_ColourCallbackType_GBC, r, g, b);
+                }
+                else
+                {
+                    map[palette][colours] = pair;
+                }
             }
         }
     }
@@ -525,12 +525,12 @@ static inline void gbc_update_colours(
 
 void GBC_render_scanline(struct GB_Core* gb)
 {
-    struct PrioBuf prio_buffer = {0};
+    struct GbcPrioBuf prio_buffer = {0};
 
     // update the bg colour palettes
-    gbc_update_colours(gb->ppu.dirty_bg, gb->ppu.bg_colours, gb->ppu.bg_palette);
+    gbc_update_colours(gb, gb->ppu.dirty_bg, gb->ppu.bg_colours, gb->ppu.bg_palette);
     // update the obj colour palettes
-    gbc_update_colours(gb->ppu.dirty_obj, gb->ppu.obj_colours, gb->ppu.obj_palette);
+    gbc_update_colours(gb, gb->ppu.dirty_obj, gb->ppu.obj_colours, gb->ppu.obj_palette);
 
     if (LIKELY(GB_is_render_layer_enabled(gb, GB_RENDER_LAYER_CONFIG_BG)))
     {

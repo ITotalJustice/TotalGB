@@ -88,32 +88,16 @@ enum GB_ColourMode
 
 enum GB_SaveSizes
 {
-    GB_SAVE_SIZE_NONE   = 0,
-    GB_SAVE_SIZE_1      = 0x800,
-    GB_SAVE_SIZE_2      = 0x2000,
-    GB_SAVE_SIZE_3      = 0x8000,
+    GB_SAVE_SIZE_NONE   = 0x00000,
+    GB_SAVE_SIZE_1      = 0x00800,
+    GB_SAVE_SIZE_2      = 0x02000,
+    GB_SAVE_SIZE_3      = 0x08000,
     GB_SAVE_SIZE_4      = 0x20000,
     GB_SAVE_SIZE_5      = 0x10000,
 
-#ifdef GB_MAX_SRAM_SIZE
-    #if GB_MAX_SRAM_SIZE == 0
-        GB_SAVE_SIZE_MAX = 1, // this is so that the ram arrays don't error!
-    #elif GB_MAX_SRAM_SIZE == 1
-        GB_SAVE_SIZE_MAX = GB_SAVE_SIZE_1
-    #elif GB_MAX_SRAM_SIZE == 2
-        GB_SAVE_SIZE_MAX = GB_SAVE_SIZE_2
-    #elif GB_MAX_SRAM_SIZE == 3
-        GB_SAVE_SIZE_MAX = GB_SAVE_SIZE_3
-    #elif GB_MAX_SRAM_SIZE == 4
-        GB_SAVE_SIZE_MAX = GB_SAVE_SIZE_4
-    #elif GB_MAX_SRAM_SIZE == 5
-        GB_SAVE_SIZE_MAX = GB_SAVE_SIZE_5
-    #else
-        #error "Invalid SRAM size set!, Valid range is 0-5"
-    #endif
-#else
-    GB_SAVE_SIZE_MAX = GB_SAVE_SIZE_5,
-#endif
+    GB_SAVE_SIZE_MBC2   = 0x00200,
+
+    GB_SAVE_SIZE_MAX = GB_SAVE_SIZE_4,
 };
 
 enum GB_MbcType
@@ -200,9 +184,9 @@ enum GB_Button
 // is valid, but ONLY suppports GBC type, but DMG was forced...
 enum GB_SystemType
 {
-    GB_SYSTEM_TYPE_DMG,
-    GB_SYSTEM_TYPE_SGB,
-    GB_SYSTEM_TYPE_GBC
+    GB_SYSTEM_TYPE_DMG = 1 << 0,
+    GB_SYSTEM_TYPE_SGB = 1 << 1,
+    GB_SYSTEM_TYPE_GBC = 1 << 2,
 };
 
 // this setting only applies when the game is loaded as DMG or SGB game.
@@ -219,6 +203,8 @@ enum GB_PaletteConfig
     GB_PALETTE_CONFIG_USE_BUILTIN   = 1 << 1,
 };
 
+// todo: remove these configs as they are poorly thoughtout
+// and badly implemented!
 enum GB_SystemTypeConfig
 {
     GB_SYSTEM_TYPE_CONFIG_NONE = 0,
@@ -261,51 +247,21 @@ struct GB_Config
     enum GB_RtcUpdateConfig rtc_update_config;
 };
 
-enum GB_ErrorType
-{
-    GB_ERROR_TYPE_UNKNOWN_INSTRUCTION,
-    GB_ERROR_TYPE_ERROR,
-};
-
-struct GB_UnkownInstructionTypeData
-{
-    uint8_t opcode;
-    bool cb_prefix;
-};
-
-enum GB_ErrorDataType
-{
-    GB_ERROR_DATA_TYPE_UNK,
-    GB_ERROR_DATA_TYPE_NULL_PARAM,
-    GB_ERROR_DATA_TYPE_ROM,
-    GB_ERROR_DATA_TYPE_SRAM,
-    GB_ERROR_DATA_TYPE_SAVE,
-};
-
-struct GB_ErrorTypeData
-{
-    enum GB_ErrorDataType type;
-    char message[0x200]; // NULL terminated string
-};
-
-struct GB_ErrorData
-{
-    enum GB_ErrorType type;
-    union
-    {
-        struct GB_UnkownInstructionTypeData unk_instruction;
-        struct GB_ErrorTypeData error;
-    } data;
-};
-
 // user-set callbacks
 typedef void (*GB_apu_callback_t)(void* user, struct GB_ApuCallbackData* data);
-typedef void (*GB_error_callback_t)(void* user, struct GB_ErrorData* e);
 typedef void (*GB_vblank_callback_t)(void* user);
 typedef void (*GB_hblank_callback_t)(void* user);
 typedef void (*GB_dma_callback_t)(void* user);
 typedef void (*GB_halt_callback_t)(void* user);
 typedef void (*GB_stop_callback_t)(void* user);
+
+enum GB_ColourCallbackType
+{
+    GB_ColourCallbackType_DMG,
+    GB_ColourCallbackType_GBC,
+};
+
+typedef uint32_t (*GB_colour_callback_t)(void* user, enum GB_ColourCallbackType type, uint8_t r, uint8_t g, uint8_t b);
 
 // read / write handles to mitm memory access
 // this is useful for adding cheat devices as well as
@@ -321,12 +277,13 @@ typedef bool (*GB_read_callback_t)(void* user, uint16_t addr, uint8_t* v);
 typedef void (*GB_write_callback_t)(void* user, uint16_t addr, uint8_t* v);
 
 
+// todo: have 1 callback and have a enum for each "event".
+// basically, do an SDL2 event
 struct GB_UserCallbacks
 {
     void* user_data;
 
     GB_apu_callback_t       apu;
-    GB_error_callback_t     error;
     GB_vblank_callback_t    vblank;
     GB_hblank_callback_t    hblank;
     GB_dma_callback_t       dma;
@@ -334,6 +291,7 @@ struct GB_UserCallbacks
     GB_stop_callback_t      stop;
     GB_read_callback_t      read;
     GB_write_callback_t     write;
+    GB_colour_callback_t    colour;
     
     struct
     {
@@ -387,9 +345,9 @@ struct GB_CartHeader
     uint16_t global_checksum;
 };
 
+// todo:
 struct GB_RomInfo
 {
-    char name[0x10]; /* from cart_header */
     uint32_t rom_size;
     uint32_t ram_size;
     uint8_t mbc_flags; /* flags ored together */
@@ -473,10 +431,12 @@ struct MBC_RamBankInfo
 struct GB_Cart
 {
     const uint8_t* rom;
+    uint8_t* ram;
+    size_t max_rom_size; // set by the user
+    size_t max_ram_size; // set by the user
 
-    uint8_t ram[GB_SAVE_SIZE_MAX];
-    uint32_t rom_size;
-    uint32_t ram_size;
+    uint32_t rom_size; // set by the header
+    uint32_t ram_size; // set by the header
 
     uint16_t rom_bank_max;
     uint16_t rom_bank;
@@ -640,7 +600,8 @@ struct GB_Core
     struct GB_Config config;
 
     void* pixels;
-    uint32_t pitch;
+    uint32_t stride;
+    uint8_t bpp;
 
     // todo: does this need it's own user data?
     GB_serial_transfer_t link_cable;

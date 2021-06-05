@@ -876,13 +876,15 @@ static inline void STOP(struct GB_Core* gb) {
 }
 
 static void UNK_OP(struct GB_Core* gb, uint8_t opcode, bool cb_prefix) {
-    if (gb->callback.error != NULL) {
-        struct GB_ErrorData data = {0};
-        data.type = GB_ERROR_TYPE_UNKNOWN_INSTRUCTION;
-        data.data.unk_instruction.cb_prefix = cb_prefix;
-        data.data.unk_instruction.opcode = opcode;
-
-        gb->callback.error(gb->callback.user_data, &data);
+    (void)gb; (void)opcode; (void)cb_prefix;
+    
+    if (cb_prefix)
+    {
+        GB_log("unk instruction: 0xCB%02X\n", opcode);
+    }
+    else
+    {
+        GB_log("unk instruction: 0x%02X\n", opcode);
     }
 }
 
