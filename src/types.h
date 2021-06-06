@@ -398,6 +398,7 @@ struct GB_Cpu
 
     bool ime;
     bool halt;
+    bool halt_bug;
     bool double_speed;
 };
 
@@ -434,6 +435,8 @@ struct GB_Ppu
 
     bool dirty_bg[8]; // only update the colours if the palette changes values.
     bool dirty_obj[8];
+
+    bool stat_line;
 };
 
 // todo: fix bad name

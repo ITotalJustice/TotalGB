@@ -830,12 +830,26 @@ static inline uint16_t GB_POP(struct GB_Core* gb)
 #define SCF() do { SET_FLAGS_CHN(true, false, false); } while (0)
 #define CCF() do { SET_FLAGS_CHN(FLAG_C ^ 1, false, false); } while(0)
 
-// TODO: add halt bug, thunderbirds relies on it...
 static inline void HALT(struct GB_Core* gb) {
-    gb->cpu.halt = true;
+    if (gb->cpu.ime)
+    {
+        // normal halt
+        gb->cpu.halt = true;
+    }
+    else
+    {
+        if (IO_IF & IO_IE & 0x1F)
+        {
+            gb->cpu.halt = true;
+        }
+        else
+        {
+            gb->cpu.halt_bug = true;
+        }
+    }
 }
 
-static inline void STOP(struct GB_Core* gb) {
+static void STOP(struct GB_Core* gb) {
     if (GB_is_system_gbc(gb)) {
         // only set if speed-switch is requested
         if ((IO_KEY1 & 0x1) == 1) {
@@ -894,15 +908,22 @@ static inline void GB_interrupt_handler(struct GB_Core* gb) {
     }
 
     const uint8_t live_interrupts = IO_IF & IO_IE & 0x1F;
+    
     if (!live_interrupts) {
         return;
     }
 
-    gb->cpu.halt = false;
+    // halt is always diabled at this point, this takes 4 cycles.
+    if (gb->cpu.halt)
+    {
+        gb->cpu.halt = false;
+        gb->cpu.cycles += 4;
+    }
 
     if (!gb->cpu.ime) {
         return;
     }
+
     gb->cpu.ime = false;
 
     if (live_interrupts & GB_INTERRUPT_VBLANK) {
@@ -942,7 +963,18 @@ void GB_cpu_enable_log(const bool enable) {
 }
 
 static inline void GB_execute(struct GB_Core* gb) {
-    const uint8_t opcode = read8(REG_PC++);
+    const uint8_t opcode = read8(REG_PC);
+
+    if (UNLIKELY(gb->cpu.halt_bug))
+    {
+        GB_log("halt bug!\n");
+        assert(0 && "HALT BUG");
+        gb->cpu.halt_bug = false;
+    }
+    else
+    {
+        REG_PC++;
+    }
 
     #if GB_DEBUG
         if (CPU_LOG) {
@@ -1286,7 +1318,6 @@ uint16_t GB_cpu_run(struct GB_Core* gb, uint16_t cycles)
     GB_interrupt_handler(gb);
 
     // if halted, return early
-    // todo: need accurate cycles elapsed.
     if (UNLIKELY(gb->cpu.halt))
     {
         return 4;

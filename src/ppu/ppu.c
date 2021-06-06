@@ -89,8 +89,6 @@ uint8_t GB_get_sprite_size(const struct GB_Core* gb)
     return ((IO_LCDC & 0x04) ? 16 : 8);
 }
 
-static bool stat_line = false;
-
 static void GB_raise_if_enabled(struct GB_Core* gb, const uint8_t stat_mode)
 {
     // see if the interrupt for this mode is enabled
@@ -98,18 +96,18 @@ static void GB_raise_if_enabled(struct GB_Core* gb, const uint8_t stat_mode)
     {
         // the interrupt is only fired if the line is low.
         // SEE: https://github.com/ITotalJustice/TotalGB/issues/50
-        if (stat_line == false)
+        if (gb->ppu.stat_line == false)
         {
             GB_enable_interrupt(gb, GB_INTERRUPT_LCD_STAT);
         }
 
         // line goes high (or remains high) after.
-        stat_line = true;
+        gb->ppu.stat_line = true;
     }
     else
     {
         // line goes low
-        stat_line = false;
+        gb->ppu.stat_line = false;
     }
 }
 
@@ -235,7 +233,7 @@ void GB_on_lcdc_write(struct GB_Core* gb, const uint8_t value)
 
         IO_LY = 0;
         IO_STAT &= ~(0x3);
-        stat_line = false;
+        gb->ppu.stat_line = false;
         GB_log("disabling ppu...\n");
     }
 
