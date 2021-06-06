@@ -5,6 +5,7 @@
 #include <assert.h>
 #include <string.h>
 
+#if GBC_ENABLE
 
 // store a 1 when bg / win writes to the screen
 // this is used by obj rendering to check firstly if
@@ -511,7 +512,7 @@ static inline void gbc_update_colours(struct GB_Core* gb,
                     const uint8_t g = (pair >> 0x5) & 0x1F; 
                     const uint8_t b = (pair >> 0xA) & 0x1F; 
 
-                    map[palette][colours] = gb->callback.colour(gb->callback.user_data, GB_ColourCallbackType_GBC, r, g, b);
+                    map[palette][colours] = gb->callback.colour(gb->callback.user_colour, GB_ColourCallbackType_GBC, r, g, b);
                 }
                 else
                 {
@@ -554,3 +555,26 @@ void GBC_render_scanline(struct GB_Core* gb)
         }
     }
 }
+
+#else
+bool GB_is_hdma_active(const struct GB_Core* gb)
+{
+    (void)gb;
+    return false;
+}
+
+void perform_hdma(struct GB_Core* gb)
+{
+    (void)gb;
+}
+
+void GBC_render_scanline(struct GB_Core* gb)
+{
+    (void)gb;
+
+    assert(0 && "GBC was disabled at buildtime, yet somehow we are rendering...");
+
+    return;
+}
+
+#endif // #if GBC_ENABLE

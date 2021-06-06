@@ -4,6 +4,9 @@
 #include <stdbool.h>
 #include <stdint.h>
 #include <gb.h>
+#if GB_ZROM
+    #include <zrom.h>
+#endif
 #include <SDL.h>
 
 
@@ -33,7 +36,7 @@ static uint8_t sram_data[GB_SAVE_SIZE_MAX];
 static uint8_t* rom_data = NULL;
 static size_t rom_size = 0;
 static bool running = true;
-static int scale = 2;
+static int scale = 3;
 static int speed = 1;
 static int frameskip_counter = 0;
 static enum RunMode run_mode = RunMode_NORMAL;
@@ -388,12 +391,12 @@ static void render()
 
 static void cleanup()
 {
-    if (pixel_format)   { SDL_free(pixel_format); }
+    // if (pixel_format)   { SDL_free(pixel_format); }
     if (audio_device)   { SDL_CloseAudioDevice(audio_device); }
-    if (rom_data)       { SDL_free(rom_data); }
-    if (texture)        { SDL_DestroyTexture(texture); }
-    if (renderer)       { SDL_DestroyRenderer(renderer); }
-    if (window)         { SDL_DestroyWindow(window); }
+    // if (rom_data)       { SDL_free(rom_data); }
+    // if (texture)        { SDL_DestroyTexture(texture); }
+    // if (renderer)       { SDL_DestroyRenderer(renderer); }
+    // if (window)         { SDL_DestroyWindow(window); }
 
     SDL_Quit();
 }
@@ -473,9 +476,9 @@ int main(int argc, char** argv)
         goto fail;
     }
 
-    GB_set_apu_callback(&gameboy, core_on_apu, GB_AUDIO_FREQ);
-    GB_set_vblank_callback(&gameboy, core_on_vblank);
-    GB_set_colour_callback(&gameboy, core_on_colour);
+    GB_set_apu_callback(&gameboy, core_on_apu, NULL, GB_AUDIO_FREQ);
+    GB_set_vblank_callback(&gameboy, core_on_vblank, NULL);
+    GB_set_colour_callback(&gameboy, core_on_colour, NULL);
     GB_set_pixels(&gameboy, core_pixels, GB_SCREEN_WIDTH, 32);
 
     rom_data = (uint8_t*)SDL_LoadFile(argv[1], &rom_size);
@@ -497,10 +500,19 @@ int main(int argc, char** argv)
         GB_set_sram(&gameboy, sram_data, sizeof(sram_data));
     }
 
-    if (!GB_loadrom(&gameboy, rom_data, rom_size))
-    {
-        goto fail;
-    }
+    #if GB_ZROM
+        struct Zrom zrom = {0};
+        zrom_init(&zrom, &gameboy);
+        if (!zrom_loadrom_compressed(&zrom, rom_data, rom_size))
+        {
+            goto fail;
+        }
+    #else
+        if (!GB_loadrom(&gameboy, rom_data, rom_size))
+        {
+            goto fail;
+        }
+    #endif
 
     while (running)
     {
@@ -514,7 +526,7 @@ int main(int argc, char** argv)
     return 0;
 
 fail:
-    SDL_LogError(SDL_LOG_CATEGORY_ERROR, "%s\n", SDL_GetError());
+    // SDL_LogError(SDL_LOG_CATEGORY_ERROR, "%s\n", SDL_GetError());
     cleanup();
 
     return -1;

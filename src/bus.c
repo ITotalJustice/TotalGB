@@ -6,6 +6,7 @@
 #include <assert.h>
 
 
+#if GBC_ENABLE
 static inline void GB_iowrite_gbc(struct GB_Core* gb, uint16_t addr, uint8_t value)
 {
     assert(GB_is_system_gbc(gb) == true);
@@ -85,6 +86,7 @@ static inline void GB_iowrite_gbc(struct GB_Core* gb, uint16_t addr, uint8_t val
             break;
     }
 }
+#endif // #if GBC_ENABLE
 
 static inline uint8_t GB_ioread(struct GB_Core* gb, uint16_t addr)
 {    
@@ -195,12 +197,14 @@ static inline void GB_iowrite(struct GB_Core* gb, uint16_t addr, uint8_t value)
         case 0x50: // unused (bootrom?)
             break;
 
+    #if GBC_ENABLE
         default:
             if (GB_is_system_gbc(gb))
             {
                 GB_iowrite_gbc(gb, addr, value);
             }
             break;
+    #endif // #if GBC_ENABLE
     }
 }
 
@@ -211,7 +215,7 @@ uint8_t GB_read8(struct GB_Core* gb, const uint16_t addr)
         {
             uint8_t r = 0;
 
-            if (UNLIKELY(gb->callback.read(gb->callback.user_data, addr, &r)))
+            if (UNLIKELY(gb->callback.read(gb->callback.user_read, addr, &r)))
             {
                 return r;
             }
@@ -245,7 +249,7 @@ void GB_write8(struct GB_Core* gb, uint16_t addr, uint8_t value)
     #if GB_DEBUG
         if (UNLIKELY(gb->callback.write != NULL))
         {
-            gb->callback.write(gb->callback.user_data, addr, &value);
+            gb->callback.write(gb->callback.user_write, addr, &value);
         }
     #endif
 

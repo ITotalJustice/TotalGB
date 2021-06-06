@@ -9,7 +9,7 @@
 #include <assert.h>
 
 
-enum { ROM_SIZE_MULT = 0x8000 };
+#define ROM_SIZE_MULT 0x8000
 
 
 bool GB_init(struct GB_Core* gb)
@@ -123,11 +123,6 @@ void GB_reset(struct GB_Core* gb)
     }
 }
 
-void gb_set_userdata(struct GB_Core* gb, void* user_data)
-{
-    gb->callback.user_data = user_data;
-}
-
 void GB_skip_next_frame(struct GB_Core* gb)
 {
     gb->skip_next_frame = true;
@@ -196,12 +191,12 @@ bool GB_get_rom_header(const struct GB_Core* gb, struct GB_CartHeader* header)
     return GB_get_rom_header_from_data(gb->cart.rom, header);
 }
 
-static struct GB_CartHeader* GB_get_rom_header_ptr_from_data(const uint8_t* data)
+static const struct GB_CartHeader* GB_get_rom_header_ptr_from_data(const uint8_t* data)
 {
     return (struct GB_CartHeader*)&data[GB_BOOTROM_SIZE];
 }
 
-struct GB_CartHeader* GB_get_rom_header_ptr(const struct GB_Core* gb)
+const struct GB_CartHeader* GB_get_rom_header_ptr(const struct GB_Core* gb)
 {
     return GB_get_rom_header_ptr_from_data(gb->cart.rom);
 }
@@ -332,7 +327,7 @@ static void on_set_internal_palette(struct GB_Core* gb, struct GB_PaletteEntry* 
             const uint8_t g = ((*palette[i][j]) >> 0x5) & 0x1F;
             const uint8_t b = ((*palette[i][j]) >> 0xA) & 0x1F;
 
-            *palette[i][j] = gb->callback.colour(gb->callback.user_data, GB_ColourCallbackType_DMG, r, g, b);
+            *palette[i][j] = gb->callback.colour(gb->callback.user_colour, GB_ColourCallbackType_DMG, r, g, b);
         }
     }
 }
@@ -447,7 +442,7 @@ bool GB_loadrom(struct GB_Core* gb, const uint8_t* data, size_t size)
 
     if (gb->cart.rom_size > size)
     {
-        return false;
+        // return false;
     }
 
     enum {
@@ -472,6 +467,11 @@ bool GB_loadrom(struct GB_Core* gb, const uint8_t* data, size_t size)
 
     if ((gbc_flag & GBC_ONLY) == GBC_ONLY)
     {
+        #if GBC_ENABLE
+            GB_log("[ERROR] game is gbc only but emu is built without gbc!\n");
+            return false;
+        #endif
+
         // check if the user wants to force gbc mode
         if (gb->config.system_type_config == GB_SYSTEM_TYPE_CONFIG_DMG)
         {
@@ -504,9 +504,12 @@ bool GB_loadrom(struct GB_Core* gb, const uint8_t* data, size_t size)
         }
         else
         {
-            GB_set_system_type(gb, GB_SYSTEM_TYPE_GBC);
-            // GB_log("rom supports GBC mode, however falling back to DMG mode...\n");
-            // GB_set_system_type(gb, GB_SYSTEM_TYPE_DMG);
+            #if GBC_ENABLE
+                GB_set_system_type(gb, GB_SYSTEM_TYPE_GBC);
+            #else
+                GB_log("rom supports GBC mode, however falling back to DMG mode...\n");
+                GB_set_system_type(gb, GB_SYSTEM_TYPE_DMG);
+            #endif
         }
     }
     else
@@ -776,51 +779,69 @@ void GB_set_apu_freq(struct GB_Core* gb, unsigned freq)
     }
 }
 
-void GB_set_apu_callback(struct GB_Core* gb, GB_apu_callback_t cb, unsigned freq)
+void GB_set_apu_callback(struct GB_Core* gb, GB_apu_callback_t cb, void* user, unsigned freq)
 {
     gb->callback.apu = cb;
+    gb->callback.user_apu = user;
+
     GB_set_apu_freq(gb, freq);
 }
 
-void GB_set_vblank_callback(struct GB_Core* gb, GB_vblank_callback_t cb)
+void GB_set_vblank_callback(struct GB_Core* gb, GB_vblank_callback_t cb, void* user)
 {
     gb->callback.vblank = cb;
+    gb->callback.user_vblank = user;
 }
 
-void GB_set_hblank_callback(struct GB_Core* gb, GB_hblank_callback_t cb)
+void GB_set_hblank_callback(struct GB_Core* gb, GB_hblank_callback_t cb, void* user)
 {
     gb->callback.hblank = cb;
+    gb->callback.user_hblank = user;
 }
 
-void GB_set_dma_callback(struct GB_Core* gb, GB_dma_callback_t cb)
+void GB_set_dma_callback(struct GB_Core* gb, GB_dma_callback_t cb, void* user)
 {
     gb->callback.dma = cb;
+    gb->callback.user_dma = user;
 }
 
-void GB_set_halt_callback(struct GB_Core* gb, GB_halt_callback_t cb)
+void GB_set_halt_callback(struct GB_Core* gb, GB_halt_callback_t cb, void* user)
 {
     gb->callback.halt = cb;
+    gb->callback.user_halt = user;
 }
 
-void GB_set_stop_callback(struct GB_Core* gb, GB_stop_callback_t cb)
+void GB_set_stop_callback(struct GB_Core* gb, GB_stop_callback_t cb, void* user)
 {
     gb->callback.stop = cb;
+    gb->callback.user_stop = user;
 }
 
-void GB_set_colour_callback(struct GB_Core* gb, GB_colour_callback_t cb)
+void GB_set_colour_callback(struct GB_Core* gb, GB_colour_callback_t cb, void* user)
 {
     gb->callback.colour = cb;
+    gb->callback.user_colour = user;
 }
 
-void GB_set_read_callback(struct GB_Core* gb, GB_read_callback_t cb)
+void GB_set_rom_bank_callback(struct GB_Core* gb, GB_rom_bank_callback_t cb, void* user)
+{
+    gb->callback.rom_bank = cb;
+    gb->callback.user_rom_bank = user;
+}
+
+#if GB_DEBUG
+void GB_set_read_callback(struct GB_Core* gb, GB_read_callback_t cb, void* user)
 {
     gb->callback.read = cb;
+    gb->callback.user_read = user;
 }
 
-void GB_set_write_callback(struct GB_Core* gb, GB_write_callback_t cb)
+void GB_set_write_callback(struct GB_Core* gb, GB_write_callback_t cb, void* user)
 {
     gb->callback.write = cb;
+    gb->callback.user_write = user;
 }
+#endif // #if GB_DEBUG
 
 uint8_t GB_read(struct GB_Core* gb, uint16_t addr)
 {

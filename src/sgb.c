@@ -5,7 +5,7 @@
 #include <string.h>
 #include <assert.h>
 
-
+#if SGB_ENABLE
 // SOURCE: https://gbdev.io/pandocs/#sgb-functions
 
 
@@ -104,15 +104,18 @@ enum MLT_PlayerCount {
 // going to dump all sgb stuff here for now until i've
 // fully impl the needed SGB commands.
 // then i'll restructure this and add it to the main Core struct.
-struct SGB_Stub {
-    struct {
+struct SGB_Stub
+{
+    struct
+    {
         // which controller num are we checking
         uint8_t index : 2;
         // how many controllers are we checking
         uint8_t count;
     } mlt;
 
-    struct {
+    struct
+    {
         enum SGB_ScreenMask mask;
     } mask_en;
 
@@ -129,12 +132,14 @@ struct SGB_Stub {
 static struct SGB_Tranfer transfer = {0};
 static struct SGB_Stub sgb_stub = {0};
 
-static void cmd_mlt_reg(struct GB_Core* gb) {
+static void cmd_mlt_reg(struct GB_Core* gb)
+{
     GB_UNUSED(gb);
     sgb_stub.mlt.count = transfer.packets[0].data[1] & 0x3;
 
     // i think we always reset the current index?
-    switch (sgb_stub.mlt.count) {
+    switch (sgb_stub.mlt.count)
+    {
         case MLT_1_PLAYERS:
             printf("[SGB] MLT_1_PLAYERS\n");
             break;
@@ -155,11 +160,13 @@ static void cmd_mlt_reg(struct GB_Core* gb) {
     sgb_stub.mlt.index = 0;
 }
 
-static void cmd_mask_en(struct GB_Core* gb) {
+static void cmd_mask_en(struct GB_Core* gb)
+{
     GB_UNUSED(gb);
     sgb_stub.mask_en.mask = transfer.packets[0].data[0] & 0x7;
 
-    switch (sgb_stub.mask_en.mask) {
+    switch (sgb_stub.mask_en.mask)
+    {
         case SCREEN_MASK_CANCEL:
             printf("[SGB] SCREEN_MASK_CANCEL\n");
             break;
@@ -179,7 +186,8 @@ static void cmd_mask_en(struct GB_Core* gb) {
     }
 }
 
-static void _cmd_palxx(struct GB_Core* gb, uint8_t p0, uint8_t p1) {
+static void _cmd_palxx(struct GB_Core* gb, uint8_t p0, uint8_t p1)
+{
     const uint16_t col1 = *(uint16_t*)(&(transfer.packets[0].data[0x1]));
     const uint16_t col2 = *(uint16_t*)(&(transfer.packets[0].data[0x3]));
     const uint16_t col3 = *(uint16_t*)(&(transfer.packets[0].data[0x5]));
@@ -217,28 +225,35 @@ static void _cmd_palxx(struct GB_Core* gb, uint8_t p0, uint8_t p1) {
     GB_update_all_colours_gb(gb);
 }
 
-static void cmd_pal01(struct GB_Core* gb) {
+static void cmd_pal01(struct GB_Core* gb)
+{
     _cmd_palxx(gb, 0, 1);
 }
 
-static void cmd_pal23(struct GB_Core* gb) {
+static void cmd_pal23(struct GB_Core* gb)
+{
     _cmd_palxx(gb, 2, 3);
 }
 
-static void cmd_pal03(struct GB_Core* gb) {
+static void cmd_pal03(struct GB_Core* gb)
+{
     _cmd_palxx(gb, 0, 3);
 }
 
-static void cmd_pal12(struct GB_Core* gb) {
+static void cmd_pal12(struct GB_Core* gb)
+{
     _cmd_palxx(gb, 1, 2);
 }
 
-static void cmd_pal_set(struct GB_Core* gb) {
+static void cmd_pal_set(struct GB_Core* gb)
+{
     GB_UNUSED(gb);
 }
 
-static void execute_cmd(struct GB_Core* gb) {
-    switch (transfer.header_byte.cmd) {
+static void execute_cmd(struct GB_Core* gb)
+{
+    switch (transfer.header_byte.cmd)
+    {
         case CMD_PAL01:   // Set SGB Palette 0 & 1
             printf("[SGB] %s\n", "CMD_PAL01");
             cmd_pal01(gb);
@@ -371,8 +386,10 @@ static void execute_cmd(struct GB_Core* gb) {
 }
 
 
-bool SGB_handle_joyp_read(const struct GB_Core* gb, uint8_t* data_out) {
-    if (sgb_stub.mlt.count != MLT_1_PLAYERS && (IO_JYP & 0x30) == 0x30) {
+bool SGB_handle_joyp_read(const struct GB_Core* gb, uint8_t* data_out)
+{
+    if (sgb_stub.mlt.count != MLT_1_PLAYERS && (IO_JYP & 0x30) == 0x30)
+    {
         // static const uint8_t PLAYER_VALUE[4] = {
         //     0x0F, 0x0E, /*0x0D, 0x0C,*/ 0x00, 0x00
         // };
@@ -384,7 +401,8 @@ bool SGB_handle_joyp_read(const struct GB_Core* gb, uint8_t* data_out) {
     return false;
 }
 
-void SGB_handle_joyp_write(struct GB_Core* gb, uint8_t value) {
+void SGB_handle_joyp_write(struct GB_Core* gb, uint8_t value)
+{
     // bit-5 = 1. bit-4 = 0.
     const bool p15 = (value & 0x20) > 0;
     const bool p14 = (value & 0x10) > 0;
@@ -392,21 +410,26 @@ void SGB_handle_joyp_write(struct GB_Core* gb, uint8_t value) {
     // can only be 1 if p15 is lo and p14 is hi
     const bool bit_value = p15 == 0 && p14 == 1;
 
-    if ((p14 && p15) || (!p14 && !p15 && transfer.state != 0)) {
+    if ((p14 && p15) || (!p14 && !p15 && transfer.state != 0))
+    {
         return;
     }
 
     // check which state we are in
-    switch (transfer.state) {
+    switch (transfer.state)
+    {
         case WAITING_FOR_RESET:
             // both pins need to be lo!
-            if (!p14 && !p15) {
+            if (!p14 && !p15)
+            {
                 transfer.state = DATA_TRANSFER;
 
-                if (transfer.header_byte.len > 0) {
+                if (transfer.header_byte.len > 0)
+                {
 
                 }
-                else {
+                else
+                {
                     transfer.packet_index = 0;
                     memset(&transfer.header_byte, 0, sizeof(transfer.header_byte));
                     memset(transfer.packets, 0, sizeof(transfer.packets));
@@ -421,7 +444,8 @@ void SGB_handle_joyp_write(struct GB_Core* gb, uint8_t value) {
             ++transfer.packets[transfer.packet_index].bit_index;
 
             // check if we are done!
-            if (transfer.packets[transfer.packet_index].bit_index == (16 * 8)) {
+            if (transfer.packets[transfer.packet_index].bit_index == (16 * 8))
+            {
                 transfer.state = ZERO_BIT;
             }
             break;
@@ -430,14 +454,16 @@ void SGB_handle_joyp_write(struct GB_Core* gb, uint8_t value) {
             // i am not sure if this HAS to be zero.
             // docs says it does, but some games (yellow) can write a 1 here.
             // rejecting it seems to allow the game to continue on just fine...
-            if (bit_value != 0) {
+            if (bit_value != 0)
+            {
                 return;
             }
 
             // if we don't have a len set, then this means that this
             // transfer was a new one, ie, one that sets the len and
             // command!
-            if (transfer.header_byte.len == 0) {
+            if (transfer.header_byte.len == 0)
+            {
                 // set len
                 transfer.header_byte.len |= (transfer.packets[0].data[0] & 0x7);
                 // set cmd
@@ -448,14 +474,20 @@ void SGB_handle_joyp_write(struct GB_Core* gb, uint8_t value) {
             --transfer.header_byte.len;
 
             // check the len, if 0, no more transfers
-            if (transfer.header_byte.len == 0) {
+            if (transfer.header_byte.len == 0)
+            {
                 execute_cmd(gb);
                 transfer.state = WAITING_FOR_RESET;
             }
-            else {
+            else
+            {
                 // we are saving multiple packets!
                 ++transfer.packet_index;
             }
             break;
     }
 }
+
+#else
+
+#endif // #if SGB_ENABLE

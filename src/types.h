@@ -9,6 +9,10 @@ extern "C" {
     #define GB_DEBUG 0
 #endif
 
+#ifndef GBC_ENABLE
+    #define GBC_ENABLE 1
+#endif
+
 #if defined __has_builtin
     #define GB_HAS_BUILTIN(x) __has_builtin(x)
 #else
@@ -56,7 +60,7 @@ struct GB_CartHeader;
 struct GB_Joypad;
 struct GB_ApuCallbackData;
 struct GB_Config;
-struct GB_ErrorData;
+struct MBC_RomBankInfo;
 
 
 enum
@@ -255,6 +259,11 @@ typedef void (*GB_dma_callback_t)(void* user);
 typedef void (*GB_halt_callback_t)(void* user);
 typedef void (*GB_stop_callback_t)(void* user);
 
+// if set, called whenever the bank changes.
+// return true if the bank change was handled
+typedef bool (*GB_rom_bank_callback_t)(void* user, struct MBC_RomBankInfo* info, enum GB_MbcType type, uint8_t bank);
+// typedef bool (*GB_ram_bank_callback_t)(void* user, enum GB_MbcType type, uint8_t bank);
+
 enum GB_ColourCallbackType
 {
     GB_ColourCallbackType_DMG,
@@ -277,12 +286,8 @@ typedef bool (*GB_read_callback_t)(void* user, uint16_t addr, uint8_t* v);
 typedef void (*GB_write_callback_t)(void* user, uint16_t addr, uint8_t* v);
 
 
-// todo: have 1 callback and have a enum for each "event".
-// basically, do an SDL2 event
 struct GB_UserCallbacks
 {
-    void* user_data;
-
     GB_apu_callback_t       apu;
     GB_vblank_callback_t    vblank;
     GB_hblank_callback_t    hblank;
@@ -292,6 +297,18 @@ struct GB_UserCallbacks
     GB_read_callback_t      read;
     GB_write_callback_t     write;
     GB_colour_callback_t    colour;
+    GB_rom_bank_callback_t  rom_bank;
+    
+    void* user_apu;
+    void* user_vblank;
+    void* user_hblank;
+    void* user_dma;
+    void* user_halt;
+    void* user_stop;
+    void* user_read;
+    void* user_write;
+    void* user_colour;
+    void* user_rom_bank;
     
     struct
     {
@@ -388,7 +405,16 @@ struct GB_Ppu
 {
     int16_t next_cycles;
 
+#if GBC_ENABLE
     uint8_t vram[2][0x2000]; // 2 banks of 8kb
+#else
+    // this is a hack for now because the actual size is 2KiB,
+    // however, my emu uses `vram[0][addr]` everywhere currently.
+    // so for that to still work for now, using this will *always* work
+    // still, though maybe smart enough compilers / sanitizers will catch
+    // the techinal (though safe) OOB access.
+    uint8_t vram[2][0x1000]; // 8kb
+#endif
     uint8_t oam[0xA0]; // sprite mem
 
     uint32_t bg_colours[8][4]; // calculate the colours from the palette once.
@@ -582,7 +608,11 @@ struct GB_Core
 
     uint8_t io[0x80]; // easier to have io as an array than individual bytes
     uint8_t hram[0x80]; // 0x7F + IE reg
+#if GBC_ENABLE
     uint8_t wram[8][0x1000]; // extra 6 banks in gbc
+#else
+    uint8_t wram[2][0x1000]; // 2 banks of 4KiB
+#endif
 
     struct GB_Cpu cpu;
     struct GB_Ppu ppu;

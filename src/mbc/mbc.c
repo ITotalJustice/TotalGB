@@ -26,6 +26,16 @@ void mbc_write(struct GB_Core *gb, uint16_t addr, uint8_t value)
 
 struct MBC_RomBankInfo mbc_get_rom_bank(struct GB_Core *gb, uint8_t bank)
 {
+    if (gb->callback.rom_bank)
+    {
+        struct MBC_RomBankInfo info = {0};
+
+        if (gb->callback.rom_bank(gb->callback.user_rom_bank, &info, gb->cart.type, bank))
+        {
+            return info;
+        }
+    }
+
     switch (gb->cart.type)
     {
         case GB_MbcType_0: return mbc0_get_rom_bank(gb, bank);
@@ -56,26 +66,27 @@ struct MBC_RamBankInfo mbc_get_ram_bank(struct GB_Core *gb)
 static const struct MbcInfo MBC_INFO[0x100] =
 {
     // MBC0
-    [0x00] = { .type = GB_MbcType_0, .flags = MBC_FLAGS_NONE},
+    [0x00] = { .type = GB_MbcType_0, .flags = MBC_FLAGS_NONE },
     // MBC1
-    [0x01] = { .type = GB_MbcType_1, .flags = MBC_FLAGS_NONE},
-    [0x02] = { .type = GB_MbcType_1, .flags = MBC_FLAGS_RAM},
-    [0x03] = { .type = GB_MbcType_1, .flags = MBC_FLAGS_RAM | MBC_FLAGS_BATTERY},
+    [0x01] = { .type = GB_MbcType_1, .flags = MBC_FLAGS_NONE },
+    [0x02] = { .type = GB_MbcType_1, .flags = MBC_FLAGS_RAM },
+    [0x03] = { .type = GB_MbcType_1, .flags = MBC_FLAGS_RAM | MBC_FLAGS_BATTERY },
     // MBC2
-    [0x05] = { .type = GB_MbcType_2, .flags = MBC_FLAGS_RAM},
-    [0x06] = { .type = GB_MbcType_2, .flags = MBC_FLAGS_RAM | MBC_FLAGS_BATTERY},
+    [0x05] = { .type = GB_MbcType_2, .flags = MBC_FLAGS_RAM },
+    [0x06] = { .type = GB_MbcType_2, .flags = MBC_FLAGS_RAM | MBC_FLAGS_BATTERY },
     // MBC3
-    [0x0F] = { .type = GB_MbcType_3, .flags = MBC_FLAGS_BATTERY | MBC_FLAGS_RTC},
-    [0x10] = { .type = GB_MbcType_3, .flags = MBC_FLAGS_RAM | MBC_FLAGS_BATTERY | MBC_FLAGS_RTC},
-    [0x11] = { .type = GB_MbcType_3, .flags = MBC_FLAGS_NONE},
-    [0x13] = { .type = GB_MbcType_3, .flags = MBC_FLAGS_RAM | MBC_FLAGS_BATTERY},
+    [0x0F] = { .type = GB_MbcType_3, .flags = MBC_FLAGS_BATTERY | MBC_FLAGS_RTC },
+    [0x10] = { .type = GB_MbcType_3, .flags = MBC_FLAGS_RAM | MBC_FLAGS_BATTERY | MBC_FLAGS_RTC },
+    [0x11] = { .type = GB_MbcType_3, .flags = MBC_FLAGS_NONE },
+    [0x13] = { .type = GB_MbcType_3, .flags = MBC_FLAGS_RAM | MBC_FLAGS_BATTERY },
     // MBC5
-    [0x19] = { .type = GB_MbcType_5, .flags = MBC_FLAGS_NONE},
-    [0x1A] = { .type = GB_MbcType_5, .flags = MBC_FLAGS_RAM},
-    [0x1B] = { .type = GB_MbcType_5, .flags = MBC_FLAGS_RAM | MBC_FLAGS_BATTERY},
-    [0x1C] = { .type = GB_MbcType_5, .flags = MBC_FLAGS_RUMBLE},
-    [0x1D] = { .type = GB_MbcType_5, .flags = MBC_FLAGS_RAM | MBC_FLAGS_RUMBLE},
-    [0x1E] = { .type = GB_MbcType_5, .flags = MBC_FLAGS_RAM | MBC_FLAGS_BATTERY},
+    [0x19] = { .type = GB_MbcType_5, .flags = MBC_FLAGS_NONE },
+    [0x1A] = { .type = GB_MbcType_5, .flags = MBC_FLAGS_RAM },
+    [0x1B] = { .type = GB_MbcType_5, .flags = MBC_FLAGS_RAM | MBC_FLAGS_BATTERY },
+    [0x1C] = { .type = GB_MbcType_5, .flags = MBC_FLAGS_RUMBLE },
+    [0x1D] = { .type = GB_MbcType_5, .flags = MBC_FLAGS_RAM | MBC_FLAGS_RUMBLE },
+    [0x1E] = { .type = GB_MbcType_5, .flags = MBC_FLAGS_RAM | MBC_FLAGS_BATTERY },
+    // todo: multicart, huc1, huc3
 };
 
 struct MBC_RamBankInfo mbc_setup_empty_ram(void)
@@ -132,10 +143,7 @@ int GB_get_rom_name_from_header(const struct GB_CartHeader* header, struct GB_Ca
 
 int GB_get_rom_name(const struct GB_Core* gb, struct GB_CartName* name)
 {
-    assert(gb && name);
-
     const struct GB_CartHeader* header = GB_get_rom_header_ptr(gb);
-    assert(header);
 
     return GB_get_rom_name_from_header(header, name);
 }
@@ -161,7 +169,7 @@ bool GB_get_cart_ram_size(uint8_t type, uint32_t* size)
         return false;
     }
 
-    if (type == 5)
+    if (type == 5 || type == 4)
     {
         GB_log("ram is of type GB_SAVE_SIZE_5, finally found a game that uses this!\n");
         assert(type != 5);
@@ -216,7 +224,7 @@ bool GB_setup_mbc(struct GB_Cart* mbc, const struct GB_CartHeader* header)
     }
     else
     {
-         mbc->rom_bank = 1;
+        mbc->rom_bank = 1;
         mbc->rom_bank_lo = 1;
     }
 
@@ -244,20 +252,13 @@ bool GB_setup_mbc(struct GB_Cart* mbc, const struct GB_CartHeader* header)
             mbc->ram_bank_max = mbc->ram_size / 0x2000;
         }
 
-        // this is a check for ram size.
-        // this check should still be performed, but not sure when...
-        // the user should be allowed to set the cart ram when loading rom
-        // 
-        #if 0
         // check that the size (if any) returned is within range of the
         // maximum ram size.
-        // this can be set by the user, using build flags!
-        if (mbc->ram_size > GB_SAVE_SIZE_MAX)
+        if (mbc->ram_size > mbc->max_ram_size)
         {
-            GB_log("cart-ram size is too big for the maximum size set! got: %u max: %d", mbc->ram_size, GB_SAVE_SIZE_MAX);
+            GB_log("cart-ram size is too big for the maximum size set! got: %u max: %zu", mbc->ram_size, mbc->max_ram_size);
             return false;
         }
-        #endif
     }
 
     return true;

@@ -1,8 +1,11 @@
 #include "palette_table.h"
 #include "../types.h"
 
-#ifndef GB_NO_BUILTIN_PALETTE
+#ifndef GB_ENABLE_BUILTIN_PALETTE
+    #define GB_ENABLE_BUILTIN_PALETTE 1
+#endif
 
+#if GB_ENABLE_BUILTIN_PALETTE
 
 #define ARRAY_SIZE(array) (sizeof(array) / sizeof(array[0]))
 
@@ -1796,7 +1799,7 @@ int GB_Palette_fill_from_custom(
     return 0;
 }
 
-#else // #ifndef GB_NO_BUILTIN_PALETTE
+#else // GB_ENABLE_BUILTIN_PALETTE
 
 int GB_palette_fill_from_table_entry(
     uint8_t table, uint8_t entry, /* keys */
@@ -1832,4 +1835,4 @@ int GB_Palette_fill_from_custom(
     return -1;
 }
 
-#endif // GB_NO_BUILTIN_PALETTE
+#endif // GB_ENABLE_BUILTIN_PALETTE

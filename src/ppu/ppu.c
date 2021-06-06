@@ -161,7 +161,7 @@ void GB_change_status_mode(struct GB_Core* gb, const uint8_t new_mode)
 
             if (gb->callback.hblank != NULL)
             {
-                gb->callback.hblank(gb->callback.user_data);
+                gb->callback.hblank(gb->callback.user_hblank);
             }
             break;
 
@@ -172,7 +172,7 @@ void GB_change_status_mode(struct GB_Core* gb, const uint8_t new_mode)
 
             if (gb->callback.vblank != NULL)
             {
-                gb->callback.vblank(gb->callback.user_data);
+                gb->callback.vblank(gb->callback.user_vblank);
             }
             break;
 

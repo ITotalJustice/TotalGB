@@ -282,7 +282,7 @@ static inline void sample_channels(struct GB_Core* gb)
         .ch4 = { r.ch4[0], r.ch4[1] },
     };
 
-    gb->callback.apu(gb->callback.user_data, &samples);
+    gb->callback.apu(gb->callback.user_apu, &samples);
 }
 
 void GB_apu_run(struct GB_Core* gb, uint16_t cycles)

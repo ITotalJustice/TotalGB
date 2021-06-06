@@ -13,6 +13,10 @@ option(GB_SINGLE_FILE "include all src in single.c" OFF)
 option(GB_DEBUG "enable debug" OFF)
 option(GB_DEV "enables debug and sanitizers" OFF)
 
+option(GBC_ENABLE "build with GBC support" ON)
+option(SGB_ENABLE "build with SGB support" OFF)
+option(GB_ENABLE_BUILTIN_PALETTE "build with builtin palettes" ON)
+
 option(GB_GAMESHARK "enables gameshark cheats (uses malloc,free)" OFF)
 option(GB_CODEBREAKER "enables codebreaker cheats (uses malloc,free)" OFF)
 option(GB_GAMEGENIE "enables gamegenie cheats (uses malloc,free)" OFF)
@@ -22,6 +26,8 @@ option(GB_IPS "enables ips" OFF)
 option(GB_UPS "enables ups" OFF)
 # option(GB_BPS "enables bps" OFF)
 option(GB_ENABLE_PATCHES "enables all patches" OFF)
+
+option(GB_ZROM "" OFF)
 
 option(GB_EXAMPLE_MMAP "build example that shows how to use mmap" OFF)
 option(GB_EXAMPLE_SDL "build basic sdl2 example" OFF)

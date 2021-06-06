@@ -131,19 +131,19 @@ int main(int argc, char** argv)
                     goto fail;
                 }
 
-                if (s.st_size < sram_size)
+                if (s.st_size < (long int)sram_size)
                 {
                     char page[1024] = {0};
                     
-                    for (int i = 0; i < sram_size; i += sizeof(page))
+                    for (size_t i = 0; i < sram_size; i += sizeof(page))
                     {
                         int size = sizeof(page) > sram_size-i ? sram_size-i : sizeof(page);
-                        write(sram_fd, page, sizeof(page));
+                        write(sram_fd, page, size);
                     }
                 }
             }
         
-            sram_data = (uint8_t*)mmap(NULL, sram_size, SRAM_PROT, SRAM_FLAGS, sram_fd, 0);
+            sram_data = (uint8_t*)mmap(NULL, sram_size, SRAM_PROT, mmap_flags, sram_fd, 0);
     
             if (sram_data == MAP_FAILED)
             {
