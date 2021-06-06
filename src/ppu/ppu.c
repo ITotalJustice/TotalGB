@@ -89,11 +89,27 @@ uint8_t GB_get_sprite_size(const struct GB_Core* gb)
     return ((IO_LCDC & 0x04) ? 16 : 8);
 }
 
-static inline void GB_raise_if_enabled(struct GB_Core* gb, const uint8_t mode)
+static bool stat_line = false;
+
+static void GB_raise_if_enabled(struct GB_Core* gb, const uint8_t stat_mode)
 {
-    if (IO_STAT & mode)
+    // see if the interrupt for this mode is enabled
+    if (IO_STAT & stat_mode)
     {
-        GB_enable_interrupt(gb, GB_INTERRUPT_LCD_STAT);
+        // the interrupt is only fired if the line is low.
+        // SEE: https://github.com/ITotalJustice/TotalGB/issues/50
+        if (stat_line == false)
+        {
+            GB_enable_interrupt(gb, GB_INTERRUPT_LCD_STAT);
+        }
+
+        // line goes high (or remains high) after.
+        stat_line = true;
+    }
+    else
+    {
+        // line goes low
+        stat_line = false;
     }
 }
 
@@ -140,7 +156,6 @@ void GB_compare_LYC(struct GB_Core* gb)
         GB_set_coincidence_flag(gb, true);
         GB_raise_if_enabled(gb, STAT_INT_MODE_COINCIDENCE);
     }
-
     else
     {
         GB_set_coincidence_flag(gb, false);
@@ -187,6 +202,26 @@ void GB_change_status_mode(struct GB_Core* gb, const uint8_t new_mode)
     }
 }
 
+void GB_on_stat_write(struct GB_Core* gb, uint8_t value)
+{
+    // keep the read-only bits!
+    IO_STAT = (IO_STAT & 0x7) | (value & 0x78);
+
+    // interrupt for our current mode 
+    if (GB_is_lcd_enabled(gb))
+    {
+        switch (GB_get_status_mode(gb))
+        {
+            case STATUS_MODE_HBLANK:    GB_raise_if_enabled(gb, STAT_INT_MODE_0); break;
+            case STATUS_MODE_VBLANK:    GB_raise_if_enabled(gb, STAT_INT_MODE_1); break;
+            case STATUS_MODE_SPRITE:    GB_raise_if_enabled(gb, STAT_INT_MODE_2); break;
+            case STATUS_MODE_TRANSFER:  break;
+        }
+
+        GB_compare_LYC(gb);
+    }
+}
+
 void GB_on_lcdc_write(struct GB_Core* gb, const uint8_t value)
 {
     // check if the game wants to disable the ppu
@@ -200,6 +235,7 @@ void GB_on_lcdc_write(struct GB_Core* gb, const uint8_t value)
 
         IO_LY = 0;
         IO_STAT &= ~(0x3);
+        stat_line = false;
         GB_log("disabling ppu...\n");
     }
 

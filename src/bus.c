@@ -149,8 +149,7 @@ static inline void GB_iowrite(struct GB_Core* gb, uint16_t addr, uint8_t value)
             break;
 
         case 0x41:
-            IO_STAT = (IO_STAT & 0x7) | (value & 0x78);
-            GB_compare_LYC(gb);
+            GB_on_stat_write(gb, value);
             break;
 
         case 0x42:

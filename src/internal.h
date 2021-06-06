@@ -162,6 +162,7 @@ GB_INLINE void GB_write16(struct GB_Core* gb, uint16_t addr, uint16_t value);
 GB_STATIC void GB_apu_iowrite(struct GB_Core* gb, uint16_t addr, uint8_t value);
 
 GB_INLINE void GB_on_lcdc_write(struct GB_Core* gb, const uint8_t value);
+GB_INLINE void GB_on_stat_write(struct GB_Core* gb, uint8_t value);
 
 GB_STATIC void GB_serial_sc_write(struct GB_Core* gb, const uint8_t data);
 

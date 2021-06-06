@@ -69,11 +69,11 @@ if (GB_DEV)
     )
 
     list(APPEND _sanitizers
-        -fsanitize=address
-        -fsanitize=leak
+        # -fsanitize=address
+        # -fsanitize=leak
         -fsanitize=undefined
-        -fsanitize=pointer-compare
-        -fsanitize=pointer-subtract
+        # -fsanitize=pointer-compare
+        # -fsanitize=pointer-subtract
         -fstack-protector-all
     )
 
@@ -85,14 +85,14 @@ if (GB_DEV)
     foreach (flag IN LISTS _flags)
         # check_c_compiler_flag(${flag} CHECK_FLAG_${flag})
         # if (CHECK_FLAG_${flag})
-            target_compile_options(TotalGB PUBLIC ${flag})
+            target_compile_options(TotalGB PRIVATE ${flag})
         # endif()
     endforeach()
 
     foreach (flag IN LISTS _sanitizers)
         # check_c_compiler_flag(${flag} CHECK_FLAG_${flag})
         # if (CHECK_FLAG_${flag})
-            target_compile_options(TotalGB PUBLIC ${flag})
+            target_compile_options(TotalGB PRIVATE ${flag})
             target_link_options(TotalGB INTERFACE ${flag})
         # endif()
     endforeach()
@@ -125,34 +125,48 @@ endif()
 if (GB_GAMESHARK)
     target_compile_definitions(TotalGB INTERFACE GB_GAMESHARK=1)
     target_link_libraries(TotalGB INTERFACE gameshark)
+else()
+    target_compile_definitions(TotalGB INTERFACE GB_ZROM=0)
 endif()
 
 if (GB_CODEBREAKER)
     target_compile_definitions(TotalGB INTERFACE GB_CODEBREAKER=1)
     target_link_libraries(TotalGB INTERFACE codebreaker)
+else()
+    target_compile_definitions(TotalGB INTERFACE GB_CODEBREAKER=0)
 endif()
 
 if (GB_GAMEGENIE)
     target_compile_definitions(TotalGB INTERFACE GB_GAMEGENIE=1)
     target_link_libraries(TotalGB INTERFACE gamegenie)
+else()
+    target_compile_definitions(TotalGB INTERFACE GB_GAMEGENIE=0)
 endif()
 
 if (GB_IPS)
     target_compile_definitions(TotalGB INTERFACE GB_IPS=1)
     target_link_libraries(TotalGB INTERFACE ips)
+else()
+    target_compile_definitions(TotalGB INTERFACE GB_IPS=0)
 endif()
 
 if (GB_UPS)
     target_compile_definitions(TotalGB INTERFACE GB_UPS=1)
     target_link_libraries(TotalGB INTERFACE ups)
+else()
+    target_compile_definitions(TotalGB INTERFACE GB_UPS=0)
 endif()
 
 if (GB_BPS)
     target_compile_definitions(TotalGB INTERFACE GB_BPS=1)
     target_link_libraries(TotalGB INTERFACE bps)
+else()
+    target_compile_definitions(TotalGB INTERFACE GB_BPS=0)
 endif()
 
 if (GB_ZROM)
     target_compile_definitions(TotalGB INTERFACE GB_ZROM=1)
     target_link_libraries(TotalGB INTERFACE zrom)
+else()
+    target_compile_definitions(TotalGB INTERFACE GB_ZROM=0)
 endif()

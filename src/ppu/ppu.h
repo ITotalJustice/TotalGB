@@ -12,6 +12,7 @@ extern "C" {
 extern const uint8_t PIXEL_BIT_SHRINK[8];
 extern const uint8_t PIXEL_BIT_GROW[8];
 
+
 // data selects
 GB_INLINE bool GB_get_bg_data_select(const struct GB_Core* gb);
 GB_INLINE bool GB_get_title_data_select(const struct GB_Core* gb);
