@@ -38,3 +38,9 @@ build*/
 run.sh
 .clang-format
 roms/
+# dilions emu used for testing
+examples/n64/n64-emu
+
+*.dol
+*.elf
+*.raw

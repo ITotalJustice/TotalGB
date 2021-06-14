@@ -15,7 +15,7 @@ enum
     WIDTH = 160,
     HEIGHT = 144,
 
-    VOLUME = SDL_MIX_MAXVOLUME/16,
+    VOLUME = SDL_MIX_MAXVOLUME / 8,
     SAMPLES = 1024,
     SDL_AUDIO_FREQ = 48000,
     GB_AUDIO_FREQ = SDL_AUDIO_FREQ,
@@ -391,12 +391,12 @@ static void render()
 
 static void cleanup()
 {
-    // if (pixel_format)   { SDL_free(pixel_format); }
+    if (pixel_format)   { SDL_free(pixel_format); }
     if (audio_device)   { SDL_CloseAudioDevice(audio_device); }
-    // if (rom_data)       { SDL_free(rom_data); }
-    // if (texture)        { SDL_DestroyTexture(texture); }
-    // if (renderer)       { SDL_DestroyRenderer(renderer); }
-    // if (window)         { SDL_DestroyWindow(window); }
+    if (rom_data)       { SDL_free(rom_data); }
+    if (texture)        { SDL_DestroyTexture(texture); }
+    if (renderer)       { SDL_DestroyRenderer(renderer); }
+    if (window)         { SDL_DestroyWindow(window); }
 
     SDL_Quit();
 }
@@ -407,6 +407,11 @@ int main(int argc, char** argv)
     {
         goto fail;
     }
+
+    // enable to record audio
+    #if 0
+        SDL_setenv("SDL_AUDIODRIVER", "disk", 1);
+    #endif
 
     if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO))
     {
@@ -510,6 +515,7 @@ int main(int argc, char** argv)
     #else
         if (!GB_loadrom(&gameboy, rom_data, rom_size))
         {
+            printf("failed to loadrom\n");
             goto fail;
         }
     #endif
@@ -526,7 +532,8 @@ int main(int argc, char** argv)
     return 0;
 
 fail:
-    // SDL_LogError(SDL_LOG_CATEGORY_ERROR, "%s\n", SDL_GetError());
+    printf("fail\n");
+    printf("%s\n", SDL_GetError());
     cleanup();
 
     return -1;

@@ -13,3 +13,23 @@ if (GB_EXAMPLE_MMAP)
     add_executable(example_mmap example_mmap.c)
     target_link_libraries(example_mmap LINK_PRIVATE TotalGB)
 endif()
+
+if (GAMECUBE)
+    add_subdirectory(gamecube)
+endif()
+
+if (WII)
+    add_subdirectory(wii)
+endif()
+
+if (WIIU)
+    add_subdirectory(wiiu)
+endif()
+
+if (3DS)
+    add_subdirectory(3ds)
+endif()
+
+if (SWITCH)
+    add_subdirectory(switch)
+endif()
