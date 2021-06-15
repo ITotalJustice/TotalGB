@@ -27,7 +27,7 @@ bool GB_init(struct GB_Core* gb)
 void GB_quit(struct GB_Core* gb)
 {
     assert(gb);
-    GB_UNUSED(gb);
+    UNUSED(gb);
 }
 
 void GB_reset(struct GB_Core* gb)

@@ -118,19 +118,14 @@ void hdma_write(struct GB_Core* gb, const uint16_t addr, const uint8_t value)
 void perform_hdma(struct GB_Core* gb)
 {
     assert(GB_is_hdma_active(gb) == true);
-
     // perform 16-block transfer
     for (uint16_t i = 0; i < 0x10; ++i)
     {
-        hdma_write(gb,
-            gb->ppu.hdma_dst_addr + i,
-            hdma_read(gb, gb->ppu.hdma_src_addr + i)
-        );
+        hdma_write(gb, gb->ppu.hdma_dst_addr++, hdma_read(gb, gb->ppu.hdma_src_addr++));
     }
 
     gb->ppu.hdma_length -= 0x10;
-    gb->ppu.hdma_src_addr += 0x10;
-    gb->ppu.hdma_dst_addr += 0x10;
+
     --IO_HDMA5;
 
     // finished!
@@ -149,10 +144,6 @@ uint8_t GB_hdma5_read(const struct GB_Core* gb)
 
 void GB_hdma5_write(struct GB_Core* gb, uint8_t value)
 {
-    // the lower 4-bits of both address are ignored
-    const uint16_t dma_src = ((IO_HDMA1 << 8) | IO_HDMA2) & 0xFFF0;
-    const uint16_t dma_dst = ((IO_HDMA3 << 8) | IO_HDMA4) & 0x7FF0;
-
     // lower 6-bits are the length + 1 * 0x10
     const uint16_t dma_len = ((value & 0x7F) + 1) * 0x10;
 
@@ -182,7 +173,7 @@ void GB_hdma5_write(struct GB_Core* gb, uint8_t value)
         // GDMA are performed immediately
         for (uint16_t i = 0; i < dma_len; ++i)
         {
-            hdma_write(gb, dma_dst + i, hdma_read(gb, dma_src + i));
+            hdma_write(gb, gb->ppu.hdma_dst_addr++, hdma_read(gb, gb->ppu.hdma_src_addr++));
         }
 
         // it's unclear if all HDMA regs are set to 0xFF post transfer,
@@ -191,8 +182,6 @@ void GB_hdma5_write(struct GB_Core* gb, uint8_t value)
     }
     else
     {
-        gb->ppu.hdma_src_addr = dma_src;
-        gb->ppu.hdma_dst_addr = dma_dst;
         gb->ppu.hdma_length = dma_len;
 
         // set that the transfer is active.
@@ -232,7 +221,7 @@ static struct GBC_BgAttributes gbc_fetch_bg_attr(const struct GB_Core* gb, uint1
 
     const uint8_t* ptr = &gb->ppu.vram[1][(map + (tile_y << 5)) & 0x1FFF];
 
-    for (size_t i = 0; i < GB_ARR_SIZE(attrs.a); ++i)
+    for (size_t i = 0; i < ARRAY_SIZE(attrs.a); ++i)
     {
         attrs.a[i] = gbc_get_bg_attr(ptr[i]);
     }
@@ -379,7 +368,7 @@ static struct GBC_Sprites gbc_sprite_fetch(const struct GB_Core* gb)
     const uint8_t sprite_size = GB_get_sprite_size(gb);
     const uint8_t ly = IO_LY;
 
-    for (size_t i = 0; i < GB_ARR_SIZE(gb->ppu.oam); i += 4)
+    for (size_t i = 0; i < ARRAY_SIZE(gb->ppu.oam); i += 4)
     {
         struct GBC_Sprite* sprite = &sprites.sprite[sprites.count];
 

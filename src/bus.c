@@ -24,19 +24,23 @@ static inline void GB_iowrite_gbc(struct GB_Core* gb, uint16_t addr, uint8_t val
             break;
 
         case 0x51: // (HDMA1)
-            IO_HDMA1 = value;
+            gb->ppu.hdma_src_addr &= 0xF0;
+            gb->ppu.hdma_src_addr |= (value & 0xFF) << 8;
             break;
 
         case 0x52: // (HDMA2)
-            IO_HDMA2 = value;
+            gb->ppu.hdma_src_addr &= 0xFF00;
+            gb->ppu.hdma_src_addr |= value & 0xF0;
             break;
 
         case 0x53: // (HMDA3)
-            IO_HDMA3 = value;
+            gb->ppu.hdma_dst_addr &= 0xF0;
+            gb->ppu.hdma_dst_addr |= (value & 0x1F) << 8;
             break;
 
         case 0x54: // (HDMA4)
-            IO_HDMA4 = value;
+            gb->ppu.hdma_dst_addr &= 0xFF00;
+            gb->ppu.hdma_dst_addr |= value & 0xF0;
             break;
 
         case 0x55: // (HDMA5)
@@ -112,19 +116,19 @@ static inline void GB_iowrite(struct GB_Core* gb, uint16_t addr, uint8_t value)
             break;
 
         case 0x04:
-            IO_DIV_UPPER = IO_DIV_LOWER = 0;
+            GB_div_write(gb, value);
             break;
 
         case 0x05:
-            IO_TIMA = value;
+            GB_tima_write(gb, value);
             break;
 
         case 0x06:
-            IO_TMA = value;
+            GB_tma_write(gb, value);
             break;
 
         case 0x07:
-            IO_TAC = value;
+            GB_tac_write(gb, value);
             break;
 
         case 0x0F:

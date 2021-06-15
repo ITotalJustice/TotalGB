@@ -126,7 +126,7 @@ int GB_get_rom_name_from_header(const struct GB_CartHeader* header, struct GB_Ca
     memset(name, 0, sizeof(struct GB_CartName));
 
     // manually copy the name using range check as explained above...
-    for (size_t i = 0; i < sizeof(header->title); ++i)
+    for (size_t i = 0; i < ARRAY_SIZE(header->title); ++i)
     {
         const char c = header->title[i];
 
@@ -162,10 +162,11 @@ bool GB_get_cart_ram_size(uint8_t type, uint32_t* size)
         [5] = GB_SAVE_SIZE_5      /*0x10000*/,
     };
 
-    assert(type < GB_ARR_SIZE(GB_CART_RAM_SIZES) && "OOB type access!");
+    assert(type < ARRAY_SIZE(GB_CART_RAM_SIZES) && "OOB type access!");
 
-    if (type >= GB_ARR_SIZE(GB_CART_RAM_SIZES))
+    if (type >= ARRAY_SIZE(GB_CART_RAM_SIZES))
     {
+        GB_log_fatal("invalid ram size type! %u\n", type);
         return false;
     }
 

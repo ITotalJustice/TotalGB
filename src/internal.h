@@ -10,9 +10,13 @@ extern "C" {
 #define GB_MIN(x, y) (((x) < (y)) ? (x) : (y))
 #define GB_MAX(x, y) (((x) > (y)) ? (x) : (y))
 
-// msvc prepro has a hard time with (macro && macro), so they have to be
-// split into different if, else chains...
-#if GB_HAS_BUILTIN(__builtin_expect)
+#if defined __has_builtin
+    #define HAS_BUILTIN(x) __has_builtin(x)
+#else
+    #define HAS_BUILTIN(x) (0)
+#endif // __has_builtin
+
+#if HAS_BUILTIN(__builtin_expect)
     #define LIKELY(c) (__builtin_expect(c,1))
     #define UNLIKELY(c) (__builtin_expect(c,0))
 #else
@@ -20,7 +24,7 @@ extern "C" {
     #define UNLIKELY(c) ((c))
 #endif // __has_builtin(__builtin_expect)
 
-#if GB_HAS_BUILTIN(__builtin_unreachable)
+#if HAS_BUILTIN(__builtin_unreachable)
     #define UNREACHABLE(ret) __builtin_unreachable()
 #else
     #define UNREACHABLE(ret) return ret
@@ -28,18 +32,20 @@ extern "C" {
 
 // used mainly in debugging when i want to quickly silence
 // the compiler about unsed vars.
-#define GB_UNUSED(var) ((void)(var))
+#define UNUSED(var) ((void)(var))
 
 // ONLY use this for C-arrays, not pointers, not structs
-#define GB_ARR_SIZE(array) (sizeof(array) / sizeof(array[0]))
+#define ARRAY_SIZE(array) (sizeof(array) / sizeof(array[0]))
 
 #if GB_DEBUG
     #include <stdio.h>
     #define GB_log(...) fprintf(stdout, __VA_ARGS__)
     #define GB_log_err(...) fprintf(stderr, __VA_ARGS__)
+    #define GB_log_fatal(...) do { fprintf(stderr, __VA_ARGS__); assert(0); } while(0)
 #else
     #define GB_log(...)
     #define GB_log_err(...)
+    #define GB_log_fatal(...)
 #endif // NES_DEBUG
 
 // 4-mhz
@@ -165,6 +171,11 @@ GB_INLINE void GB_on_lcdc_write(struct GB_Core* gb, const uint8_t value);
 GB_INLINE void GB_on_stat_write(struct GB_Core* gb, uint8_t value);
 
 GB_STATIC void GB_serial_sc_write(struct GB_Core* gb, const uint8_t data);
+
+GB_INLINE void GB_div_write(struct GB_Core* gb, uint8_t value);
+GB_INLINE void GB_tima_write(struct GB_Core* gb, uint8_t value);
+GB_INLINE void GB_tma_write(struct GB_Core* gb, uint8_t value);
+GB_INLINE void GB_tac_write(struct GB_Core* gb, uint8_t value);
 
 #if GBC_ENABLE
     GB_INLINE void GB_bcpd_write(struct GB_Core* gb, uint8_t value);

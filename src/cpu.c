@@ -622,7 +622,7 @@ static inline uint16_t GB_POP(struct GB_Core* gb)
 } while(0)
 
 #define DI() do { gb->cpu.ime = false; } while(0)
-#define EI() do { gb->cpu.ime = true; } while(0)
+#define EI() do { gb->cpu.ime_delay = true; } while(0)
 
 #define POP_BC() do { \
     const uint16_t result = POP(); \
@@ -830,7 +830,8 @@ static inline uint16_t GB_POP(struct GB_Core* gb)
 #define SCF() do { SET_FLAGS_CHN(true, false, false); } while (0)
 #define CCF() do { SET_FLAGS_CHN(FLAG_C ^ 1, false, false); } while(0)
 
-static inline void HALT(struct GB_Core* gb) {
+static inline void HALT(struct GB_Core* gb)
+{
     if (gb->cpu.ime)
     {
         // normal halt
@@ -840,19 +841,22 @@ static inline void HALT(struct GB_Core* gb) {
     {
         if (IO_IF & IO_IE & 0x1F)
         {
-            gb->cpu.halt = true;
+            gb->cpu.halt_bug = true;
         }
         else
         {
-            gb->cpu.halt_bug = true;
+            gb->cpu.halt = true;
         }
     }
 }
 
-static void STOP(struct GB_Core* gb) {
-    if (GB_is_system_gbc(gb)) {
+static void STOP(struct GB_Core* gb)
+{
+    if (GB_is_system_gbc(gb))
+    {
         // only set if speed-switch is requested
-        if ((IO_KEY1 & 0x1) == 1) {
+        if (IO_KEY1 & 0x1)
+        {
             GB_log("changing speed mode");
 
             // switch speed state.
@@ -861,35 +865,25 @@ static void STOP(struct GB_Core* gb) {
             // or normal speed mode.
             IO_KEY1 = (gb->cpu.double_speed << 7);
         }
-        // TODO: replace stop callback with error callback!!
-        // // if stop was called and speed-switch wasn't set, then
-        // // something has gone wrong, report this via callback
-        // else {
-        //     if (gb->stop_cb != NULL) {
-        //         gb->stop_cb(gb->stop_cb_user_data);
-        //     }
-        // }
     }
-    // // the game should never try to stop if it's a normal DMG game
-    // // should this happen, call the error callback
-    // else {
-    //     if (gb->stop_cb != NULL) {
-    //         gb->stop_cb(gb->stop_cb_user_data);
-    //     }
-    // }
 
     // STOP is a 2-byte instruction, 0x10 | 0x00
     const uint8_t next_byte = read8(REG_PC++);
-    if (next_byte == 0x00) {
+
+    if (next_byte == 0x00)
+    {
         GB_log("[CPU-STOP] next byte is 0x00, this is valid!\n");
-    } else {
+    }
+    else
+    {
         GB_log("[CPU-STOP] next byte is 0x%02X, this is NOT valid!\n", next_byte);
     }
 
     gb->cpu.cycles += 2050;
 }
 
-static void UNK_OP(struct GB_Core* gb, uint8_t opcode, bool cb_prefix) {
+static void UNK_OP(struct GB_Core* gb, uint8_t opcode, bool cb_prefix)
+{
     (void)gb; (void)opcode; (void)cb_prefix;
     
     if (cb_prefix)
@@ -902,14 +896,17 @@ static void UNK_OP(struct GB_Core* gb, uint8_t opcode, bool cb_prefix) {
     }
 }
 
-static inline void GB_interrupt_handler(struct GB_Core* gb) {
-    if (!gb->cpu.ime && !gb->cpu.halt) {
+static inline void GB_interrupt_handler(struct GB_Core* gb)
+{
+    if (!gb->cpu.ime && !gb->cpu.halt)
+    {
         return;
     }
 
     const uint8_t live_interrupts = IO_IF & IO_IE & 0x1F;
     
-    if (!live_interrupts) {
+    if (!live_interrupts)
+    {
         return;
     }
 
@@ -920,29 +917,35 @@ static inline void GB_interrupt_handler(struct GB_Core* gb) {
         gb->cpu.cycles += 4;
     }
 
-    if (!gb->cpu.ime) {
+    if (!gb->cpu.ime)
+    {
         return;
     }
 
     gb->cpu.ime = false;
 
-    if (live_interrupts & GB_INTERRUPT_VBLANK) {
+    if (live_interrupts & GB_INTERRUPT_VBLANK)
+    {
         RST(64);
         GB_disable_interrupt(gb, GB_INTERRUPT_VBLANK);
     }
-    else if (live_interrupts & GB_INTERRUPT_LCD_STAT) {
+    else if (live_interrupts & GB_INTERRUPT_LCD_STAT)
+    {
         RST(72);
         GB_disable_interrupt(gb, GB_INTERRUPT_LCD_STAT);
     }
-    else if (live_interrupts & GB_INTERRUPT_TIMER) {
+    else if (live_interrupts & GB_INTERRUPT_TIMER)
+    {
         RST(80);
         GB_disable_interrupt(gb, GB_INTERRUPT_TIMER);
     }
-    else if (live_interrupts & GB_INTERRUPT_SERIAL) {
+    else if (live_interrupts & GB_INTERRUPT_SERIAL)
+    {
         RST(88);
         GB_disable_interrupt(gb, GB_INTERRUPT_SERIAL);
     }
-    else if (live_interrupts & GB_INTERRUPT_JOYPAD) {
+    else if (live_interrupts & GB_INTERRUPT_JOYPAD)
+    {
         RST(96);
         GB_disable_interrupt(gb, GB_INTERRUPT_JOYPAD);
     }
@@ -950,44 +953,56 @@ static inline void GB_interrupt_handler(struct GB_Core* gb) {
     gb->cpu.cycles += 20;
 }
 
-void GB_cpu_enable_log(const bool enable) {
+void GB_cpu_enable_log(const bool enable)
+{
     #if GB_DEBUG
         CPU_LOG = enable;
-        if (CPU_LOG) {
+        if (CPU_LOG)
+        {
             // reset the cycles
             CPU_DEBUG_CYCLYES = 0;
         }
     #else
-        GB_UNUSED(enable);
+        UNUSED(enable);
     #endif
 }
 
-static inline void GB_execute(struct GB_Core* gb) {
+static inline void GB_execute(struct GB_Core* gb)
+{
+    // ime is delayed by 1 instruction
+    gb->cpu.ime |= gb->cpu.ime_delay;
+    gb->cpu.ime_delay = false;
+
     const uint8_t opcode = read8(REG_PC);
 
-    if (UNLIKELY(gb->cpu.halt_bug))
+    #if GB_DEBUG
+    if (gb->cpu.halt_bug)
     {
-        GB_log("halt bug!\n");
-        assert(0 && "HALT BUG");
-        gb->cpu.halt_bug = false;
+        GB_log_fatal("halt bug!!!\n");
     }
-    else
-    {
-        REG_PC++;
-    }
+    #endif
+
+    // if halt bug happens, the same instruction is executed twice
+    // so to emulate this, we DON'T advance the pc if set (PC += !1)
+    REG_PC += !gb->cpu.halt_bug;
+    // reset halt bug after!
+    gb->cpu.halt_bug = false;
 
     #if GB_DEBUG
-        if (CPU_LOG) {
+        if (CPU_LOG)
+        {
             const opcode_t debug_op = CYCLE_TABLE_DEBUG[opcode];
             GB_log("[CPU] [OP_CODE 0x%02X] %s %s %s\t\tREG_PC: 0x%04X\n", opcode, debug_op.name, debug_op.group, debug_op.flags, REG_PC);
-            if (((CPU_DEBUG_CYCLYES + 1) % 0x20) == 0) {
+            if (((CPU_DEBUG_CYCLYES + 1) % 0x20) == 0)
+            {
                 putchar('\n');
             }
         }
     #endif // GB_DEBUG
 
 
-    switch (opcode) {
+    switch (opcode)
+    {
         case 0x00: break; // nop
         case 0x01: LD_BC_u16(); break;
         case 0x02: LD_BCa_A(); break;
@@ -1152,18 +1167,21 @@ static inline void GB_execute(struct GB_Core* gb) {
     gb->cpu.cycles += CYCLE_TABLE[opcode];
 }
 
-static inline void GB_execute_cb(struct GB_Core* gb) {
+static inline void GB_execute_cb(struct GB_Core* gb)
+{
     const uint8_t opcode = read8(REG_PC++);
 
     #if GB_DEBUG
-        if (CPU_LOG) {
+        if (CPU_LOG)
+        {
             const opcode_t debug_op = CYCLE_TABLE_DEBUG[opcode];
             GB_log("[CPU] [OP_CODE 0x%02X] %s %s %s\n", opcode, debug_op.name, debug_op.group, debug_op.flags);
         }
     #endif // GB_DEBUG
 
 
-    switch (opcode) {
+    switch (opcode)
+    {
         case 0x00: case 0x01: case 0x02: case 0x03:
         case 0x04: case 0x05: case 0x07:
             RLC_r();
@@ -1309,7 +1327,7 @@ static inline void GB_execute_cb(struct GB_Core* gb) {
 
 uint16_t GB_cpu_run(struct GB_Core* gb, uint16_t cycles)
 {
-    GB_UNUSED(cycles);
+    UNUSED(cycles);
 
     // reset cycles counter
     gb->cpu.cycles = 0;

@@ -13,12 +13,6 @@ extern "C" {
     #define GBC_ENABLE 1
 #endif
 
-#if defined __has_builtin
-    #define GB_HAS_BUILTIN(x) __has_builtin(x)
-#else
-    #define GB_HAS_BUILTIN(x) (0)
-#endif // __has_builtin
-
 #if defined _WIN32 || defined __CYGWIN__
   #ifdef BUILDING_LIB
     #define GBAPI __declspec(dllexport)
@@ -397,6 +391,7 @@ struct GB_Cpu
     bool z;
 
     bool ime;
+    bool ime_delay;
     bool halt;
     bool halt_bug;
     bool double_speed;

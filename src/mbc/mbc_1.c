@@ -90,7 +90,7 @@ struct MBC_RomBankInfo mbc1_get_rom_bank(struct GB_Core* gb, uint8_t bank)
         ptr = gb->cart.rom + (gb->cart.rom_bank * 0x4000);
     }
 
-    for (size_t i = 0; i < GB_ARR_SIZE(info.entries); ++i)
+    for (size_t i = 0; i < ARRAY_SIZE(info.entries); ++i)
     {
         info.entries[i].ptr = ptr + (0x1000 * i);
         info.entries[i].mask = 0x0FFF;
@@ -111,7 +111,7 @@ struct MBC_RamBankInfo mbc1_get_ram_bank(struct GB_Core* gb)
     // in mode 0, always read from bank 0
     const uint8_t* ptr = gb->cart.ram + (0x2000 * (gb->cart.bank_mode == 1 ? gb->cart.ram_bank : 0));
 
-    for (size_t i = 0; i < GB_ARR_SIZE(info.entries); ++i)
+    for (size_t i = 0; i < ARRAY_SIZE(info.entries); ++i)
     {
         info.entries[i].ptr = ptr + (0x1000 * i);
         info.entries[i].mask = 0x0FFF;

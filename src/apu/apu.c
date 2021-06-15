@@ -108,7 +108,12 @@ void gb_apu_on_disabled(struct GB_Core* gb)
 
     IO_NR52 &= ~0xF;
 
+    // not sure if this should be 0xFF or 0x00 on reset
+    #if 1
+    memset(IO + 0x10, 0x00, 0x15);
+    #else
     memset(IO + 0x10, 0xFF, 0x15);
+    #endif
 
     memset(&IO_NR10, 0, sizeof(IO_NR10));
     memset(&IO_NR11, 0, sizeof(IO_NR11));
@@ -121,11 +126,12 @@ void gb_apu_on_disabled(struct GB_Core* gb)
     memset(&IO_NR23, 0, sizeof(IO_NR23));
     memset(&IO_NR22, 0, sizeof(IO_NR22));
 
-    memset(&IO_NR30, 0, sizeof(IO_NR30));
-    memset(&IO_NR31, 0, sizeof(IO_NR31));
-    memset(&IO_NR32, 0, sizeof(IO_NR32));
-    memset(&IO_NR33, 0, sizeof(IO_NR33));
-    memset(&IO_NR34, 0, sizeof(IO_NR34));
+    // wave is preserved!
+    // memset(&IO_NR30, 0, sizeof(IO_NR30));
+    // memset(&IO_NR31, 0, sizeof(IO_NR31));
+    // memset(&IO_NR32, 0, sizeof(IO_NR32));
+    // memset(&IO_NR33, 0, sizeof(IO_NR33));
+    // memset(&IO_NR34, 0, sizeof(IO_NR34));
 
     memset(&IO_NR41, 0, sizeof(IO_NR41));
     memset(&IO_NR42, 0, sizeof(IO_NR42));
@@ -190,14 +196,6 @@ static inline void step_frame_sequencer(struct GB_Core* gb)
     gb->apu.frame_sequencer_counter = (gb->apu.frame_sequencer_counter + 1) % 8;
 }
 
-struct MixerResult
-{
-    int8_t ch1[2];
-    int8_t ch2[2];
-    int8_t ch3[2];
-    int8_t ch4[2];
-};
-
 struct MixerSampleData
 {
     int8_t sample;
@@ -215,11 +213,11 @@ struct MixerData
     int8_t left_master, right_master;
 };
 
-static inline struct MixerResult mixer(const struct MixerData* data)
+static inline struct GB_ApuCallbackData mixer(const struct MixerData* data)
 {
     enum { LEFT, RIGHT };
 
-    return (struct MixerResult)
+    return (struct GB_ApuCallbackData)
     {
         .ch1[LEFT] = data->ch1.sample * data->ch1.left * data->left_master,
         .ch1[RIGHT] = data->ch1.sample * data->ch1.right * data->right_master,
@@ -272,15 +270,7 @@ static inline void sample_channels(struct GB_Core* gb)
         .right_master = volume_right(gb)
     };
 
-    const struct MixerResult r = mixer(&mixer_data);
-
-    struct GB_ApuCallbackData samples =
-    {
-        .ch1 = { r.ch1[0], r.ch1[1] },
-        .ch2 = { r.ch2[0], r.ch2[1] },
-        .ch3 = { r.ch3[0], r.ch3[1] },
-        .ch4 = { r.ch4[0], r.ch4[1] },
-    };
+    struct GB_ApuCallbackData samples = mixer(&mixer_data);
 
     gb->callback.apu(gb->callback.user_apu, &samples);
 }

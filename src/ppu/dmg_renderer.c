@@ -173,7 +173,7 @@ static struct DMG_Sprites dmg_sprite_fetch(const struct GB_Core* gb)
     const uint8_t sprite_size = GB_get_sprite_size(gb);
     const uint8_t ly = IO_LY;
 
-    for (size_t i = 0; i < GB_ARR_SIZE(gb->ppu.oam); i += 4)
+    for (size_t i = 0; i < ARRAY_SIZE(gb->ppu.oam); i += 4)
     {
         struct DMG_Sprite* sprite = &sprites.sprite[sprites.count];
 

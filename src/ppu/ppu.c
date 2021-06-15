@@ -89,11 +89,18 @@ uint8_t GB_get_sprite_size(const struct GB_Core* gb)
     return ((IO_LCDC & 0x04) ? 16 : 8);
 }
 
-static void GB_raise_if_enabled(struct GB_Core* gb, const uint8_t stat_mode)
+static void GB_stat_interrupt_update(struct GB_Core* gb)
 {
-    // see if the interrupt for this mode is enabled
-    if (IO_STAT & stat_mode)
-    {
+    const uint8_t mode = GB_get_status_mode(gb);
+
+    // SOURCE: https://github.com/AntonioND/giibiiadvance/blob/master/docs/TCAGBD.pdf
+    if (
+        ((IO_LY == IO_LYC) && (IO_STAT & STAT_INT_MODE_COINCIDENCE)) ||
+        ((mode == STATUS_MODE_HBLANK) && (IO_STAT & STAT_INT_MODE_0)) ||
+        ((mode == STATUS_MODE_SPRITE) && (IO_STAT & STAT_INT_MODE_2)) ||
+        // TCAGBD says that oam and vblank int enable flags are checked here...
+        ((mode == STATUS_MODE_VBLANK) && (IO_STAT & (STAT_INT_MODE_1 | STAT_INT_MODE_2)))
+    ) {
         // the interrupt is only fired if the line is low.
         // SEE: https://github.com/ITotalJustice/TotalGB/issues/50
         if (gb->ppu.stat_line == false)
@@ -152,23 +159,27 @@ void GB_compare_LYC(struct GB_Core* gb)
     if (UNLIKELY(IO_LY == IO_LYC))
     {
         GB_set_coincidence_flag(gb, true);
-        GB_raise_if_enabled(gb, STAT_INT_MODE_COINCIDENCE);
     }
     else
     {
         GB_set_coincidence_flag(gb, false);
     }
+
+    GB_stat_interrupt_update(gb);
 }
 
 void GB_change_status_mode(struct GB_Core* gb, const uint8_t new_mode)
 {
     GB_set_status_mode(gb, new_mode);
 
+    // this happens on every mode switch because going to transfer
+    // mode will set the stat_line=0 (unless LY==LYC)
+    GB_stat_interrupt_update(gb);
+
     // TODO: check what the timing should actually be for ppu modes!
     switch (new_mode)
     {
         case STATUS_MODE_HBLANK:
-            GB_raise_if_enabled(gb, STAT_INT_MODE_0);
             gb->ppu.next_cycles += 204;
             GB_draw_scanline(gb);
 
@@ -179,7 +190,6 @@ void GB_change_status_mode(struct GB_Core* gb, const uint8_t new_mode)
             break;
 
         case STATUS_MODE_VBLANK:
-            GB_raise_if_enabled(gb, STAT_INT_MODE_1);
             GB_enable_interrupt(gb, GB_INTERRUPT_VBLANK);
             gb->ppu.next_cycles += 456;
 
@@ -190,7 +200,6 @@ void GB_change_status_mode(struct GB_Core* gb, const uint8_t new_mode)
             break;
 
         case STATUS_MODE_SPRITE:
-            GB_raise_if_enabled(gb, STAT_INT_MODE_2);
             gb->ppu.next_cycles += 80;
             break;
 
@@ -208,42 +217,55 @@ void GB_on_stat_write(struct GB_Core* gb, uint8_t value)
     // interrupt for our current mode 
     if (GB_is_lcd_enabled(gb))
     {
-        switch (GB_get_status_mode(gb))
-        {
-            case STATUS_MODE_HBLANK:    GB_raise_if_enabled(gb, STAT_INT_MODE_0); break;
-            case STATUS_MODE_VBLANK:    GB_raise_if_enabled(gb, STAT_INT_MODE_1); break;
-            case STATUS_MODE_SPRITE:    GB_raise_if_enabled(gb, STAT_INT_MODE_2); break;
-            case STATUS_MODE_TRANSFER:  break;
-        }
-
+        // GB_stat_interrupt_update(gb);
+        // this will internally call stat_interrupt_update!!!
         GB_compare_LYC(gb);
     }
+}
+
+static void on_lcd_disable(struct GB_Core* gb)
+{
+    // this *should* only happen in vblank!
+    if (GB_get_status_mode(gb) != STATUS_MODE_VBLANK)
+    {
+        GB_log("[PPU-WARN] game is disabling lcd outside vblank: 0x%0X\n", GB_get_status_mode(gb));
+    }
+
+    // in progress hdma should be stopped when ppu is turned off
+    #if GBC_ENABLE
+        gb->ppu.hdma_length = 0;
+        IO_HDMA5 = 0xFF;
+    #endif
+
+    IO_LY = 0;
+    IO_STAT &= ~(0x3);
+    gb->ppu.stat_line = false;
+    
+    GB_log("disabling ppu...\n");
+}
+
+static void on_lcd_enable(struct GB_Core* gb)
+{
+    GB_log("enabling ppu!\n");
+
+    gb->ppu.next_cycles = 0;
+    gb->ppu.stat_line = false;
+    GB_set_status_mode(gb, STATUS_MODE_TRANSFER);
+    GB_compare_LYC(gb);
 }
 
 void GB_on_lcdc_write(struct GB_Core* gb, const uint8_t value)
 {
     // check if the game wants to disable the ppu
-    // this *should* only happen in vblank!
     if (GB_is_lcd_enabled(gb) && (value & 0x80) == 0)
     {
-        if (GB_get_status_mode(gb) != STATUS_MODE_VBLANK)
-        {
-            GB_log("[PPU-WARN] game is disabling lcd outside vblank: 0x%0X\n", GB_get_status_mode(gb));
-        }
-
-        IO_LY = 0;
-        IO_STAT &= ~(0x3);
-        gb->ppu.stat_line = false;
-        GB_log("disabling ppu...\n");
+        on_lcd_disable(gb);
     }
 
     // check if the game wants to re-enable the lcd
     else if (!GB_is_lcd_enabled(gb) && (value & 0x80))
     {
-        gb->ppu.next_cycles = 0;
-        GB_set_status_mode(gb, STATUS_MODE_TRANSFER);
-        GB_compare_LYC(gb);
-        GB_log("enabling ppu!\n");
+        on_lcd_enable(gb);
     }
 
     IO_LCDC = value;
@@ -258,7 +280,7 @@ void GB_ppu_run(struct GB_Core* gb, uint16_t cycles)
 
     gb->ppu.next_cycles -= cycles;
     
-    if (UNLIKELY(((gb->ppu.next_cycles) > 0)))
+    if (UNLIKELY(gb->ppu.next_cycles > 0))
     {
         return;
     }

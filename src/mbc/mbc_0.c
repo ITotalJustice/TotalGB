@@ -4,7 +4,7 @@
 
 void mbc0_write(struct GB_Core* gb, uint16_t addr, uint8_t value)
 {
-    GB_UNUSED(gb); GB_UNUSED(addr); GB_UNUSED(value);
+    UNUSED(gb); UNUSED(addr); UNUSED(value);
 }
 
 struct MBC_RomBankInfo mbc0_get_rom_bank(struct GB_Core* gb, uint8_t bank)
@@ -21,7 +21,7 @@ struct MBC_RomBankInfo mbc0_get_rom_bank(struct GB_Core* gb, uint8_t bank)
         ptr = gb->cart.rom + 0x4000;
     }
 
-    for (size_t i = 0; i < GB_ARR_SIZE(info.entries); ++i)
+    for (size_t i = 0; i < ARRAY_SIZE(info.entries); ++i)
     {
         info.entries[i].ptr = ptr + (0x1000 * i);
         info.entries[i].mask = 0x0FFF;
@@ -32,7 +32,7 @@ struct MBC_RomBankInfo mbc0_get_rom_bank(struct GB_Core* gb, uint8_t bank)
 
 struct MBC_RamBankInfo mbc0_get_ram_bank(struct GB_Core* gb)
 {
-    GB_UNUSED(gb);
+    UNUSED(gb);
 
     return mbc_setup_empty_ram();
 }
