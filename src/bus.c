@@ -45,6 +45,7 @@ static inline void GB_iowrite_gbc(struct GB_Core* gb, uint16_t addr, uint8_t val
 
         case 0x68: // BCPS
             IO_BCPS = value;
+            GBC_on_bcpd_update(gb);
             break;
 
         case 0x69: // BCPD
@@ -53,6 +54,7 @@ static inline void GB_iowrite_gbc(struct GB_Core* gb, uint16_t addr, uint8_t val
 
         case 0x6A: // OCPS
             IO_OCPS = value;
+            GBC_on_ocpd_update(gb);
             break;
 
         case 0x6B: // OCPD

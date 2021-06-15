@@ -166,10 +166,13 @@ GB_INLINE void GB_on_stat_write(struct GB_Core* gb, uint8_t value);
 
 GB_STATIC void GB_serial_sc_write(struct GB_Core* gb, const uint8_t data);
 
-GB_INLINE void GB_bcpd_write(struct GB_Core* gb, uint8_t value);
-GB_INLINE void GB_ocpd_write(struct GB_Core* gb, uint8_t value);
-
-GB_STATIC void GB_hdma5_write(struct GB_Core* gb, uint8_t value);
+#if GBC_ENABLE
+    GB_INLINE void GB_bcpd_write(struct GB_Core* gb, uint8_t value);
+    GB_INLINE void GB_ocpd_write(struct GB_Core* gb, uint8_t value);
+    GB_INLINE void GBC_on_bcpd_update(struct GB_Core* gb);
+    GB_INLINE void GBC_on_ocpd_update(struct GB_Core* gb);
+    GB_STATIC void GB_hdma5_write(struct GB_Core* gb, uint8_t value);
+#endif
 
 // these should also be static
 GB_STATIC bool GB_get_mbc_flags(uint8_t cart_type, uint8_t* flags_out);

@@ -61,6 +61,16 @@ static inline void ocps_increment(struct GB_Core* gb)
     }
 }
 
+void GBC_on_bcpd_update(struct GB_Core* gb)
+{
+    IO_BCPD = gb->ppu.bg_palette[get_bcps_index(gb)];
+}
+
+void GBC_on_ocpd_update(struct GB_Core* gb)
+{
+    IO_OCPD = gb->ppu.bg_palette[get_ocps_index(gb)];
+}
+
 void GB_bcpd_write(struct GB_Core* gb, uint8_t value)
 {
     const uint8_t index = get_bcps_index(gb);
@@ -72,7 +82,7 @@ void GB_bcpd_write(struct GB_Core* gb, uint8_t value)
     gb->ppu.bg_palette[index] = value;
     bcps_increment(gb);
 
-    IO_BCPD = gb->ppu.bg_palette[index];
+    GBC_on_bcpd_update(gb);
 }
 
 void GB_ocpd_write(struct GB_Core* gb, uint8_t value)
@@ -86,7 +96,7 @@ void GB_ocpd_write(struct GB_Core* gb, uint8_t value)
     gb->ppu.obj_palette[index] = value;
     ocps_increment(gb);
 
-    IO_OCPD = gb->ppu.obj_palette[index];
+    GBC_on_ocpd_update(gb);
 }
 
 bool GB_is_hdma_active(const struct GB_Core* gb)

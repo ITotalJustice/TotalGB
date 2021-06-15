@@ -467,7 +467,7 @@ bool GB_loadrom(struct GB_Core* gb, const uint8_t* data, size_t size)
 
     if ((gbc_flag & GBC_ONLY) == GBC_ONLY)
     {
-        #if GBC_ENABLE
+        #if !GBC_ENABLE
             GB_log("[ERROR] game is gbc only but emu is built without gbc!\n");
             return false;
         #endif
@@ -504,7 +504,7 @@ bool GB_loadrom(struct GB_Core* gb, const uint8_t* data, size_t size)
         }
         else
         {
-            #if GBC_ENABLE
+            #if !GBC_ENABLE
                 GB_set_system_type(gb, GB_SYSTEM_TYPE_GBC);
             #else
                 GB_log("rom supports GBC mode, however falling back to DMG mode...\n");
