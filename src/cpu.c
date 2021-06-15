@@ -969,10 +969,6 @@ void GB_cpu_enable_log(const bool enable)
 
 static inline void GB_execute(struct GB_Core* gb)
 {
-    // ime is delayed by 1 instruction
-    gb->cpu.ime |= gb->cpu.ime_delay;
-    gb->cpu.ime_delay = false;
-
     const uint8_t opcode = read8(REG_PC);
 
     #if GB_DEBUG
@@ -1334,6 +1330,15 @@ uint16_t GB_cpu_run(struct GB_Core* gb, uint16_t cycles)
 
     // check and handle interrupts
     GB_interrupt_handler(gb);
+
+    // EI overlaps with the next fetch and ISR, meaning it hasn't yet
+    // set ime during that time, hense the delay.
+    // this is important as it means games can do:
+    // EI -> ADD -> ISR, whereas without the delay, it would EI -> ISR.
+    // this breaks bubble bobble if ime is not delayed!
+    // SEE: https://github.com/ITotalJustice/TotalGB/issues/42
+    gb->cpu.ime |= gb->cpu.ime_delay;
+    gb->cpu.ime_delay = false;
 
     // if halted, return early
     if (UNLIKELY(gb->cpu.halt))
