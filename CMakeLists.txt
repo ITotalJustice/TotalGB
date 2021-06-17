@@ -14,7 +14,7 @@ option(GB_DEBUG "enable debug" OFF)
 option(GB_DEV "enables debug and sanitizers" OFF)
 
 option(GBC_ENABLE "build with GBC support" ON)
-option(SGB_ENABLE "build with SGB support" OFF)
+option(SGB_ENABLE "build with SGB support" ON)
 option(GB_ENABLE_BUILTIN_PALETTE "build with builtin palettes" ON)
 
 option(GB_GAMESHARK "enables gameshark cheats (uses malloc,free)" OFF)

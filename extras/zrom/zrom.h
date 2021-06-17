@@ -24,6 +24,7 @@ enum ZromEntryFlag
 
 enum
 {
+    ZROM_MAGIC = 0xFACADE,
     ZROM_MAX_BANKS = 0x100,
     ZROM_BANK_SIZE = 1024 * 16,
 };
@@ -50,16 +51,26 @@ struct Zrom
     const uint8_t* rom_data;
     size_t rom_size;
 
+    uint8_t* pool;
+    size_t pool_count;
+
     struct ZromHeader header;
     struct ZromBankEntry entries[ZROM_MAX_BANKS];
-    bool slots[ZROM_MAX_BANKS];
+    
+    uint8_t last_used[ZROM_MAX_BANKS];
+    uint8_t last_used_count;
 
-    uint8_t bank_buffer[ZROM_BANK_SIZE];
-    uint8_t bank;
+    uint8_t pool_idx[ZROM_MAX_BANKS];
+    
+    bool slots[ZROM_MAX_BANKS];
 };
 
+// this can be called before `zrom_init()`
+// checks if the zrom header is found, no futher checks are performed such
+// as is the rom itself is valid!
+GBAPI bool is_zrom(const uint8_t* data, size_t size);
 
-GBAPI bool zrom_init(struct Zrom* z, struct GB_Core* gb);
+GBAPI bool zrom_init(struct Zrom* z, struct GB_Core* gb, uint8_t* pool, size_t size);
 GBAPI void zrom_exit(struct Zrom* z);
 GBAPI bool zrom_loadrom_compressed(struct Zrom* z, const uint8_t* data, size_t size);
 

@@ -9,7 +9,8 @@
 // SOURCE: https://gbdev.io/pandocs/#sgb-functions
 
 
-enum SGB_Commands {
+enum SGB_Commands
+{
     CMD_PAL01       = 0x00, // Set SGB Palette 0 & 1
     CMD_PAL23       = 0x01, // Set SGB Palette 2 & 3
     CMD_PAL03       = 0x02, // Set SGB Palette 0 & 3
@@ -45,7 +46,8 @@ enum SGB_Commands {
     CMD_OBJ_TRN     = 0x18, // Super NES OBJ Mode
 };
 
-enum SGB_ScreenMask {
+enum SGB_ScreenMask
+{
     // cancle screen mask!
     SCREEN_MASK_CANCEL          = 0,
     // the screen is fronzen (todo)
@@ -56,7 +58,8 @@ enum SGB_ScreenMask {
     SCREEN_MASK_BLANK_SCREEN    = 3,
 };
 
-enum SGB_TransferState {
+enum SGB_TransferState
+{
     // this happens when both p15 and p14 go lo
     WAITING_FOR_RESET,
 
@@ -68,21 +71,24 @@ enum SGB_TransferState {
     ZERO_BIT
 };
 
-struct SGB_HeaderByte {
-    uint8_t len : 3;
-    uint8_t cmd : 5;
+struct SGB_HeaderByte
+{
+    uint8_t len; // 3-bits
+    uint8_t cmd; // 5-bits
 };
 
 // 1-bit is transfered at a time
 // because of this, we need to keep track at which bit index we are in!
-struct SGB_Packet {
+struct SGB_Packet
+{
     uint8_t data[16];
 
     // max value of 128 (for 16-bytes)
     uint8_t bit_index;
 };
 
-struct SGB_Tranfer {
+struct SGB_Tranfer
+{
     // which state we are in
     enum SGB_TransferState state;
 
@@ -94,7 +100,8 @@ struct SGB_Tranfer {
     struct SGB_HeaderByte header_byte;
 };
 
-enum MLT_PlayerCount {
+enum MLT_PlayerCount
+{
     MLT_1_PLAYERS = 0,
     MLT_2_PLAYERS = 1,
     MLT_4_PLAYERS = 3
@@ -109,7 +116,7 @@ struct SGB_Stub
     struct
     {
         // which controller num are we checking
-        uint8_t index : 2;
+        uint8_t index; // 2-bits
         // how many controllers are we checking
         uint8_t count;
     } mlt;
@@ -134,26 +141,26 @@ static struct SGB_Stub sgb_stub = {0};
 
 static void cmd_mlt_reg(struct GB_Core* gb)
 {
-    GB_UNUSED(gb);
+    UNUSED(gb);
     sgb_stub.mlt.count = transfer.packets[0].data[1] & 0x3;
 
     // i think we always reset the current index?
     switch (sgb_stub.mlt.count)
     {
         case MLT_1_PLAYERS:
-            printf("[SGB] MLT_1_PLAYERS\n");
+            GB_log("[SGB] MLT_1_PLAYERS\n");
             break;
 
         case MLT_2_PLAYERS:
-            printf("[SGB] MLT_2_PLAYERS\n");
+            GB_log("[SGB] MLT_2_PLAYERS\n");
             break;
 
         case MLT_4_PLAYERS:
-            printf("[SGB] MLT_4_PLAYERS\n");
+            GB_log("[SGB] MLT_4_PLAYERS\n");
             break;
 
         default:
-            printf("[SGB] inavlid amount! %u\n", sgb_stub.mlt.count);
+            GB_log_fatal("[SGB] inavlid amount! %u\n", sgb_stub.mlt.count);
             break;
     }
 
@@ -162,25 +169,25 @@ static void cmd_mlt_reg(struct GB_Core* gb)
 
 static void cmd_mask_en(struct GB_Core* gb)
 {
-    GB_UNUSED(gb);
+    UNUSED(gb);
     sgb_stub.mask_en.mask = transfer.packets[0].data[0] & 0x7;
 
     switch (sgb_stub.mask_en.mask)
     {
         case SCREEN_MASK_CANCEL:
-            printf("[SGB] SCREEN_MASK_CANCEL\n");
+            GB_log("[SGB] SCREEN_MASK_CANCEL\n");
             break;
 
         case SCREEN_MASK_FREEZE:
-            printf("[SGB] SCREEN_MASK_FREEZE\n");
+            GB_log("[SGB] SCREEN_MASK_FREEZE\n");
             break;
 
         case SCREEN_MASK_BLACK_SCREEN:
-            printf("[SGB] SCREEN_MASK_BLACK_SCREEN\n");
+            GB_log("[SGB] SCREEN_MASK_BLACK_SCREEN\n");
             break;
 
         case SCREEN_MASK_BLANK_SCREEN:
-            printf("[SGB] SCREEN_MASK_BLANK_SCREEN\n");
+            GB_log("[SGB] SCREEN_MASK_BLANK_SCREEN\n");
             break;
 
     }
@@ -188,38 +195,24 @@ static void cmd_mask_en(struct GB_Core* gb)
 
 static void _cmd_palxx(struct GB_Core* gb, uint8_t p0, uint8_t p1)
 {
-    const uint16_t col1 = *(uint16_t*)(&(transfer.packets[0].data[0x1]));
-    const uint16_t col2 = *(uint16_t*)(&(transfer.packets[0].data[0x3]));
-    const uint16_t col3 = *(uint16_t*)(&(transfer.packets[0].data[0x5]));
-    const uint16_t col4 = *(uint16_t*)(&(transfer.packets[0].data[0x7]));
-    const uint16_t col5 = *(uint16_t*)(&(transfer.packets[0].data[0x9]));
-    const uint16_t col6 = *(uint16_t*)(&(transfer.packets[0].data[0xB]));
-    const uint16_t col7 = *(uint16_t*)(&(transfer.packets[0].data[0xD]));
+    const uint8_t col_a = transfer.packets[0].data[0x1];
+    const uint8_t col_b = transfer.packets[0].data[0x2];
+    const uint16_t pair = (col_b << 8) | col_a;
 
-    const uint8_t array[2] = { p0, p1 };
+    const uint8_t r = (pair >> 0x0) & 0x1F; 
+    const uint8_t g = (pair >> 0x5) & 0x1F; 
+    const uint8_t b = (pair >> 0xA) & 0x1F; 
 
-    GB_UNUSED(col1); GB_UNUSED(col2); GB_UNUSED(col3); GB_UNUSED(col4);
-    GB_UNUSED(col5); GB_UNUSED(col6); GB_UNUSED(col7); GB_UNUSED(array);
+    uint32_t colour = gb->callback.colour(gb->callback.user_colour, GB_ColourCallbackType_GBC, r, g, b);
 
-    // for (size_t i = 0; i < 2; ++i) {
-    //     switch (array[i]) {
-    //         case 0:
-    //             memcpy(gb->palette.BG, pal_array, sizeof(pal_array));
-    //             break;
+    gb->palette.BG[p0] = colour;
+    gb->palette.BG[p1] = colour;
 
-    //         case 1:
-    //             memcpy(gb->palette.OBJ0, pal_array, sizeof(pal_array));
-    //             break;
+    gb->palette.OBJ0[p0] = colour;
+    gb->palette.OBJ0[p1] = colour;
 
-    //         case 2:
-    //             memcpy(gb->palette.OBJ1, pal_array, sizeof(pal_array));
-    //             break;
-
-    //         case 3:
-    //             memcpy(gb->palette.OBJ0, pal_array, sizeof(pal_array));
-    //             break;
-    //     }
-    // }
+    gb->palette.OBJ1[p0] = colour;
+    gb->palette.OBJ1[p1] = colour;
 
     // refresh the palette cache.
     GB_update_all_colours_gb(gb);
@@ -247,7 +240,7 @@ static void cmd_pal12(struct GB_Core* gb)
 
 static void cmd_pal_set(struct GB_Core* gb)
 {
-    GB_UNUSED(gb);
+    UNUSED(gb);
 }
 
 static void execute_cmd(struct GB_Core* gb)
@@ -255,151 +248,138 @@ static void execute_cmd(struct GB_Core* gb)
     switch (transfer.header_byte.cmd)
     {
         case CMD_PAL01:   // Set SGB Palette 0 & 1
-            printf("[SGB] %s\n", "CMD_PAL01");
+            GB_log("[SGB] %s\n", "CMD_PAL01");
             cmd_pal01(gb);
             break;
 
         case CMD_PAL23:   // Set SGB Palette 2 & 3
-            printf("[SGB] %s\n", "CMD_PAL23");
+            GB_log("[SGB] %s\n", "CMD_PAL23");
             cmd_pal23(gb);
             break;
 
         case CMD_PAL03:   // Set SGB Palette 0 & 3
-            printf("[SGB] %s\n", "CMD_PAL03");
+            GB_log("[SGB] %s\n", "CMD_PAL03");
             cmd_pal03(gb);
             break;
 
         case CMD_PAL12:   // Set SGB Palette 1 & 2
-            printf("[SGB] %s\n", "CMD_PAL12");
+            GB_log("[SGB] %s\n", "CMD_PAL12");
             cmd_pal12(gb);
             break;
 
         case CMD_ATTR_BLK:// "Block" Area Designation Mode
-            printf("[SGB] %s\n", "CMD_ATTR_BLK");
-            // assert(0 && "CMD_ATTR_BLK");
+            GB_log("[SGB] %s\n", "CMD_ATTR_BLK");
             break;
 
         case CMD_ATTR_LIN:// "Line" Area Designation Mode
-            printf("[SGB] %s\n", "CMD_ATTR_LIN");
-            // assert(0 && "CMD_ATTR_LIN");
+            GB_log("[SGB] %s\n", "CMD_ATTR_LIN");
             break;
 
         case CMD_ATTR_DIV:// "Divide" Area Designation Mode
-            printf("[SGB] %s\n", "CMD_ATTR_DIV");
-            // assert(0 && "CMD_ATTR_DIV");
+            GB_log("[SGB] %s\n", "CMD_ATTR_DIV");
             break;
 
         case CMD_ATTR_CHR:// "1CHR" Area Designation Mode
-            printf("[SGB] %s\n", "CMD_ATTR_CHR");
-            // assert(0 && "CMD_ATTR_CHR");
+            GB_log("[SGB] %s\n", "CMD_ATTR_CHR");
             break;
 
         case CMD_SOUND:   // Sound On/Off
-            printf("[SGB] %s\n", "CMD_SOUND");
-            // assert(0 && "CMD_SOUND");
+            GB_log("[SGB] %s\n", "CMD_SOUND");
             break;
 
         case CMD_SOU_TRN: // Transfer Sound PRG/DATA
-            printf("[SGB] %s\n", "CMD_SOU_TRN");
-            // assert(0 && "CMD_SOU_TRN");
+            GB_log("[SGB] %s\n", "CMD_SOU_TRN");
             break;
 
         case CMD_PAL_SET: // Set SGB Palette Indirect
-            printf("[SGB] %s\n", "CMD_PAL_SET");
+            GB_log("[SGB] %s\n", "CMD_PAL_SET");
             cmd_pal_set(gb);
             break;
 
         case CMD_PAL_TRN: // Set System Color Palette Data
-            printf("[SGB] %s\n", "CMD_PAL_TRN");
-            // assert(0 && "CMD_PAL_TRN");
+            GB_log("[SGB] %s\n", "CMD_PAL_TRN");
             break;
 
         case CMD_ATRC_EN: // Enable/disable Attraction Mode
-            printf("[SGB] %s\n", "CMD_ATRC_EN");
-            // assert(0 && "CMD_ATRC_EN");
+            GB_log("[SGB] %s\n", "CMD_ATRC_EN");
             break;
 
         case CMD_TEST_EN: // Speed Function
-            printf("[SGB] %s\n", "CMD_TEST_EN");
-            // assert(0 && "CMD_TEST_EN");
+            GB_log("[SGB] %s\n", "CMD_TEST_EN");
             break;
 
         case CMD_ICON_EN: // SGB Function
-            printf("[SGB] %s\n", "CMD_ICON_EN");
-            // assert(0 && "CMD_ICON_EN");
+            GB_log("[SGB] %s\n", "CMD_ICON_EN");
             break;
 
         case CMD_DATA_SND:// SUPER NES WRAM Transfer 1
-            printf("[SGB] %s\n", "CMD_DATA_SND");
-            // assert(0 && "CMD_DATA_SND");
+            GB_log("[SGB] %s\n", "CMD_DATA_SND");
             break;
 
         case CMD_DATA_TRN:// SUPER NES WRAM Transfer 2
-            printf("[SGB] %s\n", "CMD_DATA_TRN");
-            // assert(0 && "CMD_DATA_TRN");
+            GB_log("[SGB] %s\n", "CMD_DATA_TRN");
             break;
 
         case CMD_MLT_REG: // Controller 2 Request
-            printf("[SGB] %s\n", "CMD_MLT_REG");
+            GB_log("[SGB] %s\n", "CMD_MLT_REG");
             cmd_mlt_reg(gb);
             break;
 
         case CMD_JUMP:    // Set SNES Program Counter
-            printf("[SGB] %s\n", "CMD_JUMP");
-            // assert(0 && "CMD_JUMP");
+            GB_log("[SGB] %s\n", "CMD_JUMP");
             break;
 
         case CMD_CHR_TRN: // Transfer Character Font Data
-            printf("[SGB] %s\n", "CMD_CHR_TRN");
-            // assert(0 && "CMD_CHR_TRN");
+            GB_log("[SGB] %s\n", "CMD_CHR_TRN");
             break;
 
         case CMD_PCT_TRN: // Set Screen Data Color Data
-            printf("[SGB] %s\n", "CMD_PCT_TRN");
-            // assert(0 && "CMD_PCT_TRN");
+            GB_log("[SGB] %s\n", "CMD_PCT_TRN");
             break;
 
         case CMD_ATTR_TRN:// Set Attribute from ATF
-            printf("[SGB] %s\n", "CMD_ATTR_TRN");
-            // assert(0 && "CMD_ATTR_TRN");
+            GB_log("[SGB] %s\n", "CMD_ATTR_TRN");
             break;
 
         case CMD_ATTR_SET:// Set Data to ATF
-            printf("[SGB] %s\n", "CMD_ATTR_SET");
-            // assert(0 && "CMD_ATTR_SET");
+            GB_log("[SGB] %s\n", "CMD_ATTR_SET");
             break;
 
         case CMD_MASK_EN: // Game Boy Window Mask
-            printf("[SGB] %s\n", "CMD_MASK_EN");
+            GB_log("[SGB] %s\n", "CMD_MASK_EN");
             cmd_mask_en(gb);
             break;
 
         case CMD_OBJ_TRN: // Super NES OBJ Mode
-            printf("[SGB] %s\n", "CMD_OBJ_TRN");
-            // assert(0 && "CMD_OBJ_TRN");
+            GB_log("[SGB] %s\n", "CMD_OBJ_TRN");
             break;
 
         default:
-            printf("UNK SGB CMD: 0x%02X\n", transfer.header_byte.cmd);
+            GB_log_fatal("UNK SGB CMD: 0x%02X\n", transfer.header_byte.cmd);
             break;
     }
 }
 
-
+// todo: handle this on joypad write by setting JYP
+#if 0
 bool SGB_handle_joyp_read(const struct GB_Core* gb, uint8_t* data_out)
 {
-    if (sgb_stub.mlt.count != MLT_1_PLAYERS && (IO_JYP & 0x30) == 0x30)
+    // not sure if this is correct because bomberman GB always has both
+    // p14 an p15 set, so this will always be true...
+    // there must be some other condition that needs to be checked
+    if ((IO_JYP & 0x30) == 0x30)
     {
         // static const uint8_t PLAYER_VALUE[4] = {
         //     0x0F, 0x0E, /*0x0D, 0x0C,*/ 0x00, 0x00
         // };
 
-        *data_out = 0xF0 | 0x0E;
+        *data_out = 0x0E;
         return true;
     }
 
     return false;
 }
+#endif
 
 void SGB_handle_joyp_write(struct GB_Core* gb, uint8_t value)
 {

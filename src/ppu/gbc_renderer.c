@@ -106,8 +106,9 @@ bool GB_is_hdma_active(const struct GB_Core* gb)
 
 uint8_t hdma_read(const struct GB_Core* gb, const uint16_t addr)
 {
-    const struct GB_MemMapEntry entry = gb->mmap[(addr >> 12)];
-    return entry.ptr[addr & entry.mask];
+    const struct GB_MemMapEntry* entry = &gb->mmap[(addr >> 12)];
+    
+    return entry->ptr[addr & entry->mask];
 }
 
 void hdma_write(struct GB_Core* gb, const uint16_t addr, const uint8_t value)
@@ -532,26 +533,17 @@ void GBC_render_scanline(struct GB_Core* gb)
     // update the obj colour palettes
     gbc_update_colours(gb, gb->ppu.dirty_obj, gb->ppu.obj_colours, gb->ppu.obj_palette);
 
-    if (LIKELY(GB_is_render_layer_enabled(gb, GB_RENDER_LAYER_CONFIG_BG)))
-    {
-        gbc_render_scanline_bg(gb, &prio_buffer);
-    }
+    gbc_render_scanline_bg(gb, &prio_buffer);
 
     // WX=0..166, WY=0..143
     if ((GB_is_win_enabled(gb)) && (IO_WX <= 166) && (IO_WY <= 143) && (IO_WY <= IO_LY))
     {
-        if (LIKELY(GB_is_render_layer_enabled(gb, GB_RENDER_LAYER_CONFIG_WIN)))
-        {
-            gbc_render_scanline_win(gb, &prio_buffer);
-        }
+        gbc_render_scanline_win(gb, &prio_buffer);
     }
 
     if (LIKELY(GB_is_obj_enabled(gb)))
     {
-        if (LIKELY(GB_is_render_layer_enabled(gb, GB_RENDER_LAYER_CONFIG_OBJ)))
-        {
-            gbc_render_scanline_obj(gb, &prio_buffer);
-        }
+        gbc_render_scanline_obj(gb, &prio_buffer);
     }
 }
 

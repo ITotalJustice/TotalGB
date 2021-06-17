@@ -112,7 +112,7 @@ int main(int argc, char** argv)
 
                 sram_fd = open(argv[2], O_RDWR | O_CREAT, 0644);
 
-                if (rom_fd == -1)
+                if (sram_fd == -1)
                 {
                     perror("failed to open sram");
                     goto fail;

@@ -13,6 +13,10 @@ extern "C" {
     #define GBC_ENABLE 1
 #endif
 
+#ifndef SGB_ENABLE
+    #define SGB_ENABLE 0
+#endif
+
 #if defined _WIN32 || defined __CYGWIN__
   #ifdef BUILDING_LIB
     #define GBAPI __declspec(dllexport)
@@ -361,7 +365,7 @@ struct GB_RomInfo
 {
     uint32_t rom_size;
     uint32_t ram_size;
-    uint8_t mbc_flags; /* flags ored together */
+    uint8_t flags; /* flags ored together */
 };
 
 struct GB_Rtc

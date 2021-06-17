@@ -224,8 +224,7 @@ GB_INLINE bool GB_is_bg_enabled(const struct GB_Core* gb);
 
 
 // SGB stuff
-/*GB_STATIC*/ bool SGB_handle_joyp_read(const struct GB_Core* gb, uint8_t* data_out);
-/*GB_STATIC*/ void SGB_handle_joyp_write(struct GB_Core* gb, uint8_t value);
+GB_STATIC void SGB_handle_joyp_write(struct GB_Core* gb, uint8_t value);
 
 #ifdef __cplusplus
 }

@@ -40,8 +40,7 @@ void ppu_write_pixel(struct GB_Core* gb, uint32_t c, uint8_t x, uint8_t y)
 
 uint8_t GB_vram_read(const struct GB_Core* gb,
     const uint16_t addr, const uint8_t bank
-)
-{
+) {
     assert(bank < 2);
     return gb->ppu.vram[bank][addr & 0x1FFF];
 }

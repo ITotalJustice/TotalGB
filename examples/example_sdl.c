@@ -3,9 +3,14 @@
 
 #include <stdbool.h>
 #include <stdint.h>
+#include <sys/mman.h>
+#include <sys/stat.h>
+#include <fcntl.h>
+#include <unistd.h>
 #include <gb.h>
 #if GB_ZROM
     #include <zrom.h>
+    static uint8_t zrom_mem_pool[ZROM_BANK_SIZE * 7];
 #endif
 #include <SDL.h>
 
@@ -15,7 +20,7 @@ enum
     WIDTH = 160,
     HEIGHT = 144,
 
-    VOLUME = SDL_MIX_MAXVOLUME / 8,
+    VOLUME = SDL_MIX_MAXVOLUME / 16,
     SAMPLES = 1024,
     SDL_AUDIO_FREQ = 48000,
     GB_AUDIO_FREQ = SDL_AUDIO_FREQ,
@@ -24,27 +29,23 @@ enum
 };
 
 
-enum RunMode
-{
-    RunMode_NORMAL,
-    RunMode_STEP,
-};
-
 static struct GB_Core gameboy;
 static uint32_t core_pixels[144][160];
-static uint8_t sram_data[GB_SAVE_SIZE_MAX];
 static uint8_t* rom_data = NULL;
 static size_t rom_size = 0;
 static bool running = true;
-static int scale = 3;
+static int scale = 4;
 static int speed = 1;
 static int frameskip_counter = 0;
-static enum RunMode run_mode = RunMode_NORMAL;
-static bool step = false;
+
+static int sram_fd = -1;
+static uint8_t* sram_data = NULL;
+static size_t sram_size = 0;
 
 static SDL_Window* window = NULL;
 static SDL_Renderer* renderer = NULL;
 static SDL_Texture* texture = NULL;
+static SDL_Texture* prev_texture = NULL;
 static SDL_AudioDeviceID audio_device = 0;
 static SDL_Rect rect = {0};
 static SDL_PixelFormat* pixel_format = NULL;
@@ -52,30 +53,15 @@ static SDL_PixelFormat* pixel_format = NULL;
 
 static void run()
 {
-    switch (run_mode)
+    for (int i = 0; i < speed; ++i)
     {
-        case RunMode_NORMAL:
-            for (int i = 0; i < speed; ++i)
-            {
-                // check if we should skip next frame
-                if (i + 1 != speed)
-                {
-                    GB_skip_next_frame(&gameboy);
-                }
+        // check if we should skip next frame
+        if (i + 1 != speed)
+        {
+            GB_skip_next_frame(&gameboy);
+        }
 
-                GB_run_frame(&gameboy);
-            }
-            break;
-
-        case RunMode_STEP:
-            if (step)
-            {
-                GB_run_frame(&gameboy);
-                // we've handled the step!
-                step = false;
-            }
-            SDL_Delay(16);
-            break;
+        GB_run_frame(&gameboy);
     }
 }
 
@@ -136,12 +122,9 @@ static void toggle_fullscreen()
     }
 }
 
-static void on_key_event(const SDL_KeyboardEvent* e)
+static void on_ctrl_key_event(const SDL_KeyboardEvent* e, bool down)
 {
-    const bool down = e->type == SDL_KEYDOWN;
-    const bool ctrl = (e->keysym.mod & KMOD_CTRL) > 0;
-
-    if (ctrl && !down)
+    if (down)
     {
         switch (e->keysym.scancode)
         {
@@ -174,24 +157,25 @@ static void on_key_event(const SDL_KeyboardEvent* e)
                 toggle_fullscreen();
                 break;
 
-            // break into step mode
-            case SDL_SCANCODE_B:
-                run_mode = RunMode_STEP;
-                break;
-
-            case SDL_SCANCODE_R:
-                run_mode = RunMode_NORMAL;
+            case SDL_SCANCODE_L:
                 break;
 
             case SDL_SCANCODE_S:
-                if (run_mode == RunMode_STEP)
-                {
-                    step = true;
-                }
                 break;
 
             default: break; // silence enum warning
         }
+    }
+}
+
+static void on_key_event(const SDL_KeyboardEvent* e)
+{
+    const bool down = e->type == SDL_KEYDOWN;
+    const bool ctrl = (e->keysym.mod & KMOD_CTRL) > 0;
+
+    if (ctrl)
+    {
+        on_ctrl_key_event(e, down);
 
         return;
     }
@@ -209,11 +193,6 @@ static void on_key_event(const SDL_KeyboardEvent* e)
     
         case SDL_SCANCODE_ESCAPE:
             running = false;
-            break;
-
-        case SDL_SCANCODE_I:
-            GB_cpu_enable_log(down);
-            printf("\n\n\t----NEWLINE----\n\n");
             break;
 
         default: break; // silence enum warning
@@ -372,7 +351,15 @@ static void core_on_vblank(void* user)
 
     if (frameskip_counter >= speed)
     {
+        SDL_Texture* tmp = prev_texture;
+        prev_texture = texture;
+        texture = tmp;
+
         void* pixels; int pitch;
+
+        SDL_SetTextureBlendMode(texture, SDL_BLENDMODE_NONE);
+        SDL_SetTextureBlendMode(prev_texture, SDL_BLENDMODE_BLEND);
+        SDL_SetTextureAlphaMod(prev_texture, 100);
 
         SDL_LockTexture(texture, NULL, &pixels, &pitch);
         memcpy(pixels, core_pixels, sizeof(core_pixels));
@@ -386,14 +373,18 @@ static void render()
 {
     SDL_RenderClear(renderer);
     SDL_RenderCopy(renderer, texture, NULL, &rect);
+    SDL_RenderCopy(renderer, prev_texture, NULL, &rect);
     SDL_RenderPresent(renderer);
 }
 
 static void cleanup()
 {
+    if (sram_data)      { munmap(sram_data, sram_size); }
+    if (sram_fd != -1)  { close(sram_fd); }
     if (pixel_format)   { SDL_free(pixel_format); }
     if (audio_device)   { SDL_CloseAudioDevice(audio_device); }
     if (rom_data)       { SDL_free(rom_data); }
+    if (prev_texture)   { SDL_DestroyTexture(prev_texture); }
     if (texture)        { SDL_DestroyTexture(texture); }
     if (renderer)       { SDL_DestroyRenderer(renderer); }
     if (window)         { SDL_DestroyWindow(window); }
@@ -444,8 +435,9 @@ int main(int argc, char** argv)
     }
 
     texture = SDL_CreateTexture(renderer, pixel_format_enum, SDL_TEXTUREACCESS_STREAMING, WIDTH, HEIGHT);
+    prev_texture = SDL_CreateTexture(renderer, pixel_format_enum, SDL_TEXTUREACCESS_STREAMING, WIDTH, HEIGHT);
 
-    if (!texture)
+    if (!texture || !prev_texture)
     {
         goto fail;
     }
@@ -502,12 +494,72 @@ int main(int argc, char** argv)
 
     if (rom_info.ram_size > 0)
     {
-        GB_set_sram(&gameboy, sram_data, sizeof(sram_data));
+        int flags = 0;
+
+        if (rom_info.flags & MBC_FLAGS_BATTERY)
+        {
+            char sram_path[0x304] = {0};
+
+            const char* ext = strrchr(argv[1], '.');
+
+            if (!ext)
+            {
+                goto fail;
+            }
+
+            strncat(sram_path, argv[1], ext - argv[1]);
+            strcat(sram_path, ".sav");
+
+            flags = MAP_SHARED;
+
+            sram_fd = open(sram_path, O_RDWR | O_CREAT, 0644);
+
+            if (sram_fd == -1)
+            {
+                perror("failed to open sram");
+                goto fail;
+            }
+
+            struct stat s = {0};
+
+            if (fstat(sram_fd, &s) == -1)
+            {
+                perror("failed to stat sram");
+                goto fail;
+            }
+
+            if (s.st_size < rom_info.ram_size)
+            {
+                char page[1024] = {0};
+                
+                for (size_t i = 0; i < rom_info.ram_size; i += sizeof(page))
+                {
+                    int size = sizeof(page) > rom_info.ram_size-i ? rom_info.ram_size-i : sizeof(page);
+                    write(sram_fd, page, size);
+                }
+            }  
+        }
+        else
+        {
+            flags = MAP_PRIVATE | MAP_ANONYMOUS;
+        }
+
+        sram_data = (uint8_t*)mmap(NULL, rom_info.ram_size, PROT_READ | PROT_WRITE, flags, sram_fd, 0);
+    
+        if (sram_data == MAP_FAILED)
+        {
+            perror("failed to mmap sram");
+            goto fail;
+        }
+
+        sram_size = rom_info.ram_size;
+
+        GB_set_sram(&gameboy, sram_data, rom_info.ram_size);
     }
 
     #if GB_ZROM
         struct Zrom zrom = {0};
-        zrom_init(&zrom, &gameboy);
+        zrom_init(&zrom, &gameboy, zrom_mem_pool, sizeof(zrom_mem_pool));
         if (!zrom_loadrom_compressed(&zrom, rom_data, rom_size))
         {
             goto fail;

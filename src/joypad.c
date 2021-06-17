@@ -66,10 +66,12 @@ bool GB_is_button_down(const struct GB_Core* gb, enum GB_Button button)
 
 void GB_joypad_write(struct GB_Core* gb, uint8_t value)
 {
-    // if (GB_get_system_type(gb) == GB_SYSTEM_TYPE_SGB)
-    // {
-    //     SGB_handle_joyp_write(gb, value);
-    // }
+    #if SGB_ENABLE
+        if (GB_get_system_type(gb) == GB_SYSTEM_TYPE_SGB)
+        {
+            SGB_handle_joyp_write(gb, value);
+        }
+    #endif // #if SGB_ENABLE
 
     // unset p14 and p15
     IO_JYP &= ~0x30;
@@ -85,7 +87,8 @@ void GB_joypad_write(struct GB_Core* gb, uint8_t value)
     // this was noticed in [bomberman GB] where both p14 and p15 were low.
     // SEE: https://github.com/ITotalJustice/TotalGB/issues/41
 
-    if ((GB_is_button(gb))) {
+    if ((GB_is_button(gb)))
+    {
         if (GB_is_button_down(gb, GB_BUTTON_A))
         {
             IO_JYP &= ~0x01;
@@ -104,7 +107,8 @@ void GB_joypad_write(struct GB_Core* gb, uint8_t value)
         }
     }
     
-    if ((GB_is_directional(gb))) {
+    if ((GB_is_directional(gb)))
+    {
         if (GB_is_button_down(gb, GB_BUTTON_RIGHT))
         {
             IO_JYP &= ~0x01;

@@ -4,7 +4,7 @@ add_library(zrom zrom.c)
 target_include_directories(zrom PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 target_compile_features(zrom PRIVATE c_std_99)
 
-target_link_libraries(zrom LINK_PRIVATE TotalGB)
+target_link_libraries(zrom LINK_PRIVATE TotalGB -llz4)
 
 # find_package(LZ4 REQUIRED)
 

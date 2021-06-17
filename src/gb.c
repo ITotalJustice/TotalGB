@@ -410,7 +410,7 @@ bool GB_get_rom_info(const uint8_t* data, size_t size, struct GB_RomInfo* info_o
         return false;
     }
 
-    if (!GB_get_mbc_flags(header->cart_type, &info_out->mbc_flags))
+    if (!GB_get_mbc_flags(header->cart_type, &info_out->flags))
     {
         return false;
     }
@@ -538,7 +538,9 @@ bool GB_loadrom(struct GB_Core* gb, const uint8_t* data, size_t size)
     if (header->sgb_flag == SGB_FLAG && header->old_licensee_code == NEW_LICENSEE_USED)
     {
         GB_log("[INFO] game supports SGB!\n");
-        // GB_set_system_type(gb, GB_SYSTEM_TYPE_SGB);
+        #if SGB_ENABLE
+            GB_set_system_type(gb, GB_SYSTEM_TYPE_SGB);
+        #endif
     }
 
     // try and setup the mbc, this also implicitly sets up

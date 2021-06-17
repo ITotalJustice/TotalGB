@@ -30,7 +30,7 @@ struct MBC_RomBankInfo mbc_get_rom_bank(struct GB_Core *gb, uint8_t bank)
     {
         struct MBC_RomBankInfo info = {0};
 
-        if (gb->callback.rom_bank(gb->callback.user_rom_bank, &info, gb->cart.type, bank))
+        if (gb->callback.rom_bank(gb->callback.user_rom_bank, &info, gb->cart.type, bank * gb->cart.rom_bank))
         {
             return info;
         }

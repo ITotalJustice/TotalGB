@@ -67,7 +67,7 @@ static inline void GB_iowrite_gbc(struct GB_Core* gb, uint16_t addr, uint8_t val
 
         case 0x6C: // OPRI
             IO_OPRI = value;
-            GB_log("[INFO] IO_OPRI %d\n", value & 1);
+            GB_log_fatal("[INFO] IO_OPRI %d\n", value & 1);
             break;
 
         case 0x70: // (SVBK) always set between 1-7
@@ -95,8 +95,9 @@ static inline void GB_iowrite_gbc(struct GB_Core* gb, uint16_t addr, uint8_t val
 #endif // #if GBC_ENABLE
 
 static inline uint8_t GB_ioread(struct GB_Core* gb, uint16_t addr)
-{    
-    return IO[addr & 0x7F] | IO_READ_TABLE[addr & 0x7F];
+{
+    return IO[addr & 0x7F] | IO_READ_TABLE[addr & 0x7F]; 
+
 }
 
 static inline void GB_iowrite(struct GB_Core* gb, uint16_t addr, uint8_t value)
@@ -229,8 +230,9 @@ uint8_t GB_read8(struct GB_Core* gb, const uint16_t addr)
 
     if (LIKELY(addr < 0xFE00))
     {
-        const struct GB_MemMapEntry entry = gb->mmap[(addr >> 12)];
-        return entry.ptr[addr & entry.mask];
+        const struct GB_MemMapEntry* entry = &gb->mmap[(addr >> 12)];
+        
+        return entry->ptr[addr & entry->mask];
     }
     else if (addr <= 0xFE9F)
     {
@@ -244,9 +246,11 @@ uint8_t GB_read8(struct GB_Core* gb, const uint16_t addr)
     {
         return gb->hram[addr & 0x7F];
     }
-
-    // unused section in address area.
-    return 0xFF;
+    else
+    {
+        // unused section in address area.
+        return 0xFF;
+    }
 }
 
 void GB_write8(struct GB_Core* gb, uint16_t addr, uint8_t value)
