@@ -20,11 +20,13 @@ bool is_ch3_enabled(const struct GB_Core* gb)
 void ch3_enable(struct GB_Core* gb)
 {
     IO_NR52 |= 0x04;
+    GB_add_event(gb, GB_EventType_APU_CH3, get_ch3_freq(gb));
 }
 
 void ch3_disable(struct GB_Core* gb)
 {
     IO_NR52 &= ~0x04;
+    GB_pop_event(gb, GB_EventType_APU_CH3);
 }
 
 int8_t sample_ch3(struct GB_Core* gb)

@@ -20,11 +20,13 @@ bool is_ch2_enabled(const struct GB_Core* gb)
 void ch2_enable(struct GB_Core* gb)
 {
     IO_NR52 |= 0x02;
+    GB_add_event(gb, GB_EventType_APU_CH2, get_ch2_freq(gb));
 }
 
 void ch2_disable(struct GB_Core* gb)
 {
     IO_NR52 &= ~0x02;
+    GB_pop_event(gb, GB_EventType_APU_CH2);
 }
 
 int8_t sample_ch2(struct GB_Core* gb)
