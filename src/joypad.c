@@ -19,6 +19,11 @@ void GB_set_buttons(struct GB_Core* gb, uint8_t buttons, bool is_down)
     if (is_down)
     {
         gb->joypad.var &= ~buttons;
+
+        // this isn't correct impl, it needs to fire when going hi to lo.
+        // but it's good enough for now.
+        GB_enable_interrupt(gb, GB_INTERRUPT_JOYPAD);
+
     }
     else
     {
