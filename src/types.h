@@ -61,6 +61,40 @@ struct GB_Config;
 struct MBC_RomBankInfo;
 
 
+enum GB_EventType
+{
+    // APU
+    GB_EventType_APU_CH1,
+    GB_EventType_APU_CH2,
+    GB_EventType_APU_CH3,
+    GB_EventType_APU_CH4,
+    GB_EventType_APU_FRAME_SEQUENCER,
+    GB_EventType_APU_SAMPLE,
+    // PPU
+    GB_EventType_PPU,
+    // TIMER
+    GB_EventType_TIMER,
+    // MISC
+    GB_EventType_CYCLES_END, // removes while(cycles) check
+    // please don't set an event with this!
+    GB_EventType_MAX,
+};
+
+struct GB_EventEntry
+{
+    int cycles;
+    // 3 bytes of padding here, should put it to good use...
+    // maybe a "type" to say whether the event should auto add itself
+    // back to the queue after trigger...though that isn't very useful
+    bool enabled;
+};
+
+struct GB_Scheduler
+{
+    struct GB_EventEntry events[GB_EventType_MAX];
+    int run_for_cycles;
+};
+
 enum
 {
     GB_SCREEN_WIDTH = 160,
@@ -616,6 +650,7 @@ struct GB_Core
     uint8_t wram[2][0x1000]; // 2 banks of 4KiB
 #endif
 
+    struct GB_Scheduler sch;
     struct GB_Cpu cpu;
     struct GB_Ppu ppu;
     struct GB_Apu apu;

@@ -126,13 +126,6 @@ void gb_apu_on_disabled(struct GB_Core* gb)
     memset(&IO_NR23, 0, sizeof(IO_NR23));
     memset(&IO_NR22, 0, sizeof(IO_NR22));
 
-    // wave is preserved!
-    // memset(&IO_NR30, 0, sizeof(IO_NR30));
-    // memset(&IO_NR31, 0, sizeof(IO_NR31));
-    // memset(&IO_NR32, 0, sizeof(IO_NR32));
-    // memset(&IO_NR33, 0, sizeof(IO_NR33));
-    // memset(&IO_NR34, 0, sizeof(IO_NR34));
-
     memset(&IO_NR41, 0, sizeof(IO_NR41));
     memset(&IO_NR42, 0, sizeof(IO_NR42));
     memset(&IO_NR43, 0, sizeof(IO_NR43));
@@ -275,71 +268,48 @@ static inline void sample_channels(struct GB_Core* gb)
     gb->callback.apu(gb->callback.user_apu, &samples);
 }
 
-void GB_apu_run(struct GB_Core* gb, uint16_t cycles)
+void GB_apu_on_ch1_event(struct GB_Core* gb)
 {
-    // todo: handle if the apu is disabled!
-    if (LIKELY(gb_is_apu_enabled(gb)))
-    {
-        // still tick samples but fill empty
-        // nothing else should tick i dont think?
-        // not sure if when apu is disabled, do all regs reset?
-        // what happens when apu is re-enabled? do they all trigger?
-        CH1.timer -= cycles;
-        while (UNLIKELY(CH1.timer <= 0))
-        {
-            CH1.timer += get_ch1_freq(gb);
-            CH1.duty_index = (CH1.duty_index + 1) % 8;
-        }
+    CH1.duty_index = (CH1.duty_index + 1) % 8;
+    GB_add_event(gb, GB_EventType_APU_CH1, get_ch1_freq(gb));
+}
 
-        CH2.timer -= cycles;
-        while (UNLIKELY(CH2.timer <= 0))
-        {
-            CH2.timer += get_ch2_freq(gb);
-            CH2.duty_index = (CH2.duty_index + 1) % 8;
-        }
+void GB_apu_on_ch2_event(struct GB_Core* gb)
+{
+    CH2.duty_index = (CH2.duty_index + 1) % 8;
+    GB_add_event(gb, GB_EventType_APU_CH2, get_ch2_freq(gb));
+}
 
-        CH3.timer -= cycles;
-        while (UNLIKELY(CH3.timer <= 0))
-        {
-            CH3.timer += get_ch3_freq(gb);
-            advance_ch3_position_counter(gb);
-        }
+void GB_apu_on_ch3_event(struct GB_Core* gb)
+{
+    advance_ch3_position_counter(gb);
+    GB_add_event(gb, GB_EventType_APU_CH3, get_ch3_freq(gb));
+}
 
-        // NOTE: ch4 lfsr is ONLY clocked if clock shift is not 14 or 15
-        if (IO_NR43.clock_shift != 14 && IO_NR43.clock_shift != 15)
-        {
-            CH4.timer -= cycles;
-            while (UNLIKELY(CH4.timer <= 0))
-            {
-                CH4.timer += get_ch4_freq(gb);
-                step_ch4_lfsr(gb);
-            }
-        }
+void GB_apu_on_ch4_event(struct GB_Core* gb)
+{
+    step_ch4_lfsr(gb);
+    GB_add_event(gb, GB_EventType_APU_CH4, get_ch4_freq(gb));
+}
 
-        // check if we need to tick the frame sequencer!
-        gb->apu.next_frame_sequencer_cycles += cycles;
-        while (UNLIKELY(gb->apu.next_frame_sequencer_cycles >= FRAME_SEQUENCER_STEP_RATE))
-        {
-            gb->apu.next_frame_sequencer_cycles -= FRAME_SEQUENCER_STEP_RATE;
-            step_frame_sequencer(gb);
-        }
-    }
+void GB_apu_on_frame_sequencer_event(struct GB_Core* gb)
+{
+    step_frame_sequencer(gb);
+    GB_add_event(gb, GB_EventType_APU_FRAME_SEQUENCER, FRAME_SEQUENCER_STEP_RATE);
+}
 
-    // we should still sample even if the apu is disabled
-    // in this case, the samples are filled with 0.
+void GB_apu_on_sample_event(struct GB_Core* gb)
+{
+    sample_channels(gb);
+    GB_add_event(gb, GB_EventType_APU_SAMPLE, CALC_CALLBACK_FREQ(gb->callback.apu_data.freq));
+}
 
-    // this can slightly optimised by just filling that sample with
-    // a fixed silence value, rather than fake-creating samples for
-    // no reason.
-
-    if (gb->callback.apu && gb->callback.apu_data.freq)
-    {
-        gb->apu.next_sample_cycles += cycles;
-
-        while (UNLIKELY(gb->apu.next_sample_cycles >= CALC_CALLBACK_FREQ(gb->callback.apu_data.freq)))
-        {
-            gb->apu.next_sample_cycles -= CALC_CALLBACK_FREQ(gb->callback.apu_data.freq);
-            sample_channels(gb);
-        }
-    }
+void GB_apu_init(struct GB_Core* gb)
+{
+    GB_add_event(gb, GB_EventType_APU_CH1, get_ch1_freq(gb));
+    GB_add_event(gb, GB_EventType_APU_CH2, get_ch2_freq(gb));
+    GB_add_event(gb, GB_EventType_APU_CH3, get_ch3_freq(gb));
+    GB_add_event(gb, GB_EventType_APU_CH4, get_ch4_freq(gb));
+    GB_add_event(gb, GB_EventType_APU_FRAME_SEQUENCER, FRAME_SEQUENCER_STEP_RATE);
+    GB_add_event(gb, GB_EventType_APU_SAMPLE, CALC_CALLBACK_FREQ(gb->callback.apu_data.freq));
 }

@@ -30,11 +30,13 @@ bool is_ch4_enabled(const struct GB_Core* gb)
 void ch4_enable(struct GB_Core* gb)
 {
     IO_NR52 |= 0x08;
+    GB_add_event(gb, GB_EventType_APU_CH4, get_ch4_freq(gb));
 }
 
 void ch4_disable(struct GB_Core* gb)
 {
     IO_NR52 &= ~0x08;
+    GB_pop_event(gb, GB_EventType_APU_CH4);
 }
 
 int8_t sample_ch4(struct GB_Core* gb)

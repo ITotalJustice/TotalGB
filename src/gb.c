@@ -6,6 +6,7 @@
 #include "internal.h"
 
 #include <string.h>
+#include <limits.h>
 #include <assert.h>
 
 
@@ -121,6 +122,11 @@ void GB_reset(struct GB_Core* gb)
             IO_77 = 0x00;
             break;
     }
+
+    // todo: init more stuff...
+    GB_apu_init(gb);
+    GB_ppu_init(gb);
+    GB_timer_init(gb);
 }
 
 void GB_skip_next_frame(struct GB_Core* gb)
@@ -879,35 +885,8 @@ void GB_set_wram_bank(struct GB_Core* gb, uint8_t bank)
     GB_update_wram_banks(gb);
 }
 
-uint16_t GB_run_step(struct GB_Core* gb)
+static void GB_update_rtc(struct GB_Core* gb)
 {
-    uint16_t cycles = GB_cpu_run(gb, 0 /*unused*/);
-
-    GB_timer_run(gb, cycles);
-    GB_ppu_run(gb, cycles >> gb->cpu.double_speed);
-    GB_apu_run(gb, cycles >> gb->cpu.double_speed);
-
-    assert(gb->cpu.double_speed == 1 || gb->cpu.double_speed == 0);
-
-    return cycles >> gb->cpu.double_speed;
-}
-
-void GB_run_frame(struct GB_Core* gb)
-{
-    assert(gb);
-
-    uint32_t cycles_elapsed = 0;
-
-    do {
-        cycles_elapsed += GB_run_step(gb);
-
-    } while (cycles_elapsed < GB_FRAME_CPU_CYCLES);
-
-    // reset
-    gb->skip_next_frame = false;
-
-    // check if we should update rtc using a switch so that
-    // compiler warns if i add new enum entries...
     if (GB_has_rtc(gb) == true)
     {
         ++gb->cart.internal_rtc_counter;
@@ -931,4 +910,91 @@ void GB_run_frame(struct GB_Core* gb)
             }
         }
     }
+}
+
+static inline void GB_set_scheduler_cycles(struct GB_Core* gb)
+{
+    // find the lowest cycles, run for that time
+    gb->sch.run_for_cycles = INT_MAX;
+
+    for (int i = 0; i < GB_EventType_MAX; ++i)
+    {
+        if (gb->sch.events[i].enabled)
+        {
+            if (gb->sch.events[i].cycles < gb->sch.run_for_cycles)
+            {
+                gb->sch.run_for_cycles = gb->sch.events[i].cycles;
+            }
+        }
+    }
+}
+
+void GB_add_event(struct GB_Core* gb, enum GB_EventType type, int cycles)
+{
+    gb->sch.events[type].cycles += cycles;
+    gb->sch.events[type].enabled = true;
+
+    GB_set_scheduler_cycles(gb);
+}
+
+void GB_pop_event(struct GB_Core* gb, enum GB_EventType type)
+{
+    gb->sch.events[type].cycles = 0;
+    gb->sch.events[type].enabled = false;
+
+    GB_set_scheduler_cycles(gb);
+}
+
+void GB_run_frame(struct GB_Core* gb)
+{
+    GB_add_event(gb, GB_EventType_CYCLES_END, GB_FRAME_CPU_CYCLES);
+
+    for (;;)
+    {
+        int cycles = 0;
+        GB_set_scheduler_cycles(gb);
+
+        while (cycles < gb->sch.run_for_cycles)
+        {
+            const int elapsed = GB_cpu_run(gb, 0 /*unused*/);
+            
+            GB_timer_run(gb, elapsed); // ticks DIV
+
+            cycles += elapsed;
+        }
+
+        // tick scheduler
+        // todo: this should be sorted, to avoid stepping through every entry
+        for (int i = 0; i < GB_EventType_MAX; ++i)
+        {
+            if (gb->sch.events[i].enabled)
+            {
+                // not exactly correct as timer still runs at normal speed
+                gb->sch.events[i].cycles -= cycles >> gb->cpu.double_speed;
+
+                if (gb->sch.events[i].cycles <= 0)
+                {
+                    gb->sch.events[i].enabled = false;
+
+                    switch (i)
+                    {
+                        case GB_EventType_APU_CH1: GB_apu_on_ch1_event(gb); break;
+                        case GB_EventType_APU_CH2: GB_apu_on_ch2_event(gb); break;
+                        case GB_EventType_APU_CH3: GB_apu_on_ch3_event(gb); break;
+                        case GB_EventType_APU_CH4: GB_apu_on_ch4_event(gb); break;
+                        case GB_EventType_APU_FRAME_SEQUENCER: GB_apu_on_frame_sequencer_event(gb); break;
+                        case GB_EventType_APU_SAMPLE: GB_apu_on_sample_event(gb); break;
+                        case GB_EventType_PPU: GB_ppu_on_event(gb); break;
+                        case GB_EventType_TIMER: GB_timer_on_event(gb); break;
+                        case GB_EventType_CYCLES_END: goto fin; break;
+                        case GB_EventType_MAX: break;
+                    }
+                }
+            }
+        }
+    }
+
+// label which gets jumped to on GB_EventType_CYCLES_END
+fin:
+    GB_update_rtc(gb);    
 }

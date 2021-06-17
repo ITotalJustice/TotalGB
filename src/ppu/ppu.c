@@ -167,7 +167,7 @@ void GB_compare_LYC(struct GB_Core* gb)
     GB_stat_interrupt_update(gb);
 }
 
-void GB_change_status_mode(struct GB_Core* gb, const uint8_t new_mode)
+void GB_change_status_mode(struct GB_Core* gb, enum GB_StatusModes new_mode)
 {
     GB_set_status_mode(gb, new_mode);
 
@@ -179,7 +179,7 @@ void GB_change_status_mode(struct GB_Core* gb, const uint8_t new_mode)
     switch (new_mode)
     {
         case STATUS_MODE_HBLANK:
-            gb->ppu.next_cycles += 204;
+            GB_add_event(gb, GB_EventType_PPU, 204);
             GB_draw_scanline(gb);
 
             if (gb->callback.hblank != NULL)
@@ -190,7 +190,7 @@ void GB_change_status_mode(struct GB_Core* gb, const uint8_t new_mode)
 
         case STATUS_MODE_VBLANK:
             GB_enable_interrupt(gb, GB_INTERRUPT_VBLANK);
-            gb->ppu.next_cycles += 456;
+            GB_add_event(gb, GB_EventType_PPU, 456);
 
             if (gb->callback.vblank != NULL)
             {
@@ -199,11 +199,11 @@ void GB_change_status_mode(struct GB_Core* gb, const uint8_t new_mode)
             break;
 
         case STATUS_MODE_SPRITE:
-            gb->ppu.next_cycles += 80;
+            GB_add_event(gb, GB_EventType_PPU, 80);
             break;
 
         case STATUS_MODE_TRANSFER:
-            gb->ppu.next_cycles += 172;
+            GB_add_event(gb, GB_EventType_PPU, 172);
             break;
     }
 }
@@ -224,6 +224,8 @@ void GB_on_stat_write(struct GB_Core* gb, uint8_t value)
 
 static void on_lcd_disable(struct GB_Core* gb)
 {
+    GB_log("disabling ppu...\n");
+
     // this *should* only happen in vblank!
     if (GB_get_status_mode(gb) != STATUS_MODE_VBLANK)
     {
@@ -239,8 +241,7 @@ static void on_lcd_disable(struct GB_Core* gb)
     IO_LY = 0;
     IO_STAT &= ~(0x3);
     gb->ppu.stat_line = false;
-    
-    GB_log("disabling ppu...\n");
+    GB_pop_event(gb, GB_EventType_PPU);
 }
 
 static void on_lcd_enable(struct GB_Core* gb)
@@ -249,7 +250,7 @@ static void on_lcd_enable(struct GB_Core* gb)
 
     gb->ppu.next_cycles = 0;
     gb->ppu.stat_line = false;
-    GB_set_status_mode(gb, STATUS_MODE_TRANSFER);
+    GB_change_status_mode(gb, STATUS_MODE_SPRITE);
     GB_compare_LYC(gb);
 }
 
@@ -270,20 +271,8 @@ void GB_on_lcdc_write(struct GB_Core* gb, const uint8_t value)
     IO_LCDC = value;
 }
 
-void GB_ppu_run(struct GB_Core* gb, uint16_t cycles)
+void GB_ppu_on_event(struct GB_Core* gb)
 {
-    if (UNLIKELY(!GB_is_lcd_enabled(gb)))
-    {
-        return;
-    }
-
-    gb->ppu.next_cycles -= cycles;
-    
-    if (UNLIKELY(gb->ppu.next_cycles > 0))
-    {
-        return;
-    }
-
     switch (GB_get_status_mode(gb))
     {
         case STATUS_MODE_HBLANK:
@@ -312,12 +301,12 @@ void GB_ppu_run(struct GB_Core* gb, uint16_t cycles)
             // for 4-Tcycles.
             if (IO_LY == 153)
             {
-                gb->ppu.next_cycles += 4;
+                GB_add_event(gb, GB_EventType_PPU, 4);
                 GB_compare_LYC(gb);
             }
             else if (IO_LY == 154)
             {
-                gb->ppu.next_cycles += 452;
+                GB_add_event(gb, GB_EventType_PPU, 452);
                 IO_LY = 0;
                 gb->ppu.window_line = 0;
                 GB_compare_LYC(gb);
@@ -329,7 +318,7 @@ void GB_ppu_run(struct GB_Core* gb, uint16_t cycles)
             }
             else
             {
-                gb->ppu.next_cycles += 456;
+                GB_add_event(gb, GB_EventType_PPU, 456);
                 GB_compare_LYC(gb);
             }
             break;
@@ -342,6 +331,11 @@ void GB_ppu_run(struct GB_Core* gb, uint16_t cycles)
             GB_change_status_mode(gb, STATUS_MODE_HBLANK);
             break;
     }
+}
+
+void GB_ppu_init(struct GB_Core* gb)
+{
+    GB_change_status_mode(gb, STATUS_MODE_SPRITE);
 }
 
 void GB_DMA(struct GB_Core* gb)

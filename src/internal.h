@@ -158,6 +158,25 @@ enum GB_StatIntModes
 };
 
 
+GB_STATIC void GB_apu_init(struct GB_Core* gb);
+GB_STATIC void GB_ppu_init(struct GB_Core* gb);
+GB_STATIC void GB_timer_init(struct GB_Core* gb);
+
+// events for scheduler
+GB_INLINE void GB_apu_on_ch1_event(struct GB_Core* gb);
+GB_INLINE void GB_apu_on_ch2_event(struct GB_Core* gb);
+GB_INLINE void GB_apu_on_ch3_event(struct GB_Core* gb);
+GB_INLINE void GB_apu_on_ch4_event(struct GB_Core* gb);
+GB_INLINE void GB_apu_on_frame_sequencer_event(struct GB_Core* gb);
+GB_INLINE void GB_apu_on_sample_event(struct GB_Core* gb);
+GB_INLINE void GB_ppu_on_event(struct GB_Core* gb);
+GB_INLINE void GB_timer_on_event(struct GB_Core* gb);
+
+// adding an exisitng event is supported, it'll just overwrite the cycles
+GB_INLINE void GB_add_event(struct GB_Core* gb, enum GB_EventType type, int cycles);
+// if the event is not queue, nothing happens
+GB_INLINE void GB_pop_event(struct GB_Core* gb, enum GB_EventType type);
+
 GB_STATIC void GB_rtc_tick_frame(struct GB_Core* gb);
 
 GB_INLINE uint8_t GB_read8(struct GB_Core* gb, const uint16_t addr);
@@ -167,8 +186,8 @@ GB_INLINE void GB_write16(struct GB_Core* gb, uint16_t addr, uint16_t value);
 
 GB_STATIC void GB_apu_iowrite(struct GB_Core* gb, uint16_t addr, uint8_t value);
 
-GB_INLINE void GB_on_lcdc_write(struct GB_Core* gb, const uint8_t value);
-GB_INLINE void GB_on_stat_write(struct GB_Core* gb, uint8_t value);
+GB_STATIC void GB_on_lcdc_write(struct GB_Core* gb, const uint8_t value);
+GB_STATIC void GB_on_stat_write(struct GB_Core* gb, uint8_t value);
 
 GB_STATIC void GB_serial_sc_write(struct GB_Core* gb, const uint8_t data);
 
