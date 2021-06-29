@@ -18,17 +18,17 @@ extern "C" {
 #endif
 
 #if defined _WIN32 || defined __CYGWIN__
-  #ifdef BUILDING_LIB
-    #define GBAPI __declspec(dllexport)
-  #else
-    #define GBAPI __declspec(dllimport)
-  #endif
+    #ifdef BUILDING_LIB
+        #define GBAPI __declspec(dllexport)
+    #else
+        #define GBAPI __declspec(dllimport)
+    #endif
 #else
-  #ifdef BUILDING_LIB
-      #define GBAPI __attribute__ ((visibility ("default")))
-  #else
-      #define GBAPI
-  #endif
+    #ifdef BUILDING_LIB
+        #define GBAPI __attribute__ ((visibility ("default")))
+    #else
+        #define GBAPI
+    #endif
 #endif
 
 #ifndef GB_SINGLE_FILE

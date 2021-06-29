@@ -818,7 +818,7 @@ static inline uint16_t GB_POP(struct GB_Core* gb)
 
 #define RETI() do { \
     REG_PC = POP(); \
-    EI(); \
+    gb->cpu.ime = true; /* not delayed! */ \
 } while (0)
 
 #define RST(value) do { \
