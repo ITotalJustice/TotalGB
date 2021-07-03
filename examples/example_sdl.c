@@ -678,12 +678,12 @@ static void resize_touch_buttons(int w, int h)
 
     if (is_mobile)
     {
-        touch_buttons[TouchButtonID_A].rect.x = w - 90 * big_scale;
+        touch_buttons[TouchButtonID_A].rect.x = w - 45 * big_scale;
         touch_buttons[TouchButtonID_A].rect.y = h - 45 * big_scale;
         touch_buttons[TouchButtonID_A].rect.w = touch_buttons[TouchButtonID_A].w * big_scale;
         touch_buttons[TouchButtonID_A].rect.h = touch_buttons[TouchButtonID_A].h * big_scale;
-
-        touch_buttons[TouchButtonID_B].rect.x = w - 45 * big_scale;
+        
+        touch_buttons[TouchButtonID_B].rect.x = w - 90 * big_scale;
         touch_buttons[TouchButtonID_B].rect.y = h - 45 * big_scale;
         touch_buttons[TouchButtonID_B].rect.w = touch_buttons[TouchButtonID_B].w * big_scale;
         touch_buttons[TouchButtonID_B].rect.h = touch_buttons[TouchButtonID_B].h * big_scale;
