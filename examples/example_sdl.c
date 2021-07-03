@@ -51,6 +51,7 @@ static struct TouchButton
     int w, h;
     SDL_Rect rect;
     bool enabled;
+    const bool dragable; // can slide your finger over
 } touch_buttons[] =
 {
     [TouchButtonID_A] =
@@ -58,78 +59,91 @@ static struct TouchButton
         .path = "res/sprites/a.png",
         .w = 40,
         .h = 40,
+        .dragable = true,
     },
     [TouchButtonID_B] =
     {
         .path = "res/sprites/b.png",
         .w = 40,
         .h = 40,
+        .dragable = true,
     },
     [TouchButtonID_UP] =
     {
         .path = "res/sprites/up.png",
         .w = 30,
         .h = 38,
+        .dragable = true,
     },
     [TouchButtonID_DOWN] =
     {
         .path = "res/sprites/down.png",
         .w = 30,
         .h = 38,
+        .dragable = true,
     },
     [TouchButtonID_LEFT] =
     {
         .path = "res/sprites/left.png",
         .w = 38,
         .h = 30,
+        .dragable = true,
     },
     [TouchButtonID_RIGHT] =
     {
         .path = "res/sprites/right.png",
         .w = 38,
         .h = 30,
+        .dragable = true,
     },
     [TouchButtonID_START] =
     {
         .path = "res/sprites/start.png",
         .w = 108,
         .h = 48,
+        .dragable = false,
     },
     [TouchButtonID_SELECT] =
     {
         .path = "res/sprites/select.png",
         .w = 108,
         .h = 48,
+        .dragable = false,
     },
     [TouchButtonID_MENU] =
     {
         .path = "res/sprites/menu.png",
         .w = 48,
         .h = 48,
+        .dragable = false,
     },
     [TouchButtonID_TITLE] =
     {
         .path = "res/sprites/title.png",
         .w = 105,
         .h = 35,
+        .dragable = false,
     },
     [TouchButtonID_SAVE] =
     {
         .path = "res/sprites/save.png",
         .w = 105,
         .h = 35,
+        .dragable = false,
     },
     [TouchButtonID_LOAD] =
     {
         .path = "res/sprites/load.png",
         .w = 105,
         .h = 35,
+        .dragable = false,
     },
     [TouchButtonID_BACK] =
     {
         .path = "res/sprites/back.png",
         .w = 105,
         .h = 35,
+        .dragable = false,
     },
 };
 
@@ -439,7 +453,12 @@ static void on_touch_motion(struct TouchCacheEntry* cache, size_t size, SDL_Fing
 
     // this is pretty inefficient, but its simple enough and works.
     on_touch_up(cache, size, id);
-    on_touch_down(cache, size, id, x, y);
+
+    // check if the button is dragable!
+    if (touch_buttons[touch_id].dragable)
+    {
+        on_touch_down(cache, size, id, x, y);
+    }
 }
 
 static void set_rtc_from_time_t()
@@ -465,7 +484,7 @@ static void set_rtc_from_time_t()
 
 static void run()
 {
-    if (running_state != RunningState_GAME)
+    if (!has_rom || running_state != RunningState_GAME)
     {
         return;
     }
@@ -598,7 +617,7 @@ static bool is_fullscreen()
 
 static void resize_touch_buttons(int w, int h)
 {
-    const float big_scale = (float)get_scale(w, h) * 1.0f;
+    const float big_scale = (float)get_scale(w, h) * 0.9f;
     const float min_scale = (float)get_scale(w, h) * 0.5f;
 
     if (is_mobile)
@@ -613,32 +632,32 @@ static void resize_touch_buttons(int w, int h)
         touch_buttons[TouchButtonID_B].rect.w = touch_buttons[TouchButtonID_B].w * big_scale;
         touch_buttons[TouchButtonID_B].rect.h = touch_buttons[TouchButtonID_B].h * big_scale;
 
-        touch_buttons[TouchButtonID_UP].rect.x = 35 * big_scale;
-        touch_buttons[TouchButtonID_UP].rect.y = h - 85 * big_scale;
+        touch_buttons[TouchButtonID_UP].rect.x = 30 * big_scale;
+        touch_buttons[TouchButtonID_UP].rect.y = h - 82 * big_scale;
         touch_buttons[TouchButtonID_UP].rect.w = touch_buttons[TouchButtonID_UP].w * big_scale;
         touch_buttons[TouchButtonID_UP].rect.h = touch_buttons[TouchButtonID_UP].h * big_scale;
 
-        touch_buttons[TouchButtonID_DOWN].rect.x = 35 * big_scale;
+        touch_buttons[TouchButtonID_DOWN].rect.x = 30 * big_scale;
         touch_buttons[TouchButtonID_DOWN].rect.y = h - 45 * big_scale;
         touch_buttons[TouchButtonID_DOWN].rect.w = touch_buttons[TouchButtonID_DOWN].w * big_scale;
         touch_buttons[TouchButtonID_DOWN].rect.h = touch_buttons[TouchButtonID_DOWN].h * big_scale;
 
         touch_buttons[TouchButtonID_LEFT].rect.x = 5 * big_scale;
-        touch_buttons[TouchButtonID_LEFT].rect.y = h - 63 * big_scale;
+        touch_buttons[TouchButtonID_LEFT].rect.y = h - 60 * big_scale;
         touch_buttons[TouchButtonID_LEFT].rect.w = touch_buttons[TouchButtonID_LEFT].w * big_scale;
         touch_buttons[TouchButtonID_LEFT].rect.h = touch_buttons[TouchButtonID_LEFT].h * big_scale;
 
-        touch_buttons[TouchButtonID_RIGHT].rect.x = 56 * big_scale;
-        touch_buttons[TouchButtonID_RIGHT].rect.y = h - 63 * big_scale;
+        touch_buttons[TouchButtonID_RIGHT].rect.x = 47 * big_scale;
+        touch_buttons[TouchButtonID_RIGHT].rect.y = h - 60 * big_scale;
         touch_buttons[TouchButtonID_RIGHT].rect.w = touch_buttons[TouchButtonID_RIGHT].w * big_scale;
         touch_buttons[TouchButtonID_RIGHT].rect.h = touch_buttons[TouchButtonID_RIGHT].h * big_scale;
 
-        touch_buttons[TouchButtonID_START].rect.x = (w / 2) + 10 * min_scale;
+        touch_buttons[TouchButtonID_START].rect.x = (w / 2) + 5 * min_scale;
         touch_buttons[TouchButtonID_START].rect.y = 5 * min_scale;
         touch_buttons[TouchButtonID_START].rect.w = touch_buttons[TouchButtonID_START].w * min_scale;
         touch_buttons[TouchButtonID_START].rect.h = touch_buttons[TouchButtonID_START].h * min_scale;
 
-        touch_buttons[TouchButtonID_SELECT].rect.x = (w / 2) - 118 * min_scale;
+        touch_buttons[TouchButtonID_SELECT].rect.x = (w / 2) - 113 * min_scale;
         touch_buttons[TouchButtonID_SELECT].rect.y = 5 * min_scale;
         touch_buttons[TouchButtonID_SELECT].rect.w = touch_buttons[TouchButtonID_SELECT].w * min_scale;
         touch_buttons[TouchButtonID_SELECT].rect.h = touch_buttons[TouchButtonID_SELECT].h * min_scale;
@@ -785,8 +804,8 @@ static void on_key_event(const SDL_KeyboardEvent* e)
 
     switch (e->keysym.scancode)
     {
-        case SDL_SCANCODE_X:        GB_set_buttons(&gb, GB_BUTTON_A, down);        break;
-        case SDL_SCANCODE_Z:        GB_set_buttons(&gb, GB_BUTTON_B, down);        break;
+        case SDL_SCANCODE_Z:        GB_set_buttons(&gb, GB_BUTTON_A, down);        break;
+        case SDL_SCANCODE_X:        GB_set_buttons(&gb, GB_BUTTON_B, down);        break;
         case SDL_SCANCODE_RETURN:   GB_set_buttons(&gb, GB_BUTTON_START, down);    break;
         case SDL_SCANCODE_SPACE:    GB_set_buttons(&gb, GB_BUTTON_SELECT, down);   break;
         case SDL_SCANCODE_UP:       GB_set_buttons(&gb, GB_BUTTON_UP, down);       break;
@@ -1115,7 +1134,6 @@ static uint32_t core_on_colour(void* user, enum GB_ColourCallbackType type, uint
 
     uint32_t R = 0, G = 0, B = 0;
 
-
     switch (type)
     {
         case GB_ColourCallbackType_DMG:
@@ -1180,6 +1198,13 @@ static void load_touch_buttons()
             touch_buttons[i].texture = SDL_CreateTextureFromSurface(renderer, surface);
             touch_buttons[i].rect.w = touch_buttons[i].w;
             touch_buttons[i].rect.h = touch_buttons[i].h;
+
+            // todo: reduce the alpha in the src pictures
+            if (i <= TouchButtonID_MENU)
+            {
+                SDL_SetTextureBlendMode(touch_buttons[i].texture, SDL_BLENDMODE_BLEND);
+                SDL_SetTextureAlphaMod(touch_buttons[i].texture, 80);
+            }
 
             SDL_FreeSurface(surface);
         }
