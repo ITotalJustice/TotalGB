@@ -14,11 +14,11 @@ struct MBC_RomBankInfo mbc0_get_rom_bank(struct GB_Core* gb, uint8_t bank)
 
     if (bank == 0)
     {
-        ptr = gb->cart.rom;
+        ptr = gb->rom;
     }
     else
     {
-        ptr = gb->cart.rom + 0x4000;
+        ptr = gb->rom + 0x4000;
     }
 
     for (size_t i = 0; i < ARRAY_SIZE(info.entries); ++i)

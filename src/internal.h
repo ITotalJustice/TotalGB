@@ -48,6 +48,35 @@ extern "C" {
     #define GB_log_fatal(...)
 #endif // NES_DEBUG
 
+#ifndef GB_ENABLE_FORCE_INLINE
+    #define GB_ENABLE_FORCE_INLINE 0
+#endif
+
+#if GB_ENABLE_FORCE_INLINE
+    #if defined(_MSC_VER)
+        #define FORCE_INLINE inline __forceinline
+    #elif defined(__GNUC__)
+        #define FORCE_INLINE inline __attribute__((always_inline))
+    #elif defined(__clang__)
+        #define FORCE_INLINE inline __attribute__((always_inline))
+    #else
+        #define FORCE_INLINE inline
+    #endif
+#else
+    #define FORCE_INLINE inline
+#endif
+
+#if GB_SINGLE_FILE
+    #define GB_STATIC static
+    #define GB_INLINE static inline
+    #define GB_FORCE_INLINE static FORCE_INLINE
+#else
+    #define GB_STATIC
+    #define GB_INLINE
+    #define GB_FORCE_INLINE
+#endif // GB_SINGLE_FILE
+
+
 // 4-mhz
 #define DMG_CPU_CLOCK 4194304
 // 8-mhz
@@ -160,35 +189,35 @@ enum GB_StatIntModes
 
 GB_STATIC void GB_rtc_tick_frame(struct GB_Core* gb);
 
-GB_INLINE uint8_t GB_read8(struct GB_Core* gb, const uint16_t addr);
-GB_INLINE void GB_write8(struct GB_Core* gb, uint16_t addr, uint8_t value);
-GB_INLINE uint16_t GB_read16(struct GB_Core* gb, uint16_t addr);
-GB_INLINE void GB_write16(struct GB_Core* gb, uint16_t addr, uint16_t value);
+GB_FORCE_INLINE uint8_t GB_read8(struct GB_Core* gb, const uint16_t addr);
+GB_FORCE_INLINE void GB_write8(struct GB_Core* gb, uint16_t addr, uint8_t value);
+GB_FORCE_INLINE uint16_t GB_read16(struct GB_Core* gb, uint16_t addr);
+GB_FORCE_INLINE void GB_write16(struct GB_Core* gb, uint16_t addr, uint16_t value);
 
-GB_STATIC void GB_apu_iowrite(struct GB_Core* gb, uint16_t addr, uint8_t value);
+GB_INLINE void GB_apu_iowrite(struct GB_Core* gb, uint16_t addr, uint8_t value);
 
-GB_INLINE void GB_on_lcdc_write(struct GB_Core* gb, const uint8_t value);
-GB_INLINE void GB_on_stat_write(struct GB_Core* gb, uint8_t value);
+GB_FORCE_INLINE void GB_on_lcdc_write(struct GB_Core* gb, const uint8_t value);
+GB_FORCE_INLINE void GB_on_stat_write(struct GB_Core* gb, uint8_t value);
 
 GB_STATIC void GB_serial_sc_write(struct GB_Core* gb, const uint8_t data);
 
-GB_INLINE void GB_div_write(struct GB_Core* gb, uint8_t value);
-GB_INLINE void GB_tima_write(struct GB_Core* gb, uint8_t value);
-GB_INLINE void GB_tma_write(struct GB_Core* gb, uint8_t value);
-GB_INLINE void GB_tac_write(struct GB_Core* gb, uint8_t value);
+GB_FORCE_INLINE void GB_div_write(struct GB_Core* gb, uint8_t value);
+GB_FORCE_INLINE void GB_tima_write(struct GB_Core* gb, uint8_t value);
+GB_FORCE_INLINE void GB_tma_write(struct GB_Core* gb, uint8_t value);
+GB_FORCE_INLINE void GB_tac_write(struct GB_Core* gb, uint8_t value);
 
 #if GBC_ENABLE
-    GB_INLINE void GB_bcpd_write(struct GB_Core* gb, uint8_t value);
-    GB_INLINE void GB_ocpd_write(struct GB_Core* gb, uint8_t value);
-    GB_INLINE void GBC_on_bcpd_update(struct GB_Core* gb);
-    GB_INLINE void GBC_on_ocpd_update(struct GB_Core* gb);
+    GB_FORCE_INLINE void GB_bcpd_write(struct GB_Core* gb, uint8_t value);
+    GB_FORCE_INLINE void GB_ocpd_write(struct GB_Core* gb, uint8_t value);
+    GB_FORCE_INLINE void GBC_on_bcpd_update(struct GB_Core* gb);
+    GB_FORCE_INLINE void GBC_on_ocpd_update(struct GB_Core* gb);
     GB_STATIC void GB_hdma5_write(struct GB_Core* gb, uint8_t value);
 #endif
 
 // these should also be static
 GB_STATIC bool GB_get_mbc_flags(uint8_t cart_type, uint8_t* flags_out);
 GB_STATIC bool GB_get_cart_ram_size(uint8_t type, uint32_t* size);
-GB_STATIC bool GB_setup_mbc(struct GB_Cart* mbc, const struct GB_CartHeader* header);
+GB_STATIC bool GB_setup_mbc(struct GB_Core* gb, const struct GB_CartHeader* header);
 GB_STATIC void GB_setup_mmap(struct GB_Core* gb);
 GB_STATIC void GB_update_rom_banks(struct GB_Core* gb);
 GB_STATIC void GB_update_ram_banks(struct GB_Core* gb);
@@ -212,15 +241,15 @@ GB_INLINE void GB_enable_interrupt(struct GB_Core* gb, const enum GB_Interrupts 
 GB_INLINE void GB_disable_interrupt(struct GB_Core* gb, const enum GB_Interrupts interrupt);
 
 // used internally
-GB_INLINE uint16_t GB_cpu_run(struct GB_Core* gb, uint16_t cycles);
-GB_INLINE void GB_timer_run(struct GB_Core* gb, uint16_t cycles);
-GB_INLINE void GB_ppu_run(struct GB_Core* gb, uint16_t cycles);
-GB_INLINE void GB_apu_run(struct GB_Core* gb, uint16_t cycles);
+GB_FORCE_INLINE uint16_t GB_cpu_run(struct GB_Core* gb, uint16_t cycles);
+GB_FORCE_INLINE void GB_timer_run(struct GB_Core* gb, uint16_t cycles);
+GB_FORCE_INLINE void GB_ppu_run(struct GB_Core* gb, uint16_t cycles);
+GB_FORCE_INLINE void GB_apu_run(struct GB_Core* gb, uint16_t cycles);
 
-GB_INLINE bool GB_is_lcd_enabled(const struct GB_Core* gb);
-GB_INLINE bool GB_is_win_enabled(const struct GB_Core* gb);
-GB_INLINE bool GB_is_obj_enabled(const struct GB_Core* gb);
-GB_INLINE bool GB_is_bg_enabled(const struct GB_Core* gb);
+GB_FORCE_INLINE bool GB_is_lcd_enabled(const struct GB_Core* gb);
+GB_FORCE_INLINE bool GB_is_win_enabled(const struct GB_Core* gb);
+GB_FORCE_INLINE bool GB_is_obj_enabled(const struct GB_Core* gb);
+GB_FORCE_INLINE bool GB_is_bg_enabled(const struct GB_Core* gb);
 
 
 // SGB stuff

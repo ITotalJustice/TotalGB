@@ -5,7 +5,7 @@
 extern "C" {
 #endif
 
-#include "../types.h"
+#include "../internal.h"
 
 //        Square 1
 // NR10 FF10 -PPP NSSS Sweep period, negate, shift
@@ -66,55 +66,55 @@ extern const int8_t SQUARE_DUTY_CYCLES[4][8];
 extern const uint8_t PERIOD_TABLE[8];
 
 
-GB_INLINE uint16_t get_ch1_freq(const struct GB_Core* gb);
-GB_INLINE bool is_ch1_dac_enabled(const struct GB_Core* gb);
-GB_INLINE bool is_ch1_enabled(const struct GB_Core* gb);
-GB_INLINE void ch1_enable(struct GB_Core* gb);
-GB_INLINE void ch1_disable(struct GB_Core* gb);
-GB_INLINE int8_t sample_ch1(struct GB_Core* gb);
-GB_INLINE void clock_ch1_len(struct GB_Core* gb);
-GB_INLINE void clock_ch1_vol(struct GB_Core* gb);
-GB_INLINE void do_freq_sweep_calc(struct GB_Core* gb);
-GB_INLINE void on_ch1_sweep(struct GB_Core* gb);
-GB_INLINE void on_ch1_trigger(struct GB_Core* gb);
+GB_FORCE_INLINE uint16_t get_ch1_freq(const struct GB_Core* gb);
+GB_FORCE_INLINE bool is_ch1_dac_enabled(const struct GB_Core* gb);
+GB_FORCE_INLINE bool is_ch1_enabled(const struct GB_Core* gb);
+GB_FORCE_INLINE void ch1_enable(struct GB_Core* gb);
+GB_FORCE_INLINE void ch1_disable(struct GB_Core* gb);
+GB_FORCE_INLINE int8_t sample_ch1(struct GB_Core* gb);
+GB_FORCE_INLINE void clock_ch1_len(struct GB_Core* gb);
+GB_FORCE_INLINE void clock_ch1_vol(struct GB_Core* gb);
+GB_FORCE_INLINE void do_freq_sweep_calc(struct GB_Core* gb);
+GB_FORCE_INLINE void on_ch1_sweep(struct GB_Core* gb);
+GB_FORCE_INLINE void on_ch1_trigger(struct GB_Core* gb);
 
-GB_INLINE uint16_t get_ch2_freq(const struct GB_Core* gb);
-GB_INLINE bool is_ch2_dac_enabled(const struct GB_Core* gb);
-GB_INLINE bool is_ch2_enabled(const struct GB_Core* gb);
-GB_INLINE void ch2_enable(struct GB_Core* gb);
-GB_INLINE void ch2_disable(struct GB_Core* gb);
-GB_INLINE int8_t sample_ch2(struct GB_Core* gb);
-GB_INLINE void clock_ch2_len(struct GB_Core* gb);
-GB_INLINE void clock_ch2_vol(struct GB_Core* gb);
-GB_INLINE void on_ch2_trigger(struct GB_Core* gb);
+GB_FORCE_INLINE uint16_t get_ch2_freq(const struct GB_Core* gb);
+GB_FORCE_INLINE bool is_ch2_dac_enabled(const struct GB_Core* gb);
+GB_FORCE_INLINE bool is_ch2_enabled(const struct GB_Core* gb);
+GB_FORCE_INLINE void ch2_enable(struct GB_Core* gb);
+GB_FORCE_INLINE void ch2_disable(struct GB_Core* gb);
+GB_FORCE_INLINE int8_t sample_ch2(struct GB_Core* gb);
+GB_FORCE_INLINE void clock_ch2_len(struct GB_Core* gb);
+GB_FORCE_INLINE void clock_ch2_vol(struct GB_Core* gb);
+GB_FORCE_INLINE void on_ch2_trigger(struct GB_Core* gb);
 
-GB_INLINE uint16_t get_ch3_freq(const struct GB_Core* gb);
-GB_INLINE bool is_ch3_dac_enabled(const struct GB_Core* gb);
-GB_INLINE bool is_ch3_enabled(const struct GB_Core* gb);
-GB_INLINE void ch3_enable(struct GB_Core* gb);
-GB_INLINE void ch3_disable(struct GB_Core* gb);
-GB_INLINE int8_t sample_ch3(struct GB_Core* gb);
-GB_INLINE void clock_ch3_len(struct GB_Core* gb);
-GB_INLINE void advance_ch3_position_counter(struct GB_Core* gb);
-GB_INLINE void on_ch3_trigger(struct GB_Core* gb);
+GB_FORCE_INLINE uint16_t get_ch3_freq(const struct GB_Core* gb);
+GB_FORCE_INLINE bool is_ch3_dac_enabled(const struct GB_Core* gb);
+GB_FORCE_INLINE bool is_ch3_enabled(const struct GB_Core* gb);
+GB_FORCE_INLINE void ch3_enable(struct GB_Core* gb);
+GB_FORCE_INLINE void ch3_disable(struct GB_Core* gb);
+GB_FORCE_INLINE int8_t sample_ch3(struct GB_Core* gb);
+GB_FORCE_INLINE void clock_ch3_len(struct GB_Core* gb);
+GB_FORCE_INLINE void advance_ch3_position_counter(struct GB_Core* gb);
+GB_FORCE_INLINE void on_ch3_trigger(struct GB_Core* gb);
 
-GB_INLINE uint32_t get_ch4_freq(const struct GB_Core* gb);
-GB_INLINE bool is_ch4_dac_enabled(const struct GB_Core* gb);
-GB_INLINE bool is_ch4_enabled(const struct GB_Core* gb);
-GB_INLINE void ch4_enable(struct GB_Core* gb);
-GB_INLINE void ch4_disable(struct GB_Core* gb);
-GB_INLINE int8_t sample_ch4(struct GB_Core* gb);
-GB_INLINE void clock_ch4_len(struct GB_Core* gb);
-GB_INLINE void clock_ch4_vol(struct GB_Core* gb);
-GB_INLINE void step_ch4_lfsr(struct GB_Core* gb);
-GB_INLINE void on_ch4_trigger(struct GB_Core* gb);
+GB_FORCE_INLINE uint32_t get_ch4_freq(const struct GB_Core* gb);
+GB_FORCE_INLINE bool is_ch4_dac_enabled(const struct GB_Core* gb);
+GB_FORCE_INLINE bool is_ch4_enabled(const struct GB_Core* gb);
+GB_FORCE_INLINE void ch4_enable(struct GB_Core* gb);
+GB_FORCE_INLINE void ch4_disable(struct GB_Core* gb);
+GB_FORCE_INLINE int8_t sample_ch4(struct GB_Core* gb);
+GB_FORCE_INLINE void clock_ch4_len(struct GB_Core* gb);
+GB_FORCE_INLINE void clock_ch4_vol(struct GB_Core* gb);
+GB_FORCE_INLINE void step_ch4_lfsr(struct GB_Core* gb);
+GB_FORCE_INLINE void on_ch4_trigger(struct GB_Core* gb);
 
 GB_STATIC void gb_apu_on_enabled(struct GB_Core* gb);
 GB_STATIC void gb_apu_on_disabled(struct GB_Core* gb);
 
-GB_INLINE bool gb_is_apu_enabled(const struct GB_Core* gb);
-GB_INLINE bool is_next_frame_sequencer_step_not_len(const struct GB_Core* gb);
-GB_INLINE bool is_next_frame_sequencer_step_vol(const struct GB_Core* gb);
+GB_FORCE_INLINE bool gb_is_apu_enabled(const struct GB_Core* gb);
+GB_FORCE_INLINE bool is_next_frame_sequencer_step_not_len(const struct GB_Core* gb);
+GB_FORCE_INLINE bool is_next_frame_sequencer_step_vol(const struct GB_Core* gb);
 
 #ifdef __cplusplus
 }

@@ -1,6 +1,9 @@
 cmake_minimum_required(VERSION 3.13.4)
 
 
+list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
+
+
 project(TotalGB
     VERSION 0.0.1
     DESCRIPTION "Simple, fast, very inaccurate GB / GBC emulator!"
@@ -12,9 +15,10 @@ project(TotalGB
 option(GB_SINGLE_FILE "include all src in single.c" OFF)
 option(GB_DEBUG "enable debug" OFF)
 option(GB_DEV "enables debug and sanitizers" OFF)
+option(GB_ENABLE_FORCE_INLINE "enables force inline, disabled in debug mode" ON)
 
 option(GBC_ENABLE "build with GBC support" ON)
-option(SGB_ENABLE "build with SGB support" ON)
+option(SGB_ENABLE "build with SGB support" OFF)
 option(GB_ENABLE_BUILTIN_PALETTE "build with builtin palettes" ON)
 
 option(GB_GAMESHARK "enables gameshark cheats (uses malloc,free)" OFF)

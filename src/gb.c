@@ -123,11 +123,6 @@ void GB_reset(struct GB_Core* gb)
     }
 }
 
-void GB_skip_next_frame(struct GB_Core* gb)
-{
-    gb->skip_next_frame = true;
-}
-
 static const char* cart_type_str(const uint8_t type)
 {
     switch (type)
@@ -183,12 +178,12 @@ bool GB_get_rom_header_from_data(const uint8_t* data, struct GB_CartHeader* head
 
 bool GB_get_rom_header(const struct GB_Core* gb, struct GB_CartHeader* header)
 {
-    if (!gb->cart.rom || (gb->cart.ram_size < (sizeof(struct GB_CartHeader) + GB_BOOTROM_SIZE)))
+    if (!gb->rom || (gb->cart.ram_size < (sizeof(struct GB_CartHeader) + GB_BOOTROM_SIZE)))
     {
         return false;
     }
 
-    return GB_get_rom_header_from_data(gb->cart.rom, header);
+    return GB_get_rom_header_from_data(gb->rom, header);
 }
 
 static const struct GB_CartHeader* GB_get_rom_header_ptr_from_data(const uint8_t* data)
@@ -198,7 +193,7 @@ static const struct GB_CartHeader* GB_get_rom_header_ptr_from_data(const uint8_t
 
 const struct GB_CartHeader* GB_get_rom_header_ptr(const struct GB_Core* gb)
 {
-    return GB_get_rom_header_ptr_from_data(gb->cart.rom);
+    return GB_get_rom_header_ptr_from_data(gb->rom);
 }
 
 bool GB_get_rom_palette_hash_from_header(const struct GB_CartHeader* header, uint8_t* hash, uint8_t* forth)
@@ -384,13 +379,13 @@ void GB_set_pixels(struct GB_Core* gb, void* pixels, uint32_t stride, uint8_t bp
 
 void GB_set_sram(struct GB_Core* gb, uint8_t* ram, size_t size)
 {
-    gb->cart.ram = ram;
-    gb->cart.max_ram_size = size;
+    gb->ram = ram;
+    gb->ram_size = size;
 
     // if we have a rom loaded, re-map the ram banks.
 
     // TODO: this should be a func instead of checking the ptr here!
-    if (gb->cart.rom)
+    if (gb->rom)
     {
         GB_update_ram_banks(gb);
     }
@@ -436,30 +431,28 @@ bool GB_loadrom(struct GB_Core* gb, const uint8_t* data, size_t size)
     }
 
     const struct GB_CartHeader* header = GB_get_rom_header_ptr_from_data(data);
+
     cart_header_print(header);
 
     gb->cart.rom_size = ROM_SIZE_MULT << header->rom_size;
 
     if (gb->cart.rom_size > size)
     {
-        // return false;
+        return false;
     }
 
-    enum {
+    enum
+    {
         GBC_ONLY = 0xC0,
         GBC_AND_DMG = 0x80,
         // not much is known about these types
         // these are not checked atm, but soon will be...
         PGB_1 = 0x84,
         PGB_2 = 0x88,
-    };
 
-    enum {
-        SGB_FLAG = 0x03
-    };
+        SGB_FLAG = 0x03,
 
-    enum {
-        NEW_LICENSEE_USED = 0x33
+        NEW_LICENSEE_USED = 0x33,
     };
 
     // todo: clean up the below spaghetti code
@@ -504,7 +497,7 @@ bool GB_loadrom(struct GB_Core* gb, const uint8_t* data, size_t size)
         }
         else
         {
-            #if !GBC_ENABLE
+            #if GBC_ENABLE
                 GB_set_system_type(gb, GB_SYSTEM_TYPE_GBC);
             #else
                 GB_log("rom supports GBC mode, however falling back to DMG mode...\n");
@@ -525,7 +518,12 @@ bool GB_loadrom(struct GB_Core* gb, const uint8_t* data, size_t size)
         // games work on the SGB.
         if (gb->config.system_type_config == GB_SYSTEM_TYPE_CONFIG_SGB)
         {
-            GB_set_system_type(gb, GB_SYSTEM_TYPE_SGB);
+            #if SGB_ENABLE
+                GB_set_system_type(gb, GB_SYSTEM_TYPE_SGB);
+            #else
+                GB_log("rom supports SGB mode, however falling back to DMG mode...\n");
+                GB_set_system_type(gb, GB_SYSTEM_TYPE_DMG);
+            #endif
         }
         else
         {
@@ -545,14 +543,15 @@ bool GB_loadrom(struct GB_Core* gb, const uint8_t* data, size_t size)
 
     // try and setup the mbc, this also implicitly sets up
     // gbc mode
-    if (!GB_setup_mbc(&gb->cart, header))
+    if (!GB_setup_mbc(gb, header))
     {
         GB_log("failed to setup mbc!\n");
         return false;
     }
 
     // todo: should add more checks before we get to this point!
-    gb->cart.rom = data;
+    gb->rom = data;
+    gb->rom_size = size;
 
     GB_reset(gb);
     GB_setup_mmap(gb);
@@ -576,116 +575,31 @@ bool GB_has_rtc(const struct GB_Core* gb)
     return (gb->cart.flags & MBC_FLAGS_RTC) == MBC_FLAGS_RTC;
 }
 
-uint32_t GB_calculate_savedata_size(const struct GB_Core* gb)
+size_t GB_calculate_savedata_size(const struct GB_Core* gb)
 {
     return gb->cart.ram_size;
 }
 
-bool GB_savegame(const struct GB_Core* gb, struct GB_SaveData* save)
-{
-    if (!GB_has_save(gb))
-    {
-        GB_log("[GB-ERROR] trying to savegame when cart doesn't support battery ram!\n");
-        return false;
-    }
 
-    save->size = GB_calculate_savedata_size(gb);
-    memcpy(save->data, gb->cart.ram, save->size);
-
-    if (GB_has_rtc(gb) == true)
-    {
-        memcpy(&save->rtc, &gb->cart.rtc, sizeof(save->rtc));
-        save->has_rtc = true;
-    }
-
-    return true;
-}
-
-bool GB_loadsave(struct GB_Core* gb, const struct GB_SaveData* save)
-{
-    if (!GB_has_save(gb))
-    {
-        GB_log("[GB-ERROR] trying to loadsave when cart doesn't support battery ram!\n");
-        return false;
-    }
-
-    // having the user pass in a larger ram size can be caused by a few
-    // reasons.
-    // 1 - the save comes from vba, which packs the RTC data at the end
-    // 2 - the save is invalid.
-    // for now, it will just error if the exact size isn't a match
-    // but support for handling vba saves will be added soon.
-    // NOTE: when adding support for vba saves, i should
-    // then restore the rtc from that save IF the user has not passed in
-    // their own rtc save data.
-    const uint32_t wanted_size = GB_calculate_savedata_size(gb);
-    
-    if (save->size != wanted_size)
-    {
-        GB_log("[GB-ERROR] wrong wanted savesize. got: %u wanted %u\n", save->size, wanted_size);
-        return false;
-    }
-
-    // copy of the savedata!
-    memcpy(gb->cart.ram, save->data, save->size);
-
-    if (GB_has_rtc(gb))
-    {
-        if (save->has_rtc)
-        {
-            // this will handle setting legal values of each entry
-            // such as 0-59 for seconds...
-            GB_set_rtc(gb, save->rtc);
-        }
-        else
-        {
-            GB_log("[WARN] game supports RTC but no RTC was loaded when loading save!\n");
-        }
-    }
-
-    return true;
-}
-
-static const struct GB_StateHeader STATE_HEADER = {
-    .magic = 1,
-    .version = 1,
-    /* padding */
-};
+enum { STATE_MAGIC = 0x6BCE };
+enum { STATE_VER = 1 };
 
 bool GB_savestate(const struct GB_Core* gb, struct GB_State* state)
 {
-    if (!state)
+    if (!state || !gb->rom)
     {
         return false;
     }
 
-    memcpy(&state->header, &STATE_HEADER, sizeof(state->header));
-    return GB_savestate2(gb, &state->core);
-}
+    state->magic = STATE_MAGIC;
+    state->version = STATE_VER;
+    state->size = sizeof(struct GB_State);
 
-bool GB_loadstate(struct GB_Core* gb, const struct GB_State* state)
-{
-    if (!state)
-    {
-        return false;
-    }
+    // the structs will have different sizes based on if built with sgb / gbc
+    state->gbc_enabled = GBC_ENABLE;
+    state->sgb_enabled = SGB_ENABLE;
 
-    // check if header is valid.
-    // todo: maybe check each field.
-    if (memcmp(&STATE_HEADER, &state->header, sizeof(STATE_HEADER)) != 0)
-    {
-        return false;
-    }
-
-    return GB_loadstate2(gb, &state->core);
-}
-
-bool GB_savestate2(const struct GB_Core* gb, struct GB_CoreState* state)
-{
-    if (!state)
-    {
-        return false;
-    }
+    memset(state->reserved, 0xFF, sizeof(state->reserved));
 
     memcpy(&state->io, &gb->io, sizeof(state->io));
     memcpy(&state->hram, &gb->hram, sizeof(state->hram));
@@ -693,32 +607,35 @@ bool GB_savestate2(const struct GB_Core* gb, struct GB_CoreState* state)
     memcpy(&state->cpu, &gb->cpu, sizeof(state->cpu));
     memcpy(&state->ppu, &gb->ppu, sizeof(state->ppu));
     memcpy(&state->apu, &gb->apu, sizeof(state->apu));
+    memcpy(&state->cart, &gb->cart, sizeof(state->cart));
     memcpy(&state->timer, &gb->timer, sizeof(state->timer));
-    memcpy(&state->joypad, &gb->joypad, sizeof(state->joypad));
 
-    // todo: make this part of normal struct so that i can just memcpy
-    memcpy(&state->cart.rom_bank, &gb->cart.rom_bank, sizeof(state->cart.rom_bank));
-    memcpy(&state->cart.ram_bank, &gb->cart.ram_bank, sizeof(state->cart.ram_bank));
-    memcpy(&state->cart.ram, &gb->cart.ram, sizeof(state->cart.ram));
-    memcpy(&state->cart.rtc, &gb->cart.rtc, sizeof(state->cart.rtc));
+    // set array to zero to allow for unused space to be better compressed
+    memset(state->sram, 0, sizeof(state->sram));
 
-    state->cart.rom_bank = gb->cart.rom_bank;
-    state->cart.rom_bank_lo = gb->cart.rom_bank_lo;
-    state->cart.rom_bank_hi = gb->cart.rom_bank_hi;
-    state->cart.ram_bank = gb->cart.ram_bank;
-    state->cart.rtc_mapped_reg = gb->cart.rtc_mapped_reg;
-    state->cart.rtc = gb->cart.rtc;
-    state->cart.internal_rtc_counter = gb->cart.internal_rtc_counter;
-    state->cart.bank_mode = gb->cart.bank_mode;
-    state->cart.ram_enabled = gb->cart.ram_enabled;
-    state->cart.in_ram = gb->cart.in_ram;
+    const size_t sram_size = GB_calculate_savedata_size(gb);
+
+    if (sram_size && sram_size <= gb->ram_size && gb->ram)
+    {
+        memcpy(state->sram, gb->ram, sram_size);
+    }
 
     return true;
 }
 
-bool GB_loadstate2(struct GB_Core* gb, const struct GB_CoreState* state)
+bool GB_loadstate(struct GB_Core* gb, const struct GB_State* state)
 {
-    if (!state)
+    if (!state || !gb->rom)
+    {
+        return false;
+    }
+
+    if (state->magic != STATE_MAGIC || state->version != STATE_VER || state->size != sizeof(struct GB_State))
+    {
+        return false;
+    }
+
+    if (state->gbc_enabled != GBC_ENABLE || state->sgb_enabled != SGB_ENABLE)
     {
         return false;
     }
@@ -729,26 +646,15 @@ bool GB_loadstate2(struct GB_Core* gb, const struct GB_CoreState* state)
     memcpy(&gb->cpu, &state->cpu, sizeof(gb->cpu));
     memcpy(&gb->ppu, &state->ppu, sizeof(gb->ppu));
     memcpy(&gb->apu, &state->apu, sizeof(gb->apu));
+    memcpy(&gb->cart, &state->cart, sizeof(gb->cart));
     memcpy(&gb->timer, &state->timer, sizeof(gb->timer));
-    memcpy(&gb->joypad, &state->joypad, sizeof(gb->joypad));
 
-    // setup cart
-    memcpy(&gb->cart.rom_bank, &state->cart.rom_bank, sizeof(state->cart.rom_bank));
-    memcpy(&gb->cart.ram_bank, &state->cart.ram_bank, sizeof(state->cart.ram_bank));
-    memcpy(&gb->cart.ram, &state->cart.ram, sizeof(state->cart.ram));
-    memcpy(&gb->cart.rtc, &state->cart.rtc, sizeof(state->cart.rtc));
+    const size_t sram_size = GB_calculate_savedata_size(gb);
 
-    gb->cart.rom_bank = state->cart.rom_bank;
-    gb->cart.rom_bank_lo = state->cart.rom_bank_lo;
-    gb->cart.rom_bank_hi = state->cart.rom_bank_hi;
-    gb->cart.ram_bank = state->cart.ram_bank;
-    gb->cart.rtc_mapped_reg = state->cart.rtc_mapped_reg;
-    gb->cart.rtc = state->cart.rtc;
-    gb->cart.internal_rtc_counter = state->cart.internal_rtc_counter;
-    gb->cart.bank_mode = state->cart.bank_mode;
-    gb->cart.ram_enabled = state->cart.ram_enabled;
-    gb->cart.in_ram = state->cart.in_ram;
-
+    if (sram_size && sram_size <= gb->ram_size && gb->ram)
+    {
+        memcpy(gb->ram, state->sram, sram_size);
+    }
 
     // we need to reload mmaps
     GB_setup_mmap(gb);
@@ -898,13 +804,11 @@ void GB_run_frame(struct GB_Core* gb)
 
     uint32_t cycles_elapsed = 0;
 
-    do {
+    while (cycles_elapsed < GB_FRAME_CPU_CYCLES)
+    {
         cycles_elapsed += GB_run_step(gb);
+    }
 
-    } while (cycles_elapsed < GB_FRAME_CPU_CYCLES);
-
-    // reset
-    gb->skip_next_frame = false;
 
     // check if we should update rtc using a switch so that
     // compiler warns if i add new enum entries...

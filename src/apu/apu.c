@@ -16,57 +16,57 @@ const int8_t SQUARE_DUTY_CYCLES[4][8] =
 const uint8_t PERIOD_TABLE[8] = { 8, 1, 2, 3, 4, 5, 6, 7 };
 
 
-static inline uint8_t volume_left(const struct GB_Core* gb)
+static FORCE_INLINE uint8_t volume_left(const struct GB_Core* gb)
 {
     return (IO_NR50 >> 4) & 0x7;
 }
 
-static inline uint8_t volume_right(const struct GB_Core* gb)
+static FORCE_INLINE uint8_t volume_right(const struct GB_Core* gb)
 {
     return (IO_NR50 >> 0) & 0x7;
 }
 
-static inline bool ch1_left_output(const struct GB_Core* gb)
+static FORCE_INLINE bool ch1_left_output(const struct GB_Core* gb)
 {
     return (IO_NR51 >> 4) & 0x1;
 }
 
-static inline bool ch2_left_output(const struct GB_Core* gb)
+static FORCE_INLINE bool ch2_left_output(const struct GB_Core* gb)
 {
     return (IO_NR51 >> 5) & 0x1;
 }
 
-static inline bool ch3_left_output(const struct GB_Core* gb)
+static FORCE_INLINE bool ch3_left_output(const struct GB_Core* gb)
 {
     return (IO_NR51 >> 6) & 0x1;
 }
 
-static inline bool ch4_left_output(const struct GB_Core* gb)
+static FORCE_INLINE bool ch4_left_output(const struct GB_Core* gb)
 {
     return (IO_NR51 >> 7) & 0x1;
 }
 
-static inline bool ch1_right_output(const struct GB_Core* gb)
+static FORCE_INLINE bool ch1_right_output(const struct GB_Core* gb)
 {
     return (IO_NR51 >> 0) & 0x1;
 }
 
-static inline bool ch2_right_output(const struct GB_Core* gb)
+static FORCE_INLINE bool ch2_right_output(const struct GB_Core* gb)
 {
     return (IO_NR51 >> 1) & 0x1;
 }
 
-static inline bool ch3_right_output(const struct GB_Core* gb)
+static FORCE_INLINE bool ch3_right_output(const struct GB_Core* gb)
 {
     return (IO_NR51 >> 2) & 0x1;
 }
 
-static inline bool ch4_right_output(const struct GB_Core* gb)
+static FORCE_INLINE bool ch4_right_output(const struct GB_Core* gb)
 {
     return (IO_NR51 >> 3) & 0x1;
 }
 
-static inline void clock_len(struct GB_Core* gb)
+static FORCE_INLINE void clock_len(struct GB_Core* gb)
 {
     clock_ch1_len(gb);
     clock_ch2_len(gb);
@@ -74,12 +74,12 @@ static inline void clock_len(struct GB_Core* gb)
     clock_ch4_len(gb);
 }
 
-static inline void clock_sweep(struct GB_Core* gb)
+static FORCE_INLINE void clock_sweep(struct GB_Core* gb)
 {
     on_ch1_sweep(gb);
 }
 
-static inline void clock_vol(struct GB_Core* gb)
+static FORCE_INLINE void clock_vol(struct GB_Core* gb)
 {
     clock_ch1_vol(gb);
     clock_ch2_vol(gb);
@@ -157,7 +157,7 @@ bool is_next_frame_sequencer_step_vol(const struct GB_Core* gb)
 }
 
 // this runs at 512hz
-static inline void step_frame_sequencer(struct GB_Core* gb)
+static FORCE_INLINE void step_frame_sequencer(struct GB_Core* gb)
 {
     switch (gb->apu.frame_sequencer_counter)
     {
@@ -213,7 +213,7 @@ struct MixerData
     int8_t left_master, right_master;
 };
 
-static inline struct GB_ApuCallbackData mixer(const struct MixerData* data)
+static FORCE_INLINE struct GB_ApuCallbackData mixer(const struct MixerData* data)
 {
     enum { LEFT, RIGHT };
 
@@ -230,7 +230,7 @@ static inline struct GB_ApuCallbackData mixer(const struct MixerData* data)
     };
 }
 
-static inline void sample_channels(struct GB_Core* gb)
+static FORCE_INLINE void sample_channels(struct GB_Core* gb)
 {
     // check if we have any callbacks set, if not, avoid
     // doing all the hardwork below!

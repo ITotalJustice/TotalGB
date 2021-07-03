@@ -35,14 +35,6 @@ extern "C" {
     #define GB_SINGLE_FILE 0
 #endif
 
-#if GB_SINGLE_FILE
-    #define GB_STATIC static
-    #define GB_INLINE static inline
-#else
-    #define GB_STATIC
-    #define GB_INLINE
-#endif // GB_SINGLE_FILE
-
 #include "tables/palette_table.h"
 
 #include <stddef.h>
@@ -66,20 +58,15 @@ enum
     GB_SCREEN_WIDTH = 160,
     GB_SCREEN_HEIGHT = 144,
 
+    GB_ROM_SIZE_MAX = 1024 * 1024 * 4, // 4MiB
+
     GB_BOOTROM_SIZE = 0x100,
 
     GB_FRAME_CPU_CYCLES = 70224,
 };
 
 
-// for changing the internal colour buffer.
-// this is is faster than converting each colour to rgb when rendering.
-// most consoles support rgb565 or bg565 but not bgr555 (default).
-// changing it GB side means that it potentially only calculates the colours
-// once, when updating the palette.
-// for built-in GB colours, i can have 4 precalculated colour tables,
-// so the only overhead is a switch statement when updating the palettes,
-// this can also be removed by using a func ptr, but no real need honestly.
+// todo: remove this
 enum GB_ColourMode
 {
     GB_COLOUR_BGR555,
@@ -455,14 +442,8 @@ struct MBC_RamBankInfo
     struct GB_MemMapEntry entries[2];
 };
 
-// todo: remove all bitfields, there's no reason to be using them!
 struct GB_Cart
 {
-    const uint8_t* rom;
-    uint8_t* ram;
-    size_t max_rom_size; // set by the user
-    size_t max_ram_size; // set by the user
-
     uint32_t rom_size; // set by the header
     uint32_t ram_size; // set by the header
 
@@ -623,13 +604,17 @@ struct GB_Core
     struct GB_Timer timer;
     struct GB_Joypad joypad;
 
-    bool skip_next_frame;
-
     struct GB_PaletteEntry palette; /* default */
 
     enum GB_SystemType system_type; // set by the rom itself
 
     struct GB_Config config;
+
+    const uint8_t* rom;
+    size_t rom_size; // set by the user
+    
+    uint8_t* ram;
+    size_t ram_size; // set by the user
 
     void* pixels;
     uint32_t stride;
@@ -646,60 +631,33 @@ struct GB_Core
 // i decided that the ram usage / statefile size is less important
 // than code complexity, reliablility and speed.
 // because of this, even if the game has no ram (tetris), it will
-// still take up 64k.
+// still take up 128k.
 // however *most* games do have ram, and fixing the size removes the
 // need to allocate and simplifies savestate / rewinding *a lot*.
-struct GB_CartState
+// further, compressed empty arrays often take up no space at all
+struct GB_State
 {
-    uint8_t ram[GB_SAVE_SIZE_MAX];
+    uint16_t magic;
+    uint16_t version;
+    uint32_t size;
+    uint8_t gbc_enabled;
+    uint8_t sgb_enabled;
+    uint8_t reserved[0xA];
 
-    uint16_t rom_bank;
-    uint8_t rom_bank_lo;
-    uint8_t rom_bank_hi;
-
-    uint8_t ram_bank;
-
-    enum GB_RtcMappedReg rtc_mapped_reg;
-    struct GB_Rtc rtc;
-    uint8_t internal_rtc_counter;
-
-    bool bank_mode;
-    bool ram_enabled;
-    bool in_ram;
-};
-
-struct GB_CoreState
-{
     uint8_t io[0x80]; // easier to have io as an array than individual bytes
     uint8_t hram[0x80]; // 0x7F + IE reg
+#if GBC_ENABLE
     uint8_t wram[8][0x1000]; // extra 6 banks in gbc
+#else
+    uint8_t wram[2][0x1000]; // 2 banks of 4KiB
+#endif
     struct GB_Cpu cpu;
     struct GB_Ppu ppu;
     struct GB_Apu apu;
+    struct GB_Cart cart;
     struct GB_Timer timer;
-    struct GB_Joypad joypad;
-    struct GB_CartState cart;
-};
 
-struct GB_StateHeader
-{
-    uint32_t magic;
-    uint32_t version;
-    uint8_t padding[0x20];
-};
-
-struct GB_State
-{
-    struct GB_StateHeader header;
-    struct GB_CoreState core;
-};
-
-struct GB_SaveData
-{
-    uint32_t size; // is filled internally
-    uint8_t data[GB_SAVE_SIZE_MAX];
-    struct GB_Rtc rtc;
-    bool has_rtc; // is filled internally
+    uint8_t sram[GB_SAVE_SIZE_MAX];
 };
 
 struct GB_CartName

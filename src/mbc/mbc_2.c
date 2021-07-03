@@ -35,7 +35,7 @@ void mbc2_write(struct GB_Core* gb, uint16_t addr, uint8_t value)
             const uint8_t masked_value = (value & 0x0F) | 0xF0;
             const uint16_t masked_addr = addr & 0x1FF;
 
-            gb->cart.ram[masked_addr] = masked_value;
+            gb->ram[masked_addr] = masked_value;
         } break;
     }
 }
@@ -47,11 +47,11 @@ struct MBC_RomBankInfo mbc2_get_rom_bank(struct GB_Core* gb, uint8_t bank)
 
     if (bank == 0)
     {
-        ptr = gb->cart.rom;
+        ptr = gb->rom;
     }
     else
     {
-        ptr = gb->cart.rom + (gb->cart.rom_bank * 0x4000);
+        ptr = gb->rom + (gb->cart.rom_bank * 0x4000);
     }
 
     for (size_t i = 0; i < ARRAY_SIZE(info.entries); ++i)
@@ -72,7 +72,7 @@ struct MBC_RamBankInfo mbc2_get_ram_bank(struct GB_Core* gb)
 
     struct MBC_RamBankInfo info = {0};
 
-    const uint8_t* ptr = gb->cart.ram + (0x2000 * gb->cart.ram_bank);
+    const uint8_t* ptr = gb->ram + (0x2000 * gb->cart.ram_bank);
 
     for (size_t i = 0; i < ARRAY_SIZE(info.entries); ++i)
     {

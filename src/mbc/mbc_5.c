@@ -48,7 +48,7 @@ void mbc5_write(struct GB_Core* gb, uint16_t addr, uint8_t value)
         case 0xA: case 0xB:
             if ((gb->cart.flags & MBC_FLAGS_RAM) && gb->cart.ram_enabled)
             {
-                gb->cart.ram[(addr & 0x1FFF) + (0x2000 * gb->cart.ram_bank)] = value;
+                gb->ram[(addr & 0x1FFF) + (0x2000 * gb->cart.ram_bank)] = value;
             }
             break;
     }
@@ -61,11 +61,11 @@ struct MBC_RomBankInfo mbc5_get_rom_bank(struct GB_Core* gb, uint8_t bank)
 
     if (bank == 0)
     {
-        ptr = gb->cart.rom;
+        ptr = gb->rom;
     }
     else
     {
-        ptr = gb->cart.rom + (gb->cart.rom_bank * 0x4000);
+        ptr = gb->rom + (gb->cart.rom_bank * 0x4000);
     }
 
     for (size_t i = 0; i < ARRAY_SIZE(info.entries); ++i)
@@ -86,7 +86,7 @@ struct MBC_RamBankInfo mbc5_get_ram_bank(struct GB_Core* gb)
 
     struct MBC_RamBankInfo info = {0};
 
-    const uint8_t* ptr = gb->cart.ram + (0x2000 * gb->cart.ram_bank);
+    const uint8_t* ptr = gb->ram + (0x2000 * gb->cart.ram_bank);
 
     for (size_t i = 0; i < ARRAY_SIZE(info.entries); ++i)
     {

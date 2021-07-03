@@ -101,6 +101,11 @@ endif()
 
 if (GB_DEBUG)
     target_compile_definitions(TotalGB PRIVATE GB_DEBUG=1)
+    set(GB_ENABLE_FORCE_INLINE OFF)
+endif()
+
+if (GB_ENABLE_FORCE_INLINE)
+    target_compile_definitions(TotalGB PRIVATE GB_ENABLE_FORCE_INLINE=1)
 endif()
 
 if (GB_ENABLE_BUILTIN_PALETTE)

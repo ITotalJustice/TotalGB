@@ -381,11 +381,6 @@ void GB_draw_scanline(struct GB_Core* gb)
         return;
     }
 
-    if (gb->skip_next_frame)
-    {
-        // return;
-    }
-
     switch (GB_get_system_type(gb))
     {
         case GB_SYSTEM_TYPE_DMG:

@@ -195,13 +195,8 @@ bool GB_get_mbc_flags(uint8_t cart_type, uint8_t* flags_out)
     return true;
 }
 
-bool GB_setup_mbc(struct GB_Cart* mbc, const struct GB_CartHeader* header)
+bool GB_setup_mbc(struct GB_Core* gb, const struct GB_CartHeader* header)
 {
-    if (!mbc || !header)
-    {
-        return false;
-    }
-
     // this won't fail because the type is 8-bit and theres 0x100 entries.
     // though the data inside can be NULL, but this is checked next...
     const struct MbcInfo* info = &MBC_INFO[header->cart_type];
@@ -214,50 +209,50 @@ bool GB_setup_mbc(struct GB_Cart* mbc, const struct GB_CartHeader* header)
         return false;
     }
 
-    mbc->type = info->type;
-    mbc->flags = info->flags;
+    gb->cart.type = info->type;
+    gb->cart.flags = info->flags;
 
     // todo: create mbcx_init() functions
-    if (mbc->type == GB_MbcType_0)
+    if (gb->cart.type == GB_MbcType_0)
     {
-        mbc->rom_bank = 0;
-        mbc->rom_bank_lo = 0;
+        gb->cart.rom_bank = 0;
+        gb->cart.rom_bank_lo = 0;
     }
     else
     {
-        mbc->rom_bank = 1;
-        mbc->rom_bank_lo = 1;
+        gb->cart.rom_bank = 1;
+        gb->cart.rom_bank_lo = 1;
     }
 
     // setup max rom banks
     // this can never be 0 as rom size is already set before.
-    assert(mbc->rom_size > 0 && "you changed where rom size is set!");
-    mbc->rom_bank_max = mbc->rom_size / 0x4000;
+    assert(gb->cart.rom_size > 0 && "you changed where rom size is set!");
+    gb->cart.rom_bank_max = gb->cart.rom_size / 0x4000;
 
     // todo: setup more flags.
-    if (mbc->flags & MBC_FLAGS_RAM)
+    if (gb->cart.flags & MBC_FLAGS_RAM)
     {
         // check if mbc2, if so, manually set the ram size!
         if (header->cart_type == 0x5 || header->cart_type == 0x6)
         {
-            mbc->ram_size = 0x200;
+            gb->cart.ram_size = 0x200;
         }
         // otherwise get the ram size via a LUT
-        else if (!GB_get_cart_ram_size(header->ram_size, &mbc->ram_size))
+        else if (!GB_get_cart_ram_size(header->ram_size, &gb->cart.ram_size))
         {
             GB_log("rom has ram but the size entry in header is invalid! %u\n", header->ram_size);
             return false;
         }
         else
         {
-            mbc->ram_bank_max = mbc->ram_size / 0x2000;
+            gb->cart.ram_bank_max = gb->cart.ram_size / 0x2000;
         }
 
         // check that the size (if any) returned is within range of the
         // maximum ram size.
-        if (mbc->ram_size > mbc->max_ram_size)
+        if (gb->cart.ram_size > gb->ram_size)
         {
-            GB_log("cart-ram size is too big for the maximum size set! got: %u max: %zu", mbc->ram_size, mbc->max_ram_size);
+            GB_log("cart-ram size is too big for the maximum size set! got: %u max: %zu", gb->cart.ram_size, gb->ram_size);
             return false;
         }
     }

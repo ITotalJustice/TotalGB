@@ -62,7 +62,7 @@ void mbc1_write(struct GB_Core* gb, uint16_t addr, uint8_t value)
             {
                 return;
             }
-            gb->cart.ram[(addr & 0x1FFF) + (0x2000 * (gb->cart.bank_mode == 1 ? gb->cart.ram_bank : 0))] = value;
+            gb->ram[(addr & 0x1FFF) + (0x2000 * (gb->cart.bank_mode == 1 ? gb->cart.ram_bank : 0))] = value;
             break;
     }
 }
@@ -81,13 +81,16 @@ struct MBC_RomBankInfo mbc1_get_rom_bank(struct GB_Core* gb, uint8_t bank)
             {
                 b %= gb->cart.rom_bank_max;
             }
-            ptr = gb->cart.rom + (b * 0x4000);
-        } else {
-            ptr = gb->cart.rom;
+            ptr = gb->rom + (b * 0x4000);
+        }
+        else
+        {
+            ptr = gb->rom;
         }
     }
-    else {
-        ptr = gb->cart.rom + (gb->cart.rom_bank * 0x4000);
+    else
+    {
+        ptr = gb->rom + (gb->cart.rom_bank * 0x4000);
     }
 
     for (size_t i = 0; i < ARRAY_SIZE(info.entries); ++i)
@@ -109,7 +112,7 @@ struct MBC_RamBankInfo mbc1_get_ram_bank(struct GB_Core* gb)
     struct MBC_RamBankInfo info = {0};
 
     // in mode 0, always read from bank 0
-    const uint8_t* ptr = gb->cart.ram + (0x2000 * (gb->cart.bank_mode == 1 ? gb->cart.ram_bank : 0));
+    const uint8_t* ptr = gb->ram + (0x2000 * (gb->cart.bank_mode == 1 ? gb->cart.ram_bank : 0));
 
     for (size_t i = 0; i < ARRAY_SIZE(info.entries); ++i)
     {
