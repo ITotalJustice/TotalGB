@@ -9,6 +9,7 @@
 #include <SDL.h>
 #include <SDL_image.h>
 #include <zlib.h>
+#include <time.h>
 
 #ifdef EMSCRIPTEN
     #include <emscripten.h>
@@ -441,6 +442,27 @@ static void on_touch_motion(struct TouchCacheEntry* cache, size_t size, SDL_Fing
     on_touch_down(cache, size, id, x, y);
 }
 
+static void set_rtc_from_time_t()
+{
+    time_t the_time = time(NULL);
+    const struct tm* tm = localtime(&the_time);
+
+    if (!tm)
+    {
+        printf("failed to set rtc\n");
+        return;
+    }
+
+    struct GB_Rtc rtc = {0};
+    rtc.S = tm->tm_sec;
+    rtc.M = tm->tm_min;
+    rtc.H = tm->tm_hour;
+    rtc.DL = tm->tm_yday & 0xFF;
+    rtc.DH = tm->tm_yday > 0xFF;
+
+    GB_set_rtc(&gb, rtc);
+}
+
 static void run()
 {
     if (running_state != RunningState_GAME)
@@ -451,6 +473,18 @@ static void run()
     for (int i = 0; i < speed; ++i)
     {
         GB_run_frame(&gb);
+    }
+
+    static int rtc_counter = 0;
+
+    if (rtc_counter >= 60)
+    {
+        set_rtc_from_time_t();
+        rtc_counter = 0;
+    }
+    else
+    {
+        rtc_counter++;
     }
 }
 
@@ -1194,9 +1228,13 @@ static void em_loop()
     {
         static int sram_sync_counter = 0;
 
-        // sync saves every 1s
-        if (sram_sync_counter >= 60)
+        // sync saves every 1.5s
+        if (sram_sync_counter >= 90)
         {
+            if (msync(sram_data, sram_size, MS_SYNC))
+            {
+                perror("failed to msync!\n");
+            }
             syncfs();
             sram_sync_counter = 0;
         }
@@ -1226,6 +1264,10 @@ static void close_save()
         close(sram_fd);
         sram_fd = -1;
     }
+
+    #ifdef EMSCRIPTEN
+        syncfs();
+    #endif
 }
 
 static bool loadsave(const char* _rom_path, const struct GB_RomInfo* rom_info)
@@ -1484,6 +1526,7 @@ int main(int argc, char** argv)
     GB_set_vblank_callback(&gb, core_on_vblank, NULL);
     GB_set_colour_callback(&gb, core_on_colour, NULL);
     GB_set_pixels(&gb, core_pixels, GB_SCREEN_WIDTH, 32);
+    GB_set_rtc_update_config(&gb, GB_RTC_UPDATE_CONFIG_NONE);
 
     #ifndef EMSCRIPTEN
         if (!GB_loadrom(&gb, rom_data, rom_size))
