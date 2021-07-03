@@ -37,6 +37,7 @@ enum TouchButtonID
     TouchButtonID_RIGHT,
     TouchButtonID_START,
     TouchButtonID_SELECT,
+    TouchButtonID_VOLUME,
     TouchButtonID_MENU,
     TouchButtonID_TITLE,
     TouchButtonID_SAVE,
@@ -107,6 +108,13 @@ static struct TouchButton
     {
         .path = "res/sprites/select.png",
         .w = 108,
+        .h = 48,
+        .dragable = false,
+    },
+    [TouchButtonID_VOLUME] =
+    {
+        .path = "res/sprites/volume.png",
+        .w = 48,
         .h = 48,
         .dragable = false,
     },
@@ -183,6 +191,7 @@ static enum RunningState running_state = RunningState_GAME;
 static int scale = 4;
 static int speed = 1;
 static int frameskip_counter = 0;
+static int audio_freq = 0;
 
 static int sram_fd = -1;
 static uint8_t* sram_data = NULL;
@@ -203,6 +212,9 @@ static void savestate();
 static void loadstate();
 static bool loadsave(const char* _rom_path, const struct GB_RomInfo* rom_info);
 static void close_save();
+static void toggle_volume();
+static void core_on_apu(void* user, struct GB_ApuCallbackData* data);
+
 
 static void change_running_state(enum RunningState new_state)
 {
@@ -217,6 +229,7 @@ static void change_running_state(enum RunningState new_state)
             touch_buttons[TouchButtonID_RIGHT].enabled = true;
             touch_buttons[TouchButtonID_START].enabled = true;
             touch_buttons[TouchButtonID_SELECT].enabled = true;
+            touch_buttons[TouchButtonID_VOLUME].enabled = true;
             touch_buttons[TouchButtonID_MENU].enabled = true;
             touch_buttons[TouchButtonID_TITLE].enabled = false;
             touch_buttons[TouchButtonID_SAVE].enabled = false;
@@ -236,6 +249,7 @@ static void change_running_state(enum RunningState new_state)
             touch_buttons[TouchButtonID_RIGHT].enabled = false;
             touch_buttons[TouchButtonID_START].enabled = false;
             touch_buttons[TouchButtonID_SELECT].enabled = false;
+            touch_buttons[TouchButtonID_VOLUME].enabled = false;
             touch_buttons[TouchButtonID_MENU].enabled = false;
             touch_buttons[TouchButtonID_TITLE].enabled = true;
             touch_buttons[TouchButtonID_SAVE].enabled = true;
@@ -357,8 +371,19 @@ static void on_touch_button_change(enum TouchButtonID touch_id, bool down)
         case TouchButtonID_START:    GB_set_buttons(&gb, GB_BUTTON_START, down);  break;
         case TouchButtonID_SELECT:   GB_set_buttons(&gb, GB_BUTTON_SELECT, down); break;
 
-        case TouchButtonID_MENU: if (down) { change_running_state(RunningState_MENU); } break;
-        case TouchButtonID_TITLE: break;
+        case TouchButtonID_VOLUME:
+            if (down)
+            {
+                toggle_volume();
+            }
+            break;
+        
+        case TouchButtonID_MENU:
+            if (down)
+            {
+                change_running_state(RunningState_MENU);
+            }
+            break;
         
         case TouchButtonID_SAVE:
             if (down)
@@ -375,7 +400,16 @@ static void on_touch_button_change(enum TouchButtonID touch_id, bool down)
                 change_running_state(RunningState_GAME);
             }
             break;
-        case TouchButtonID_BACK: if (down) { change_running_state(RunningState_GAME); } break;
+
+        case TouchButtonID_BACK:
+            if (down)
+            {
+                change_running_state(RunningState_GAME);
+            }
+            break;
+
+        case TouchButtonID_TITLE:
+            break;
     }
 }
 
@@ -480,6 +514,28 @@ static void set_rtc_from_time_t()
     rtc.DH = tm->tm_yday > 0xFF;
 
     GB_set_rtc(&gb, rtc);
+}
+
+static void toggle_volume()
+{
+    #ifdef EMSCRIPTEN
+        switch (SDL_GetAudioDeviceStatus(audio_device))
+        {
+            case SDL_AUDIO_PLAYING:
+                GB_set_apu_callback(&gb, NULL, NULL, 0);
+                SDL_ClearQueuedAudio(audio_device);
+                SDL_PauseAudioDevice(audio_device, 1);
+                printf("paused audio\n");
+                break;
+
+            case SDL_AUDIO_STOPPED:
+            case SDL_AUDIO_PAUSED:
+                GB_set_apu_callback(&gb, core_on_apu, NULL, audio_freq);
+                SDL_PauseAudioDevice(audio_device, 0);
+                printf("resumed audio audio\n");
+                break;
+        }
+    #endif
 }
 
 static void run()
@@ -661,6 +717,11 @@ static void resize_touch_buttons(int w, int h)
         touch_buttons[TouchButtonID_SELECT].rect.y = 5 * min_scale;
         touch_buttons[TouchButtonID_SELECT].rect.w = touch_buttons[TouchButtonID_SELECT].w * min_scale;
         touch_buttons[TouchButtonID_SELECT].rect.h = touch_buttons[TouchButtonID_SELECT].h * min_scale;
+
+        touch_buttons[TouchButtonID_VOLUME].rect.x = w - 53 * min_scale;
+        touch_buttons[TouchButtonID_VOLUME].rect.y = 5 * min_scale;
+        touch_buttons[TouchButtonID_VOLUME].rect.w = touch_buttons[TouchButtonID_VOLUME].w * min_scale;
+        touch_buttons[TouchButtonID_VOLUME].rect.h = touch_buttons[TouchButtonID_VOLUME].h * min_scale;
 
         touch_buttons[TouchButtonID_MENU].rect.x = 5 * min_scale;
         touch_buttons[TouchButtonID_MENU].rect.y = 5 * min_scale;
@@ -1547,7 +1608,9 @@ int main(int argc, char** argv)
 
     SDL_PauseAudioDevice(audio_device, 0);
 
-    GB_set_apu_callback(&gb, core_on_apu, NULL, aspec_got.freq + 512);
+    audio_freq = aspec_got.freq + 512;
+
+    GB_set_apu_callback(&gb, core_on_apu, NULL, audio_freq);
     GB_set_vblank_callback(&gb, core_on_vblank, NULL);
     GB_set_colour_callback(&gb, core_on_colour, NULL);
     GB_set_pixels(&gb, core_pixels, GB_SCREEN_WIDTH, 32);
