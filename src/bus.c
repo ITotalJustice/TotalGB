@@ -97,7 +97,6 @@ static inline void GB_iowrite_gbc(struct GB_Core* gb, uint16_t addr, uint8_t val
 static inline uint8_t GB_ioread(struct GB_Core* gb, uint16_t addr)
 {
     return IO[addr & 0x7F] | IO_READ_TABLE[addr & 0x7F]; 
-
 }
 
 static inline void GB_iowrite(struct GB_Core* gb, uint16_t addr, uint8_t value)

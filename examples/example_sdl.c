@@ -16,13 +16,18 @@
     #include <emscripten/html5.h>
 #endif
 
+#ifdef GB_MMPX
+    #include <mmpx.h>
+#endif
+
 
 enum
 {
     WIDTH = GB_SCREEN_WIDTH,
     HEIGHT = GB_SCREEN_HEIGHT,
 
-    VOLUME = SDL_MIX_MAXVOLUME / 16,
+    VOLUME = SDL_MIX_MAXVOLUME / 2,
+    // VOLUME = 80,
     SAMPLES = 2048,
     SDL_AUDIO_FREQ = 96000,
 };
@@ -1112,10 +1117,7 @@ static void core_on_apu(void* user, struct GB_ApuCallbackData* data)
 
     // using buffers because pushing 1 sample at a time seems to
     // cause popping sounds (on my chromebook).
-    static int8_t buffer1[SAMPLES * 2] = {0};
-    static int8_t buffer2[SAMPLES * 2] = {0};
-    static int8_t buffer3[SAMPLES * 2] = {0};
-    static int8_t buffer4[SAMPLES * 2] = {0};
+    static int8_t buffer[SAMPLES * 2] = {0};
     static size_t buffer_count = 0;
 
     static bool first = true;
@@ -1123,10 +1125,10 @@ static void core_on_apu(void* user, struct GB_ApuCallbackData* data)
     if (first)
     {
         // stops nasty audio pop in the beginning on chromebook
-        SDL_QueueAudio(audio_device, buffer1, sizeof(buffer1));
-        SDL_QueueAudio(audio_device, buffer1, sizeof(buffer1));
-        SDL_QueueAudio(audio_device, buffer1, sizeof(buffer1));
-        SDL_QueueAudio(audio_device, buffer1, sizeof(buffer1));
+        SDL_QueueAudio(audio_device, buffer, sizeof(buffer));
+        SDL_QueueAudio(audio_device, buffer, sizeof(buffer));
+        SDL_QueueAudio(audio_device, buffer, sizeof(buffer));
+        SDL_QueueAudio(audio_device, buffer, sizeof(buffer));
         first = false;
     }
 
@@ -1145,39 +1147,28 @@ static void core_on_apu(void* user, struct GB_ApuCallbackData* data)
     }
 
     #ifdef EMSCRIPTEN
-        if (SDL_GetQueuedAudioSize(audio_device) > sizeof(buffer1) * 4)
+        if (SDL_GetQueuedAudioSize(audio_device) > sizeof(buffer) * 4)
         {
             return;
         }
     #endif
 
-    buffer1[buffer_count + 0] = data->ch1[0];
-    buffer1[buffer_count + 1] = data->ch1[1];
+    const int16_t sample_left = data->ch1[0] + data->ch2[0] + data->ch3[0] + data->ch4[0];
+    const int16_t sample_right = data->ch1[1] + data->ch2[1] + data->ch3[1] + data->ch4[1];
 
-    buffer2[buffer_count + 0] = data->ch2[0];
-    buffer2[buffer_count + 1] = data->ch2[1];
+    buffer[buffer_count++] = sample_left ? sample_left / 4 : 0;
+    buffer[buffer_count++] = sample_right ? sample_right / 4 : 0;
 
-    buffer3[buffer_count + 0] = data->ch3[0];
-    buffer3[buffer_count + 1] = data->ch3[1];
-
-    buffer4[buffer_count + 0] = data->ch4[0];
-    buffer4[buffer_count + 1] = data->ch4[1];
-
-    buffer_count += 2;
-
-    if (buffer_count == sizeof(buffer1))
+    if (buffer_count == sizeof(buffer))
     {
         buffer_count = 0;
 
-        uint8_t samples[sizeof(buffer1)] = {0};
+        uint8_t samples[sizeof(buffer)] = {0};
 
-        SDL_MixAudioFormat(samples, (const uint8_t*)buffer1, AUDIO_S8, sizeof(buffer1), VOLUME);
-        SDL_MixAudioFormat(samples, (const uint8_t*)buffer2, AUDIO_S8, sizeof(buffer2), VOLUME);
-        SDL_MixAudioFormat(samples, (const uint8_t*)buffer3, AUDIO_S8, sizeof(buffer3), VOLUME);
-        SDL_MixAudioFormat(samples, (const uint8_t*)buffer4, AUDIO_S8, sizeof(buffer4), VOLUME);
+        SDL_MixAudioFormat(samples, (const uint8_t*)buffer, AUDIO_S8, sizeof(buffer), VOLUME);
 
         #ifndef EMSCRIPTEN
-            while (SDL_GetQueuedAudioSize(audio_device) > (sizeof(buffer1) * 4))
+            while (SDL_GetQueuedAudioSize(audio_device) > (sizeof(buffer) * 4))
             {
                 SDL_Delay(4);
             }
@@ -1222,7 +1213,7 @@ static void core_on_vblank(void* user)
 {
     (void)user;
 
-    ++frameskip_counter; // what even is this for??????
+    ++frameskip_counter;
 
     if (frameskip_counter >= speed)
     {
@@ -1237,7 +1228,11 @@ static void core_on_vblank(void* user)
         SDL_SetTextureAlphaMod(prev_texture, 100);
 
         SDL_LockTexture(texture, NULL, &pixels, &pitch);
-        memcpy(pixels, core_pixels, sizeof(core_pixels));
+        #ifdef GB_MMPX
+            mmpx_scale2x((const uint32_t*)core_pixels, (uint32_t*)pixels, WIDTH, HEIGHT);
+        #else
+            memcpy(pixels, core_pixels, sizeof(core_pixels));
+        #endif
         SDL_UnlockTexture(texture);
 
         frameskip_counter = 0;
@@ -1280,6 +1275,7 @@ static void render()
 {
     SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
     SDL_RenderClear(renderer);
+    // todo:
     SDL_RenderCopy(renderer, texture, NULL, &rect);
     SDL_RenderCopy(renderer, prev_texture, NULL, &rect);
 
@@ -1546,9 +1542,6 @@ int main(int argc, char** argv)
         goto fail;
     }
 
-    // this doesn't seem to work on chromebook...
-    SDL_SetWindowMinimumSize(window, WIDTH, HEIGHT);
-
     const uint32_t pixel_format_enum = SDL_GetWindowPixelFormat(window);
 
     pixel_format = SDL_AllocFormat(pixel_format_enum);
@@ -1561,8 +1554,15 @@ int main(int argc, char** argv)
         goto fail;
     }
 
-    texture = SDL_CreateTexture(renderer, pixel_format_enum, SDL_TEXTUREACCESS_STREAMING, WIDTH, HEIGHT);
-    prev_texture = SDL_CreateTexture(renderer, pixel_format_enum, SDL_TEXTUREACCESS_STREAMING, WIDTH, HEIGHT);
+    #ifdef GB_MMPX
+        texture = SDL_CreateTexture(renderer, pixel_format_enum, SDL_TEXTUREACCESS_STREAMING, WIDTH * 2, HEIGHT * 2);
+        prev_texture = SDL_CreateTexture(renderer, pixel_format_enum, SDL_TEXTUREACCESS_STREAMING, WIDTH * 2, HEIGHT * 2);
+        SDL_SetWindowMinimumSize(window, WIDTH * 2, HEIGHT * 2);
+    #else
+        texture = SDL_CreateTexture(renderer, pixel_format_enum, SDL_TEXTUREACCESS_STREAMING, WIDTH, HEIGHT);
+        prev_texture = SDL_CreateTexture(renderer, pixel_format_enum, SDL_TEXTUREACCESS_STREAMING, WIDTH, HEIGHT);
+        SDL_SetWindowMinimumSize(window, WIDTH, HEIGHT);
+    #endif
 
     if (!texture || !prev_texture)
     {

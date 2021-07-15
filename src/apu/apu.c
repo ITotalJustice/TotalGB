@@ -5,12 +5,12 @@
 #include <string.h>
 
 
-const int8_t SQUARE_DUTY_CYCLES[4][8] =
+const bool SQUARE_DUTY_CYCLES[4][8] =
 {
-    [0] = { -1, -1, -1, -1, -1, -1, -1, +1 },
-    [1] = { +1, -1, -1, -1, -1, -1, -1, +1 },
-    [2] = { -1, -1, -1, -1, -1, +1, +1, +1 },
-    [3] = { -1, +1, +1, +1, +1, +1, +1, -1 },
+    [0] = { 0, 0, 0, 0, 0, 0, 0, 1 },
+    [1] = { 1, 0, 0, 0, 0, 0, 0, 1 },
+    [2] = { 0, 0, 0, 0, 0, 1, 1, 1 },
+    [3] = { 0, 1, 1, 1, 1, 1, 1, 0 },
 };
 
 const uint8_t PERIOD_TABLE[8] = { 8, 1, 2, 3, 4, 5, 6, 7 };
@@ -68,22 +68,22 @@ static FORCE_INLINE bool ch4_right_output(const struct GB_Core* gb)
 
 static FORCE_INLINE void clock_len(struct GB_Core* gb)
 {
-    clock_ch1_len(gb);
-    clock_ch2_len(gb);
-    clock_ch3_len(gb);
-    clock_ch4_len(gb);
+    if (is_ch1_enabled(gb)) { clock_ch1_len(gb); }
+    if (is_ch2_enabled(gb)) { clock_ch2_len(gb); }
+    if (is_ch3_enabled(gb)) { clock_ch3_len(gb); }
+    if (is_ch4_enabled(gb)) { clock_ch4_len(gb); }
 }
 
 static FORCE_INLINE void clock_sweep(struct GB_Core* gb)
 {
-    on_ch1_sweep(gb);
+    if (is_ch1_enabled(gb)) { on_ch1_sweep(gb); }
 }
 
 static FORCE_INLINE void clock_vol(struct GB_Core* gb)
 {
-    clock_ch1_vol(gb);
-    clock_ch2_vol(gb);
-    clock_ch4_vol(gb);
+    if (is_ch1_enabled(gb)) { clock_ch1_vol(gb); }
+    if (is_ch2_enabled(gb)) { clock_ch2_vol(gb); }
+    if (is_ch4_enabled(gb)) { clock_ch4_vol(gb); }
 }
 
 bool gb_is_apu_enabled(const struct GB_Core* gb)
@@ -105,6 +105,8 @@ void gb_apu_on_enabled(struct GB_Core* gb)
 void gb_apu_on_disabled(struct GB_Core* gb)
 {
     GB_log("[APU] disabling...\n");
+
+    gb->apu.frame_sequencer_counter = 0;
 
     IO_NR52 &= ~0xF;
 
@@ -199,8 +201,8 @@ static FORCE_INLINE void step_frame_sequencer(struct GB_Core* gb)
 struct MixerSampleData
 {
     int8_t sample;
-    int8_t left;
-    int8_t right;
+    bool left;
+    bool right;
 };
 
 struct MixerData
@@ -266,8 +268,8 @@ static FORCE_INLINE void sample_channels(struct GB_Core* gb)
             .left = ch4_left_output(gb),
             .right = ch4_right_output(gb)
         },
-        .left_master = volume_left(gb),
-        .right_master = volume_right(gb)
+        .left_master = volume_left(gb) + 1,
+        .right_master = volume_right(gb) + 1,
     };
 
     struct GB_ApuCallbackData samples = mixer(&mixer_data);
@@ -284,37 +286,76 @@ void GB_apu_run(struct GB_Core* gb, uint16_t cycles)
         // nothing else should tick i dont think?
         // not sure if when apu is disabled, do all regs reset?
         // what happens when apu is re-enabled? do they all trigger?
-        CH1.timer -= cycles;
-        while (UNLIKELY(CH1.timer <= 0))
+        
+        // NOTE: not sure if the timer is always ticked, im guessing it is
+        // tho not sure if the duty_index etc is changed :/
+        #define TEST 1
+
+        if (LIKELY(CH1.timer > 0 || get_ch1_freq(gb)))
         {
-            CH1.timer += get_ch1_freq(gb);
-            CH1.duty_index = (CH1.duty_index + 1) % 8;
+            CH1.timer -= cycles;
+            if (UNLIKELY(CH1.timer <= 0))
+            {
+                CH1.timer += get_ch1_freq(gb);
+                #if TEST
+                if (is_ch1_enabled(gb))
+                #endif
+                {
+                    CH1.duty_index = (CH1.duty_index + 1) % 8;
+                }
+            }
         }
 
-        CH2.timer -= cycles;
-        while (UNLIKELY(CH2.timer <= 0))
+        if (LIKELY(CH2.timer > 0 || get_ch2_freq(gb)))
         {
-            CH2.timer += get_ch2_freq(gb);
-            CH2.duty_index = (CH2.duty_index + 1) % 8;
+            CH2.timer -= cycles;
+            if (UNLIKELY(CH2.timer <= 0))
+            {
+                CH2.timer += get_ch2_freq(gb);
+                #if TEST
+                if (is_ch2_enabled(gb))
+                #endif
+                {
+                    CH2.duty_index = (CH2.duty_index + 1) % 8;
+                }
+            }
         }
 
-        CH3.timer -= cycles;
-        while (UNLIKELY(CH3.timer <= 0))
+        if (LIKELY(CH3.timer > 0 || get_ch3_freq(gb)))
         {
-            CH3.timer += get_ch3_freq(gb);
-            advance_ch3_position_counter(gb);
+            CH3.timer -= cycles;
+            if (UNLIKELY(CH3.timer <= 0))
+            {
+                CH3.timer += get_ch3_freq(gb);
+                #if TEST
+                if (is_ch3_enabled(gb))
+                #endif
+                {
+                    advance_ch3_position_counter(gb);
+                }
+            }
         }
 
         // NOTE: ch4 lfsr is ONLY clocked if clock shift is not 14 or 15
         if (IO_NR43.clock_shift != 14 && IO_NR43.clock_shift != 15)
         {
-            CH4.timer -= cycles;
-            while (UNLIKELY(CH4.timer <= 0))
+            if (LIKELY(CH4.timer > 0 || get_ch4_freq(gb)))
             {
-                CH4.timer += get_ch4_freq(gb);
-                step_ch4_lfsr(gb);
+                CH4.timer -= cycles;
+                if (UNLIKELY(CH4.timer <= 0))
+                {
+                    CH4.timer += get_ch4_freq(gb);
+                    #if TEST
+                    if (is_ch4_enabled(gb))
+                    #endif
+                    {
+                        step_ch4_lfsr(gb);
+                    }
+                }
             }
         }
+        
+        #undef TEST
 
         // check if we need to tick the frame sequencer!
         gb->apu.next_frame_sequencer_cycles += cycles;

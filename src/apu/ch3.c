@@ -29,22 +29,13 @@ void ch3_disable(struct GB_Core* gb)
 
 int8_t sample_ch3(struct GB_Core* gb)
 {
-    static const int8_t test_table[16] =
-    {
-        -7, -6, -5, -4, -3, -2, -1,
-        -0, +0,
-        +1, +2, +3, +4, +5, +6, +7
-    };
-
     // indexed using the ch3 shift.
-    // the values in this table are used to right-shift the sample from ch3_table
+    // the values in this table are used to right-shift the sample
     static const uint8_t CH3_SHIFT[4] = { 4, 0, 1, 2 };
 
-    // this now uses the sample buffer, rather than indexing the array
-    // which is *correct*, but still sounds very bad
-    uint8_t sample = (CH3.position_counter & 1) ? CH3.sample_buffer & 0xF : CH3.sample_buffer >> 4;
+    const uint8_t sample = (CH3.position_counter & 1) ? CH3.sample_buffer & 0xF : CH3.sample_buffer >> 4;
 
-    return test_table[(sample >> CH3_SHIFT[IO_NR32.vol_code])] * 2;
+    return sample >> CH3_SHIFT[IO_NR32.vol_code];
 }
 
 void clock_ch3_len(struct GB_Core* gb)
@@ -62,13 +53,7 @@ void clock_ch3_len(struct GB_Core* gb)
 
 void advance_ch3_position_counter(struct GB_Core* gb)
 {
-    ++CH3.position_counter;
-    // check if we need to wrap around
-    if (CH3.position_counter >= 32)
-    {
-        CH3.position_counter = 0;
-    }
-
+    CH3.position_counter = (CH3.position_counter + 1) % 32;
     CH3.sample_buffer = IO_WAVE_TABLE[CH3.position_counter >> 1];
 }
 

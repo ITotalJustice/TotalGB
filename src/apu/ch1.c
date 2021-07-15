@@ -29,9 +29,8 @@ void ch1_disable(struct GB_Core* gb)
 
 int8_t sample_ch1(struct GB_Core* gb)
 {
-    const int8_t duty = SQUARE_DUTY_CYCLES[IO_NR11.duty][CH1.duty_index];
-    
-    return CH1.volume * duty;
+    const bool duty = SQUARE_DUTY_CYCLES[IO_NR11.duty][CH1.duty_index];
+    return duty ? +CH1.volume : -CH1.volume;
 }
 
 void clock_ch1_len(struct GB_Core* gb)

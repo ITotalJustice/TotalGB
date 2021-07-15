@@ -175,3 +175,13 @@ if (GB_ZROM)
 else()
     target_compile_definitions(TotalGB INTERFACE GB_ZROM=0)
 endif()
+
+if (GB_MMPX)
+    target_compile_definitions(TotalGB INTERFACE GB_MMPX=1)
+    target_link_libraries(TotalGB INTERFACE mmpx)
+else()
+endif()
+
+if (GB_MARCH_NATIVE)
+    target_compile_options(TotalGB PUBLIC -march=native)
+endif()

@@ -54,13 +54,14 @@ extern "C" {
 // 4 * 1024^2 / 512
 #define FRAME_SEQUENCER_STEP_RATE 8192
 
-enum EnvelopeMode {
+enum EnvelopeMode
+{
     SUB = 0,
     ADD = 1
 };
 
 // defined in core/apu/apu.c
-extern const int8_t SQUARE_DUTY_CYCLES[4][8];
+extern const bool SQUARE_DUTY_CYCLES[4][8];
 
 // defined in core/apu/apu.c
 extern const uint8_t PERIOD_TABLE[8];

@@ -1,3 +1,6 @@
 [submodule "res/controller_mapping"]
 	path = res/controller_mapping
 	url = https://github.com/gabomdq/SDL_GameControllerDB.git
+[submodule "libs/mmpx"]
+	path = libs/mmpx
+	url = https://github.com/ITotalJustice/mmpx.git
