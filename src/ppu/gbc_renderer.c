@@ -68,7 +68,7 @@ void GBC_on_bcpd_update(struct GB_Core* gb)
 
 void GBC_on_ocpd_update(struct GB_Core* gb)
 {
-    IO_OCPD = gb->ppu.bg_palette[get_ocps_index(gb)];
+    IO_OCPD = gb->ppu.obj_palette[get_ocps_index(gb)];
 }
 
 void GB_bcpd_write(struct GB_Core* gb, uint8_t value)
@@ -218,7 +218,7 @@ static struct GBC_BgAttribute gbc_get_bg_attr(const uint8_t v)
 
 static struct GBC_BgAttributes gbc_fetch_bg_attr(const struct GB_Core* gb, uint16_t map, uint8_t tile_y)
 {
-    struct GBC_BgAttributes attrs;
+    struct GBC_BgAttributes attrs = {0};
 
     const uint8_t* ptr = &gb->ppu.vram[1][(map + (tile_y << 5)) & 0x1FFF];
 
@@ -416,7 +416,7 @@ static void gbc_render_scanline_obj(struct GB_Core* gb,
 
         // check if the sprite has a chance of being on screen
         // + 8 because thats the width of each sprite (8 pixels)
-        if ((sprite->x + 8) <= 0 || sprite->x >= GB_SCREEN_WIDTH)
+        if (sprite->x == -8 || sprite->x >= GB_SCREEN_WIDTH)
         {
             continue;
         }
@@ -545,27 +545,6 @@ void GBC_render_scanline(struct GB_Core* gb)
     {
         gbc_render_scanline_obj(gb, &prio_buffer);
     }
-}
-
-#else
-bool GB_is_hdma_active(const struct GB_Core* gb)
-{
-    (void)gb;
-    return false;
-}
-
-void perform_hdma(struct GB_Core* gb)
-{
-    (void)gb;
-}
-
-void GBC_render_scanline(struct GB_Core* gb)
-{
-    (void)gb;
-
-    assert(0 && "GBC was disabled at buildtime, yet somehow we are rendering...");
-
-    return;
 }
 
 #endif // #if GBC_ENABLE

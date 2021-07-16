@@ -290,10 +290,12 @@ void GB_ppu_run(struct GB_Core* gb, uint16_t cycles)
             ++IO_LY;
             GB_compare_LYC(gb);
 
-            if (GB_is_hdma_active(gb))
-            {
-                perform_hdma(gb);
-            }
+            #if GBC_ENABLE
+                if (GB_is_hdma_active(gb))
+                {
+                    perform_hdma(gb);
+                }
+            #endif
 
             if (UNLIKELY(IO_LY == 144))
             {
@@ -388,11 +390,15 @@ void GB_draw_scanline(struct GB_Core* gb)
             break;
 
          case GB_SYSTEM_TYPE_GBC:
-            GBC_render_scanline(gb);
+            #if GBC_ENABLE
+                GBC_render_scanline(gb);
+            #endif
             break;
 
         case GB_SYSTEM_TYPE_SGB:
-            SGB_render_scanline(gb);
+            #if SGB_ENABLE
+                SGB_render_scanline(gb);
+            #endif
             break;
     }
 }

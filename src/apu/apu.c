@@ -68,10 +68,11 @@ static FORCE_INLINE bool ch4_right_output(const struct GB_Core* gb)
 
 static FORCE_INLINE void clock_len(struct GB_Core* gb)
 {
-    if (is_ch1_enabled(gb)) { clock_ch1_len(gb); }
-    if (is_ch2_enabled(gb)) { clock_ch2_len(gb); }
-    if (is_ch3_enabled(gb)) { clock_ch3_len(gb); }
-    if (is_ch4_enabled(gb)) { clock_ch4_len(gb); }
+    // docs say that this is always clocked, even if channel is disabled
+    clock_ch1_len(gb);
+    clock_ch2_len(gb);
+    clock_ch3_len(gb);
+    clock_ch4_len(gb);
 }
 
 static FORCE_INLINE void clock_sweep(struct GB_Core* gb)
@@ -242,37 +243,43 @@ static FORCE_INLINE void sample_channels(struct GB_Core* gb)
     }
 
     // build up data for the mixer!
-    const struct MixerData mixer_data =
-    {
-        .ch1 =
-        {
-            .sample = sample_ch1(gb) * is_ch1_enabled(gb),
-            .left = ch1_left_output(gb),
-            .right = ch1_right_output(gb)
-        },
-        .ch2 =
-        {
-            .sample = sample_ch2(gb) * is_ch2_enabled(gb),
-            .left = ch2_left_output(gb),
-            .right = ch2_right_output(gb)
-        },
-        .ch3 =
-        {
-            .sample = sample_ch3(gb) * is_ch3_enabled(gb),
-            .left = ch3_left_output(gb),
-            .right = ch3_right_output(gb)
-        },
-        .ch4 =
-        {
-            .sample = sample_ch4(gb) * is_ch4_enabled(gb),
-            .left = ch4_left_output(gb),
-            .right = ch4_right_output(gb)
-        },
-        .left_master = volume_left(gb) + 1,
-        .right_master = volume_right(gb) + 1,
-    };
+    struct GB_ApuCallbackData samples = {0};
 
-    struct GB_ApuCallbackData samples = mixer(&mixer_data);
+    if (gb_is_apu_enabled(gb))
+    {
+        // build up data for the mixer!
+        const struct MixerData mixer_data =
+        {
+            .ch1 =
+            {
+                .sample = sample_ch1(gb) * is_ch1_enabled(gb),
+                .left = ch1_left_output(gb),
+                .right = ch1_right_output(gb)
+            },
+            .ch2 =
+            {
+                .sample = sample_ch2(gb) * is_ch2_enabled(gb),
+                .left = ch2_left_output(gb),
+                .right = ch2_right_output(gb)
+            },
+            .ch3 =
+            {
+                .sample = sample_ch3(gb) * is_ch3_enabled(gb),
+                .left = ch3_left_output(gb),
+                .right = ch3_right_output(gb)
+            },
+            .ch4 =
+            {
+                .sample = sample_ch4(gb) * is_ch4_enabled(gb),
+                .left = ch4_left_output(gb),
+                .right = ch4_right_output(gb)
+            },
+            .left_master = volume_left(gb) + 1,
+            .right_master = volume_right(gb) + 1,
+        };
+
+        samples = mixer(&mixer_data);
+    }
 
     gb->callback.apu(gb->callback.user_apu, &samples);
 }

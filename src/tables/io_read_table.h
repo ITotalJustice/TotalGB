@@ -1,5 +1,5 @@
-#ifndef _GB_IO_READ_TABLE_H_
-#define _GB_IO_READ_TABLE_H_
+#ifndef GB_IO_READ_TABLE_H
+#define GB_IO_READ_TABLE_H
 
 #ifdef __cplusplus
 extern "C" {
@@ -152,4 +152,4 @@ static const uint8_t IO_READ_TABLE[0x80] =
 extern "C" {
 #endif
 
-#endif //_GB_IO_READ_TABLE_H_
+#endif //GB_IO_READ_TABLE_H

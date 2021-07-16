@@ -41,12 +41,8 @@ int8_t sample_ch4(struct GB_Core* gb)
 {
     // docs say that it's bit-0 INVERTED
     const bool bit = !(CH4.lfsr & 0x1);
-    if (bit == 1)
-    {
-        return CH4.volume;
-    }
 
-    return -CH4.volume;
+    return (bit ? +CH4.volume : -CH4.volume) * CH4.master;
 }
 
 void clock_ch4_len(struct GB_Core* gb)

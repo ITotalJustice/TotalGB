@@ -1,5 +1,5 @@
-#ifndef _GB_TYPES_H_
-#define _GB_TYPES_H_
+#ifndef GB_TYPES_H
+#define GB_TYPES_H
 
 #ifdef __cplusplus
 extern "C" {
@@ -35,7 +35,6 @@ extern "C" {
     #define GB_SINGLE_FILE 0
 #endif
 
-#include "tables/palette_table.h"
 
 #include <stddef.h>
 #include <stdbool.h>
@@ -227,6 +226,19 @@ enum GB_RtcUpdateConfig
     GB_RTC_UPDATE_CONFIG_NONE,
 };
 
+struct GB_PaletteEntry
+{
+    uint32_t BG[4];
+    uint32_t OBJ0[4];
+    uint32_t OBJ1[4];
+};
+
+struct GB_PalettePreviewShades
+{
+    uint32_t shade1;
+    uint32_t shade2;
+};
+
 struct GB_Config
 {
     enum GB_PaletteConfig palette_config;
@@ -335,7 +347,7 @@ struct GB_CartHeader
     uint8_t entry_point[0x4];
     uint8_t logo[0x30];
     char title[0x10];
-    uint16_t new_licensee_code;
+    uint8_t new_licensee_code[2];
     uint8_t sgb_flag;
     uint8_t cart_type;
     uint8_t rom_size;
@@ -344,7 +356,7 @@ struct GB_CartHeader
     uint8_t old_licensee_code;
     uint8_t rom_version;
     uint8_t header_checksum;
-    uint16_t global_checksum;
+    uint8_t global_checksum[2];
 };
 
 // todo:
@@ -474,11 +486,12 @@ struct GB_Timer
 
 struct GB_ApuCh1
 {
+    bool master;
+
     uint8_t sweep_period;
     bool sweep_negate;
     uint8_t sweep_shift;
     uint8_t duty;
-    uint8_t length_load;
     uint8_t starting_vol;
     bool env_add_mode;
     uint8_t period;
@@ -502,8 +515,9 @@ struct GB_ApuCh1
 
 struct GB_ApuCh2
 {
+    bool master;
+
     uint8_t duty;
-    uint8_t length_load;
     uint8_t starting_vol;
     bool env_add_mode;
     uint8_t period;
@@ -523,7 +537,6 @@ struct GB_ApuCh2
 struct GB_ApuCh3
 {
     bool dac_power;
-    uint8_t length_load;
     uint8_t vol_code;
     uint8_t freq_lsb;
     uint8_t freq_msb;
@@ -538,7 +551,8 @@ struct GB_ApuCh3
 
 struct GB_ApuCh4
 {
-    uint8_t length_load;
+    bool master;
+    
     uint8_t starting_vol;
     bool env_add_mode;
 
@@ -669,4 +683,4 @@ struct GB_CartName
 }
 #endif
 
-#endif // _GB_TYPES_H_
+#endif // GB_TYPES_H

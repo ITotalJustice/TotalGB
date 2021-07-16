@@ -30,13 +30,13 @@ void GB_rtc_tick_frame(struct GB_Core* gb)
         return;
     }
 
-    enum GB_RtcFlags
+    enum RtcFlags
     {
-        OVERFLOW = 0x01,
-        HALT = 0x40
+        RtcFlags_OVERFLOW = 0x01,
+        RtcFlags_HALT = 0x40
     };
 
-    if ((gb->cart.rtc.DH & HALT) == HALT)
+    if ((gb->cart.rtc.DH & RtcFlags_HALT) == RtcFlags_HALT)
     {
         return;
     }
@@ -65,7 +65,7 @@ void GB_rtc_tick_frame(struct GB_Core* gb)
 
                     // if already set, we have overflowed the days counter!
                     // 0-511 days!
-                    if ((gb->cart.rtc.DH & OVERFLOW) == OVERFLOW)
+                    if ((gb->cart.rtc.DH & RtcFlags_OVERFLOW) == RtcFlags_OVERFLOW)
                     {
                         // set the overflow bit but keep bit-6!
                         gb->cart.rtc.DH = (gb->cart.rtc.DH & 0x40) | 0x80;

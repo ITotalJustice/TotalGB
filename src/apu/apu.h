@@ -1,5 +1,5 @@
-#ifndef _GB_APU_H_
-#define _GB_APU_H_
+#ifndef GB_APU_H
+#define GB_APU_H
 
 #ifdef __cplusplus
 extern "C" {
@@ -121,4 +121,4 @@ GB_FORCE_INLINE bool is_next_frame_sequencer_step_vol(const struct GB_Core* gb);
 }
 #endif
 
-#endif // _GB_APU_H_
+#endif // GB_APU_H

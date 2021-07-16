@@ -1,5 +1,5 @@
-#ifndef _GB_MBC_H_
-#define _GB_MBC_H_
+#ifndef GB_MBC_H
+#define GB_MBC_H
 
 #ifdef __cplusplus
 extern "C" {
@@ -39,4 +39,4 @@ GB_STATIC struct MBC_RamBankInfo mbc5_get_ram_bank(struct GB_Core* gb);
 }
 #endif
 
-#endif // _GB_MBC_H_
+#endif // GB_MBC_H

@@ -1,5 +1,5 @@
-#ifndef _GB_INTERNAL_H_
-#define _GB_INTERNAL_H_
+#ifndef GB_INTERNAL_H
+#define GB_INTERNAL_H
 
 #ifdef __cplusplus
 extern "C" {
@@ -216,7 +216,7 @@ GB_FORCE_INLINE void GB_tac_write(struct GB_Core* gb, uint8_t value);
 
 // these should also be static
 GB_STATIC bool GB_get_mbc_flags(uint8_t cart_type, uint8_t* flags_out);
-GB_STATIC bool GB_get_cart_ram_size(uint8_t type, uint32_t* size);
+GB_STATIC bool GB_get_cart_ram_size(const struct GB_CartHeader* header, uint32_t* size);
 GB_STATIC bool GB_setup_mbc(struct GB_Core* gb, const struct GB_CartHeader* header);
 GB_STATIC void GB_setup_mmap(struct GB_Core* gb);
 GB_STATIC void GB_update_rom_banks(struct GB_Core* gb);
@@ -253,10 +253,12 @@ GB_FORCE_INLINE bool GB_is_bg_enabled(const struct GB_Core* gb);
 
 
 // SGB stuff
+#if SGB_ENABLE
 GB_STATIC void SGB_handle_joyp_write(struct GB_Core* gb, uint8_t value);
+#endif
 
 #ifdef __cplusplus
 }
 #endif
 
-#endif // _GB_INTERNAL_H_
+#endif // GB_INTERNAL_H

@@ -394,11 +394,6 @@ static inline uint16_t GB_POP(struct GB_Core* gb)
 #define INC_SP() do { ++REG_SP; } while(0)
 #define DEC_SP() do { --REG_SP; } while(0)
 
-#define CP() do { \
-    const uint8_t result = REG_A - REG(opcode); \
-    SET_ALL_FLAGS(REG(opcode) < REG_A, (REG_A & 0xF) < (REG(opcode) & 0xF), true, result == 0); \
-} while(0)
-
 #define LD_r_r() do { REG(opcode >> 3) = REG(opcode); } while(0)
 #define LD_r_u8() do { REG(opcode >> 3) = read8(REG_PC++); } while(0)
 
@@ -420,15 +415,12 @@ static inline uint16_t GB_POP(struct GB_Core* gb)
 #define LD_A_BCa() do { REG_A = read8(REG_BC); } while(0)
 #define LD_A_DEa() do { REG_A = read8(REG_DE); } while(0)
 #define LD_A_HLa() do { REG_A = read8(REG_HL); } while(0)
-#define LD_A_AFa() do { REG_A = read8(REG_AF); } while(0)
 
 #define LD_BCa_A() do { write8(REG_BC, REG_A); } while(0)
 #define LD_DEa_A() do { write8(REG_DE, REG_A); } while(0)
-#define LD_HLa_A() do { write8(REG_HL, REG_A); } while(0)
-#define LD_AFa_A() do { write8(REG_AF, REG_A); } while(0)
 
-#define LD_FFRC_A() do { write8(0xFF00 | REG_C, REG_A); } while(0);
-#define LD_A_FFRC() do { REG_A = read8(0xFF00 | REG_C); } while(0);
+#define LD_FFRC_A() do { write8(0xFF00 | REG_C, REG_A); } while(0)
+#define LD_A_FFRC() do { REG_A = read8(0xFF00 | REG_C); } while(0)
 
 #define LD_BC_u16() do { \
     const uint16_t result = read16(REG_PC); \
@@ -448,13 +440,9 @@ static inline uint16_t GB_POP(struct GB_Core* gb)
     REG_PC += 2; \
 } while(0)
 
-#define LD_u16_BC() do { write16(read16(REG_PC), REG_BC); REG_PC+=2; } while(0)
-#define LD_u16_DE() do { write16(read16(REG_PC), REG_DE); REG_PC+=2; } while(0)
-#define LD_u16_HL() do { write16(read16(REG_PC), REG_HL); REG_PC+=2; } while(0)
 #define LD_u16_SP() do { write16(read16(REG_PC), REG_SP); REG_PC+=2; } while(0)
 
-#define LD_SP_u16() do { REG_SP = read16(REG_PC); REG_PC+=2; } while(0)
-#define LD_SP_HL() do { REG_SP = REG_HL; } while(0);
+#define LD_SP_HL() do { REG_SP = REG_HL; } while(0)
 
 #define LD_FFu8_A() do { write8((0xFF00 | read8(REG_PC++)), REG_A); } while(0)
 #define LD_A_FFu8() do { REG_A = read8(0xFF00 | read8(REG_PC++)); } while(0)
@@ -477,36 +465,36 @@ static inline uint16_t GB_POP(struct GB_Core* gb)
     SET_ALL_FLAGS(value > REG_A, (REG_A & 0xF) < (value & 0xF), true, result == 0); \
 } while(0)
 
-#define __ADD(value, carry) do { \
+#define ADD_INTERNAL(value, carry) do { \
     const uint8_t result = REG_A + value + carry; \
     SET_ALL_FLAGS((REG_A + value + carry) > 0xFF, ((REG_A & 0xF) + (value & 0xF) + carry) > 0xF, false, result == 0); \
     REG_A = result; \
 } while (0)
 
 #define ADD_r() do { \
-    __ADD(REG(opcode), false); \
+    ADD_INTERNAL(REG(opcode), false); \
 } while(0)
 
 #define ADD_u8() do { \
     const uint8_t value = read8(REG_PC++); \
-    __ADD(value, false); \
+    ADD_INTERNAL(value, false); \
 } while(0)
 
 #define ADD_HLa() do { \
     const uint8_t value = read8(REG_HL); \
-    __ADD(value, false); \
+    ADD_INTERNAL(value, false); \
 } while(0)
 
-#define __ADD_HL(value) do { \
+#define ADD_HL_INTERNAL(value) do { \
     const uint16_t result = REG_HL + value; \
     SET_FLAGS_CHN((REG_HL + value) > 0xFFFF, (REG_HL & 0xFFF) + (value & 0xFFF) > 0xFFF, false); \
     SET_REG_HL(result); \
 } while(0)
 
-#define ADD_HL_BC() do { __ADD_HL(REG_BC); } while(0)
-#define ADD_HL_DE() do { __ADD_HL(REG_DE); } while(0)
-#define ADD_HL_HL() do { __ADD_HL(REG_HL); } while(0)
-#define ADD_HL_SP() do { __ADD_HL(REG_SP); } while(0)
+#define ADD_HL_BC() do { ADD_HL_INTERNAL(REG_BC); } while(0)
+#define ADD_HL_DE() do { ADD_HL_INTERNAL(REG_DE); } while(0)
+#define ADD_HL_HL() do { ADD_HL_INTERNAL(REG_HL); } while(0)
+#define ADD_HL_SP() do { ADD_HL_INTERNAL(REG_SP); } while(0)
 
 #define ADD_SP_i8() do { \
     const uint8_t value = read8(REG_PC++); \
@@ -524,56 +512,56 @@ static inline uint16_t GB_POP(struct GB_Core* gb)
 
 #define ADC_r() do { \
     const bool fc = FLAG_C; \
-    __ADD(REG(opcode), fc); \
+    ADD_INTERNAL(REG(opcode), fc); \
 } while(0)
 
 #define ADC_u8() do { \
     const uint8_t value = read8(REG_PC++); \
     const bool fc = FLAG_C; \
-    __ADD(value, fc); \
+    ADD_INTERNAL(value, fc); \
 } while(0)
 
 #define ADC_HLa() do { \
     const uint8_t value = read8(REG_HL); \
     const bool fc = FLAG_C; \
-    __ADD(value, fc); \
+    ADD_INTERNAL(value, fc); \
 } while(0)
 
-#define __SUB(value, carry) do { \
+#define SUB_INTERNAL(value, carry) do { \
     const uint8_t result = REG_A - value - carry; \
     SET_ALL_FLAGS((value + carry) > REG_A, (REG_A & 0xF) < ((value & 0xF) + carry), true, result == 0); \
     REG_A = result; \
 } while (0)
 
 #define SUB_r() do { \
-    __SUB(REG(opcode), false); \
+    SUB_INTERNAL(REG(opcode), false); \
 } while(0)
 
 #define SUB_u8() do { \
     const uint8_t value = read8(REG_PC++); \
-    __SUB(value, false); \
+    SUB_INTERNAL(value, false); \
 } while(0)
 
 #define SUB_HLa() do { \
     const uint8_t value = read8(REG_HL); \
-    __SUB(value, false); \
+    SUB_INTERNAL(value, false); \
 } while(0)
 
 #define SBC_r() do { \
     const bool fc = FLAG_C; \
-    __SUB(REG(opcode), fc); \
+    SUB_INTERNAL(REG(opcode), fc); \
 } while(0)
 
 #define SBC_u8() do { \
     const uint8_t value = read8(REG_PC++); \
     const bool fc = FLAG_C; \
-    __SUB(value, fc); \
+    SUB_INTERNAL(value, fc); \
 } while(0)
 
 #define SBC_HLa() do { \
     const uint8_t value = read8(REG_HL); \
     const bool fc = FLAG_C; \
-    __SUB(value, fc); \
+    SUB_INTERNAL(value, fc); \
 } while(0)
 
 #define AND_r() do { \

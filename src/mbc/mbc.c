@@ -148,8 +148,15 @@ int GB_get_rom_name(const struct GB_Core* gb, struct GB_CartName* name)
     return GB_get_rom_name_from_header(header, name);
 }
 
-bool GB_get_cart_ram_size(uint8_t type, uint32_t* size)
+bool GB_get_cart_ram_size(const struct GB_CartHeader* header, uint32_t* size)
 {
+    // check if mbc2, if so, manually set the ram size!
+    if (header->cart_type == 0x5 || header->cart_type == 0x6)
+    {
+        *size = 0x200;
+        return true;
+    }
+
     // i think that more ram sizes are valid, however
     // i have yet to see a ram size bigger than this...
     const uint32_t GB_CART_RAM_SIZES[6] =
@@ -162,22 +169,22 @@ bool GB_get_cart_ram_size(uint8_t type, uint32_t* size)
         [5] = GB_SAVE_SIZE_5      /*0x10000*/,
     };
 
-    assert(type < ARRAY_SIZE(GB_CART_RAM_SIZES) && "OOB type access!");
+    assert(header->ram_size < ARRAY_SIZE(GB_CART_RAM_SIZES) && "OOB header->ram_size access!");
 
-    if (type >= ARRAY_SIZE(GB_CART_RAM_SIZES))
+    if (header->ram_size >= ARRAY_SIZE(GB_CART_RAM_SIZES))
     {
-        GB_log_fatal("invalid ram size type! %u\n", type);
+        GB_log_fatal("invalid ram size header->ram_size! %u\n", header->ram_size);
         return false;
     }
 
-    if (type == 5 || type == 4)
+    if (header->ram_size == 5 || header->ram_size == 4)
     {
-        GB_log("ram is of type GB_SAVE_SIZE_5, finally found a game that uses this!\n");
-        assert(type != 5);
+        GB_log("ram is of header->ram_size GB_SAVE_SIZE_5, finally found a game that uses this!\n");
+        assert(header->ram_size != 5);
         return false;
     }
 
-    *size = GB_CART_RAM_SIZES[type];
+    *size = GB_CART_RAM_SIZES[header->ram_size];
     return true;
 }
 
@@ -232,13 +239,8 @@ bool GB_setup_mbc(struct GB_Core* gb, const struct GB_CartHeader* header)
     // todo: setup more flags.
     if (gb->cart.flags & MBC_FLAGS_RAM)
     {
-        // check if mbc2, if so, manually set the ram size!
-        if (header->cart_type == 0x5 || header->cart_type == 0x6)
-        {
-            gb->cart.ram_size = 0x200;
-        }
         // otherwise get the ram size via a LUT
-        else if (!GB_get_cart_ram_size(header->ram_size, &gb->cart.ram_size))
+        if (!GB_get_cart_ram_size(header, &gb->cart.ram_size))
         {
             GB_log("rom has ram but the size entry in header is invalid! %u\n", header->ram_size);
             return false;

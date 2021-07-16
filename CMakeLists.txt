@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.13.4)
+cmake_minimum_required(VERSION 3.18.0)
 
 
 list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
@@ -10,6 +10,27 @@ project(TotalGB
     HOMEPAGE_URL "https://github.com/ITotalJustice/TotalGB"
     LANGUAGES C
 )
+
+
+message("COMPILER: using ${CMAKE_C_COMPILER_ID}")
+
+# SEE: https://cmake.org/cmake/help/latest/manual/cmake-compile-features.7.html#supported-compilers
+list(APPEND cmake_supported_compiler_features
+    AppleClang
+    Clang
+    GNU
+    MSVC
+    SunPro
+    Intel
+)
+
+if (${CMAKE_C_COMPILER_ID} IN_LIST cmake_supported_compiler_features)
+    set(COMPILER_FEATURES ON)
+    message("compiler features are enabled for this compiler")
+else()
+    set(COMPILER_FEATURES OFF)
+    message("compiler features are NOT enabled for this compiler")
+endif()
 
 
 option(GB_SINGLE_FILE "include all src in single.c" OFF)

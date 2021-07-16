@@ -45,6 +45,9 @@ void GB_apu_iowrite(struct GB_Core* gb, uint16_t addr, uint8_t value)
     }
     else if (UNLIKELY(gb_is_apu_enabled(gb) == false))
     {
+        // numism.gb says that these regs should not be writeable...
+        // however the sound_hardware docs say otherwise!
+        #if 0
         // on the dmg, len registers are still writable
         if (GB_get_system_type(gb) & GB_SYSTEM_TYPE_DMG)
         {
@@ -56,6 +59,7 @@ void GB_apu_iowrite(struct GB_Core* gb, uint16_t addr, uint8_t value)
                 case 0x20: IO[addr] = value; on_nr41_write(gb, value); break;
             }
         }
+        #endif
 
         if (addr >= 0x30 && addr <= 0x3F)
         {
@@ -114,15 +118,49 @@ void on_nr10_write(struct GB_Core* gb, uint8_t value)
 void on_nr11_write(struct GB_Core* gb, uint8_t value)
 {
     IO_NR11.duty = value >> 6;
-    IO_NR11.length_load = value & 0x3F;
-    CH1.length_counter = 64 - IO_NR11.length_load;
+    CH1.length_counter = 64 - (value & 0x3F);
 }
 
 void on_nr12_write(struct GB_Core* gb, uint8_t value)
 {
-    IO_NR12.starting_vol = value >> 4;
-    IO_NR12.env_add_mode = (value >> 3) & 0x1;
-    IO_NR12.period = value & 0x7;
+    const uint8_t starting_vol = value >> 4;
+    const bool env_add_mode = (value >> 3) & 0x1;
+    const uint8_t period = value & 0x7;
+
+    if (is_ch1_enabled(gb))
+    {
+        if (IO_NR12.period == 0 && CH1.disable_env == false)
+        {
+            if (IO_NR12.env_add_mode)
+            {
+                CH1.volume += 1;
+            }
+            else
+            {
+                CH1.volume += 2;
+            }
+        }
+
+        if (IO_NR12.env_add_mode != env_add_mode)
+        {
+            CH1.volume = 16 - CH1.volume;
+        }
+
+        CH1.volume &= 0xF;
+    }
+
+    if (starting_vol == 0)
+    {
+        CH1.master = false;
+    }
+    else
+    {
+        CH1.master = true;
+    }
+
+    IO_NR12.starting_vol = starting_vol;
+    IO_NR12.env_add_mode = env_add_mode;
+    IO_NR12.period = period;
 
     if (is_ch1_dac_enabled(gb) == false)
     {
@@ -163,16 +201,50 @@ void on_nr14_write(struct GB_Core* gb, uint8_t value)
 void on_nr21_write(struct GB_Core* gb, uint8_t value)
 {
     IO_NR21.duty = value >> 6;
-    IO_NR21.length_load = value & 0x3F;
-    CH2.length_counter = 64 - IO_NR21.length_load;
+    CH2.length_counter = 64 - (value & 0x3F);
 }
 
 void on_nr22_write(struct GB_Core* gb, uint8_t value)
 {
-    IO_NR22.starting_vol = value >> 4;
-    IO_NR22.env_add_mode = (value >> 3) & 0x1;
-    IO_NR22.period = value & 0x7;
-    
+    const uint8_t starting_vol = value >> 4;
+    const bool env_add_mode = (value >> 3) & 0x1;
+    const uint8_t period = value & 0x7;
+
+    if (is_ch2_enabled(gb))
+    {
+        if (IO_NR22.period == 0 && CH2.disable_env == false)
+        {
+            if (IO_NR22.env_add_mode)
+            {
+                CH2.volume += 1;
+            }
+            else
+            {
+                CH2.volume += 2;
+            }
+        }
+
+        if (IO_NR22.env_add_mode != env_add_mode)
+        {
+            CH2.volume = 16 - CH2.volume;
+        }
+
+        CH2.volume &= 0xF;
+    }
+
+    if (starting_vol == 0)
+    {
+        CH2.master = false;
+    }
+    else
+    {
+        CH2.master = true;
+    }
+
+    IO_NR22.starting_vol = starting_vol;
+    IO_NR22.env_add_mode = env_add_mode;
+    IO_NR22.period = period;
+
     if (is_ch2_dac_enabled(gb) == false)
     {
         ch2_disable(gb);
@@ -221,8 +293,7 @@ void on_nr30_write(struct GB_Core* gb, uint8_t value)
 
 void on_nr31_write(struct GB_Core* gb, uint8_t value)
 {
-    IO_NR31.length_load = value;
-    CH3.length_counter = 256 - IO_NR31.length_load;
+    CH3.length_counter = 256 - value;
 }
 
 void on_nr32_write(struct GB_Core* gb, uint8_t value)
@@ -262,15 +333,49 @@ void on_nr34_write(struct GB_Core* gb, uint8_t value)
 
 void on_nr41_write(struct GB_Core* gb, uint8_t value)
 {
-    IO_NR41.length_load = value & 0x3F;
-    CH4.length_counter = 64 - IO_NR41.length_load;
+    CH4.length_counter = 64 - (value & 0x3F);
 }
 
 void on_nr42_write(struct GB_Core* gb, uint8_t value)
 {
-    IO_NR42.starting_vol = value >> 4;
-    IO_NR42.env_add_mode = (value >> 3) & 0x1;
-    IO_NR42.period = value & 0x7;
+    const uint8_t starting_vol = value >> 4;
+    const bool env_add_mode = (value >> 3) & 0x1;
+    const uint8_t period = value & 0x7;
+
+    if (is_ch4_enabled(gb))
+    {
+        if (IO_NR42.period == 0 && CH4.disable_env == false)
+        {
+            if (env_add_mode)
+            {
+                CH4.volume += 1;
+            }
+            else
+            {
+                CH4.volume += 2;
+            }
+        }
+
+        if (IO_NR42.env_add_mode != env_add_mode)
+        {
+            CH4.volume = 16 - CH4.volume;
+        }
+
+        CH4.volume &= 0xF;
+    }
+
+    if (starting_vol == 0)
+    {
+        CH4.master = false;
+    }
+    else
+    {
+        CH4.master = true;
+    }
+
+    IO_NR42.starting_vol = starting_vol;
+    IO_NR42.env_add_mode = env_add_mode;
+    IO_NR42.period = period;
 
     if (is_ch4_dac_enabled(gb) == false)
     {

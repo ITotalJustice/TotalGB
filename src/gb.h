@@ -1,5 +1,5 @@
-#ifndef _GB_H_
-#define _GB_H_
+#ifndef GB_H
+#define GB_H
 
 #ifdef __cplusplus
 extern "C" {
@@ -163,4 +163,4 @@ GBAPI void GB_cpu_enable_log(const bool enable);
 }
 #endif
 
-#endif // _GB_H_
+#endif // GB_H

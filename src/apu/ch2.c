@@ -30,7 +30,7 @@ void ch2_disable(struct GB_Core* gb)
 int8_t sample_ch2(struct GB_Core* gb)
 {
     const bool duty = SQUARE_DUTY_CYCLES[IO_NR21.duty][CH2.duty_index];
-    return duty ? +CH2.volume : -CH2.volume;
+    return (duty ? +CH2.volume : -CH2.volume) * CH2.master;
 }
 
 void clock_ch2_len(struct GB_Core* gb)
@@ -76,6 +76,10 @@ void clock_ch2_vol(struct GB_Core* gb)
                 {
                     CH2.disable_env = true;
                 }
+            }
+            else
+            {
+                CH2.disable_env = true;
             }
         }
     }

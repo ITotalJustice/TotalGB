@@ -52,7 +52,9 @@ static void dmg_render_scanline_bg(struct GB_Core* gb, struct DmgPrioBuf* prio)
     const uint8_t sub_tile_y = (pixel_y & 7);
 
     const uint8_t* bit = PIXEL_BIT_SHRINK;
-    const uint8_t *vram_map = &gb->ppu.vram[0][(GB_get_bg_map_select(gb) + (tile_y << 5)) & 0x1FFF];
+    // due how internally the array is represented when NOT built with gbc
+    // support, this needed changing to silence gcc array-bounds
+    const uint8_t *vram_map = ((const uint8_t*)gb->ppu.vram) + ((GB_get_bg_map_select(gb) + (tile_y << 5)) & 0x1FFF);
 
     for (uint8_t tile_x = 0; tile_x <= 20; ++tile_x)
     {
@@ -96,7 +98,7 @@ static void dmg_render_scanline_win(struct GB_Core* gb, struct DmgPrioBuf* prio)
     bool did_draw = false;
 
     const uint8_t* bit = PIXEL_BIT_SHRINK;
-    const uint8_t *vram_map = &gb->ppu.vram[0][(GB_get_win_map_select(gb) + (tile_y << 5)) & 0x1FFF];
+    const uint8_t *vram_map = ((const uint8_t*)gb->ppu.vram) + ((GB_get_win_map_select(gb) + (tile_y << 5)) & 0x1FFF);
 
     for (uint8_t tile_x = 0; tile_x <= base_tile_x; ++tile_x)
     {
@@ -204,13 +206,14 @@ static struct DMG_Sprites dmg_sprite_fetch(const struct GB_Core* gb)
 
     if (sprites.count)
     {
+        const uint8_t runfor = sprites.count - 1; // silence gcc strict-overflow
         bool unsorted = true;
 
         while (unsorted)
         {
             unsorted = false;
 
-            for (int i = 0; i < sprites.count - 1; ++i)
+            for (uint8_t i = 0; i < runfor; ++i)
             {
                 if (sprites.sprite[i].x > sprites.sprite[i + 1].x)
                 {
@@ -245,7 +248,7 @@ static void dmg_render_scanline_obj(struct GB_Core* gb, const struct DmgPrioBuf*
 
         // check if the sprite has a chance of being on screen
         // + 8 because thats the width of each sprite (8 pixels)
-        if ((sprite->x + 8) <= 0 || sprite->x >= GB_SCREEN_WIDTH)
+        if (sprite->x == -8 || sprite->x >= GB_SCREEN_WIDTH)
         {
             continue;
         }

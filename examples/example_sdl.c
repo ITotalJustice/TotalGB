@@ -26,8 +26,8 @@ enum
     WIDTH = GB_SCREEN_WIDTH,
     HEIGHT = GB_SCREEN_HEIGHT,
 
-    VOLUME = SDL_MIX_MAXVOLUME / 2,
-    // VOLUME = 80,
+    // VOLUME = SDL_MIX_MAXVOLUME / 2,
+    VOLUME = 51, // 40%
     SAMPLES = 2048,
     SDL_AUDIO_FREQ = 96000,
 };
@@ -870,8 +870,8 @@ static void on_key_event(const SDL_KeyboardEvent* e)
 
     switch (e->keysym.scancode)
     {
-        case SDL_SCANCODE_Z:        GB_set_buttons(&gb, GB_BUTTON_A, down);        break;
-        case SDL_SCANCODE_X:        GB_set_buttons(&gb, GB_BUTTON_B, down);        break;
+        case SDL_SCANCODE_X:        GB_set_buttons(&gb, GB_BUTTON_A, down);        break;
+        case SDL_SCANCODE_Z:        GB_set_buttons(&gb, GB_BUTTON_B, down);        break;
         case SDL_SCANCODE_RETURN:   GB_set_buttons(&gb, GB_BUTTON_START, down);    break;
         case SDL_SCANCODE_SPACE:    GB_set_buttons(&gb, GB_BUTTON_SELECT, down);   break;
         case SDL_SCANCODE_UP:       GB_set_buttons(&gb, GB_BUTTON_UP, down);       break;
@@ -1168,7 +1168,7 @@ static void core_on_apu(void* user, struct GB_ApuCallbackData* data)
         SDL_MixAudioFormat(samples, (const uint8_t*)buffer, AUDIO_S8, sizeof(buffer), VOLUME);
 
         #ifndef EMSCRIPTEN
-            while (SDL_GetQueuedAudioSize(audio_device) > (sizeof(buffer) * 4))
+            while (SDL_GetQueuedAudioSize(audio_device) > sizeof(buffer))
             {
                 SDL_Delay(4);
             }
@@ -1189,9 +1189,9 @@ static uint32_t core_on_colour(void* user, enum GB_ColourCallbackType type, uint
     switch (type)
     {
         case GB_ColourCallbackType_DMG:
-            R = r << 3;
-            G = g << 3;
-            B = b << 3;
+            R = r;
+            G = g;
+            B = b;
             break;
 
         case GB_ColourCallbackType_GBC:

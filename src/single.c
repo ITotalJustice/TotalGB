@@ -26,7 +26,9 @@
     #include "mbc/mbc_5.c"
     #include "timers.c"
     #include "serial.c"
-    #include "sgb.c"
+    #if SGB_ENABLE
+        #include "sgb.c"
+    #endif
     #include "accessories/printer.c"
     #include "tables/palette_table.c"
 #endif // GB_SINGLE_FILE

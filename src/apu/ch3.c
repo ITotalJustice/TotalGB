@@ -9,7 +9,7 @@ uint16_t get_ch3_freq(const struct GB_Core* gb)
 
 bool is_ch3_dac_enabled(const struct GB_Core* gb)
 {
-    return IO_NR30.dac_power > 0;
+    return IO_NR30.dac_power;
 }
 
 bool is_ch3_enabled(const struct GB_Core* gb)
