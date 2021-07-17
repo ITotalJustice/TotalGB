@@ -3,6 +3,7 @@
 #include "tables/cycle_table.h"
 
 #include <assert.h>
+#include <string.h>
 
 
 #if GB_DEBUG
@@ -385,7 +386,19 @@ static inline uint16_t GB_POP(struct GB_Core* gb)
 
 #define INC_BC() do { SET_REG_BC(REG_BC + 1); } while(0)
 #define INC_DE() do { SET_REG_DE(REG_DE + 1); } while(0)
-#define INC_HL() do { SET_REG_HL(REG_HL + 1); } while(0)
+#define INC_HL() do { \
+    /* bug: if ppu in mode2 and H = FE, oam is corrupt */ \
+    /* SOURCE: numism.gb */ \
+    if (REG_H == 0xFE) \
+    { \
+        if (GB_get_status_mode(gb) == 2) \
+        { \
+            memset(gb->ppu.oam, 0xFF, sizeof(gb->ppu.oam)); \
+            GB_log("INC_HL oam corrupt bug!\n"); \
+        } \
+    } \
+    SET_REG_HL(REG_HL + 1); \
+} while(0)
 
 #define DEC_BC() do { SET_REG_BC(REG_BC - 1); } while(0)
 #define DEC_DE() do { SET_REG_DE(REG_DE - 1); } while(0)

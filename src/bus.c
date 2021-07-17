@@ -1,6 +1,7 @@
 #include "gb.h"
 #include "internal.h"
 #include "mbc/mbc.h"
+#include "apu/apu.h"
 #include "tables/io_read_table.h"
 
 #include <assert.h>
@@ -96,6 +97,21 @@ static inline void GB_iowrite_gbc(struct GB_Core* gb, uint16_t addr, uint8_t val
 
 static inline uint8_t GB_ioread(struct GB_Core* gb, uint16_t addr)
 {
+    switch (addr & 0x7F)
+    {
+        // if apu and ch3 are enabled, then wave ram returns 0xFF
+        // or the value at sample index
+        case 0x30: case 0x31: case 0x32: case 0x33:
+        case 0x34: case 0x35: case 0x36: case 0x37:
+        case 0x38: case 0x39: case 0x3A: case 0x3B:
+        case 0x3C: case 0x3D: case 0x3E: case 0x3F:
+            if (gb_is_apu_enabled(gb) && is_ch3_enabled(gb))
+            {
+                return 0xFF;
+            }
+            break;
+    }
+
     return IO[addr & 0x7F] | IO_READ_TABLE[addr & 0x7F]; 
 }
 
@@ -271,7 +287,11 @@ void GB_write8(struct GB_Core* gb, uint16_t addr, uint8_t value)
                 break;
 
             case 0x8: case 0x9:
-                gb->ppu.vram[IO_VBK][addr & 0x1FFF] = value;
+                // vram cannot be written to during mode 3
+                if (GB_get_status_mode(gb) != STATUS_MODE_TRANSFER)
+                {
+                    gb->ppu.vram[IO_VBK][addr & 0x1FFF] = value;
+                }
                 break;
 
             case 0xC: case 0xE:
@@ -285,7 +305,13 @@ void GB_write8(struct GB_Core* gb, uint16_t addr, uint8_t value)
     }
     else if (addr <= 0xFE9F)
     {
-        gb->ppu.oam[addr & 0xFF] = value;
+        const enum GB_StatusModes status = GB_get_status_mode(gb);
+
+        // oam cannot be written to during mode 2 and 3
+        if (status != STATUS_MODE_SPRITE && status != STATUS_MODE_TRANSFER)
+        {
+            gb->ppu.oam[addr & 0xFF] = value;
+        }
     }
     else if (addr >= 0xFF00 && addr <= 0xFF7F)
     {

@@ -580,11 +580,13 @@ struct GB_ApuCallbackData
     int8_t ch2[2];
     int8_t ch3[2];
     int8_t ch4[2];
+
+    int8_t left_amp;
+    int8_t right_amp;
 };
 
 struct GB_Apu
 {
-    uint16_t next_frame_sequencer_cycles;
     uint16_t next_sample_cycles;
 
     struct GB_ApuCh1 ch1; // square 1

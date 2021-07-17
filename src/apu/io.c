@@ -45,9 +45,6 @@ void GB_apu_iowrite(struct GB_Core* gb, uint16_t addr, uint8_t value)
     }
     else if (UNLIKELY(gb_is_apu_enabled(gb) == false))
     {
-        // numism.gb says that these regs should not be writeable...
-        // however the sound_hardware docs say otherwise!
-        #if 0
         // on the dmg, len registers are still writable
         if (GB_get_system_type(gb) & GB_SYSTEM_TYPE_DMG)
         {
@@ -59,7 +56,6 @@ void GB_apu_iowrite(struct GB_Core* gb, uint16_t addr, uint8_t value)
                 case 0x20: IO[addr] = value; on_nr41_write(gb, value); break;
             }
         }
-        #endif
 
         if (addr >= 0x30 && addr <= 0x3F)
         {

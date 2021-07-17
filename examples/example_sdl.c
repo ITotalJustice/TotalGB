@@ -1153,8 +1153,8 @@ static void core_on_apu(void* user, struct GB_ApuCallbackData* data)
         }
     #endif
 
-    const int16_t sample_left = data->ch1[0] + data->ch2[0] + data->ch3[0] + data->ch4[0];
-    const int16_t sample_right = data->ch1[1] + data->ch2[1] + data->ch3[1] + data->ch4[1];
+    const int16_t sample_left = (data->ch1[0] + data->ch2[0] + data->ch3[0] + data->ch4[0]) * data->left_amp;
+    const int16_t sample_right = (data->ch1[1] + data->ch2[1] + data->ch3[1] + data->ch4[1]) * data->right_amp;
 
     buffer[buffer_count++] = sample_left ? sample_left / 4 : 0;
     buffer[buffer_count++] = sample_right ? sample_right / 4 : 0;

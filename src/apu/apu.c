@@ -111,14 +111,14 @@ void gb_apu_on_disabled(struct GB_Core* gb)
 
     IO_NR52 &= ~0xF;
 
-    // not sure if this should be 0xFF or 0x00 on reset
-    #if 1
     memset(IO + 0x10, 0x00, 0x15);
-    #else
-    memset(IO + 0x10, 0xFF, 0x15);
-    #endif
+
+    memset(&CH1, 0, sizeof(CH1));
+    memset(&CH2, 0, sizeof(CH2));
+    memset(&CH3, 0, sizeof(CH3));
 
     memset(&IO_NR10, 0, sizeof(IO_NR10));
+
     memset(&IO_NR11, 0, sizeof(IO_NR11));
     memset(&IO_NR12, 0, sizeof(IO_NR12));
     memset(&IO_NR13, 0, sizeof(IO_NR13));
@@ -128,13 +128,6 @@ void gb_apu_on_disabled(struct GB_Core* gb)
     memset(&IO_NR22, 0, sizeof(IO_NR22));
     memset(&IO_NR23, 0, sizeof(IO_NR23));
     memset(&IO_NR22, 0, sizeof(IO_NR22));
-
-    // wave is preserved!
-    // memset(&IO_NR30, 0, sizeof(IO_NR30));
-    // memset(&IO_NR31, 0, sizeof(IO_NR31));
-    // memset(&IO_NR32, 0, sizeof(IO_NR32));
-    // memset(&IO_NR33, 0, sizeof(IO_NR33));
-    // memset(&IO_NR34, 0, sizeof(IO_NR34));
 
     memset(&IO_NR41, 0, sizeof(IO_NR41));
     memset(&IO_NR42, 0, sizeof(IO_NR42));
@@ -159,9 +152,14 @@ bool is_next_frame_sequencer_step_vol(const struct GB_Core* gb)
     return gb->apu.frame_sequencer_counter == 7;
 }
 
-// this runs at 512hz
-static FORCE_INLINE void step_frame_sequencer(struct GB_Core* gb)
+// this is clocked by DIV
+void step_frame_sequencer(struct GB_Core* gb)
 {
+    if (!gb_is_apu_enabled(gb))
+    {
+        return;
+    }
+
     switch (gb->apu.frame_sequencer_counter)
     {
         case 0: // len
@@ -213,7 +211,7 @@ struct MixerData
     struct MixerSampleData ch3;
     struct MixerSampleData ch4;
 
-    int8_t left_master, right_master;
+    int8_t left_amp, right_amp;
 };
 
 static FORCE_INLINE struct GB_ApuCallbackData mixer(const struct MixerData* data)
@@ -222,14 +220,16 @@ static FORCE_INLINE struct GB_ApuCallbackData mixer(const struct MixerData* data
 
     return (struct GB_ApuCallbackData)
     {
-        .ch1[LEFT] = data->ch1.sample * data->ch1.left * data->left_master,
-        .ch1[RIGHT] = data->ch1.sample * data->ch1.right * data->right_master,
-        .ch2[LEFT] = data->ch2.sample * data->ch2.left * data->left_master,
-        .ch2[RIGHT] = data->ch2.sample * data->ch2.right * data->right_master,
-        .ch3[LEFT] = data->ch3.sample * data->ch3.left * data->left_master,
-        .ch3[RIGHT] = data->ch3.sample * data->ch3.right * data->right_master,
-        .ch4[LEFT] = data->ch4.sample * data->ch4.left * data->left_master,
-        .ch4[RIGHT] = data->ch4.sample * data->ch4.right * data->right_master,
+        .ch1[LEFT] = data->ch1.sample * data->ch1.left,
+        .ch1[RIGHT] = data->ch1.sample * data->ch1.right,
+        .ch2[LEFT] = data->ch2.sample * data->ch2.left,
+        .ch2[RIGHT] = data->ch2.sample * data->ch2.right,
+        .ch3[LEFT] = data->ch3.sample * data->ch3.left,
+        .ch3[RIGHT] = data->ch3.sample * data->ch3.right,
+        .ch4[LEFT] = data->ch4.sample * data->ch4.left,
+        .ch4[RIGHT] = data->ch4.sample * data->ch4.right,
+        .left_amp = data->left_amp,
+        .right_amp = data->right_amp,
     };
 }
 
@@ -274,8 +274,8 @@ static FORCE_INLINE void sample_channels(struct GB_Core* gb)
                 .left = ch4_left_output(gb),
                 .right = ch4_right_output(gb)
             },
-            .left_master = volume_left(gb) + 1,
-            .right_master = volume_right(gb) + 1,
+            .left_amp = volume_left(gb) + 1,
+            .right_amp = volume_right(gb) + 1,
         };
 
         samples = mixer(&mixer_data);
@@ -286,17 +286,12 @@ static FORCE_INLINE void sample_channels(struct GB_Core* gb)
 
 void GB_apu_run(struct GB_Core* gb, uint16_t cycles)
 {
-    // todo: handle if the apu is disabled!
     if (LIKELY(gb_is_apu_enabled(gb)))
     {
         // still tick samples but fill empty
         // nothing else should tick i dont think?
         // not sure if when apu is disabled, do all regs reset?
         // what happens when apu is re-enabled? do they all trigger?
-        
-        // NOTE: not sure if the timer is always ticked, im guessing it is
-        // tho not sure if the duty_index etc is changed :/
-        #define TEST 1
 
         if (LIKELY(CH1.timer > 0 || get_ch1_freq(gb)))
         {
@@ -304,12 +299,7 @@ void GB_apu_run(struct GB_Core* gb, uint16_t cycles)
             if (UNLIKELY(CH1.timer <= 0))
             {
                 CH1.timer += get_ch1_freq(gb);
-                #if TEST
-                if (is_ch1_enabled(gb))
-                #endif
-                {
-                    CH1.duty_index = (CH1.duty_index + 1) % 8;
-                }
+                CH1.duty_index = (CH1.duty_index + 1) % 8;
             }
         }
 
@@ -319,12 +309,7 @@ void GB_apu_run(struct GB_Core* gb, uint16_t cycles)
             if (UNLIKELY(CH2.timer <= 0))
             {
                 CH2.timer += get_ch2_freq(gb);
-                #if TEST
-                if (is_ch2_enabled(gb))
-                #endif
-                {
-                    CH2.duty_index = (CH2.duty_index + 1) % 8;
-                }
+                CH2.duty_index = (CH2.duty_index + 1) % 8;
             }
         }
 
@@ -334,12 +319,7 @@ void GB_apu_run(struct GB_Core* gb, uint16_t cycles)
             if (UNLIKELY(CH3.timer <= 0))
             {
                 CH3.timer += get_ch3_freq(gb);
-                #if TEST
-                if (is_ch3_enabled(gb))
-                #endif
-                {
-                    advance_ch3_position_counter(gb);
-                }
+                advance_ch3_position_counter(gb);
             }
         }
 
@@ -352,34 +332,14 @@ void GB_apu_run(struct GB_Core* gb, uint16_t cycles)
                 if (UNLIKELY(CH4.timer <= 0))
                 {
                     CH4.timer += get_ch4_freq(gb);
-                    #if TEST
-                    if (is_ch4_enabled(gb))
-                    #endif
-                    {
-                        step_ch4_lfsr(gb);
-                    }
+                    step_ch4_lfsr(gb);
                 }
             }
-        }
-        
-        #undef TEST
-
-        // check if we need to tick the frame sequencer!
-        gb->apu.next_frame_sequencer_cycles += cycles;
-        while (UNLIKELY(gb->apu.next_frame_sequencer_cycles >= FRAME_SEQUENCER_STEP_RATE))
-        {
-            gb->apu.next_frame_sequencer_cycles -= FRAME_SEQUENCER_STEP_RATE;
-            step_frame_sequencer(gb);
         }
     }
 
     // we should still sample even if the apu is disabled
     // in this case, the samples are filled with 0.
-
-    // this can slightly optimised by just filling that sample with
-    // a fixed silence value, rather than fake-creating samples for
-    // no reason.
-
     if (gb->callback.apu && gb->callback.apu_data.freq)
     {
         gb->apu.next_sample_cycles += cycles;

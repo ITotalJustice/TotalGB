@@ -116,6 +116,7 @@ GB_STATIC void gb_apu_on_disabled(struct GB_Core* gb);
 GB_FORCE_INLINE bool gb_is_apu_enabled(const struct GB_Core* gb);
 GB_FORCE_INLINE bool is_next_frame_sequencer_step_not_len(const struct GB_Core* gb);
 GB_FORCE_INLINE bool is_next_frame_sequencer_step_vol(const struct GB_Core* gb);
+GB_FORCE_INLINE void step_frame_sequencer(struct GB_Core* gb);
 
 #ifdef __cplusplus
 }
