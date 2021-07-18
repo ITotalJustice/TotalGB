@@ -8,7 +8,7 @@
 
 
 #if GBC_ENABLE
-static inline void GB_iowrite_gbc(struct GB_Core* gb, uint16_t addr, uint8_t value)
+static FORCE_INLINE void GB_iowrite_gbc(struct GB_Core* gb, uint16_t addr, uint8_t value)
 {
     assert(GB_is_system_gbc(gb) == true);
 
@@ -241,6 +241,30 @@ static inline void GB_iowrite(struct GB_Core* gb, uint16_t addr, uint8_t value)
             }
             break;
     #endif // #if GBC_ENABLE
+    }
+}
+
+uint8_t GB_ffread8(struct GB_Core* gb, uint8_t addr)
+{
+    if (addr <= 0x7F)
+    {
+        return GB_ioread(gb, addr);
+    }
+    else
+    {
+        return gb->hram[addr & 0x7F];
+    }
+}
+
+void GB_ffwrite8(struct GB_Core* gb, uint8_t addr, uint8_t value)
+{
+    if (addr <= 0x7F)
+    {
+        GB_iowrite(gb, addr, value);
+    }
+    else
+    {
+        gb->hram[addr & 0x7F] = value;
     }
 }
 

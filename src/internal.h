@@ -194,6 +194,9 @@ GB_FORCE_INLINE void GB_write8(struct GB_Core* gb, uint16_t addr, uint8_t value)
 GB_FORCE_INLINE uint16_t GB_read16(struct GB_Core* gb, uint16_t addr);
 GB_FORCE_INLINE void GB_write16(struct GB_Core* gb, uint16_t addr, uint16_t value);
 
+GB_FORCE_INLINE uint8_t GB_ffread8(struct GB_Core* gb, uint8_t addr);
+GB_FORCE_INLINE void GB_ffwrite8(struct GB_Core* gb, uint8_t addr, uint8_t value);
+
 GB_INLINE void GB_apu_iowrite(struct GB_Core* gb, uint16_t addr, uint8_t value);
 
 GB_FORCE_INLINE void GB_on_lcdc_write(struct GB_Core* gb, const uint8_t value);
@@ -219,26 +222,26 @@ GB_STATIC bool GB_get_mbc_flags(uint8_t cart_type, uint8_t* flags_out);
 GB_STATIC bool GB_get_cart_ram_size(const struct GB_CartHeader* header, uint32_t* size);
 GB_STATIC bool GB_setup_mbc(struct GB_Core* gb, const struct GB_CartHeader* header);
 GB_STATIC void GB_setup_mmap(struct GB_Core* gb);
-GB_STATIC void GB_update_rom_banks(struct GB_Core* gb);
-GB_STATIC void GB_update_ram_banks(struct GB_Core* gb);
-GB_STATIC void GB_update_vram_banks(struct GB_Core* gb);
-GB_STATIC void GB_update_wram_banks(struct GB_Core* gb);
+GB_FORCE_INLINE void GB_update_rom_banks(struct GB_Core* gb);
+GB_FORCE_INLINE void GB_update_ram_banks(struct GB_Core* gb);
+GB_FORCE_INLINE void GB_update_vram_banks(struct GB_Core* gb);
+GB_FORCE_INLINE void GB_update_wram_banks(struct GB_Core* gb);
 
 // used internally
 GB_STATIC void GB_DMA(struct GB_Core* gb);
 GB_STATIC void GB_draw_scanline(struct GB_Core* gb);
 GB_STATIC void GB_update_all_colours_gb(struct GB_Core* gb);
-GB_STATIC void GB_set_coincidence_flag(struct GB_Core* gb, const bool n);
+GB_FORCE_INLINE void GB_set_coincidence_flag(struct GB_Core* gb, const bool n);
 
-GB_INLINE void GB_set_status_mode(struct GB_Core* gb, const enum GB_StatusModes mode);
-GB_INLINE enum GB_StatusModes GB_get_status_mode(const struct GB_Core* gb);
+GB_FORCE_INLINE void GB_set_status_mode(struct GB_Core* gb, const enum GB_StatusModes mode);
+GB_FORCE_INLINE enum GB_StatusModes GB_get_status_mode(const struct GB_Core* gb);
 
-GB_INLINE void GB_compare_LYC(struct GB_Core* gb);
+GB_FORCE_INLINE void GB_compare_LYC(struct GB_Core* gb);
 
 GB_INLINE void GB_joypad_write(struct GB_Core* gb, uint8_t value);
 
-GB_INLINE void GB_enable_interrupt(struct GB_Core* gb, const enum GB_Interrupts interrupt);
-GB_INLINE void GB_disable_interrupt(struct GB_Core* gb, const enum GB_Interrupts interrupt);
+GB_FORCE_INLINE void GB_enable_interrupt(struct GB_Core* gb, const enum GB_Interrupts interrupt);
+GB_FORCE_INLINE void GB_disable_interrupt(struct GB_Core* gb, const enum GB_Interrupts interrupt);
 
 // used internally
 GB_FORCE_INLINE uint16_t GB_cpu_run(struct GB_Core* gb, uint16_t cycles);

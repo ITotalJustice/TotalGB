@@ -44,15 +44,6 @@ extern "C" {
 #define CH2 gb->apu.ch2
 #define CH3 gb->apu.ch3
 #define CH4 gb->apu.ch4
-#define CONTROL_CHANNEL gb->apu.control
-
-#define CALC_CALLBACK_FREQ(freq) (4213440 / freq)
-
-// clocked at 512hz
-#define FRAME_SEQUENCER_CLOCK 512
-
-// 4 * 1024^2 / 512
-#define FRAME_SEQUENCER_STEP_RATE 8192
 
 enum EnvelopeMode
 {
@@ -117,6 +108,33 @@ GB_FORCE_INLINE bool gb_is_apu_enabled(const struct GB_Core* gb);
 GB_FORCE_INLINE bool is_next_frame_sequencer_step_not_len(const struct GB_Core* gb);
 GB_FORCE_INLINE bool is_next_frame_sequencer_step_vol(const struct GB_Core* gb);
 GB_FORCE_INLINE void step_frame_sequencer(struct GB_Core* gb);
+
+
+GB_FORCE_INLINE void on_wave_mem_write(struct GB_Core* gb, uint8_t addr, uint8_t value);
+
+GB_FORCE_INLINE void on_nr10_write(struct GB_Core* gb, uint8_t value);
+GB_FORCE_INLINE void on_nr11_write(struct GB_Core* gb, uint8_t value);
+GB_FORCE_INLINE void on_nr12_write(struct GB_Core* gb, uint8_t value);
+GB_FORCE_INLINE void on_nr13_write(struct GB_Core* gb, uint8_t value);
+GB_FORCE_INLINE void on_nr14_write(struct GB_Core* gb, uint8_t value);
+
+GB_FORCE_INLINE void on_nr21_write(struct GB_Core* gb, uint8_t value);
+GB_FORCE_INLINE void on_nr22_write(struct GB_Core* gb, uint8_t value);
+GB_FORCE_INLINE void on_nr23_write(struct GB_Core* gb, uint8_t value);
+GB_FORCE_INLINE void on_nr24_write(struct GB_Core* gb, uint8_t value);
+
+GB_FORCE_INLINE void on_nr30_write(struct GB_Core* gb, uint8_t value);
+GB_FORCE_INLINE void on_nr31_write(struct GB_Core* gb, uint8_t value);
+GB_FORCE_INLINE void on_nr32_write(struct GB_Core* gb, uint8_t value);
+GB_FORCE_INLINE void on_nr33_write(struct GB_Core* gb, uint8_t value);
+GB_FORCE_INLINE void on_nr34_write(struct GB_Core* gb, uint8_t value);
+
+GB_FORCE_INLINE void on_nr41_write(struct GB_Core* gb, uint8_t value);
+GB_FORCE_INLINE void on_nr42_write(struct GB_Core* gb, uint8_t value);
+GB_FORCE_INLINE void on_nr43_write(struct GB_Core* gb, uint8_t value);
+GB_FORCE_INLINE void on_nr44_write(struct GB_Core* gb, uint8_t value);
+
+GB_FORCE_INLINE void on_nr52_write(struct GB_Core* gb, uint8_t value);
 
 #ifdef __cplusplus
 }

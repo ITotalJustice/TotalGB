@@ -235,13 +235,6 @@ static FORCE_INLINE struct GB_ApuCallbackData mixer(const struct MixerData* data
 
 static FORCE_INLINE void sample_channels(struct GB_Core* gb)
 {
-    // check if we have any callbacks set, if not, avoid
-    // doing all the hardwork below!
-    if (gb->callback.apu == NULL)
-    {
-        return;
-    }
-
     // build up data for the mixer!
     struct GB_ApuCallbackData samples = {0};
 
@@ -281,7 +274,10 @@ static FORCE_INLINE void sample_channels(struct GB_Core* gb)
         samples = mixer(&mixer_data);
     }
 
-    gb->callback.apu(gb->callback.user_apu, &samples);
+    if (LIKELY(gb->callback.apu != NULL))
+    {
+        gb->callback.apu(gb->callback.user_apu, &samples);
+    }
 }
 
 void GB_apu_run(struct GB_Core* gb, uint16_t cycles)
@@ -340,13 +336,13 @@ void GB_apu_run(struct GB_Core* gb, uint16_t cycles)
 
     // we should still sample even if the apu is disabled
     // in this case, the samples are filled with 0.
-    if (gb->callback.apu && gb->callback.apu_data.freq)
+    if (LIKELY(gb->callback.apu_data.freq_reload))
     {
         gb->apu.next_sample_cycles += cycles;
 
-        while (UNLIKELY(gb->apu.next_sample_cycles >= CALC_CALLBACK_FREQ(gb->callback.apu_data.freq)))
+        if (gb->apu.next_sample_cycles >= gb->callback.apu_data.freq_reload)
         {
-            gb->apu.next_sample_cycles -= CALC_CALLBACK_FREQ(gb->callback.apu_data.freq);
+            gb->apu.next_sample_cycles -= gb->callback.apu_data.freq_reload;
             sample_channels(gb);
         }
     }

@@ -18,26 +18,6 @@ const uint8_t PIXEL_BIT_GROW[] =
 };
 
 
-void ppu_write_pixel(struct GB_Core* gb, uint32_t c, uint8_t x, uint8_t y)
-{
-    switch (gb->bpp)
-    {
-        case 8:
-            ((uint8_t*)gb->pixels)[gb->stride * y + x] = c;
-            break;
-
-        case 15:
-        case 16:
-            ((uint16_t*)gb->pixels)[gb->stride * y + x] = c;
-            break;
-
-        case 24:
-        case 32:
-            ((uint32_t*)gb->pixels)[gb->stride * y + x] = c;
-            break;
-    }
-}
-
 uint8_t GB_vram_read(const struct GB_Core* gb,
     const uint16_t addr, const uint8_t bank
 ) {

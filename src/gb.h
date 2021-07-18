@@ -48,9 +48,6 @@ GBAPI void GB_set_rtc_update_config(struct GB_Core* gb, const enum GB_RtcUpdateC
 
 GBAPI bool GB_has_mbc_flags(const struct GB_Core* gb, const uint8_t flags);
 
-/* returns the number of cycles ran */
-GBAPI uint16_t GB_run_step(struct GB_Core* gb);
-
 /* run until the end of a frame */
 GBAPI void GB_run_frame(struct GB_Core* gb);
 
@@ -63,7 +60,6 @@ GBAPI bool GB_is_system_gbc(const struct GB_Core* gb);
 GBAPI int GB_get_rom_name(const struct GB_Core* gb, struct GB_CartName* name);
 GBAPI int GB_get_rom_name_from_header(const struct GB_CartHeader* header, struct GB_CartName* name);
 
-GBAPI unsigned GB_get_apu_freq(const struct GB_Core* gb);
 GBAPI void GB_set_apu_freq(struct GB_Core* gb, unsigned freq);
 
 /* set a callback which will be called when apu has filled 512 stero samples. */

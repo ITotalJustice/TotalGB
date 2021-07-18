@@ -5,33 +5,8 @@
 #include <assert.h>
 
 
-static inline void on_wave_mem_write(struct GB_Core* gb, uint8_t addr, uint8_t value);
-
-static inline void on_nr10_write(struct GB_Core* gb, uint8_t value);
-static inline void on_nr11_write(struct GB_Core* gb, uint8_t value);
-static inline void on_nr12_write(struct GB_Core* gb, uint8_t value);
-static inline void on_nr13_write(struct GB_Core* gb, uint8_t value);
-static inline void on_nr14_write(struct GB_Core* gb, uint8_t value);
-
-static inline void on_nr21_write(struct GB_Core* gb, uint8_t value);
-static inline void on_nr22_write(struct GB_Core* gb, uint8_t value);
-static inline void on_nr23_write(struct GB_Core* gb, uint8_t value);
-static inline void on_nr24_write(struct GB_Core* gb, uint8_t value);
-
-static inline void on_nr30_write(struct GB_Core* gb, uint8_t value);
-static inline void on_nr31_write(struct GB_Core* gb, uint8_t value);
-static inline void on_nr32_write(struct GB_Core* gb, uint8_t value);
-static inline void on_nr33_write(struct GB_Core* gb, uint8_t value);
-static inline void on_nr34_write(struct GB_Core* gb, uint8_t value);
-
-static inline void on_nr41_write(struct GB_Core* gb, uint8_t value);
-static inline void on_nr42_write(struct GB_Core* gb, uint8_t value);
-static inline void on_nr43_write(struct GB_Core* gb, uint8_t value);
-static inline void on_nr44_write(struct GB_Core* gb, uint8_t value);
-
 // static inline void on_nr50_write(struct GB_Core* gb, uint8_t value);
 // static inline void on_nr51_write(struct GB_Core* gb, uint8_t value);
-static inline void on_nr52_write(struct GB_Core* gb, uint8_t value);
 
 
 void GB_apu_iowrite(struct GB_Core* gb, uint16_t addr, uint8_t value)

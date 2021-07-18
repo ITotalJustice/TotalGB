@@ -309,7 +309,7 @@ struct GB_UserCallbacks
     
     struct
     {
-        unsigned freq;
+        unsigned freq_reload;
     } apu_data;
 };
 

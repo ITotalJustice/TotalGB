@@ -4,6 +4,7 @@
 
 #include "gb.h"
 #include "internal.h"
+#include "apu/apu.h"
 #include "tables/palette_table.h"
 
 #include <string.h>
@@ -65,7 +66,6 @@ void GB_reset(struct GB_Core* gb)
     IO_TIMA = 0x00;
     IO_TMA = 0x00;
     IO_TAC = 0x00;
-    // todo: apu reg values.
     IO_LCDC = 0x91;
     IO_STAT = 0x00;
     IO_SCY = 0x00;
@@ -73,12 +73,61 @@ void GB_reset(struct GB_Core* gb)
     IO_LY = 0x00;
     IO_LYC = 0x00;
     IO_BGP = 0xFC;
-    // todo: check init values
-    IO_OBP0 = 0xFF;
-    IO_OBP1 = 0xFF;
     IO_WY = 0x00;
     IO_WX = 0x00;
+    IO_IF = 0x00;
     IO_IE = 0x00;
+
+    IO[0x10] = 0x80;//   ; NR10
+    IO[0x11] = 0xBF;//   ; NR11
+    IO[0x12] = 0xF3;//   ; NR12
+    IO[0x14] = 0xBF;//   ; NR14
+    IO[0x16] = 0x3F;//   ; NR21
+    IO[0x17] = 0x00;//   ; NR22
+    IO[0x19] = 0xBF;//   ; NR24
+    IO[0x1A] = 0x7F;//   ; NR30
+    IO[0x1B] = 0xFF;//   ; NR31
+    IO[0x1C] = 0x9F;//   ; NR32
+    IO[0x1E] = 0xBF;//   ; NR33
+    IO[0x20] = 0xFF;//   ; NR41
+    IO[0x21] = 0x00;//   ; NR42
+    IO[0x22] = 0x00;//   ; NR43
+    IO[0x23] = 0xBF;//   ; NR44
+    IO[0x24] = 0x77;//   ; NR50
+    IO[0x25] = 0xF3;//   ; NR51
+    IO[0x26] = 0xF1;//   ; NR52
+
+    // triggering the channels causes a high pitch sound effect to be played
+    // at start of most games so disabled for now.
+    #if 1
+    on_nr10_write(gb, 0x80);
+    on_nr11_write(gb, 0xBF);
+    on_nr12_write(gb, 0xF3);
+    // on_nr14_write(gb, 0xBF);
+    on_nr21_write(gb, 0x3F);
+    on_nr22_write(gb, 0x00);
+    // on_nr24_write(gb, 0xBF);
+    on_nr30_write(gb, 0x7F);
+    on_nr31_write(gb, 0xFF);
+    on_nr32_write(gb, 0x9F);
+    on_nr33_write(gb, 0xBF);
+    on_nr41_write(gb, 0xFF);
+    on_nr42_write(gb, 0x00);
+    on_nr43_write(gb, 0x00);
+    // on_nr44_write(gb, 0xBF);
+    #endif
+
+    const uint8_t dmg_wave_ram[16] =
+    {
+        0x84, 0x40, 0x43, 0xAA, 0x2D, 0x78, 0x92, 0x3C,
+        0x60, 0x59, 0x59, 0xB0, 0x34, 0xB8, 0x2E, 0xDA,
+    };
+
+    const uint8_t gbc_wave_ram[16] =
+    {
+        0x00, 0xFF, 0x00, 0xFF, 0x00, 0xFF, 0x00, 0xFF,
+        0x00, 0xFF, 0x00, 0xFF, 0x00, 0xFF, 0x00, 0xFF,
+    };
 
     // cpu register initial values taken from TCAGBD.pdf
     // SOURCE: https://github.com/AntonioND/giibiiadvance/blob/master/docs/TCAGBD.pdf
@@ -92,6 +141,7 @@ void GB_reset(struct GB_Core* gb)
             GB_cpu_set_register_pair(gb, GB_CPU_REGISTER_PAIR_HL, 0x014D);
             IO_SVBK = 0x01;
             IO_VBK = 0x00;
+            memcpy(IO_WAVE_TABLE, dmg_wave_ram, sizeof(dmg_wave_ram));
             break;
 
         case GB_SYSTEM_TYPE_SGB:
@@ -101,6 +151,7 @@ void GB_reset(struct GB_Core* gb)
             GB_cpu_set_register_pair(gb, GB_CPU_REGISTER_PAIR_HL, 0xC060);
             IO_SVBK = 0x01;
             IO_VBK = 0x00;
+            memcpy(IO_WAVE_TABLE, dmg_wave_ram, sizeof(dmg_wave_ram));
             break;
 
         case GB_SYSTEM_TYPE_GBC:
@@ -120,6 +171,7 @@ void GB_reset(struct GB_Core* gb)
             IO_75 = 0x8F;
             IO_76 = 0x00;
             IO_77 = 0x00;
+            memcpy(IO_WAVE_TABLE, dmg_wave_ram, sizeof(gbc_wave_ram));
             break;
     }
 }
@@ -673,18 +725,15 @@ void GB_disable_interrupt(struct GB_Core* gb, const enum GB_Interrupts interrupt
     IO_IF &= ~(interrupt);
 }
 
-unsigned GB_get_apu_freq(const struct GB_Core* gb)
-{
-    return gb->callback.apu_data.freq;
-}
-
 void GB_set_apu_freq(struct GB_Core* gb, unsigned freq)
 {
-    gb->callback.apu_data.freq = freq;
-
-    if (gb->callback.apu_data.freq == 0)
+    if (freq)
     {
-        gb->callback.apu_data.freq = 4;
+        gb->callback.apu_data.freq_reload = 4213440 / freq;
+    }
+    else
+    {
+        gb->callback.apu_data.freq_reload = 0;
     }
 }
 
@@ -786,9 +835,12 @@ void GB_set_wram_bank(struct GB_Core* gb, uint8_t bank)
     GB_update_wram_banks(gb);
 }
 
-uint16_t GB_run_step(struct GB_Core* gb)
+// NOTE: the compiler will NOT inline this if called in more than one function
+// as the compiler will inline the functions inside, making this func very big.
+// if this function is not inlined, performance will suffer!
+static FORCE_INLINE uint16_t GB_run_step_internal(struct GB_Core* gb)
 {
-    uint16_t cycles = GB_cpu_run(gb, 0 /*unused*/);
+    const uint16_t cycles = GB_cpu_run(gb, 0 /*unused*/);
 
     GB_timer_run(gb, cycles);
     GB_ppu_run(gb, cycles >> gb->cpu.double_speed);
@@ -807,7 +859,7 @@ void GB_run_frame(struct GB_Core* gb)
 
     while (cycles_elapsed < GB_FRAME_CPU_CYCLES)
     {
-        cycles_elapsed += GB_run_step(gb);
+        cycles_elapsed += GB_run_step_internal(gb);
     }
 
 

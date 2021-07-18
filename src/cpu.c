@@ -187,16 +187,16 @@ uint16_t GB_cpu_get_register_pair(const struct GB_Core* gb, enum GB_CpuRegisterP
 #define write16(addr,value) GB_write16(gb, addr, value)
 
 // fwd
-static inline void GB_execute(struct GB_Core* gb);
-static inline void GB_execute_cb(struct GB_Core* gb);
+static FORCE_INLINE void GB_execute(struct GB_Core* gb);
+static FORCE_INLINE void GB_execute_cb(struct GB_Core* gb);
 
-static inline void GB_PUSH(struct GB_Core* gb, uint16_t value)
+static FORCE_INLINE void GB_PUSH(struct GB_Core* gb, uint16_t value)
 {
     write8(--REG_SP, (value >> 8) & 0xFF);
     write8(--REG_SP, value & 0xFF);
 }
 
-static inline uint16_t GB_POP(struct GB_Core* gb)
+static FORCE_INLINE uint16_t GB_POP(struct GB_Core* gb)
 {
     const uint16_t result = read16(REG_SP);
     REG_SP += 2;
@@ -452,8 +452,8 @@ static void sprite_ram_bug(struct GB_Core* gb, uint8_t v)
 #define LD_BCa_A() do { write8(REG_BC, REG_A); } while(0)
 #define LD_DEa_A() do { write8(REG_DE, REG_A); } while(0)
 
-#define LD_FFRC_A() do { write8(0xFF00 | REG_C, REG_A); } while(0)
-#define LD_A_FFRC() do { REG_A = read8(0xFF00 | REG_C); } while(0)
+#define LD_FFRC_A() do { GB_ffwrite8(gb, REG_C, REG_A); } while(0)
+#define LD_A_FFRC() do { REG_A = GB_ffread8(gb, REG_C); } while(0)
 
 #define LD_BC_u16() do { \
     const uint16_t result = read16(REG_PC); \
@@ -477,8 +477,8 @@ static void sprite_ram_bug(struct GB_Core* gb, uint8_t v)
 
 #define LD_SP_HL() do { REG_SP = REG_HL; } while(0)
 
-#define LD_FFu8_A() do { write8((0xFF00 | read8(REG_PC++)), REG_A); } while(0)
-#define LD_A_FFu8() do { REG_A = read8(0xFF00 | read8(REG_PC++)); } while(0)
+#define LD_FFu8_A() do { GB_ffwrite8(gb, read8(REG_PC++), REG_A); } while(0)
+#define LD_A_FFu8() do { REG_A = GB_ffread8(gb, read8(REG_PC++)); } while(0)
 
 #define CP_r() do { \
     const uint8_t value = REG(opcode); \
@@ -503,6 +503,60 @@ static void sprite_ram_bug(struct GB_Core* gb, uint8_t v)
     SET_ALL_FLAGS((REG_A + value + carry) > 0xFF, ((REG_A & 0xF) + (value & 0xF) + carry) > 0xF, false, result == 0); \
     REG_A = result; \
 } while (0)
+
+#define ADD_A_A() do { \
+    const uint8_t result = REG_A << 1; \
+    FLAG_C = REG_A > 127; \
+    FLAG_H = (REG_A & 0xF) > 7; \
+    FLAG_N = 0; \
+    FLAG_Z = result == 0; \
+    REG_A = result; \
+} while(0) \
+
+#define SUB_A_A() do { \
+    REG_A = 0; \
+    FLAG_C = false; \
+    FLAG_H = false; \
+    FLAG_N = true; \
+    FLAG_Z = true; \
+} while(0) \
+
+#define SBC_A_A() do { \
+    REG_A = 0 - FLAG_C; \
+    FLAG_C = REG_A == 0xFF; \
+    FLAG_H = REG_A == 0xFF; \
+    FLAG_N = true; \
+    FLAG_Z = REG_A != 0xFF; \
+} while(0) \
+
+#define AND_A_A() do { \
+    FLAG_C = false; \
+    FLAG_H = true; \
+    FLAG_N = false; \
+    FLAG_Z = REG_A == 0; \
+} while(0) \
+
+#define XOR_A_A() do { \
+    REG_A = 0; \
+    FLAG_C = false; \
+    FLAG_H = false; \
+    FLAG_N = false; \
+    FLAG_Z = true; \
+} while(0) \
+
+#define OR_A_A() do { \
+    FLAG_C = false; \
+    FLAG_H = false; \
+    FLAG_N = false; \
+    FLAG_Z = REG_A == 0; \
+} while(0) \
+
+#define CP_A_A() do { \
+    FLAG_C = false; \
+    FLAG_H = false; \
+    FLAG_N = true; \
+    FLAG_Z = true; \
+} while(0) \
 
 #define ADD_r() do { \
     ADD_INTERNAL(REG(opcode), false); \
@@ -917,7 +971,7 @@ static void UNK_OP(struct GB_Core* gb, uint8_t opcode, bool cb_prefix)
     }
 }
 
-static inline void GB_interrupt_handler(struct GB_Core* gb)
+static FORCE_INLINE void GB_interrupt_handler(struct GB_Core* gb)
 {
     if (!gb->cpu.ime && !gb->cpu.halt)
     {
@@ -988,7 +1042,7 @@ void GB_cpu_enable_log(const bool enable)
     #endif
 }
 
-static inline void GB_execute(struct GB_Core* gb)
+static FORCE_INLINE void GB_execute(struct GB_Core* gb)
 {
     const uint8_t opcode = read8(REG_PC);
 
@@ -1104,6 +1158,7 @@ static inline void GB_execute(struct GB_Core* gb)
         case 0x76: HALT(gb); break;
         case 0x7E: LD_A_HLa(); break;
 
+        #if 0
         case 0x80: case 0x81: case 0x82: case 0x83: case 0x84: case 0x85: case 0x87: ADD_r(); break;
         case 0x88: case 0x89: case 0x8A: case 0x8B: case 0x8C: case 0x8D: case 0x8F: ADC_r(); break;
         case 0x90: case 0x91: case 0x92: case 0x93: case 0x94: case 0x95: case 0x97: SUB_r(); break;
@@ -1112,6 +1167,24 @@ static inline void GB_execute(struct GB_Core* gb)
         case 0xA8: case 0xA9: case 0xAA: case 0xAB: case 0xAC: case 0xAD: case 0xAF: XOR_r(); break;
         case 0xB0: case 0xB1: case 0xB2: case 0xB3: case 0xB4: case 0xB5: case 0xB7: OR_r(); break;
         case 0xB8: case 0xB9: case 0xBA: case 0xBB: case 0xBC: case 0xBD: case 0xBF: CP_r(); break;
+        #else
+        case 0x80: case 0x81: case 0x82: case 0x83: case 0x84: case 0x85: ADD_r(); break;
+        case 0x88: case 0x89: case 0x8A: case 0x8B: case 0x8C: case 0x8D: case 0x8F: ADC_r(); break;
+        case 0x90: case 0x91: case 0x92: case 0x93: case 0x94: case 0x95: SUB_r(); break;
+        case 0x98: case 0x99: case 0x9A: case 0x9B: case 0x9C: case 0x9D: SBC_r(); break;
+        case 0xA0: case 0xA1: case 0xA2: case 0xA3: case 0xA4: case 0xA5: AND_r(); break;
+        case 0xA8: case 0xA9: case 0xAA: case 0xAB: case 0xAC: case 0xAD: XOR_r(); break;
+        case 0xB0: case 0xB1: case 0xB2: case 0xB3: case 0xB4: case 0xB5: OR_r(); break;
+        case 0xB8: case 0xB9: case 0xBA: case 0xBB: case 0xBC: case 0xBD: CP_r(); break;
+
+        case 0x87: ADD_A_A(); break;
+        case 0x97: SUB_A_A(); break;
+        case 0x9F: SBC_A_A(); break;
+        case 0xA7: AND_A_A(); break;
+        case 0xAF: XOR_A_A(); break;
+        case 0xB7: OR_A_A(); break;
+        case 0xBF: CP_A_A(); break;
+        #endif
 
         case 0x86: ADD_HLa(); break;
         case 0x8E: ADC_HLa(); break;
@@ -1184,7 +1257,7 @@ static inline void GB_execute(struct GB_Core* gb)
     gb->cpu.cycles += CYCLE_TABLE[opcode];
 }
 
-static inline void GB_execute_cb(struct GB_Core* gb)
+static FORCE_INLINE void GB_execute_cb(struct GB_Core* gb)
 {
     const uint8_t opcode = read8(REG_PC++);
 
