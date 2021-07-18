@@ -95,7 +95,7 @@ static inline void GB_iowrite_gbc(struct GB_Core* gb, uint16_t addr, uint8_t val
 }
 #endif // #if GBC_ENABLE
 
-static inline uint8_t GB_ioread(struct GB_Core* gb, uint16_t addr)
+static inline uint8_t GB_ioread(const struct GB_Core* gb, uint16_t addr)
 {
     switch (addr & 0x7F)
     {
@@ -105,9 +105,24 @@ static inline uint8_t GB_ioread(struct GB_Core* gb, uint16_t addr)
         case 0x34: case 0x35: case 0x36: case 0x37:
         case 0x38: case 0x39: case 0x3A: case 0x3B:
         case 0x3C: case 0x3D: case 0x3E: case 0x3F:
-            if (gb_is_apu_enabled(gb) && is_ch3_enabled(gb))
+            if (is_ch3_enabled(gb))
             {
-                return 0xFF;
+                // on dmg, reading from waveram is only allowed within a few
+                // cycles of ch3 accessing waveram.
+                // to emulate this (in a hacky way), check a range of cycles
+                // and if in range, allow access.
+                if (GB_is_system_gbc(gb) || gb->apu.ch3.timer < 4)
+                {
+                    return IO_WAVE_TABLE[CH3.position_counter >> 1];
+                }
+                else
+                {
+                    return 0xFF;
+                }
+            }
+            else
+            {
+                return IO[addr & 0x7F];
             }
             break;
     }

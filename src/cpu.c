@@ -384,25 +384,45 @@ static inline uint16_t GB_POP(struct GB_Core* gb)
     SET_FLAGS_HNZ((result & 0xF) == 0xF, true, result == 0); \
 } while(0)
 
-#define INC_BC() do { SET_REG_BC(REG_BC + 1); } while(0)
-#define INC_DE() do { SET_REG_DE(REG_DE + 1); } while(0)
+static void sprite_ram_bug(struct GB_Core* gb, uint8_t v)
+{
+    /* bug: if ppu in mode2 and H = FE, oam is corrupt */
+    /* SOURCE: numism.gb */
+    if (v == 0xFE)
+    {
+        if (GB_get_status_mode(gb) == 2)
+        {
+            memset(gb->ppu.oam + 0x4, 0xFF, sizeof(gb->ppu.oam) - 0x4);
+            GB_log("INC_HL oam corrupt bug!\n");
+        }
+    }
+}
+
+#define INC_BC() do { \
+    sprite_ram_bug(gb, REG_B); \
+    SET_REG_BC(REG_BC + 1); \
+} while(0)
+#define INC_DE() do { \
+    sprite_ram_bug(gb, REG_D); \
+    SET_REG_DE(REG_DE + 1); \
+} while(0)
 #define INC_HL() do { \
-    /* bug: if ppu in mode2 and H = FE, oam is corrupt */ \
-    /* SOURCE: numism.gb */ \
-    if (REG_H == 0xFE) \
-    { \
-        if (GB_get_status_mode(gb) == 2) \
-        { \
-            memset(gb->ppu.oam, 0xFF, sizeof(gb->ppu.oam)); \
-            GB_log("INC_HL oam corrupt bug!\n"); \
-        } \
-    } \
+    sprite_ram_bug(gb, REG_H); \
     SET_REG_HL(REG_HL + 1); \
 } while(0)
 
-#define DEC_BC() do { SET_REG_BC(REG_BC - 1); } while(0)
-#define DEC_DE() do { SET_REG_DE(REG_DE - 1); } while(0)
-#define DEC_HL() do { SET_REG_HL(REG_HL - 1); } while(0)
+#define DEC_BC() do { \
+    sprite_ram_bug(gb, REG_B); \
+    SET_REG_BC(REG_BC - 1); \
+} while(0)
+#define DEC_DE() do { \
+    sprite_ram_bug(gb, REG_D); \
+    SET_REG_DE(REG_DE - 1); \
+} while(0)
+#define DEC_HL() do { \
+    sprite_ram_bug(gb, REG_H); \
+    SET_REG_HL(REG_HL - 1); \
+} while(0)
 
 #define INC_SP() do { ++REG_SP; } while(0)
 #define DEC_SP() do { --REG_SP; } while(0)

@@ -113,7 +113,13 @@ void on_nr10_write(struct GB_Core* gb, uint8_t value)
 
 void on_nr11_write(struct GB_Core* gb, uint8_t value)
 {
-    IO_NR11.duty = value >> 6;
+    // writes to NRx1 on DMG are allowed even if the apu is disabled.
+    // however, near mentiones that only the length is changed!
+    // SOURCE: https://forums.nesdev.com/viewtopic.php?t=13730
+    if (gb_is_apu_enabled(gb))
+    {
+        IO_NR11.duty = value >> 6;
+    }
     CH1.length_counter = 64 - (value & 0x3F);
 }
 
@@ -196,7 +202,10 @@ void on_nr14_write(struct GB_Core* gb, uint8_t value)
 
 void on_nr21_write(struct GB_Core* gb, uint8_t value)
 {
-    IO_NR21.duty = value >> 6;
+    if (gb_is_apu_enabled(gb))
+    {
+        IO_NR21.duty = value >> 6;
+    }
     CH2.length_counter = 64 - (value & 0x3F);
 }
 
