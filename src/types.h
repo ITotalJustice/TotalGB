@@ -400,6 +400,12 @@ struct GB_Cpu
     bool double_speed;
 };
 
+struct GB_PalCache
+{
+    bool used;
+    uint8_t pal;
+};
+
 struct GB_Ppu
 {
     int16_t next_cycles;
@@ -416,9 +422,6 @@ struct GB_Ppu
 #endif
     uint8_t oam[0xA0]; // sprite mem
 
-    uint32_t bg_colours[8][4]; // calculate the colours from the palette once.
-    uint32_t obj_colours[8][4];
-
     // these are set when a hdma occurs (not a DMA or GDMA)
     uint16_t hdma_src_addr;
     uint16_t hdma_dst_addr;
@@ -427,14 +430,33 @@ struct GB_Ppu
     // this is the internal line counter which is used as the index
     // for the window instead of IO_LY.
     uint8_t window_line;
+    bool stat_line;
 
-    uint8_t bg_palette[0x40]; // background palette memory.
-    uint8_t obj_palette[0x40]; // sprite palette memory.
+    union
+    {
+        #if GBC_ENABLE
+        struct
+        {
+            uint32_t bg_colours[8][4]; // calculate the colours from the palette once.
+            uint32_t obj_colours[8][4];
+
+            uint8_t bg_palette[64]; // background palette memory.
+            uint8_t obj_palette[64]; // sprite palette memory.
+        } gbc;
+        #endif
+
+        struct
+        {
+            uint32_t bg_colours[20][4];
+            uint32_t obj_colours[2][20][4];
+
+            struct GB_PalCache bg_cache[20];
+            struct GB_PalCache obj_cache[2][20];
+        } dmg;
+    } system;
 
     bool dirty_bg[8]; // only update the colours if the palette changes values.
     bool dirty_obj[8];
-
-    bool stat_line;
 };
 
 // todo: fix bad name
@@ -597,14 +619,8 @@ struct GB_Apu
     uint8_t frame_sequencer_counter;
 };
 
-// TODO: this struct needs to be re-organised.
-// atm, i've just been dumping vars in here as one big container,
-// which works fine, though, it's starting to get messy, and could be
-// *slightly* optimised by putting common accessed vars next to each other.
-struct GB_Core
+struct GB_mem
 {
-    struct GB_MemMapEntry mmap[0x10];
-
     uint8_t io[0x80]; // easier to have io as an array than individual bytes
     uint8_t hram[0x80]; // 0x7F + IE reg
 #if GBC_ENABLE
@@ -613,6 +629,19 @@ struct GB_Core
     uint8_t wram[2][0x1000]; // 2 banks of 4KiB
 #endif
 
+    uint8_t vbk;
+    uint8_t svbk;
+};
+
+// TODO: this struct needs to be re-organised.
+// atm, i've just been dumping vars in here as one big container,
+// which works fine, though, it's starting to get messy, and could be
+// *slightly* optimised by putting common accessed vars next to each other.
+struct GB_Core
+{
+    struct GB_MemMapEntry mmap[0x10];
+
+    struct GB_mem mem;
     struct GB_Cpu cpu;
     struct GB_Ppu ppu;
     struct GB_Apu apu;
@@ -660,13 +689,7 @@ struct GB_State
     uint8_t sgb_enabled;
     uint8_t reserved[0xA];
 
-    uint8_t io[0x80]; // easier to have io as an array than individual bytes
-    uint8_t hram[0x80]; // 0x7F + IE reg
-#if GBC_ENABLE
-    uint8_t wram[8][0x1000]; // extra 6 banks in gbc
-#else
-    uint8_t wram[2][0x1000]; // 2 banks of 4KiB
-#endif
+    struct GB_mem mem;
     struct GB_Cpu cpu;
     struct GB_Ppu ppu;
     struct GB_Apu apu;

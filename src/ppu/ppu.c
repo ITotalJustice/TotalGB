@@ -17,7 +17,6 @@ const uint8_t PIXEL_BIT_GROW[] =
     0x01, 0x02, 0x04, 0x08, 0x10, 0x20, 0x40, 0x80
 };
 
-
 uint8_t GB_vram_read(const struct GB_Core* gb,
     const uint16_t addr, const uint8_t bank
 ) {
@@ -66,6 +65,15 @@ uint16_t GB_get_tile_offset(const struct GB_Core* gb,
 uint8_t GB_get_sprite_size(const struct GB_Core* gb)
 {
     return ((IO_LCDC & 0x04) ? 16 : 8);
+}
+
+void GB_update_all_colours_gb(struct GB_Core* gb)
+{
+    for (size_t i = 0; i < 8; ++i)
+    {
+        gb->ppu.dirty_bg[i] = true;
+        gb->ppu.dirty_obj[i] = true;
+    }
 }
 
 static void GB_stat_interrupt_update(struct GB_Core* gb)
@@ -212,8 +220,11 @@ static void on_lcd_disable(struct GB_Core* gb)
 
     // in progress hdma should be stopped when ppu is turned off
     #if GBC_ENABLE
+    if (GB_is_system_gbc(gb))
+    {
         gb->ppu.hdma_length = 0;
         IO_HDMA5 = 0xFF;
+    }
     #endif
 
     IO_LY = 0;

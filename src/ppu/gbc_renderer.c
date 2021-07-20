@@ -7,6 +7,8 @@
 
 #if GBC_ENABLE
 
+#define GBC_PPU PPU.system.gbc
+
 // store a 1 when bg / win writes to the screen
 // this is used by obj rendering to check firstly if
 // the bg always has priority.
@@ -20,9 +22,8 @@ struct GbcPrioBuf
     uint8_t colour_id[GB_SCREEN_WIDTH];
 };
 
-static inline void gbc_update_colours(struct GB_Core* gb,
-    bool dirty[8], uint32_t map[8][4], const uint8_t palette_mem[64]
-) {
+static inline void gbc_update_colours(struct GB_Core* gb, bool dirty[8], uint32_t map[8][4], const uint8_t palette_mem[64])
+{
     if (gb->callback.colour == NULL)
     {
         memset(dirty, 0, sizeof(bool) * 8);
@@ -94,12 +95,12 @@ static inline void ocps_increment(struct GB_Core* gb)
 
 void GBC_on_bcpd_update(struct GB_Core* gb)
 {
-    IO_BCPD = gb->ppu.bg_palette[get_bcps_index(gb)];
+    IO_BCPD = GBC_PPU.bg_palette[get_bcps_index(gb)];
 }
 
 void GBC_on_ocpd_update(struct GB_Core* gb)
 {
-    IO_OCPD = gb->ppu.obj_palette[get_ocps_index(gb)];
+    IO_OCPD = GBC_PPU.obj_palette[get_ocps_index(gb)];
 }
 
 void GB_bcpd_write(struct GB_Core* gb, uint8_t value)
@@ -108,9 +109,9 @@ void GB_bcpd_write(struct GB_Core* gb, uint8_t value)
 
     // this is 0-7
     assert((index >> 3) <= 7);
-    gb->ppu.dirty_bg[index >> 3] |= gb->ppu.bg_palette[index] != value;
+    PPU.dirty_bg[index >> 3] |= GBC_PPU.bg_palette[index] != value;
 
-    gb->ppu.bg_palette[index] = value;
+    GBC_PPU.bg_palette[index] = value;
     bcps_increment(gb);
 
     GBC_on_bcpd_update(gb);
@@ -122,9 +123,9 @@ void GB_ocpd_write(struct GB_Core* gb, uint8_t value)
 
     // this is 0-7
     assert((index >> 3) <= 7);
-    gb->ppu.dirty_obj[index >> 3] |= gb->ppu.obj_palette[index] != value;
+    PPU.dirty_obj[index >> 3] |= GBC_PPU.obj_palette[index] != value;
 
-    gb->ppu.obj_palette[index] = value;
+    GBC_PPU.obj_palette[index] = value;
     ocps_increment(gb);
 
     GBC_on_ocpd_update(gb);
@@ -132,19 +133,19 @@ void GB_ocpd_write(struct GB_Core* gb, uint8_t value)
 
 bool GB_is_hdma_active(const struct GB_Core* gb)
 {
-    return gb->ppu.hdma_length > 0;
+    return PPU.hdma_length > 0;
 }
 
 static FORCE_INLINE uint8_t hdma_read(const struct GB_Core* gb, const uint16_t addr)
 {
-    const struct GB_MemMapEntry* entry = &gb->mmap[(addr >> 12)];
+    const struct GB_MemMapEntry* entry = &gb->mmap[addr >> 12];
     
     return entry->ptr[addr & entry->mask];
 }
 
 static FORCE_INLINE void hdma_write(struct GB_Core* gb, const uint16_t addr, const uint8_t value)
 {
-    gb->ppu.vram[IO_VBK][(addr) & 0x1FFF] = value;
+    PPU.vram[IO_VBK][addr & 0x1FFF] = value;
 }
 
 void perform_hdma(struct GB_Core* gb)
@@ -153,17 +154,17 @@ void perform_hdma(struct GB_Core* gb)
     // perform 16-block transfer
     for (uint16_t i = 0; i < 0x10; ++i)
     {
-        hdma_write(gb, gb->ppu.hdma_dst_addr++, hdma_read(gb, gb->ppu.hdma_src_addr++));
+        hdma_write(gb, PPU.hdma_dst_addr++, hdma_read(gb, PPU.hdma_src_addr++));
     }
 
-    gb->ppu.hdma_length -= 0x10;
+    PPU.hdma_length -= 0x10;
 
     --IO_HDMA5;
 
     // finished!
-    if (gb->ppu.hdma_length == 0)
+    if (PPU.hdma_length == 0)
     {
-        gb->ppu.hdma_length = 0;
+        PPU.hdma_length = 0;
 
         IO_HDMA5 = 0xFF;
     }
@@ -194,8 +195,8 @@ void GB_hdma5_write(struct GB_Core* gb, uint8_t value)
         // actually disables that transfer
         if (GB_is_hdma_active(gb) == true)
         {
-            IO_HDMA5 = ((gb->ppu.hdma_length >> 4) - 1) | 0x80;
-            gb->ppu.hdma_length = 0;
+            IO_HDMA5 = ((PPU.hdma_length >> 4) - 1) | 0x80;
+            PPU.hdma_length = 0;
 
             // do not perform GDMA after, this only cancels the active
             // transfer and sets HDMA5.
@@ -205,7 +206,7 @@ void GB_hdma5_write(struct GB_Core* gb, uint8_t value)
         // GDMA are performed immediately
         for (uint16_t i = 0; i < dma_len; ++i)
         {
-            hdma_write(gb, gb->ppu.hdma_dst_addr++, hdma_read(gb, gb->ppu.hdma_src_addr++));
+            hdma_write(gb, PPU.hdma_dst_addr++, hdma_read(gb, PPU.hdma_src_addr++));
         }
 
         // it's unclear if all HDMA regs are set to 0xFF post transfer,
@@ -214,7 +215,7 @@ void GB_hdma5_write(struct GB_Core* gb, uint8_t value)
     }
     else
     {
-        gb->ppu.hdma_length = dma_len;
+        PPU.hdma_length = dma_len;
 
         // set that the transfer is active.
         IO_HDMA5 = value & 0x7F;
@@ -251,7 +252,7 @@ static inline struct GBC_BgAttributes gbc_fetch_bg_attr(const struct GB_Core* gb
 {
     struct GBC_BgAttributes attrs = {0};
 
-    const uint8_t* ptr = &gb->ppu.vram[1][(map + (tile_y * 32)) & 0x1FFF];
+    const uint8_t* ptr = &PPU.vram[1][(map + (tile_y * 32)) & 0x1FFF];
 
     for (size_t i = 0; i < ARRAY_SIZE(attrs.a); ++i)
     {
@@ -283,9 +284,9 @@ static inline struct GBC_Sprites gbc_sprite_fetch(const struct GB_Core* gb)
     const uint8_t sprite_size = GB_get_sprite_size(gb);
     const uint8_t ly = IO_LY;
 
-    for (size_t i = 0; i < ARRAY_SIZE(gb->ppu.oam); i += 4)
+    for (size_t i = 0; i < ARRAY_SIZE(PPU.oam); i += 4)
     {
-        const int16_t sprite_y = gb->ppu.oam[i + 0] - 16;
+        const int16_t sprite_y = PPU.oam[i + 0] - 16;
 
         // check if the y is in bounds!
         if (ly >= sprite_y && ly < (sprite_y + sprite_size))
@@ -293,9 +294,9 @@ static inline struct GBC_Sprites gbc_sprite_fetch(const struct GB_Core* gb)
             struct GBC_Sprite* sprite = &sprites.sprite[sprites.count];
 
             sprite->y = sprite_y;
-            sprite->x = gb->ppu.oam[i + 1] - 8;
-            sprite->i = gb->ppu.oam[i + 2];
-            sprite->a = gbc_get_bg_attr(gb->ppu.oam[i + 3]);
+            sprite->x = PPU.oam[i + 1] - 8;
+            sprite->i = PPU.oam[i + 2];
+            sprite->a = gbc_get_bg_attr(PPU.oam[i + 3]);
 
             ++sprites.count;
 
@@ -320,7 +321,7 @@ static inline struct GBC_Sprites gbc_sprite_fetch(const struct GB_Core* gb)
     const uint8_t sub_tile_y = (pixel_y & 7); \
 \
     /* array maps */ \
-    const uint8_t* vram_map = &gb->ppu.vram[0][(GB_get_bg_map_select(gb) + (tile_y * 32)) & 0x1FFF]; \
+    const uint8_t* vram_map = &PPU.vram[0][(GB_get_bg_map_select(gb) + (tile_y * 32)) & 0x1FFF]; \
     const struct GBC_BgAttributes attr_map = gbc_fetch_bg_attr(gb, GB_get_bg_map_select(gb), tile_y); \
 \
     for (uint8_t tile_x = 0; tile_x <= 20; ++tile_x) \
@@ -363,7 +364,7 @@ static inline struct GBC_Sprites gbc_sprite_fetch(const struct GB_Core* gb)
             prio_buf.prio[x_index] = attr->prio; \
             prio_buf.colour_id[x_index] = colour_id; \
 \
-            const uint32_t colour = gb->ppu.bg_colours[attr->pal][colour_id]; \
+            const uint32_t colour = GBC_PPU.bg_colours[attr->pal][colour_id]; \
 \
             pixels[x_index] = colour; \
         } \
@@ -374,13 +375,13 @@ static inline struct GBC_Sprites gbc_sprite_fetch(const struct GB_Core* gb)
 { \
     const uint8_t base_tile_x = 20 - (IO_WX >> 3); \
     const int16_t sub_tile_x = IO_WX - 7; \
-    const uint8_t pixel_y = gb->ppu.window_line; \
+    const uint8_t pixel_y = PPU.window_line; \
     const uint8_t tile_y = pixel_y >> 3; \
     const uint8_t sub_tile_y = (pixel_y & 7); \
 \
     bool did_draw = false; \
 \
-    const uint8_t *vram_map = &gb->ppu.vram[0][(GB_get_win_map_select(gb) + (tile_y * 32)) & 0x1FFF]; \
+    const uint8_t *vram_map = &PPU.vram[0][(GB_get_win_map_select(gb) + (tile_y * 32)) & 0x1FFF]; \
     const struct GBC_BgAttributes attr_map = gbc_fetch_bg_attr(gb, GB_get_win_map_select(gb), tile_y); \
 \
     for (uint8_t tile_x = 0; tile_x <= base_tile_x; ++tile_x) \
@@ -416,7 +417,7 @@ static inline struct GBC_Sprites gbc_sprite_fetch(const struct GB_Core* gb)
             prio_buf.prio[x_index] = attr.prio; \
             prio_buf.colour_id[x_index] = colour_id; \
 \
-            const uint32_t colour = gb->ppu.bg_colours[attr.pal][colour_id]; \
+            const uint32_t colour = GBC_PPU.bg_colours[attr.pal][colour_id]; \
 \
             pixels[x_index] = colour; \
         } \
@@ -424,7 +425,7 @@ static inline struct GBC_Sprites gbc_sprite_fetch(const struct GB_Core* gb)
 \
     if (did_draw) \
     { \
-        ++gb->ppu.window_line; \
+        ++PPU.window_line; \
     } \
 } while(0)
 
@@ -515,7 +516,7 @@ static inline struct GBC_Sprites gbc_sprite_fetch(const struct GB_Core* gb)
             /* oam entries cannot overwrite this pixel! */ \
             oam_priority[x_index] = true; \
 \
-            const uint32_t colour = gb->ppu.obj_colours[sprite->a.pal][colour_id]; \
+            const uint32_t colour = GBC_PPU.obj_colours[sprite->a.pal][colour_id]; \
 \
             pixels[x_index] = colour; \
         } \
@@ -545,9 +546,9 @@ void GBC_render_scanline(struct GB_Core* gb)
     struct GbcPrioBuf prio_buf = {0};
 
     // update the bg colour palettes
-    gbc_update_colours(gb, gb->ppu.dirty_bg, gb->ppu.bg_colours, gb->ppu.bg_palette);
+    gbc_update_colours(gb, PPU.dirty_bg, GBC_PPU.bg_colours, GBC_PPU.bg_palette);
     // update the obj colour palettes
-    gbc_update_colours(gb, gb->ppu.dirty_obj, gb->ppu.obj_colours, gb->ppu.obj_palette);
+    gbc_update_colours(gb, PPU.dirty_obj, GBC_PPU.obj_colours, GBC_PPU.obj_palette);
 
     switch (gb->bpp)
     {
@@ -567,6 +568,7 @@ void GBC_render_scanline(struct GB_Core* gb)
     }
 }
 
+#undef GBC_PPU
 #undef RENDER_BG
 #undef RENDER_WIN
 #undef RENDER_OBJ

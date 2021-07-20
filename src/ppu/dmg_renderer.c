@@ -6,36 +6,92 @@
 #include <assert.h>
 
 
+#define DMG_PPU gb->ppu.system.dmg
+
+
 struct DmgPrioBuf
 {
     // 0-3
     uint8_t colour_id[GB_SCREEN_WIDTH];
 };
 
-static inline uint16_t calculate_col_from_palette(const uint8_t palette, const uint8_t colour)
+static FORCE_INLINE uint16_t calculate_col_from_palette(const uint8_t palette, const uint8_t colour)
 {
     return ((palette >> (colour << 1)) & 3);
 }
 
-static inline void dmg_update_colours(uint32_t colours[4], const uint32_t pal_colours[4], const uint8_t palette, bool* dirty)
+static void dmg_update_colours(struct GB_PalCache cache[20], uint32_t colours[20][4], bool* dirty, const uint32_t pal_colours[4], const uint8_t palette_reg)
 {
-    if (*dirty)
+    if (*dirty == false)
     {
-        *dirty = false;
-        
-        for (uint8_t i = 0; i < 4; ++i)
+        // reset cache so old entries don't persist
+        memset(cache, 0, sizeof(struct GB_PalCache) * 20);
+        return;
+    }
+
+    *dirty = false;
+    uint8_t palette = palette_reg;
+
+    GB_log("update palette\n");
+    for (uint8_t i = 0; i < 20; ++i)
+    {            
+        if (cache[i].used)
         {
-            colours[i] = pal_colours[calculate_col_from_palette(palette, i)];
+            // this is needed for now, see prehistorik man text intro
+            *dirty = true;
+
+            cache[i].used = false;
+            palette = cache[i].pal;
+        }
+
+        for (uint8_t j = 0; j < 4; ++j)
+        {
+            colours[i][j] = pal_colours[calculate_col_from_palette(palette, j)];
         }
     }
 }
 
-void GB_update_all_colours_gb(struct GB_Core* gb)
+static FORCE_INLINE void on_dmg_palette_write(const struct GB_Core* gb, struct GB_PalCache cache[20], bool* dirty, uint8_t palette, uint8_t value)
 {
-    // the colour palette will be auto updated next frame.
-    gb->ppu.dirty_bg[0] = true;
-    gb->ppu.dirty_obj[0] = true;
-    gb->ppu.dirty_obj[1] = true;
+    *dirty |= palette != value;
+
+    if (GB_get_status_mode(gb) == 3 && PPU.next_cycles >= 12 && PPU.next_cycles <= 172)
+    {
+        const uint8_t index = (172 - PPU.next_cycles) >> 3;
+
+        cache[index].used = true;
+        cache[index].pal = value;
+    }
+}
+
+void on_bgp_write(struct GB_Core* gb, uint8_t value)
+{
+    if (!GB_is_system_gbc(gb))
+    {
+        on_dmg_palette_write(gb, DMG_PPU.bg_cache, &PPU.dirty_bg[0], IO_BGP, value);
+    }
+
+    IO_BGP = value;
+}
+
+void on_obp0_write(struct GB_Core* gb, uint8_t value)
+{
+    if (!GB_is_system_gbc(gb))
+    {
+        on_dmg_palette_write(gb, DMG_PPU.obj_cache[0], &PPU.dirty_obj[0], IO_OBP0, value);
+    }
+
+    IO_OBP0 = value;
+}
+
+void on_obp1_write(struct GB_Core* gb, uint8_t value)
+{
+    if (!GB_is_system_gbc(gb))
+    {
+        on_dmg_palette_write(gb, DMG_PPU.obj_cache[1], &PPU.dirty_obj[1], IO_OBP1, value);
+    }
+
+    IO_OBP1 = value;
 }
 
 struct DMG_SpriteAttribute
@@ -179,7 +235,7 @@ static inline struct DMG_Sprites dmg_sprite_fetch(const struct GB_Core* gb)
 \
             prio_buf.colour_id[x_index] = colour_id; \
 \
-            const uint32_t colour = gb->ppu.bg_colours[0][colour_id]; \
+            const uint32_t colour = DMG_PPU.bg_colours[x_index>>3][colour_id]; \
 \
             pixels[x_index] = colour; \
         } \
@@ -222,7 +278,7 @@ static inline struct DMG_Sprites dmg_sprite_fetch(const struct GB_Core* gb)
 \
             prio_buf.colour_id[x_index] = colour_id; \
 \
-            const uint32_t colour = gb->ppu.bg_colours[0][colour_id]; \
+            const uint32_t colour = DMG_PPU.bg_colours[x_index>>3][colour_id]; \
 \
             pixels[x_index] = colour; \
         } \
@@ -302,7 +358,7 @@ static inline struct DMG_Sprites dmg_sprite_fetch(const struct GB_Core* gb)
             /* keep track of the sprite pixel that was written (so we don't overlap it!) */ \
             oam_priority[x_index] = true; \
 \
-            const uint32_t colour = gb->ppu.obj_colours[sprite->a.pal][colour_id]; \
+            const uint32_t colour = DMG_PPU.obj_colours[sprite->a.pal][x_index>>3][colour_id]; \
 \
             pixels[x_index] = colour; \
         } \
@@ -335,9 +391,9 @@ void DMG_render_scanline(struct GB_Core* gb)
     struct DmgPrioBuf prio_buf = {0};
 
     // update the DMG colour palettes
-    dmg_update_colours(gb->ppu.bg_colours[0], gb->palette.BG, IO_BGP, &gb->ppu.dirty_bg[0]);
-    dmg_update_colours(gb->ppu.obj_colours[0], gb->palette.OBJ0, IO_OBP0, &gb->ppu.dirty_obj[0]);
-    dmg_update_colours(gb->ppu.obj_colours[1], gb->palette.OBJ1, IO_OBP1, &gb->ppu.dirty_obj[1]);
+    dmg_update_colours(DMG_PPU.bg_cache, DMG_PPU.bg_colours, &PPU.dirty_bg[0], gb->palette.BG, IO_BGP);
+    dmg_update_colours(DMG_PPU.obj_cache[0], DMG_PPU.obj_colours[0], &PPU.dirty_obj[0], gb->palette.OBJ0, IO_OBP0);
+    dmg_update_colours(DMG_PPU.obj_cache[1], DMG_PPU.obj_colours[1], &PPU.dirty_obj[1], gb->palette.OBJ1, IO_OBP1);
 
     switch (gb->bpp)
     {

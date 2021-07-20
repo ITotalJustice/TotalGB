@@ -2,6 +2,7 @@
 #include "internal.h"
 #include "mbc/mbc.h"
 #include "apu/apu.h"
+#include "ppu/ppu.h"
 #include "tables/io_read_table.h"
 
 #include <assert.h>
@@ -20,7 +21,8 @@ static FORCE_INLINE void GB_iowrite_gbc(struct GB_Core* gb, uint16_t addr, uint8
             break;
 
         case 0x4F: // (VBK)
-            IO_VBK = value & 1;
+            gb->mem.vbk = value & 1;
+            IO_VBK = gb->mem.vbk;
             GB_update_vram_banks(gb);
             break;
 
@@ -72,7 +74,8 @@ static FORCE_INLINE void GB_iowrite_gbc(struct GB_Core* gb, uint16_t addr, uint8
             break;
 
         case 0x70: // (SVBK) always set between 1-7
-            IO_SVBK = (value & 0x07) + ((value & 0x07) == 0x00);
+            gb->mem.svbk = (value & 0x07) + ((value & 0x07) == 0x00);
+            IO_SVBK = gb->mem.svbk;
             GB_update_wram_banks(gb);
             break;
 
@@ -208,18 +211,15 @@ static inline void GB_iowrite(struct GB_Core* gb, uint16_t addr, uint8_t value)
             break;
 
         case 0x47:
-            gb->ppu.dirty_bg[0] |= (IO_BGP != value);
-            IO_BGP = value;
+            on_bgp_write(gb, value);
             break;
 
         case 0x48:
-            gb->ppu.dirty_obj[0] |= (IO_OBP0 != value);
-            IO_OBP0 = value;
+            on_obp0_write(gb, value);
             break;
 
         case 0x49:
-            gb->ppu.dirty_obj[1] |= (IO_OBP1 != value);
-            IO_OBP1 = value;
+            on_obp1_write(gb, value);
             break;
 
         case 0x4A:
@@ -252,7 +252,7 @@ uint8_t GB_ffread8(struct GB_Core* gb, uint8_t addr)
     }
     else
     {
-        return gb->hram[addr & 0x7F];
+        return gb->mem.hram[addr & 0x7F];
     }
 }
 
@@ -264,8 +264,20 @@ void GB_ffwrite8(struct GB_Core* gb, uint8_t addr, uint8_t value)
     }
     else
     {
-        gb->hram[addr & 0x7F] = value;
+        gb->mem.hram[addr & 0x7F] = value;
     }
+}
+
+static FORCE_INLINE bool is_vram_writeable(const struct GB_Core* gb)
+{
+    // vram cannot be written to during mode 3
+    return GB_get_status_mode(gb) != STATUS_MODE_TRANSFER;
+}
+
+static FORCE_INLINE bool is_oam_writeable(const struct GB_Core* gb)
+{
+    // oam cannot be written to during mode 2 and 3
+    return GB_get_status_mode(gb) != STATUS_MODE_SPRITE && GB_get_status_mode(gb) != STATUS_MODE_TRANSFER;
 }
 
 uint8_t GB_read8(struct GB_Core* gb, const uint16_t addr)
@@ -284,26 +296,31 @@ uint8_t GB_read8(struct GB_Core* gb, const uint16_t addr)
 
     if (LIKELY(addr < 0xFE00))
     {
-        const struct GB_MemMapEntry* entry = &gb->mmap[(addr >> 12)];
-        
+        const struct GB_MemMapEntry* const entry = &gb->mmap[addr >> 12];
         return entry->ptr[addr & entry->mask];
-    }
-    else if (addr <= 0xFE9F)
-    {
-        return gb->ppu.oam[addr & 0xFF];
-    }
-    else if (addr >= 0xFF00 && addr <= 0xFF7F)
-    {
-        return GB_ioread(gb, addr);
-    }
-    else if (addr >= 0xFF80)
-    {
-        return gb->hram[addr & 0x7F];
     }
     else
     {
-        // unused section in address area.
-        return 0xFF;
+        // either 0xE or 0xF, so even / odd.
+        // the next important value is the upper nibble or low byte.
+        // because of this, we can (>> 4), then mask 0xF.
+        // we can also mask 0x10 to see if its even / odd
+        switch ((addr >> 4) & 0x1F)
+        {
+            case 0x00: case 0x01: case 0x02: case 0x03: case 0x04:
+            case 0x05: case 0x06: case 0x07: case 0x08: case 0x09:
+                return gb->ppu.oam[addr & 0xFF];
+
+            case 0x10: case 0x11: case 0x12: case 0x13:
+            case 0x14: case 0x15: case 0x16: case 0x17:
+                return GB_ioread(gb, addr);
+
+            case 0x18: case 0x19: case 0x1A: case 0x1B:
+            case 0x1C: case 0x1D: case 0x1E: case 0x1F:
+                return gb->mem.hram[addr & 0x7F];
+
+            default: return 0xFF; // unusable, [0x0A - 0x0F]
+        }
     }
 }
 
@@ -326,39 +343,43 @@ void GB_write8(struct GB_Core* gb, uint16_t addr, uint8_t value)
                 break;
 
             case 0x8: case 0x9:
-                // vram cannot be written to during mode 3
-                if (GB_get_status_mode(gb) != STATUS_MODE_TRANSFER)
+                if (is_vram_writeable(gb))
                 {
-                    gb->ppu.vram[IO_VBK][addr & 0x1FFF] = value;
+                    gb->ppu.vram[gb->mem.vbk][addr & 0x1FFF] = value;
                 }
                 break;
 
             case 0xC: case 0xE:
-                gb->wram[0][addr & 0x0FFF] = value;
+                gb->mem.wram[0][addr & 0x0FFF] = value;
                 break;
 
             case 0xD: case 0xF:
-                gb->wram[IO_SVBK][addr & 0x0FFF] = value;
+                gb->mem.wram[gb->mem.svbk][addr & 0x0FFF] = value;
                 break;
         }
     }
-    else if (addr <= 0xFE9F)
+    else
     {
-        const enum GB_StatusModes status = GB_get_status_mode(gb);
-
-        // oam cannot be written to during mode 2 and 3
-        if (status != STATUS_MODE_SPRITE && status != STATUS_MODE_TRANSFER)
+        switch ((addr >> 4) & 0x1F)
         {
-            gb->ppu.oam[addr & 0xFF] = value;
+            case 0x00: case 0x01: case 0x02: case 0x03: case 0x04:
+            case 0x05: case 0x06: case 0x07: case 0x08: case 0x09:
+                if (is_oam_writeable(gb))
+                {
+                    gb->ppu.oam[addr & 0xFF] = value;
+                }
+                break;
+
+            case 0x10: case 0x11: case 0x12: case 0x13:
+            case 0x14: case 0x15: case 0x16: case 0x17:
+                GB_iowrite(gb, addr, value);
+                break;
+
+            case 0x18: case 0x19: case 0x1A: case 0x1B:
+            case 0x1C: case 0x1D: case 0x1E: case 0x1F:
+                gb->mem.hram[addr & 0x7F] = value;
+                break;
         }
-    }
-    else if (addr >= 0xFF00 && addr <= 0xFF7F)
-    {
-        GB_iowrite(gb, addr, value);
-    }
-    else if (addr >= 0xFF80)
-    {
-        gb->hram[addr & 0x7F] = value;
     }
 }
 
@@ -407,8 +428,8 @@ void GB_update_vram_banks(struct GB_Core* gb)
 
     if (GB_is_system_gbc(gb) == true)
     {
-        gb->mmap[0x8].ptr = gb->ppu.vram[IO_VBK] + 0x0000;
-        gb->mmap[0x9].ptr = gb->ppu.vram[IO_VBK] + 0x1000;
+        gb->mmap[0x8].ptr = gb->ppu.vram[gb->mem.vbk] + 0x0000;
+        gb->mmap[0x9].ptr = gb->ppu.vram[gb->mem.vbk] + 0x1000;
     }
     else
     {
@@ -424,18 +445,18 @@ void GB_update_wram_banks(struct GB_Core* gb)
     gb->mmap[0xE].mask = 0x0FFF;
     gb->mmap[0xF].mask = 0x0FFF;
 
-    gb->mmap[0xC].ptr = gb->wram[0];
-    gb->mmap[0xE].ptr = gb->wram[0];
+    gb->mmap[0xC].ptr = gb->mem.wram[0];
+    gb->mmap[0xE].ptr = gb->mem.wram[0];
 
     if (GB_is_system_gbc(gb) == true)
     {
-        gb->mmap[0xD].ptr = gb->wram[IO_SVBK];
-        gb->mmap[0xF].ptr = gb->wram[IO_SVBK];
+        gb->mmap[0xD].ptr = gb->mem.wram[gb->mem.svbk];
+        gb->mmap[0xF].ptr = gb->mem.wram[gb->mem.svbk];
     }
     else
     {
-        gb->mmap[0xD].ptr = gb->wram[1];
-        gb->mmap[0xF].ptr = gb->wram[1];
+        gb->mmap[0xD].ptr = gb->mem.wram[1];
+        gb->mmap[0xF].ptr = gb->mem.wram[1];
     }
 }
 

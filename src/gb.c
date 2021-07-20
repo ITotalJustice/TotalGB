@@ -34,16 +34,12 @@ void GB_quit(struct GB_Core* gb)
 
 void GB_reset(struct GB_Core* gb)
 {
-    memset(gb->wram, 0, sizeof(gb->wram));
-    memset(gb->hram, 0, sizeof(gb->hram));
+    memset(&gb->mem, 0, sizeof(gb->mem));
+    memset(&gb->cpu, 0, sizeof(gb->cpu));
+    memset(&gb->ppu, 0, sizeof(gb->ppu));
+    memset(&gb->timer, 0, sizeof(gb->timer));
+    memset(&gb->joypad, 0, sizeof(gb->joypad));
     memset(IO, 0xFF, sizeof(IO));
-    memset(gb->ppu.vram, 0, sizeof(gb->ppu.vram));
-    memset(gb->ppu.bg_palette, 0, sizeof(gb->ppu.bg_palette));
-    memset(gb->ppu.obj_palette, 0, sizeof(gb->ppu.obj_palette));
-    memset(gb->ppu.bg_colours, 0, sizeof(gb->ppu.bg_colours));
-    memset(gb->ppu.obj_colours, 0, sizeof(gb->ppu.obj_colours));
-    memset(gb->ppu.dirty_bg, 0, sizeof(gb->ppu.dirty_bg));
-    memset(gb->ppu.dirty_obj, 0, sizeof(gb->ppu.dirty_obj));
 
     GB_update_all_colours_gb(gb);
 
@@ -53,6 +49,9 @@ void GB_reset(struct GB_Core* gb)
     gb->cpu.cycles = 0;
     gb->cpu.halt = 0;
     gb->cpu.ime = 0;
+
+    gb->mem.vbk = 0;
+    gb->mem.svbk = 1;
 
     // CPU
     GB_cpu_set_register_pair(gb, GB_CPU_REGISTER_PAIR_SP, 0xFFFE);
@@ -77,6 +76,10 @@ void GB_reset(struct GB_Core* gb)
     IO_WX = 0x00;
     IO_IF = 0x00;
     IO_IE = 0x00;
+    IO_SC = 0x00;
+    IO_SB = 0x00;
+    IO_DIV_LOWER = 0x00;
+    IO_DIV_UPPER = 0x00;
 
     IO[0x10] = 0x80;//   ; NR10
     IO[0x11] = 0xBF;//   ; NR11
@@ -99,6 +102,8 @@ void GB_reset(struct GB_Core* gb)
 
     // triggering the channels causes a high pitch sound effect to be played
     // at start of most games so disabled for now.
+    // TODO: run the bios and check the state of the core after 0x50 write
+    // and set the internal values to match that!
     #if 1
     on_nr10_write(gb, 0x80);
     on_nr11_write(gb, 0xBF);
@@ -139,8 +144,6 @@ void GB_reset(struct GB_Core* gb)
             GB_cpu_set_register_pair(gb, GB_CPU_REGISTER_PAIR_BC, 0x0013);
             GB_cpu_set_register_pair(gb, GB_CPU_REGISTER_PAIR_DE, 0x00D8);
             GB_cpu_set_register_pair(gb, GB_CPU_REGISTER_PAIR_HL, 0x014D);
-            IO_SVBK = 0x01;
-            IO_VBK = 0x00;
             memcpy(IO_WAVE_TABLE, dmg_wave_ram, sizeof(dmg_wave_ram));
             break;
 
@@ -149,8 +152,6 @@ void GB_reset(struct GB_Core* gb)
             GB_cpu_set_register_pair(gb, GB_CPU_REGISTER_PAIR_BC, 0x0014);
             GB_cpu_set_register_pair(gb, GB_CPU_REGISTER_PAIR_DE, 0x0000);
             GB_cpu_set_register_pair(gb, GB_CPU_REGISTER_PAIR_HL, 0xC060);
-            IO_SVBK = 0x01;
-            IO_VBK = 0x00;
             memcpy(IO_WAVE_TABLE, dmg_wave_ram, sizeof(dmg_wave_ram));
             break;
 
@@ -654,9 +655,7 @@ bool GB_savestate(const struct GB_Core* gb, struct GB_State* state)
 
     memset(state->reserved, 0xFF, sizeof(state->reserved));
 
-    memcpy(&state->io, &gb->io, sizeof(state->io));
-    memcpy(&state->hram, &gb->hram, sizeof(state->hram));
-    memcpy(&state->wram, &gb->wram, sizeof(state->wram));
+    memcpy(&state->mem, &gb->mem, sizeof(state->mem));
     memcpy(&state->cpu, &gb->cpu, sizeof(state->cpu));
     memcpy(&state->ppu, &gb->ppu, sizeof(state->ppu));
     memcpy(&state->apu, &gb->apu, sizeof(state->apu));
@@ -693,9 +692,7 @@ bool GB_loadstate(struct GB_Core* gb, const struct GB_State* state)
         return false;
     }
 
-    memcpy(&gb->io, &state->io, sizeof(gb->io));
-    memcpy(&gb->hram, &state->hram, sizeof(gb->hram));
-    memcpy(&gb->wram, &state->wram, sizeof(gb->wram));
+    memcpy(&gb->mem, &state->mem, sizeof(gb->mem));
     memcpy(&gb->cpu, &state->cpu, sizeof(gb->cpu));
     memcpy(&gb->ppu, &state->ppu, sizeof(gb->ppu));
     memcpy(&gb->apu, &state->apu, sizeof(gb->apu));
@@ -830,7 +827,8 @@ void GB_set_ram_bank(struct GB_Core* gb, uint8_t bank)
 
 void GB_set_wram_bank(struct GB_Core* gb, uint8_t bank)
 {
-    IO_SVBK = bank;
+    IO_SVBK = bank & 0x7;
+    gb->mem.svbk = bank & 0x7;
 
     GB_update_wram_banks(gb);
 }

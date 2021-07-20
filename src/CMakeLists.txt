@@ -145,7 +145,7 @@ function(add_linker_flag flag scope)
     check_linker_flag("C" ${flag} CHECK_FLAG_${check_flag})
 
     if (CHECK_FLAG_${check_flag})
-        target_compile_options(TotalGB ${scope} ${flag})
+        target_link_options(TotalGB ${scope} ${flag})
         message("has linker flag ${flag}")
     else()
         message("does NOT have linker flag ${flag}")

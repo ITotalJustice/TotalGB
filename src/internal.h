@@ -7,8 +7,8 @@ extern "C" {
 
 #include "types.h"
 
-#define GB_MIN(x, y) (((x) < (y)) ? (x) : (y))
-#define GB_MAX(x, y) (((x) > (y)) ? (x) : (y))
+#define MIN(x, y) (((x) < (y)) ? (x) : (y))
+#define MAX(x, y) (((x) > (y)) ? (x) : (y))
 
 #if defined __has_builtin
     #define HAS_BUILTIN(x) __has_builtin(x)
@@ -82,7 +82,7 @@ extern "C" {
 // 8-mhz
 #define GBC_CPU_CLOCK (DMG_CPU_CLOCK << 1)
 
-#define IO gb->io
+#define IO gb->mem.io
 // JOYPAD
 #define IO_JYP IO[0x00]
 // SERIAL
@@ -151,7 +151,7 @@ extern "C" {
 #define IO_KEY1 IO[0x4D]
 #define IO_BOOTROM IO[0x50]
 #define IO_IF IO[0x0F]
-#define IO_IE gb->hram[0x7F]
+#define IO_IE gb->mem.hram[0x7F]
 // undocumented registers (GBC)
 #define IO_72 IO[0x72]
 #define IO_73 IO[0x73]
