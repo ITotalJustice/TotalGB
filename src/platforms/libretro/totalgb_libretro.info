@@ -1,0 +1,20 @@
+# Software Information
+display_name = "Nintendo - Game Boy / Color (TotalGB)"
+authors = "TotalJustice"
+supported_extensions = "gb|gbc|dmg|zip"
+corename = "TotalGB"
+display_version = "v0.0.1"
+categories = "Emulator"
+license = "MIT"
+permissions = ""
+
+# Hardware Information
+manufacturer = "Nintendo"
+systemname = "Game Boy/Game Boy Color"
+systemid = "game_boy"
+
+# Libretro Features
+database = "Nintendo - Game Boy|Nintendo - Game Boy Color"
+supports_no_game = "false"
+
+description = "Simple, fast, very inaccurate GB / GBC emulator!"

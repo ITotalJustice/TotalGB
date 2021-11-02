@@ -45,3 +45,12 @@ examples/n64/n64-emu
 *.dol
 *.elf
 *.raw
+compile_commands.json
+notes.txt
+out/
+.vs
+# src/third-party
+src/util/extras
+src/platforms/gamecube
+.github/workflows/build_macos.yml
+cmake/devkitpro

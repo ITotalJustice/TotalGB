@@ -1,0 +1,83 @@
+﻿{
+  "configurations": [
+    {
+      "name": "x64-Debug-SDL2",
+      "generator": "Ninja",
+      "configurationType": "Debug",
+      "inheritEnvironments": [ "msvc_x64_x64" ],
+      "buildRoot": "${projectDir}\\out\\build\\${name}",
+      "installRoot": "${projectDir}\\out\\install\\${name}",
+      "cmakeCommandArgs": "",
+      "buildCommandArgs": "",
+      "ctestCommandArgs": "",
+      "variables": [
+        {
+          "name": "GB_DEV",
+          "value": "True",
+          "type": "BOOL"
+        },
+        {
+          "name": "GB_DEBUG",
+          "value": "True",
+          "type": "BOOL"
+        },
+        {
+          "name": "PLATFORM_SDL2",
+          "value": "True",
+          "type": "BOOL"
+        }
+      ]
+    },
+    {
+      "name": "x64-Release-SDL2",
+      "generator": "Ninja",
+      "configurationType": "RelWithDebInfo",
+      "buildRoot": "${projectDir}\\out\\build\\${name}",
+      "installRoot": "${projectDir}\\out\\install\\${name}",
+      "cmakeCommandArgs": "",
+      "buildCommandArgs": "",
+      "ctestCommandArgs": "",
+      "inheritEnvironments": [ "msvc_x64_x64" ],
+      "variables": [
+        {
+          "name": "GB_SINGLE_FILE",
+          "value": "False",
+          "type": "BOOL"
+        },
+        {
+          "name": "PLATFORM_SDL2",
+          "value": "True",
+          "type": "BOOL"
+        },
+        {
+          "name": "GB_MARCH_NATIVE",
+          "value": "False",
+          "type": "BOOL"
+        },
+        {
+          "name": "GBC_ENABLE",
+          "value": "True",
+          "type": "BOOL"
+        }
+      ]
+    },
+    {
+      "name": "x64-Release-libretro",
+      "generator": "Ninja",
+      "configurationType": "Release",
+      "buildRoot": "${projectDir}\\out\\build\\${name}",
+      "installRoot": "${projectDir}\\out\\install\\${name}",
+      "cmakeCommandArgs": "",
+      "buildCommandArgs": "",
+      "ctestCommandArgs": "",
+      "inheritEnvironments": [ "msvc_x64_x64" ],
+      "variables": [
+        {
+          "name": "PLATFORM_LIBRETRO",
+          "value": "True",
+          "type": "BOOL"
+        }
+      ]
+    }
+  ]
+}
