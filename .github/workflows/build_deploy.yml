@@ -25,7 +25,7 @@ jobs:
           rm -rf build/src/platforms/sdl2/res
 
       - name: Deploy 🚀
-        uses: JamesIves/github-pages-deploy-action@4.4.2
+        uses: JamesIves/github-pages-deploy-action@v4.2.2
         with:
           branch: gh-pages # The branch the action should deploy to.
           folder: build/src/platforms/sdl2 # The folder the action should deploy.
@@ -38,7 +38,7 @@ jobs:
 
       - name: Setup vcpkg libs
         run: |
-          vcpkg install sdl2:x64-windows sdl2-image:x64-windows zlib:x64-windows nativefiledialog:x64-windows
+          vcpkg install sdl2:x64-windows zlib:x64-windows nativefiledialog:x64-windows
 
       - name: Build emu
         run: |
@@ -65,7 +65,7 @@ jobs:
 
       - name: Setup vcpkg libs
         run: |
-            vcpkg install sdl2 sdl2-image zlib nativefiledialog
+            vcpkg install sdl2 zlib nativefiledialog
 
       - name: Build emu
         run: |
@@ -91,7 +91,7 @@ jobs:
 
       - name: Setup vcpkg libs
         run: |
-          vcpkg install sdl2 sdl2-image zlib nativefiledialog
+          vcpkg install sdl2[x11] zlib nativefiledialog
 
       - name: Build emu
         run: |

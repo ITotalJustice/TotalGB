@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.18.0)
+cmake_minimum_required(VERSION 3.13.4)
 
 if (GB_SINGLE_FILE)
     add_library(TotalGB single.c)
