@@ -76,7 +76,7 @@ void GB_update_all_colours_gb(struct GB_Core* gb)
 
 void write_scanline_to_frame(struct GB_Core* gb, const uint32_t scanline[160])
 {
-    if (gb->bpp <= 8)
+    if (gb->bpp == 1)
     {
         uint8_t* pixels = &((uint8_t*)gb->pixels)[gb->stride * IO_LY];
 
@@ -85,7 +85,7 @@ void write_scanline_to_frame(struct GB_Core* gb, const uint32_t scanline[160])
             pixels[i] = (uint8_t)scanline[i];
         }
     }
-    else if (gb->bpp > 8 && gb->bpp <= 16)
+    else if (gb->bpp == 2)
     {
         uint16_t* pixels = &((uint16_t*)gb->pixels)[gb->stride * IO_LY];
 
@@ -94,7 +94,7 @@ void write_scanline_to_frame(struct GB_Core* gb, const uint32_t scanline[160])
             pixels[i] = (uint16_t)scanline[i];
         }
     }
-    else if (gb->bpp > 16 && gb->bpp <= 32)
+    else if (gb->bpp == 4)
     {
         uint32_t* pixels = &((uint32_t*)gb->pixels)[gb->stride * IO_LY];
 

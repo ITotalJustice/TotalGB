@@ -11,7 +11,7 @@
 
 void GB_apu_iowrite(struct GB_Core* gb, uint16_t addr, uint8_t value)
 {
-    addr &= 0x7F;
+    addr &= 0x3F;
 
     // on // off reg is always writable
     if (addr == 0x26)
@@ -81,8 +81,18 @@ void GB_apu_iowrite(struct GB_Core* gb, uint16_t addr, uint8_t value)
 
 void on_nr10_write(struct GB_Core* gb, uint8_t value)
 {
+    const bool sweep_negate = (value >> 3) & 0x1;
+
+    // if at least 1 sweep negate has happened since last trigger,
+    // and negate is now cleared, then disable ch1.
+    if (IO_NR10.sweep_negate && !sweep_negate && CH1.did_sweep_negate)
+    {
+        GB_log("APU: NR10 sweep negate cleared, disabling channel!\n");
+        ch1_disable(gb);
+    }
+
     IO_NR10.sweep_period = (value >> 4) & 0x7;
-    IO_NR10.sweep_negate = (value >> 3) & 0x1;
+    IO_NR10.sweep_negate = sweep_negate;
     IO_NR10.sweep_shift = value & 0x7;
 }
 
@@ -108,14 +118,11 @@ void on_nr12_write(struct GB_Core* gb, uint8_t value)
     {
         if (IO_NR12.period == 0 && CH1.disable_env == false)
         {
-            if (IO_NR12.env_add_mode)
-            {
-                CH1.volume += 1;
-            }
-            else
-            {
-                CH1.volume += 2;
-            }
+            CH1.volume += 1;
+        }
+        else if (!IO_NR12.env_add_mode)
+        {
+            CH1.volume += 2;
         }
 
         if (IO_NR12.env_add_mode != env_add_mode)
@@ -149,7 +156,7 @@ void on_nr14_write(struct GB_Core* gb, uint8_t value)
         --CH1.length_counter;
 
         GB_log("APU: edge case: extra len clock!\n");
-        // if this makes the result 0, and trigger is clear, disbale channel
+        // if this makes the result 0, and trigger is clear, disable channel
         if (!CH1.length_counter && !(value & 0x80))
         {
             ch1_disable(gb);
@@ -185,14 +192,11 @@ void on_nr22_write(struct GB_Core* gb, uint8_t value)
     {
         if (IO_NR22.period == 0 && CH2.disable_env == false)
         {
-            if (IO_NR22.env_add_mode)
-            {
-                CH2.volume += 1;
-            }
-            else
-            {
-                CH2.volume += 2;
-            }
+            CH2.volume += 1;
+        }
+        else if (!IO_NR22.env_add_mode)
+        {
+            CH2.volume += 2;
         }
 
         if (IO_NR22.env_add_mode != env_add_mode)
@@ -223,10 +227,13 @@ void on_nr24_write(struct GB_Core* gb, uint8_t value)
     // if next is not len and len is NOW enabled, it is clocked
     if (is_next_frame_sequencer_step_not_len(gb) && CH2.length_counter && !IO_NR24.length_enable && (value >> 6) & 0x1)
     {
-        --CH2.length_counter;
+        if (CH2.length_counter)
+        {
+            --CH2.length_counter;
+        }
 
         GB_log("APU - edge case: extra len clock!\n");
-        // if this makes the result 0, and trigger is clear, disbale channel
+        // if this makes the result 0, and trigger is clear, disable channel
         if (!CH2.length_counter && !(value & 0x80))
         {
             ch2_disable(gb);
@@ -273,10 +280,14 @@ void on_nr34_write(struct GB_Core* gb, uint8_t value)
     // if next is not len and len is NOW enabled, it is clocked
     if (is_next_frame_sequencer_step_not_len(gb) && CH3.length_counter && !IO_NR34.length_enable && (value >> 6) & 0x1)
     {
+        if (CH3.length_counter)
+        {
+            --CH3.length_counter;
+        }
         --CH3.length_counter;
 
         GB_log("APU: edge case: extra len clock!\n");
-        // if this makes the result 0, and trigger is clear, disbale channel
+        // if this makes the result 0, and trigger is clear, disable channel
         if (!CH3.length_counter && !(value & 0x80))
         {
             ch3_disable(gb);
@@ -351,7 +362,7 @@ void on_nr44_write(struct GB_Core* gb, uint8_t value)
         --CH4.length_counter;
 
         GB_log("APU: edge case: extra len clock!\n");
-        // if this makes the result 0, and trigger is clear, disbale channel
+        // if this makes the result 0, and trigger is clear, disable channel
         if (!CH4.length_counter && !(value & 0x80))
         {
             ch4_disable(gb);

@@ -497,7 +497,7 @@ static unzFile unzOpenInternal(const void *path, zlib_filefunc64_32_def *pzlib_f
     return (unzFile)s;
 }
 
-extern unzFile ZEXPORT unzOpen2(const char *path, zlib_filefunc_def *pzlib_filefunc32_def)
+extern unzFile ZEXPORT unzOpen2(const char *path, const zlib_filefunc_def *pzlib_filefunc32_def)
 {
     if (pzlib_filefunc32_def != NULL)
     {
@@ -508,7 +508,7 @@ extern unzFile ZEXPORT unzOpen2(const char *path, zlib_filefunc_def *pzlib_filef
     return unzOpenInternal(path, NULL);
 }
 
-extern unzFile ZEXPORT unzOpen2_64(const void *path, zlib_filefunc64_def *pzlib_filefunc_def)
+extern unzFile ZEXPORT unzOpen2_64(const void *path, const zlib_filefunc64_def *pzlib_filefunc_def)
 {
     if (pzlib_filefunc_def != NULL)
     {

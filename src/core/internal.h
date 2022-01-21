@@ -187,7 +187,7 @@ enum GB_StatIntModes
 };
 
 
-GB_STATIC void GB_rtc_tick_frame(struct GB_Core* gb);
+// GB_STATIC void GB_rtc_tick_frame(struct GB_Core* gb);
 
 GB_FORCE_INLINE uint8_t GB_read8(struct GB_Core* gb, const uint16_t addr);
 GB_FORCE_INLINE void GB_write8(struct GB_Core* gb, uint16_t addr, uint8_t value);

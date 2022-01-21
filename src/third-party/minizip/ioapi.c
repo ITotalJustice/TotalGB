@@ -75,7 +75,6 @@ void fill_zlib_filefunc64_32_def_from_filefunc32(zlib_filefunc64_32_def *p_filef
     p_filefunc64_32->zfile_func64.ztell64_file = NULL;
     p_filefunc64_32->zfile_func64.zseek64_file = NULL;
     p_filefunc64_32->zfile_func64.zclose_file = p_filefunc32->zclose_file;
-    p_filefunc64_32->zfile_func64.zerror_file = p_filefunc32->zerror_file;
     p_filefunc64_32->zfile_func64.opaque = p_filefunc32->opaque;
     p_filefunc64_32->zseek32_file = p_filefunc32->zseek_file;
     p_filefunc64_32->ztell32_file = p_filefunc32->ztell_file;
@@ -89,7 +88,7 @@ static long     ZCALLBACK fseek64_file_func(voidpf opaque, voidpf stream, uint64
 static int      ZCALLBACK fclose_file_func(voidpf opaque, voidpf stream);
 static int      ZCALLBACK ferror_file_func(voidpf opaque, voidpf stream);
 
-typedef struct 
+typedef struct
 {
     FILE *file;
     int filenameLength;

@@ -1,8 +1,8 @@
 cmake_minimum_required(VERSION 3.18.0)
 
 
-list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
-list(APPEND CMAKE_FIND_ROOT_PATH ${CMAKE_SOURCE_DIR}/cmake)
+# list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
+# list(APPEND CMAKE_FIND_ROOT_PATH ${CMAKE_SOURCE_DIR}/cmake)
 
 
 project(TotalGB
@@ -60,6 +60,11 @@ if (GB_DEV)
     set(GB_DEBUG ON)
 endif()
 
+if (NINTENDO_SWITCH)
+    enable_language(CXX) # needed for linking
+    set(BUILD_SHARED_LIBS OFF)
+endif()
+
 if (PLATFORM_LIBRETRO)
     if (SWITCH)
         set(BUILD_SHARED_LIBS OFF)
@@ -80,6 +85,12 @@ if (PLATFORM_LIBRETRO)
     else()
         set(BUILD_SHARED_LIBS ON)
     endif()
+endif()
+
+set (ANDROID_TESTING OFF)
+
+if (ANDROID OR ANDROID_TESTING)
+    add_subdirectory(android)
 endif()
 
 add_subdirectory(src)

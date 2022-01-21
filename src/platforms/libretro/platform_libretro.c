@@ -8,10 +8,13 @@
 #include <string.h>
 
 
-#define FPS 60
-#define SAMPLE_RATE 48000
-#define FRAMEBUFFER_W GB_SCREEN_WIDTH
-#define FRAMEBUFFER_H GB_SCREEN_HEIGHT
+enum
+{
+    FPS = 60,
+    SAMPLE_RATE = 48000,
+    FRAMEBUFFER_W = GB_SCREEN_WIDTH,
+    FRAMEBUFFER_H = GB_SCREEN_HEIGHT,
+};
 
 
 static struct GB_Core gb = {0};
@@ -26,12 +29,12 @@ static uint8_t sram_data[GB_SAVE_SIZE_MAX] = {0};
 static size_t sram_size = 0;
 static bool has_sram = false;
 
-static retro_video_refresh_t video_cb;
-static retro_audio_sample_t audio_cb;
-static retro_audio_sample_batch_t audio_batch_cb;
-static retro_environment_t environ_cb;
-static retro_input_poll_t input_poll_cb;
-static retro_input_state_t input_state_cb;
+static retro_video_refresh_t video_cb = NULL;
+static retro_audio_sample_t audio_cb = NULL;
+static retro_audio_sample_batch_t audio_batch_cb = NULL;
+static retro_environment_t environ_cb = NULL;
+static retro_input_poll_t input_poll_cb = NULL;
+static retro_input_state_t input_state_cb = NULL;
 
 
 static uint32_t core_on_colour(void* user, enum GB_ColourCallbackType type, uint8_t r, uint8_t g, uint8_t b)
@@ -324,7 +327,7 @@ void retro_run(void)
     GB_set_buttons(&gb, GB_BUTTON_SELECT, buttons & RA_JOYPAD_SELECT);
 
     // run for a frame
-    GB_run_frame(&gb);
+    GB_run(&gb, GB_FRAME_CPU_CYCLES);
 
     // render
     video_cb(framebuffers[framebuffer_index ^ 1], FRAMEBUFFER_W, FRAMEBUFFER_H, sizeof(uint16_t) * FRAMEBUFFER_W);

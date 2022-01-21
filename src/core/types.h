@@ -53,7 +53,13 @@ enum
 
     GB_BOOTROM_SIZE = 0x100,
 
-    GB_FRAME_CPU_CYCLES = 70224,
+#if 1
+    GB_CPU_CYCLES = 4213440, // 456 * 154 (clocks per line * number of lines * 60 fps)
+    GB_FRAME_CPU_CYCLES = 4213440 / 60, // 70224
+#else
+    GB_CPU_CYCLES = 4194304,
+    GB_FRAME_CPU_CYCLES = GB_CPU_CYCLES / 60,
+#endif
 };
 
 
@@ -357,6 +363,7 @@ struct GB_RomInfo
     uint32_t rom_size;
     uint32_t ram_size;
     uint8_t flags; /* flags ored together */
+    uint8_t _padding[3];
 };
 
 struct GB_Rtc
@@ -390,6 +397,7 @@ struct GB_Cpu
     bool halt;
     bool halt_bug;
     bool double_speed;
+    bool _padding;
 };
 
 struct GB_PalCache
@@ -498,6 +506,7 @@ struct GB_Timer
     int16_t next_cycles;
 };
 
+#if 0
 struct GB_ApuCh1
 {
     uint8_t sweep_period;
@@ -513,6 +522,7 @@ struct GB_ApuCh1
 
     uint16_t freq_shadow_register;
     uint8_t internal_enable_flag;
+    bool did_sweep_negate;
 
     int16_t timer;
     int8_t volume_timer;
@@ -582,6 +592,87 @@ struct GB_ApuCh4
     uint8_t length_counter;
 };
 
+#else
+
+struct GB_ApuCh1
+{
+    int16_t timer;
+    uint16_t freq_shadow_register;
+
+    uint8_t sweep_period;
+    uint8_t sweep_shift;
+    uint8_t duty;
+    uint8_t starting_vol;
+    uint8_t period;
+    uint8_t freq_lsb;
+    uint8_t freq_msb;
+    uint8_t internal_enable_flag;
+    uint8_t duty_index;
+    uint8_t volume;
+    uint8_t length_counter;
+    int8_t volume_timer;
+    int8_t sweep_timer;
+
+    bool sweep_negate;
+    bool env_add_mode;
+    bool length_enable;
+    bool did_sweep_negate;
+    bool disable_env;
+};
+
+struct GB_ApuCh2
+{
+    int16_t timer;
+
+    uint8_t duty;
+    uint8_t starting_vol;
+    uint8_t period;
+    uint8_t freq_lsb;
+    uint8_t freq_msb;
+    uint8_t duty_index;
+    uint8_t volume;
+    uint8_t length_counter;
+    int8_t volume_timer;
+
+    bool env_add_mode;
+    bool length_enable;
+    bool disable_env;
+};
+
+struct GB_ApuCh3
+{
+    uint16_t length_counter;
+    int16_t timer;
+    uint8_t vol_code;
+    uint8_t freq_lsb;
+    uint8_t freq_msb;
+    uint8_t sample_buffer;
+    uint8_t position_counter;
+
+    bool dac_power;
+    bool length_enable;
+};
+
+struct GB_ApuCh4
+{
+    int32_t timer;
+    uint16_t lfsr;
+
+    uint8_t starting_vol;
+    uint8_t period;
+    uint8_t clock_shift;
+    uint8_t divisor_code;
+    uint8_t volume;
+    uint8_t length_counter;
+    int8_t volume_timer;
+
+    bool env_add_mode;
+    bool width_mode;
+    bool length_enable;
+    bool disable_env;
+};
+#endif
+
 struct GB_ApuCallbackData
 {
     int8_t ch1[2];
@@ -626,6 +717,8 @@ struct GB_mem
 struct GB_Core
 {
     struct GB_MemMapEntry mmap[0x10];
+
+    int64_t cycles_left_to_run;
 
     struct GB_mem mem;
     struct GB_Cpu cpu;

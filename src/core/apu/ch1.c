@@ -37,7 +37,7 @@ void clock_ch1_len(struct GB_Core* gb)
 {
     if (IO_NR14.length_enable && CH1.length_counter > 0)
     {
-        --CH1.length_counter;
+        CH1.length_counter--;
         // disable channel if we hit zero...
         if (CH1.length_counter == 0)
         {
@@ -50,7 +50,7 @@ void clock_ch1_vol(struct GB_Core* gb)
 {
     if (CH1.disable_env == false)
     {
-        --CH1.volume_timer;
+        CH1.volume_timer--;
 
         if (CH1.volume_timer <= 0)
         {
@@ -61,11 +61,11 @@ void clock_ch1_vol(struct GB_Core* gb)
                 uint8_t new_vol = CH1.volume;
                 if (IO_NR12.env_add_mode == ADD)
                 {
-                    ++new_vol;
+                    new_vol++;
                 }
                 else
                 {
-                    --new_vol;
+                    new_vol--;
                 }
 
                 if (new_vol <= 15)
@@ -85,12 +85,13 @@ void clock_ch1_vol(struct GB_Core* gb)
     }
 }
 
-static uint16_t get_new_sweep_freq(const struct GB_Core* gb)
+static uint16_t get_new_sweep_freq(struct GB_Core* gb)
 {
     const uint16_t new_freq = CH1.freq_shadow_register >> IO_NR10.sweep_shift;
 
     if (IO_NR10.sweep_negate)
     {
+        CH1.did_sweep_negate = true;
         return CH1.freq_shadow_register - new_freq;
     }
     else
@@ -104,23 +105,24 @@ void do_freq_sweep_calc(struct GB_Core* gb)
     if (CH1.internal_enable_flag && IO_NR10.sweep_period)
     {
         const uint16_t new_freq = get_new_sweep_freq(gb);
+        bool overflowed = false;
 
-        if (new_freq <= 2047)
+        if (new_freq <= 2047 && IO_NR10.sweep_shift)
         {
             CH1.freq_shadow_register = new_freq;
             IO_NR13.freq_lsb = new_freq & 0xFF;
             IO_NR14.freq_msb = new_freq >> 8;
 
             // for some reason, a second overflow check is performed...
-            if (get_new_sweep_freq(gb) > 2047)
-            {
-                // overflow...
-                ch1_disable(gb);
-            }
-
+            overflowed = get_new_sweep_freq(gb) > 2047;
         }
         else
-        { // overflow...
+        {
+            overflowed = true;
+        }
+
+        if (overflowed)
+        {
             ch1_disable(gb);
         }
     }
@@ -128,14 +130,8 @@ void do_freq_sweep_calc(struct GB_Core* gb)
 
 void on_ch1_sweep(struct GB_Core* gb)
 {
-    // first check if sweep is enabled
-    if (!CH1.internal_enable_flag || !is_ch1_enabled(gb))
-    {
-        return;
-    }
-
     // decrement the counter, reload after
-    --CH1.sweep_timer;
+    CH1.sweep_timer--;
 
     if (CH1.sweep_timer <= 0)
     {
@@ -162,6 +158,7 @@ void on_ch1_trigger(struct GB_Core* gb)
     }
 
     CH1.disable_env = false;
+    CH1.did_sweep_negate = false;
 
     CH1.volume_timer = PERIOD_TABLE[IO_NR12.period];
     // if the next frame sequence clocks the vol, then
@@ -182,12 +179,16 @@ void on_ch1_trigger(struct GB_Core* gb)
     CH1.sweep_timer = PERIOD_TABLE[IO_NR10.sweep_period];
     // the freq is loaded into the shadow_freq_reg
     CH1.freq_shadow_register = (IO_NR14.freq_msb << 8) | IO_NR13.freq_lsb;
+
     // internal flag is set is period or shift is non zero
     CH1.internal_enable_flag = (IO_NR10.sweep_period != 0) || (IO_NR10.sweep_shift != 0);
     // if shift is non zero, then calc is performed...
     if (IO_NR10.sweep_shift != 0)
     {
-        do_freq_sweep_calc(gb);
+        if (get_new_sweep_freq(gb) > 2047)
+        {
+            ch1_disable(gb);
+        }
     }
 
     if (is_ch1_dac_enabled(gb) == false)

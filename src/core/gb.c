@@ -6,7 +6,9 @@
 #include "internal.h"
 #include "apu/apu.h"
 #include "tables/palette_table.h"
+#include "types.h"
 
+#include <stdint.h>
 #include <string.h>
 #include <assert.h>
 
@@ -708,6 +710,8 @@ bool GB_loadstate(struct GB_Core* gb, const struct GB_State* state)
 
     // we need to reload mmaps
     GB_setup_mmap(gb);
+    // reload colours!
+    GB_update_all_colours_gb(gb);
 
     return true;
 }
@@ -726,8 +730,9 @@ void GB_set_apu_freq(struct GB_Core* gb, unsigned freq)
 {
     if (freq)
     {
-        // gb->callback.apu_data.freq_reload = 4194304 / freq;
-        gb->callback.apu_data.freq_reload = 4213440 / freq;
+        const float r = (float)GB_CPU_CYCLES / (float)freq;
+        // this basically rounds up the decimal, so 43.5 will be 44
+        gb->callback.apu_data.freq_reload = (uint16_t)(r + 0.5f);
     }
     else
     {
@@ -834,13 +839,15 @@ void GB_set_wram_bank(struct GB_Core* gb, uint8_t bank)
     GB_update_wram_banks(gb);
 }
 
-void GB_run_frame(struct GB_Core* gb)
+void GB_run(struct GB_Core* gb, uint32_t tcycles)
 {
     assert(gb);
 
-    uint32_t cycles_elapsed = 0;
+    // this is used so that the frontend can easily
+    // modify the cycles via callback
+    gb->cycles_left_to_run += tcycles;
 
-    while (cycles_elapsed < GB_FRAME_CPU_CYCLES)
+    while (gb->cycles_left_to_run > 0)
     {
         const uint16_t cycles = GB_cpu_run(gb, 0 /*unused*/);
 
@@ -850,33 +857,6 @@ void GB_run_frame(struct GB_Core* gb)
 
         assert(gb->cpu.double_speed == 1 || gb->cpu.double_speed == 0);
 
-        cycles_elapsed += cycles >> gb->cpu.double_speed;
-    }
-
-
-    // check if we should update rtc using a switch so that
-    // compiler warns if i add new enum entries...
-    if (GB_has_rtc(gb) == true)
-    {
-        ++gb->cart.internal_rtc_counter;
-
-        if (gb->cart.internal_rtc_counter > 59)
-        {
-            gb->cart.internal_rtc_counter = 0;
-
-            switch (gb->config.rtc_update_config)
-            {
-                case GB_RTC_UPDATE_CONFIG_FRAME:
-                    GB_rtc_tick_frame(gb);
-                    break;
-
-                case GB_RTC_UPDATE_CONFIG_USE_LOCAL_TIME:
-                    // GB_set_rtc_from_time_t(gb);
-                    break;
-
-                case GB_RTC_UPDATE_CONFIG_NONE:
-                    break;
-            }
-        }
+        gb->cycles_left_to_run -= cycles >> gb->cpu.double_speed;
     }
 }

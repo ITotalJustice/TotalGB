@@ -22,63 +22,63 @@
 // at 60, it will finally tick the actual RTC.
 // if the RTC is disabled, then the RTC is not ticked...
 
-void GB_rtc_tick_frame(struct GB_Core* gb)
-{
-    // check if we even have rtc?
-    if ((gb->cart.flags & MBC_FLAGS_RTC) == 0)
-    {
-        return;
-    }
+// void GB_rtc_tick_frame(struct GB_Core* gb)
+// {
+//     // check if we even have rtc?
+//     if ((gb->cart.flags & MBC_FLAGS_RTC) == 0)
+//     {
+//         return;
+//     }
 
-    enum RtcFlags
-    {
-        RtcFlags_OVERFLOW = 0x01,
-        RtcFlags_HALT = 0x40
-    };
+//     enum RtcFlags
+//     {
+//         RtcFlags_OVERFLOW = 0x01,
+//         RtcFlags_HALT = 0x40
+//     };
 
-    if ((gb->cart.rtc.DH & RtcFlags_HALT) == RtcFlags_HALT)
-    {
-        return;
-    }
+//     if ((gb->cart.rtc.DH & RtcFlags_HALT) == RtcFlags_HALT)
+//     {
+//         return;
+//     }
 
-    // this is a bit sphagetii, but basically tick the lowest entry
-    // if overflow, reset and tick the next one, then repeat...
-    ++gb->cart.rtc.S;
-    if (gb->cart.rtc.S > 59)
-    {
-        gb->cart.rtc.S = 0;
+//     // this is a bit sphagetii, but basically tick the lowest entry
+//     // if overflow, reset and tick the next one, then repeat...
+//     ++gb->cart.rtc.S;
+//     if (gb->cart.rtc.S > 59)
+//     {
+//         gb->cart.rtc.S = 0;
 
-        ++gb->cart.rtc.M;
-        if (gb->cart.rtc.M > 59)
-        {
-            gb->cart.rtc.M = 0;
+//         ++gb->cart.rtc.M;
+//         if (gb->cart.rtc.M > 59)
+//         {
+//             gb->cart.rtc.M = 0;
 
-            ++gb->cart.rtc.H;
-            if (gb->cart.rtc.H > 23)
-            {
-                gb->cart.rtc.H = 0;
+//             ++gb->cart.rtc.H;
+//             if (gb->cart.rtc.H > 23)
+//             {
+//                 gb->cart.rtc.H = 0;
 
-                ++gb->cart.rtc.DL;
-                if (gb->cart.rtc.DL == 0)
-                { // wrap around to 0
-                    gb->cart.rtc.DL = 0;
+//                 ++gb->cart.rtc.DL;
+//                 if (gb->cart.rtc.DL == 0)
+//                 { // wrap around to 0
+//                     gb->cart.rtc.DL = 0;
 
-                    // if already set, we have overflowed the days counter!
-                    // 0-511 days!
-                    if ((gb->cart.rtc.DH & RtcFlags_OVERFLOW) == RtcFlags_OVERFLOW)
-                    {
-                        // set the overflow bit but keep bit-6!
-                        gb->cart.rtc.DH = (gb->cart.rtc.DH & 0x40) | 0x80;
-                    }
-                    else
-                    {
-                        ++gb->cart.rtc.DH;
-                    }
-                }
-            }
-        }
-    }
-}
+//                     // if already set, we have overflowed the days counter!
+//                     // 0-511 days!
+//                     if ((gb->cart.rtc.DH & RtcFlags_OVERFLOW) == RtcFlags_OVERFLOW)
+//                     {
+//                         // set the overflow bit but keep bit-6!
+//                         gb->cart.rtc.DH = (gb->cart.rtc.DH & 0x40) | 0x80;
+//                     }
+//                     else
+//                     {
+//                         ++gb->cart.rtc.DH;
+//                     }
+//                 }
+//             }
+//         }
+//     }
+// }
 
 static inline void mbc3_rtc_write(struct GB_Core* gb, uint8_t value)
 {

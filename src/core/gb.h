@@ -1,6 +1,7 @@
 #ifndef GB_H
 #define GB_H
 
+#include <stdint.h>
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -48,8 +49,8 @@ GBAPI void GB_set_rtc_update_config(struct GB_Core* gb, const enum GB_RtcUpdateC
 
 GBAPI bool GB_has_mbc_flags(const struct GB_Core* gb, const uint8_t flags);
 
-/* run until the end of a frame */
-GBAPI void GB_run_frame(struct GB_Core* gb);
+/* run for number of cycles */
+GBAPI void GB_run(struct GB_Core* gb, uint32_t tcycles);
 
 GBAPI enum GB_SystemType GB_get_system_type(const struct GB_Core* gb);
 

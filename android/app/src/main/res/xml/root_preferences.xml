@@ -1,0 +1,120 @@
+<PreferenceScreen xmlns:app="http://schemas.android.com/apk/res-auto">
+
+    <PreferenceCategory
+        app:title="Video"
+        app:icon="@mipmap/ic_launcher"
+        app:summary="Video settings">
+        <SwitchPreferenceCompat
+            app:title="Vsync"
+            app:key="vsync"
+            app:summaryOff="Vsync disabled, gameplay may stutter"
+            app:summaryOn="Vsync enabled, may cause audio to drift"
+            app:defaultValue="true"/>
+
+        <SwitchPreferenceCompat
+            app:title="Show FPS"
+            app:key="show_fps"
+            app:defaultValue="false"/>
+
+        <SwitchPreferenceCompat
+            app:title="Stretch to fill screen"
+            app:key="fill_screen"
+            app:summary="Stretch the image so that it fills the screen"
+            app:defaultValue="false"/>
+
+<!--        <CheckBoxPreference-->
+<!--            app:title="Vsync"-->
+<!--            app:key="vsync"-->
+<!--            app:summaryOff="Vsync disabled, gameplay may stutter"-->
+<!--            app:summaryOn="Vsync enabled, may cause audio to drift"-->
+<!--            app:defaultValue="true"/>-->
+
+<!--        <CheckBoxPreference-->
+<!--            app:title="Show FPS"-->
+<!--            app:key="show_fps"-->
+<!--            app:defaultValue="false"/>-->
+
+<!--        <CheckBoxPreference-->
+<!--            app:title="Stretch to fill screen"-->
+<!--            app:key="fill_screen"-->
+<!--            app:summary="Stretch the image so that it fills the screen"-->
+<!--            app:defaultValue="false"/>-->
+    </PreferenceCategory>
+
+    <PreferenceCategory
+        app:title="Audio"
+        app:icon="@mipmap/ic_launcher"
+        app:summary="Audio settings">
+        <SeekBarPreference
+            app:title="Volume"
+            app:defaultValue="100"
+            app:showSeekBarValue="true"
+            app:key="volume"/>
+
+        <ListPreference
+            app:title="Audio Frequency"
+            app:defaultValue="192000"
+            app:entries="@array/audio_freq_entries"
+            app:entryValues="@array/audio_freq_values"
+            app:key="audio_frequency"
+            app:dialogTitle="Select audio frequency"
+            app:summary="The higher the frequency, the better the sound but at the cost of higher cpu usage.\nIf the game is running too slow, try lowering the frequency."
+            app:useSimpleSummaryProvider="false" />
+
+        <ListPreference
+            app:title="Core sample rate"
+            app:summary="This is the rate the gameboy will be sampled, which is a multiple of the audio frequency."
+            app:dialogTitle="Select multiplier"
+            app:key="core_sample_rate"
+            app:entries="@array/core_sample_rate_entries"
+            app:entryValues="@array/core_sample_rate_values"
+            app:defaultValue="2"/>
+
+    </PreferenceCategory>
+
+    <PreferenceCategory
+        app:title="Input"
+        app:icon="@mipmap/ic_launcher"
+        app:summary="Input settings">
+        <SeekBarPreference
+            app:title="Buttons Opacity"
+            app:key="buttons_opacity"
+            app:seekBarIncrement="@integer/material_motion_duration_short_1"
+            app:showSeekBarValue="true"
+            app:min="25"
+            app:defaultValue="50"
+            app:allowDividerBelow="true" />
+
+        <SwitchPreferenceCompat
+            app:title="Vibrate on touch"
+            app:key="vibrate_on_touch"
+            app:defaultValue="false" />
+
+        <SeekBarPreference
+            app:title="Intensity"
+            app:dependency="vibrate_on_touch"
+            app:seekBarIncrement="@integer/material_motion_duration_short_1"
+            app:showSeekBarValue="true" />
+    </PreferenceCategory>
+
+    <PreferenceCategory
+        app:title="Advanced"
+        app:icon="@mipmap/ic_launcher"
+        app:summary="Advanced settings, use with caution!">
+        <SwitchPreferenceCompat
+            app:title="Savestate on exit"
+            app:summary="On exit, a savestate is created"
+            app:key="savestate_on_exit"
+            app:summaryOff="Will not create a savestate on exit"
+            app:summaryOn="Will create a savestate on exit"
+            app:defaultValue="false"/>
+
+        <SwitchPreferenceCompat
+            app:title="Load savestate on start"
+            app:key="loadstate_on_start"
+            app:summaryOff="Will not load savestate on start"
+            app:summaryOn="Will load savestate on start"
+            app:defaultValue="false"/>
+    </PreferenceCategory>
+
+</PreferenceScreen>

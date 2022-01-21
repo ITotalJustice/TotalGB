@@ -68,7 +68,6 @@ static FORCE_INLINE bool ch4_right_output(const struct GB_Core* gb)
 
 static FORCE_INLINE void clock_len(struct GB_Core* gb)
 {
-    // docs say that this is always clocked, even if channel is disabled
     clock_ch1_len(gb);
     clock_ch2_len(gb);
     clock_ch3_len(gb);
@@ -77,14 +76,14 @@ static FORCE_INLINE void clock_len(struct GB_Core* gb)
 
 static FORCE_INLINE void clock_sweep(struct GB_Core* gb)
 {
-    if (is_ch1_enabled(gb)) { on_ch1_sweep(gb); }
+    on_ch1_sweep(gb);
 }
 
 static FORCE_INLINE void clock_vol(struct GB_Core* gb)
 {
-    if (is_ch1_enabled(gb)) { clock_ch1_vol(gb); }
-    if (is_ch2_enabled(gb)) { clock_ch2_vol(gb); }
-    if (is_ch4_enabled(gb)) { clock_ch4_vol(gb); }
+    clock_ch1_vol(gb);
+    clock_ch2_vol(gb);
+    clock_ch4_vol(gb);
 }
 
 bool gb_is_apu_enabled(const struct GB_Core* gb)
@@ -163,28 +162,12 @@ void step_frame_sequencer(struct GB_Core* gb)
     switch (gb->apu.frame_sequencer_counter)
     {
         case 0: // len
+        case 4:
             clock_len(gb);
-            break;
-
-        case 1:
             break;
 
         case 2: // len, sweep
-            clock_len(gb);
-            clock_sweep(gb);
-            break;
-
-        case 3:
-            break;
-
-        case 4: // len
-            clock_len(gb);
-            break;
-
-        case 5:
-            break;
-
-        case 6: // len, sweep
+        case 6:
             clock_len(gb);
             clock_sweep(gb);
             break;
@@ -214,20 +197,31 @@ struct MixerData
     int8_t left_amp, right_amp;
 };
 
-static FORCE_INLINE struct GB_ApuCallbackData mixer(const struct MixerData* data)
+static FORCE_INLINE struct GB_ApuCallbackData mixer(const struct GB_Core* gb, const struct MixerData* data)
 {
     enum { LEFT, RIGHT };
+    enum { MAX_SAMPLE_RATE = 8 };  // minimum for FFA
+
+    const uint16_t ch1_freq = get_ch1_freq(gb);
+    const uint16_t ch2_freq = get_ch2_freq(gb);
+    const uint16_t ch3_freq = get_ch3_freq(gb);
+    const uint32_t ch4_freq = get_ch4_freq(gb);
+
+    const bool ch1_audible = ch1_freq >= MAX_SAMPLE_RATE;
+    const bool ch2_audible = ch2_freq >= MAX_SAMPLE_RATE;
+    const bool ch3_audible = ch3_freq >= MAX_SAMPLE_RATE;
+    const bool ch4_audible = ch4_freq >= MAX_SAMPLE_RATE;
 
     return (struct GB_ApuCallbackData)
     {
-        .ch1[LEFT] = data->ch1.sample * data->ch1.left,
-        .ch1[RIGHT] = data->ch1.sample * data->ch1.right,
-        .ch2[LEFT] = data->ch2.sample * data->ch2.left,
-        .ch2[RIGHT] = data->ch2.sample * data->ch2.right,
-        .ch3[LEFT] = data->ch3.sample * data->ch3.left,
-        .ch3[RIGHT] = data->ch3.sample * data->ch3.right,
-        .ch4[LEFT] = data->ch4.sample * data->ch4.left,
-        .ch4[RIGHT] = data->ch4.sample * data->ch4.right,
+        .ch1[LEFT] = data->ch1.sample * data->ch1.left * ch1_audible,
+        .ch1[RIGHT] = data->ch1.sample * data->ch1.right * ch1_audible,
+        .ch2[LEFT] = data->ch2.sample * data->ch2.left * ch2_audible,
+        .ch2[RIGHT] = data->ch2.sample * data->ch2.right * ch2_audible,
+        .ch3[LEFT] = data->ch3.sample * data->ch3.left * ch3_audible,
+        .ch3[RIGHT] = data->ch3.sample * data->ch3.right * ch3_audible,
+        .ch4[LEFT] = data->ch4.sample * data->ch4.left * ch4_audible,
+        .ch4[RIGHT] = data->ch4.sample * data->ch4.right * ch4_audible,
         .left_amp = data->left_amp,
         .right_amp = data->right_amp,
     };
@@ -271,7 +265,7 @@ static FORCE_INLINE void sample_channels(struct GB_Core* gb)
             .right_amp = volume_right(gb) + 1,
         };
 
-        samples = mixer(&mixer_data);
+        samples = mixer(gb, &mixer_data);
     }
 
     if (LIKELY(gb->callback.apu != NULL))
@@ -286,35 +280,45 @@ void GB_apu_run(struct GB_Core* gb, uint16_t cycles)
     {
         // still tick samples but fill empty
         // nothing else should tick i dont think?
-        // not sure if when apu is disabled, do all regs reset?
-        // what happens when apu is re-enabled? do they all trigger?
 
-        if (LIKELY(CH1.timer > 0 || get_ch1_freq(gb)))
+        // bit of a hack for FFA as the game uses very high frequency
+        // to silence a channel (as it would be in audable)
+        // this causes terrible aliasing, so we check that the ch freq
+        // is at least same or lower than twice our sampling rate.
+        const uint16_t ch1_freq = get_ch1_freq(gb);
+        const uint16_t ch2_freq = get_ch2_freq(gb);
+        const uint16_t ch3_freq = get_ch3_freq(gb);
+        const uint32_t ch4_freq = get_ch4_freq(gb);
+        // while this is fine for ch1,2,3, it's awful for ch4 which often
+        // have extremely high freq, and our sampling rate is usually 48k.
+        // this is most noticable in the zelda intro when the title displays.
+
+        if (LIKELY((CH1.timer > 0 || ch1_freq)))
         {
             CH1.timer -= cycles;
-            if (UNLIKELY(CH1.timer <= 0))
+            while (CH1.timer <= 0)
             {
-                CH1.timer += get_ch1_freq(gb);
+                CH1.timer += ch1_freq;
                 CH1.duty_index = (CH1.duty_index + 1) % 8;
             }
         }
 
-        if (LIKELY(CH2.timer > 0 || get_ch2_freq(gb)))
+        if (LIKELY((CH2.timer > 0 || ch2_freq)))
         {
             CH2.timer -= cycles;
-            if (UNLIKELY(CH2.timer <= 0))
+            while (CH2.timer <= 0)
             {
-                CH2.timer += get_ch2_freq(gb);
+                CH2.timer += ch2_freq;
                 CH2.duty_index = (CH2.duty_index + 1) % 8;
             }
         }
 
-        if (LIKELY(CH3.timer > 0 || get_ch3_freq(gb)))
+        if (LIKELY((CH3.timer > 0 || ch3_freq)))
         {
             CH3.timer -= cycles;
-            if (UNLIKELY(CH3.timer <= 0))
+            while (CH3.timer <= 0)
             {
-                CH3.timer += get_ch3_freq(gb);
+                CH3.timer += ch3_freq;
                 advance_ch3_position_counter(gb);
             }
         }
@@ -322,12 +326,12 @@ void GB_apu_run(struct GB_Core* gb, uint16_t cycles)
         // NOTE: ch4 lfsr is ONLY clocked if clock shift is not 14 or 15
         if (IO_NR43.clock_shift != 14 && IO_NR43.clock_shift != 15)
         {
-            if (LIKELY(CH4.timer > 0 || get_ch4_freq(gb)))
+            if (LIKELY((CH4.timer > 0 || ch4_freq)))
             {
                 CH4.timer -= cycles;
-                if (UNLIKELY(CH4.timer <= 0))
+                while (CH4.timer <= 0)
                 {
-                    CH4.timer += get_ch4_freq(gb);
+                    CH4.timer += ch4_freq;
                     step_ch4_lfsr(gb);
                 }
             }
@@ -340,7 +344,7 @@ void GB_apu_run(struct GB_Core* gb, uint16_t cycles)
     {
         gb->apu.next_sample_cycles += cycles;
 
-        if (gb->apu.next_sample_cycles >= gb->callback.apu_data.freq_reload)
+        while (gb->apu.next_sample_cycles >= gb->callback.apu_data.freq_reload)
         {
             gb->apu.next_sample_cycles -= (uint16_t)gb->callback.apu_data.freq_reload;
             sample_channels(gb);

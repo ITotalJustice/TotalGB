@@ -5,11 +5,11 @@ jobs:
   build-web:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout 🛎️
+      - name: Checkout
         uses: actions/checkout@master
 
       - name: Setup emsdk
-        uses: mymindstorm/setup-emsdk@v10
+        uses: mymindstorm/setup-emsdk@v11
         with:
           actions-cache-folder: 'emsdk-cache'
 
@@ -25,7 +25,7 @@ jobs:
           rm -rf build/src/platforms/sdl2/res
 
       - name: Deploy 🚀
-        uses: JamesIves/github-pages-deploy-action@4.1.4
+        uses: JamesIves/github-pages-deploy-action@4.4.2
         with:
           branch: gh-pages # The branch the action should deploy to.
           folder: build/src/platforms/sdl2 # The folder the action should deploy.
@@ -178,3 +178,21 @@ jobs:
         with:
           name: totalgb-libretro-linux
           path: upload
+
+  build-nx:
+    runs-on: ubuntu-latest
+    container: devkitpro/devkita64:latest
+
+    steps:
+    - name: Checkout
+      uses: actions/checkout@master
+
+    - name: Build
+      run: |
+          cmake -B build -DPLATFORM_SDL2=ON -DGB_SINGLE_FILE=ON -DCMAKE_TOOLCHAIN_FILE=$DEVKITPRO/cmake/Switch.cmake
+          cmake --build build -j2
+
+    - uses: actions/upload-artifact@master
+      with:
+        name: TotalGB_SDL2-nx
+        path: build/src/platforms/sdl2/TotalGB_SDL2.nro

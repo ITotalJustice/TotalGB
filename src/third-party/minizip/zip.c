@@ -496,7 +496,7 @@ static int zipGoToNextDisk(zipFile file)
 
         number_disk_next += 1;
     }
-    while (size_available_in_disk <= 0);
+    while (size_available_in_disk == 0);
 
     return err;
 }
@@ -850,7 +850,7 @@ extern zipFile ZEXPORT zipOpen4(const void *path, int append, uint64_t disk_size
 }
 
 extern zipFile ZEXPORT zipOpen2(const char *path, int append, const char **globalcomment,
-    zlib_filefunc_def *pzlib_filefunc32_def)
+    const zlib_filefunc_def *pzlib_filefunc32_def)
 {
     if (pzlib_filefunc32_def != NULL)
     {
@@ -862,7 +862,7 @@ extern zipFile ZEXPORT zipOpen2(const char *path, int append, const char **globa
 }
 
 extern zipFile ZEXPORT zipOpen2_64(const void *path, int append, const char **globalcomment,
-    zlib_filefunc64_def *pzlib_filefunc_def)
+    const zlib_filefunc64_def *pzlib_filefunc_def)
 {
     if (pzlib_filefunc_def != NULL)
     {
@@ -876,7 +876,7 @@ extern zipFile ZEXPORT zipOpen2_64(const void *path, int append, const char **gl
 }
 
 extern zipFile ZEXPORT zipOpen3(const char *path, int append, uint64_t disk_size, const char **globalcomment,
-    zlib_filefunc_def *pzlib_filefunc32_def)
+    const zlib_filefunc_def *pzlib_filefunc32_def)
 {
     if (pzlib_filefunc32_def != NULL)
     {
@@ -888,7 +888,7 @@ extern zipFile ZEXPORT zipOpen3(const char *path, int append, uint64_t disk_size
 }
 
 extern zipFile ZEXPORT zipOpen3_64(const void *path, int append, uint64_t disk_size, const char **globalcomment,
-    zlib_filefunc64_def *pzlib_filefunc_def)
+    const zlib_filefunc64_def *pzlib_filefunc_def)
 {
     if (pzlib_filefunc_def != NULL)
     {
