@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.13.4)
+cmake_minimum_required(VERSION 3.18.0)
 
 # (C)flags for each compiler
 # Werror is disabled atm because it's very annoying early into a project

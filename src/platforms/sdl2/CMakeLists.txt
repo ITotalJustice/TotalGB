@@ -36,6 +36,7 @@ if (${CMAKE_SYSTEM_NAME} STREQUAL "Emscripten")
     )
 
     configure_file("${CMAKE_SOURCE_DIR}/res/icons/favicon.ico" "${CMAKE_CURRENT_BINARY_DIR}/favicon.ico" COPYONLY)
+    configure_file("${CMAKE_SOURCE_DIR}/res/netlify.toml" "${CMAKE_CURRENT_BINARY_DIR}/netlify.toml" COPYONLY)
 else()
     set(myname "TotalGB_SDL2")
     if (ANDROID)
