@@ -50,7 +50,7 @@ android {
         debug {
             // if file is found or building for CI, use same debug key
             def keystorePropertiesFile = rootProject.file('key_debug.properties')
-            if (keystorePropertiesFile.exists() || System.getenv('ANDROID_DEBUG_CI_BUILD')) {
+            if (keystorePropertiesFile.exists() || System.getenv('ANDROID_DEBUG_KEYSTORE_PATH')) {
                 def keystoreProperties = new Properties()
                 if (keystorePropertiesFile.exists()) {
                     // when building locally, use signing properties from key_debug.properties

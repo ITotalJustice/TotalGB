@@ -238,6 +238,16 @@ jobs:
           ./gradlew build
           mv ./app/build/outputs/apk/debug/*.apk ../TotalGB_SDL2-Debug.apk
           mv ./app/build/outputs/apk/release/*.apk ../TotalGB_SDL2-release.apk
+        env:
+          ANDROID_RELEASE_KEY_STORE_PASSWORD: ${{ secrets.ANDROID_RELEASE_KEY_STORE_PASSWORD }}
+          ANDROID_RELEASE_KEY_PASSWORD: ${{ secrets.ANDROID_RELEASE_KEY_PASSWORD }}
+          ANDROID_RELEASE_KEY_ALIAS: ${{ secrets.ANDROID_RELEASE_KEY_ALIAS }}
+          ANDROID_RELEASE_KEYSTORE_PATH: ${{ secrets.ANDROID_RELEASE_KEYSTORE_PATH }}
+          ANDROID_DEBUG_KEY_STORE_PASSWORD: ${{ secrets.ANDROID_DEBUG_KEY_STORE_PASSWORD }}
+          ANDROID_DEBUG_KEY_PASSWORD: ${{ secrets.ANDROID_DEBUG_KEY_PASSWORD }}
+          ANDROID_DEBUG_KEY_ALIAS: ${{ secrets.ANDROID_DEBUG_KEY_ALIAS }}
+          ANDROID_DEBUG_KEYSTORE_PATH: ${{ secrets.ANDROID_DEBUG_KEYSTORE_PATH }}
+          ANDROID_DEBUG_CI_BUILD: ${{ secrets.ANDROID_DEBUG_CI_BUILD }}
 
       - name: Upload debug
         uses: actions/upload-artifact@master
