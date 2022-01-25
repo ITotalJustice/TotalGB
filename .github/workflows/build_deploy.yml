@@ -87,7 +87,7 @@ jobs:
           mkdir upload
           move build\src\platforms\sdl2\Release\*.exe upload
           move build\src\platforms\sdl2\Release\*.dll upload
-          move build\src\platforms\sdl2\Release\res upload\res
+          move build\src\platforms\sdl2\res upload\res
 
       - name: Upload files
         uses: actions/upload-artifact@master
@@ -236,6 +236,7 @@ jobs:
           cmake -B build -DPLATFORM_SDL2=ON -DGB_SINGLE_FILE=ON -DCMAKE_TOOLCHAIN_FILE=$DEVKITPRO/cmake/Switch.cmake
           cmake --build build -j2
 
+    - name: Upload files
     - uses: actions/upload-artifact@master
       with:
         name: TotalGB_SDL2-nx
@@ -247,12 +248,16 @@ jobs:
     - name: Checkout
       uses: actions/checkout@master
 
+    - name: Install ninja
+      run: sudo apt-get install -y ninja
+
     - name: Build the app
       run: |
         cd ./android
         ./gradlew build
         mv ./app/build/outputs/apk/debug/*.apk ./TotalGB_SDL2.apk
 
+    - name: Upload files
     - uses: actions/upload-artifact@master
       with:
         name: TotalGB_SDL2-android
