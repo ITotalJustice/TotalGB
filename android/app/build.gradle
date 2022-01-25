@@ -1,17 +1,9 @@
-def buildAsLibrary = project.hasProperty('BUILD_AS_LIBRARY')
-def buildAsApplication = !buildAsLibrary
-if (buildAsApplication) {
-    apply plugin: 'com.android.application'
-
-}
-else {
-    apply plugin: 'com.android.library'
-}
+apply plugin: 'com.android.application'
 
 android {
     sourceSets {
         main {
-            assets.srcDirs += ['../../res']
+            assets.srcDirs += ['../../res/sprites']
         }
     }
 
@@ -20,9 +12,7 @@ android {
     ndkVersion "23.1.7779620"
 
     defaultConfig {
-        if (buildAsApplication) {
-            applicationId "org.libsdl.totalgb"
-        }
+        applicationId "org.libsdl.totalgb"
         minSdkVersion 19
         targetSdkVersion 31
         versionCode(getBuildVersionCode())
@@ -30,17 +20,76 @@ android {
         externalNativeBuild {
             cmake {
                 arguments '-DCMAKE_BUILD_TYPE=RelWithDebInfo', '-DGB_SINGLE_FILE=ON', '-DPLATFORM_SDL2=ON'
-                 abiFilters 'armeabi-v7a', 'arm64-v8a', 'x86', 'x86_64'
+                abiFilters 'armeabi-v7a', 'arm64-v8a', 'x86', 'x86_64'
+                // abiFilters 'arm64-v8a'
             }
         }
     }
+
+    signingConfigs {
+        release {
+            def keystoreProperties = new Properties()
+            def keystorePropertiesFile = rootProject.file('key_release.properties')
+            if (keystorePropertiesFile.exists()) {
+                // when building locally, use signing properties from key_release.properties
+                keystoreProperties.load(new FileInputStream(keystorePropertiesFile))
+            } else {
+                // when building CI server, use signing properties from environment variables
+                keystoreProperties.setProperty('storePassword', System.getenv('ANDROID_RELEASE_KEY_STORE_PASSWORD'))
+                keystoreProperties.setProperty('keyPassword', System.getenv('ANDROID_RELEASE_KEY_PASSWORD'))
+                keystoreProperties.setProperty('keyAlias', System.getenv('ANDROID_RELEASE_KEY_ALIAS'))
+                keystoreProperties.setProperty('storeFile', System.getenv('ANDROID_RELEASE_KEYSTORE_PATH'))
+            }
+
+            storeFile file(keystoreProperties['storeFile'])
+            storePassword keystoreProperties['storePassword']
+            keyAlias keystoreProperties['keyAlias']
+            keyPassword keystoreProperties['keyPassword']
+        }
+
+        debug {
+            // if file is found or building for CI, use same debug key
+            def keystorePropertiesFile = rootProject.file('key_debug.properties')
+            if (keystorePropertiesFile.exists() || System.getenv('ANDROID_DEBUG_CI_BUILD')) {
+                def keystoreProperties = new Properties()
+                if (keystorePropertiesFile.exists()) {
+                    // when building locally, use signing properties from key_debug.properties
+                    keystoreProperties.load(new FileInputStream(keystorePropertiesFile))
+                } else {
+                    // when building CI server, use signing properties from environment variables
+                    keystoreProperties.setProperty('storePassword', System.getenv('ANDROID_DEBUG_KEY_STORE_PASSWORD'))
+                    keystoreProperties.setProperty('keyPassword', System.getenv('ANDROID_DEBUG_KEY_PASSWORD'))
+                    keystoreProperties.setProperty('keyAlias', System.getenv('ANDROID_DEBUG_KEY_ALIAS'))
+                    keystoreProperties.setProperty('storeFile', System.getenv('ANDROID_DEBUG_KEYSTORE_PATH'))
+                }
+
+                storeFile file(keystoreProperties['storeFile'])
+                storePassword keystoreProperties['storePassword']
+                keyAlias keystoreProperties['keyAlias']
+                keyPassword keystoreProperties['keyPassword']
+            }
+        }
+    }
+
     buildTypes {
         release {
-            minifyEnabled true
-            shrinkResources true
+            signingConfig signingConfigs.release
+
+            // has to be disabled for now or else it crashes on startup
+            // need to fix that as minify saves about 2mib
+            minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
         }
+
+        // the below is from dolphin!
+        // Signed by debug key disallowing distribution on Play Store.
+        // Attaches 'debug' suffix to version and package name, allowing installation alongside the release build.
         debug {
+            signingConfig signingConfigs.debug
+
+            applicationIdSuffix ".debug"
+            versionNameSuffix '-debug'
+            jniDebuggable true
         }
     }
     if (!project.hasProperty('EXCLUDE_NATIVE_LIBS')) {
@@ -56,18 +105,6 @@ android {
     }
     lintOptions {
         abortOnError false
-    }
-
-    if (buildAsLibrary) {
-        libraryVariants.all { variant ->
-            variant.outputs.each { output ->
-                def outputFile = output.outputFile
-                if (outputFile != null && outputFile.name.endsWith(".aar")) {
-                    def fileName = "org.libsdl.totalgb.aar"
-                    output.outputFile = new File(outputFile.parent, fileName)
-                }
-            }
-        }
     }
 }
 

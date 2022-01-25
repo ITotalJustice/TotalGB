@@ -224,14 +224,29 @@ jobs:
       - name: Install ninja
         run: sudo apt-get install -y ninja-build
 
+      - name: setup keystore
+        run: |
+              echo $SIGNING_KEY_DEBUG | base64 -di > ./android/debug.keystore
+              echo $SIGNING_KEY_RELEASE | base64 -di > ./android/release.keystore
+        env:
+          SIGNING_KEY_DEBUG: ${{ secrets.ANDROID_DEBUG_KEYSTORE }}
+          SIGNING_KEY_RELEASE: ${{ secrets.ANDROID_RELEASE_KEYSTORE }}
+
       - name: Build the app
         run: |
           cd ./android
-          ./gradlew assembleDebug
-          mv ./app/build/outputs/apk/debug/*.apk ../TotalGB_SDL2.apk
+          ./gradlew build
+          mv ./app/build/outputs/apk/debug/*.apk ../TotalGB_SDL2-Debug.apk
+          mv ./app/build/outputs/apk/release/*.apk ../TotalGB_SDL2-release.apk
 
-      - name: Upload files
+      - name: Upload debug
         uses: actions/upload-artifact@master
         with:
-          name: TotalGB_SDL2-android
-          path: ./TotalGB_SDL2.apk
+          name: TotalGB_SDL2-android-debug
+          path: ./TotalGB_SDL2-Debug.apk
+
+      - name: Upload release
+        uses: actions/upload-artifact@master
+        with:
+          name: TotalGB_SDL2-android-release
+          path: ./TotalGB_SDL2-release.apk

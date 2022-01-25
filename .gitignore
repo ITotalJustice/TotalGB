@@ -63,6 +63,9 @@ unused/
 android/app/release
 android/app/debug
 *.apk
+key_release.properties
+key_debug.properties
+key.properties
 
 
 ### JetBrains ###

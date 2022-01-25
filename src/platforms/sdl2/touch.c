@@ -6,7 +6,7 @@
 
 
 #if defined(__ANDROID__)
-#define ASSETS_FOLDER(str) ("sprites/" str)
+#define ASSETS_FOLDER(str) ("" str)
 #elif defined(__SWITCH__)
 #define ASSETS_FOLDER(str) ("romfs:/" str)
 #else
