@@ -60,6 +60,9 @@ src/platforms/gamecube
 local.properties
 android/SDL
 unused/
+android/app/release
+android/app/debug
+*.apk
 
 
 ### JetBrains ###

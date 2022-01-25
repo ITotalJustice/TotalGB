@@ -354,7 +354,7 @@ void on_mouse_motion(SDL_FingerID id, int x, int y)
 bool touch_init(SDL_Renderer* renderer)
 {
     char* base_path = NULL;
-#if !defined(ANDROID) || !(__EMSCRIPTEN__)
+#if !defined(ANDROID) || !defined(__EMSCRIPTEN__)
     base_path = SDL_GetBasePath();
 #endif
 
