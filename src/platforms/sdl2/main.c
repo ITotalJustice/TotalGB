@@ -1136,11 +1136,11 @@ EMSCRIPTEN_KEEPALIVE void em_set_browser_type(bool is_mobile)
 {
     if (is_mobile)
     {
-        touch_enable(true);
+        touch_enable();
     }
     else
     {
-        touch_enable(false);
+        touch_disable();
     }
 }
 
