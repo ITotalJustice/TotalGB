@@ -226,8 +226,8 @@ jobs:
 
       - name: setup keystore
         run: |
-              echo $SIGNING_KEY_DEBUG | base64 -di > ./android/debug.keystore
-              echo $SIGNING_KEY_RELEASE | base64 -di > ./android/release.keystore
+              echo $SIGNING_KEY_DEBUG | base64 -di > ./android/app/debug.keystore
+              echo $SIGNING_KEY_RELEASE | base64 -di > ./android/app/release.keystore
         env:
           SIGNING_KEY_DEBUG: ${{ secrets.ANDROID_DEBUG_KEYSTORE }}
           SIGNING_KEY_RELEASE: ${{ secrets.ANDROID_RELEASE_KEYSTORE }}
@@ -247,7 +247,6 @@ jobs:
           ANDROID_DEBUG_KEY_PASSWORD: ${{ secrets.ANDROID_DEBUG_KEY_PASSWORD }}
           ANDROID_DEBUG_KEY_ALIAS: ${{ secrets.ANDROID_DEBUG_KEY_ALIAS }}
           ANDROID_DEBUG_KEYSTORE_PATH: ${{ secrets.ANDROID_DEBUG_KEYSTORE_PATH }}
-          ANDROID_DEBUG_CI_BUILD: ${{ secrets.ANDROID_DEBUG_CI_BUILD }}
 
       - name: Upload debug
         uses: actions/upload-artifact@master
