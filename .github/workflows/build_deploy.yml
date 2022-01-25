@@ -255,7 +255,7 @@ jobs:
         run: |
           cd ./android
           ./gradlew build
-          mv ./app/build/outputs/apk/debug/*.apk ./TotalGB_SDL2.apk
+          mv ./app/build/outputs/apk/debug/*.apk ../TotalGB_SDL2.apk
 
       - name: Upload files
         uses: actions/upload-artifact@master
