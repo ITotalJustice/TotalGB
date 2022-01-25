@@ -25,14 +25,12 @@ android {
         }
         minSdkVersion 19
         targetSdkVersion 31
-        versionCode 2
-        versionName "0.0.1"
+        versionCode(getBuildVersionCode())
+        versionName "${getVersion()}"
         externalNativeBuild {
             cmake {
-                arguments '-DCMAKE_BUILD_TYPE=Release', '-DGB_SINGLE_FILE=ON', '-DPLATFORM_SDL2=ON'
+                arguments '-DCMAKE_BUILD_TYPE=RelWithDebInfo', '-DGB_SINGLE_FILE=ON', '-DPLATFORM_SDL2=ON'
                  abiFilters 'armeabi-v7a', 'arm64-v8a', 'x86', 'x86_64'
-//                abiFilters 'x86'
-//                abiFilters 'arm64-v8a'
             }
         }
     }
@@ -79,4 +77,33 @@ dependencies {
     implementation 'androidx.preference:preference:1.1.1'
     implementation 'androidx.appcompat:appcompat:1.4.0'
     implementation 'com.google.android.material:material:1.4.0'
+}
+
+// the below is taken from dolphin-emu (thanks!)
+// https://github.com/dolphin-emu/dolphin/blob/5d11dc1926a7c76d8cfcd11d995e24244bdd7e71/Source/Android/app/build.gradle#L117
+def getVersion() {
+    def versionNumber = '0.0'
+
+    try {
+        versionNumber = 'git describe --always --long'.execute([], project.rootDir).text
+                .trim()
+                .replaceAll(/(-0)?-[^-]+$/, "")
+    } catch (Exception e) {
+        logger.error(e + ': Cannot find git, defaulting to dummy version number')
+    }
+
+    return versionNumber
+}
+
+
+def getBuildVersionCode() {
+    try {
+        def versionNumber = 'git rev-list --first-parent --count HEAD'.execute([], project.rootDir).text
+                .trim()
+        return Integer.valueOf(versionNumber)
+    } catch (Exception e) {
+        logger.error(e + ': Cannot find git, defaulting to dummy version number')
+    }
+
+    return 1
 }

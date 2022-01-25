@@ -254,7 +254,7 @@ jobs:
       - name: Build the app
         run: |
           cd ./android
-          ./gradlew build
+          ./gradlew assembleDebug
           mv ./app/build/outputs/apk/debug/*.apk ../TotalGB_SDL2.apk
 
       - name: Upload files

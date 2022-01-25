@@ -1132,6 +1132,18 @@ static void syncfs(void)
 }
 
 #ifdef EMSCRIPTEN
+EMSCRIPTEN_KEEPALIVE void em_set_browser_type(bool is_mobile)
+{
+    if (is_mobile)
+    {
+        touch_enable(true);
+    }
+    else
+    {
+        touch_enable(false);
+    }
+}
+
 static void flushsave(void)
 {
     // sync every 60ticks
