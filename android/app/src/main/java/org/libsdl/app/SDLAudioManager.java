@@ -4,6 +4,7 @@ import android.media.AudioFormat;
 import android.media.AudioManager;
 import android.media.AudioRecord;
 import android.media.AudioTrack;
+import android.media.MediaRecorder;
 import android.os.Build;
 import android.util.Log;
 
@@ -49,7 +50,7 @@ public class SDLAudioManager
         }
 
         /* AudioTrack has sample rate limitation of 48000 (fixed in 5.0.2) */
-        if (Build.VERSION.SDK_INT <= 23) {
+        if (Build.VERSION.SDK_INT < 22) {
             if (sampleRate < 8000) {
                 sampleRate = 8000;
             } else if (sampleRate > 48000) {
@@ -188,25 +189,24 @@ public class SDLAudioManager
         int[] results = new int[4];
 
         if (isCapture) {
-            return null;
-//            if (mAudioRecord == null) {
-//                mAudioRecord = new AudioRecord(MediaRecorder.AudioSource.DEFAULT, sampleRate,
-//                        channelConfig, audioFormat, desiredFrames * frameSize);
-//
-//                // see notes about AudioTrack state in audioOpen(), above. Probably also applies here.
-//                if (mAudioRecord.getState() != AudioRecord.STATE_INITIALIZED) {
-//                    Log.e(TAG, "Failed during initialization of AudioRecord");
-//                    mAudioRecord.release();
-//                    mAudioRecord = null;
-//                    return null;
-//                }
-//
-//                mAudioRecord.startRecording();
-//            }
-//
-//            results[0] = mAudioRecord.getSampleRate();
-//            results[1] = mAudioRecord.getAudioFormat();
-//            results[2] = mAudioRecord.getChannelCount();
+            if (mAudioRecord == null) {
+                mAudioRecord = new AudioRecord(MediaRecorder.AudioSource.DEFAULT, sampleRate,
+                        channelConfig, audioFormat, desiredFrames * frameSize);
+
+                // see notes about AudioTrack state in audioOpen(), above. Probably also applies here.
+                if (mAudioRecord.getState() != AudioRecord.STATE_INITIALIZED) {
+                    Log.e(TAG, "Failed during initialization of AudioRecord");
+                    mAudioRecord.release();
+                    mAudioRecord = null;
+                    return null;
+                }
+
+                mAudioRecord.startRecording();
+            }
+
+            results[0] = mAudioRecord.getSampleRate();
+            results[1] = mAudioRecord.getAudioFormat();
+            results[2] = mAudioRecord.getChannelCount();
 
         } else {
             if (mAudioTrack == null) {

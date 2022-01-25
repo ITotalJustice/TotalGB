@@ -148,7 +148,7 @@ static inline void GB_iowrite(struct GB_Core* gb, uint16_t addr, uint8_t value)
             break;
 
         case 0x01: // SB (Serial transfer data)
-            IO_SB = value;
+            GB_serial_sb_write(gb, value);
             break;
 
         case 0x02: // SC (Serial Transfer Control)

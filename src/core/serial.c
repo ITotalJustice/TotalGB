@@ -91,13 +91,20 @@ uint8_t GB_serial_sb_read(const struct GB_Core* gb) {
     return IO_SB;
 }
 
+void GB_serial_sb_write(struct GB_Core* gb, const uint8_t data) {
+    if (GB_has_link_cable(gb)) {
+        IO_SB = data;
+    }
+}
+
 void GB_serial_sc_write(struct GB_Core* gb, const uint8_t data) {
     // we always set the byte regardless if connected or not...
-    IO_SC = data;
+    IO_SC = data & 0x83;
 
     // check if we have a serial cable connected and if we are host
     if (!GB_has_link_cable(gb)) {
         // printf("no link cable in sc write! value: 0x%02X SB: 0x%02X\n", data, IO_SB);
+        IO_SC &= ~0x80; // no transfer requested!
         return;
     }
 

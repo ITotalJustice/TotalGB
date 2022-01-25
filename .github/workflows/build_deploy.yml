@@ -87,6 +87,7 @@ jobs:
           mkdir upload
           move build\src\platforms\sdl2\Release\*.exe upload
           move build\src\platforms\sdl2\Release\*.dll upload
+          move build\src\platforms\sdl2\Release\res upload\res
 
       - name: Upload files
         uses: actions/upload-artifact@master
@@ -112,7 +113,8 @@ jobs:
       - name: Collect files
         run: |
           mv build/src/platforms/sdl2/TotalGB_SDL2 ./TotalGB_SDL2
-          tar -cvf ./TotalGB_SDL2.tar ./TotalGB_SDL2
+          mv build/src/platforms/sdl2/res ./res
+          tar -cvf ./TotalGB_SDL2.tar ./TotalGB_SDL2 ./res
 
       - name: Upload files
         uses: actions/upload-artifact@master
@@ -138,7 +140,8 @@ jobs:
       - name: Collect files
         run: |
           mv build/src/platforms/sdl2/TotalGB_SDL2 ./TotalGB_SDL2
-          tar -cvf TotalGB_SDL2.tar ./TotalGB_SDL2
+          mv build/src/platforms/sdl2/res ./res
+          tar -cvf TotalGB_SDL2.tar ./TotalGB_SDL2 ./res
 
       - name: Upload files
         uses: actions/upload-artifact@master
@@ -237,3 +240,20 @@ jobs:
       with:
         name: TotalGB_SDL2-nx
         path: build/src/platforms/sdl2/TotalGB_SDL2.nro
+
+  build-android:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout
+      uses: actions/checkout@master
+
+    - name: Build the app
+      run: |
+        cd ./android
+        ./gradlew build
+        mv ./app/build/outputs/apk/debug/*.apk ./TotalGB_SDL2.apk
+
+    - uses: actions/upload-artifact@master
+      with:
+        name: TotalGB_SDL2-android
+        path: ./TotalGB_SDL2.apk

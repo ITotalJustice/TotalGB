@@ -101,9 +101,16 @@ static voidpf file_build_ioposix(FILE *file, const char *filename)
     if (file == NULL)
         return NULL;
     ioposix = (FILE_IOPOSIX*)malloc(sizeof(FILE_IOPOSIX));
+    if (ioposix == NULL)
+        return NULL;
     ioposix->file = file;
     ioposix->filenameLength = (int)strlen(filename) + 1;
     ioposix->filename = (char*)malloc(ioposix->filenameLength * sizeof(char));
+    if (ioposix->filename == NULL)
+    {
+        free(ioposix);
+        return NULL;
+    }
     strcpy((char*)ioposix->filename, filename);
     return (voidpf)ioposix;
 }
@@ -157,6 +164,8 @@ static voidpf ZCALLBACK fopendisk64_file_func(voidpf opaque, voidpf stream, uint
         return NULL;
     ioposix = (FILE_IOPOSIX*)stream;
     diskFilename = (char*)malloc(ioposix->filenameLength * sizeof(char));
+    if (diskFilename == NULL)
+        return NULL;
     strncpy(diskFilename, (const char*)ioposix->filename, ioposix->filenameLength);
     for (i = ioposix->filenameLength - 1; i >= 0; i -= 1)
     {
@@ -182,6 +191,8 @@ static voidpf ZCALLBACK fopendisk_file_func(voidpf opaque, voidpf stream, uint32
         return NULL;
     ioposix = (FILE_IOPOSIX*)stream;
     diskFilename = (char*)malloc(ioposix->filenameLength * sizeof(char));
+    if (diskFilename == NULL)
+        return NULL;
     strncpy(diskFilename, (const char*)ioposix->filename, ioposix->filenameLength);
     for (i = ioposix->filenameLength - 1; i >= 0; i -= 1)
     {

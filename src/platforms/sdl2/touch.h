@@ -60,6 +60,8 @@ void on_mouse_motion(SDL_FingerID id, int x, int y);
 
 void on_touch_resize(int w, int h);
 void on_touch_menu_change(enum MenuType new_menu);
+void touch_enable(void);
+void touch_disable(void);
 
 #ifdef __cplusplus
 }

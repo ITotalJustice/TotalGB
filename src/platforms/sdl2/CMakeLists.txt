@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.13.4)
+cmake_minimum_required(VERSION 3.18.0)
 
 
 list(APPEND src
@@ -35,13 +35,19 @@ if (${CMAKE_SYSTEM_NAME} STREQUAL "Emscripten")
         STB::RECT_PACK
     )
 
-    configure_file("${CMAKE_SOURCE_DIR}/res/icons/favicon.ico" "${CMAKE_CURRENT_BINARY_DIR}/favicon.ico" COPYONLY)
-    configure_file("${CMAKE_SOURCE_DIR}/res/netlify.toml" "${CMAKE_CURRENT_BINARY_DIR}/netlify.toml" COPYONLY)
 else()
     set(myname "TotalGB_SDL2")
+
     if (ANDROID)
         set(myname "main")
         add_library(${myname} SHARED ${src})
+    elseif (WIN32)
+        # adds icon to exe
+        list(APPEND src "${CMAKE_SOURCE_DIR}/res/windows/icon.rc")
+        # WIN32 builds as gui application, so no console!
+        # SEE: https://cmake.org/cmake/help/latest/command/add_executable.html
+        add_executable(${myname} WIN32 ${src})
+        find_package(SDL2 CONFIG REQUIRED)
     else()
         add_executable(${myname} ${src})
         find_package(SDL2 CONFIG REQUIRED)

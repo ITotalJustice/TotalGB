@@ -2,6 +2,7 @@
 #include "main.h"
 #include "touch.h"
 #include <stdint.h>
+#include <util.h>
 
 
 #if defined(__ANDROID__)
@@ -131,6 +132,7 @@ static struct TouchButton touch_buttons[] =
 static struct TouchCacheEntry touch_entries[8] = {0}; // max of 8 touches at once
 static struct TouchCacheEntry mouse_entries[1] = {0}; // max of 1 mouse clicks at once
 static SDL_Haptic* haptic = NULL;
+static bool buttons_disabled = false;
 static bool has_rumble = false;
 
 
@@ -261,6 +263,12 @@ static void on_touch_down_internal(struct TouchCacheEntry* cache, size_t size, S
 {
     log_info("[TOUCH-DOWN] x: %d y: %d\n", x, y);
 
+    if (buttons_disabled)
+    {
+        // re-enable buttons on touch!
+        touch_enable();
+    }
+
     // check that the button press maps to a texture coord
     const int touch_id = is_touch_in_range(x, y);
 
@@ -345,10 +353,25 @@ void on_mouse_motion(SDL_FingerID id, int x, int y)
 
 bool touch_init(SDL_Renderer* renderer)
 {
+    char* base_path = NULL;
+#if !defined(ANDROID) || !(__EMSCRIPTEN__)
+    base_path = SDL_GetBasePath();
+#endif
+
     for (size_t i = 0; i < SDL_arraysize(touch_buttons); ++i)
     {
-        SDL_Surface* surface = SDL_LoadBMP(touch_buttons[i].path);
-        // SDL_Surface* surface = IMG_Load(touch_buttons[i].path);
+        struct SafeString ss = {0};
+
+        if (base_path)
+        {
+            ss = ss_build("%s/%s", base_path, touch_buttons[i].path);
+        }
+        else
+        {
+            ss = ss_build(touch_buttons[i].path);
+        }
+
+        SDL_Surface* surface = SDL_LoadBMP(ss.str);
 
         if (surface)
         {
@@ -369,8 +392,8 @@ bool touch_init(SDL_Renderer* renderer)
         }
         else
         {
-            log_error("[TOUCH] failed to load image: %s reason: %s\n", touch_buttons[i].path, SDL_GetError());
-            return false;
+            log_error("[TOUCH] failed to load image: %s reason: %s\n", ss.str, SDL_GetError());
+            goto fail;
         }
     }
 
@@ -399,13 +422,25 @@ bool touch_init(SDL_Renderer* renderer)
                 {
                     log_info("[SDL-HAPTICS] inited rumble!\n");
                     has_rumble = true;
-                    return true;
+                    break;
                 }
             }
         }
     }
 
+    if (base_path)
+    {
+        SDL_free(base_path);
+    }
+
     return true;
+
+fail:
+    if (base_path)
+    {
+        SDL_free(base_path);
+    }
+    return false;
 }
 
 void touch_exit(void)
@@ -490,6 +525,20 @@ void on_touch_menu_change(enum MenuType new_menu)
             set_menu_buttons_enable(true);
             break;
     }
+}
+
+void touch_enable(void)
+{
+    on_touch_menu_change(get_menu_type());
+    buttons_disabled = false;
+}
+
+void touch_disable(void)
+{
+    // disable buttons as user is likely using keyboard or controller!
+    set_buttons_enable(false);
+    set_menu_buttons_enable(false);
+    buttons_disabled = true;
 }
 
 void on_touch_resize(int w, int h)
@@ -587,9 +636,9 @@ void on_touch_resize(int w, int h)
         // basically disable them
         for (size_t i = 0; i < SDL_arraysize(touch_buttons); ++i)
         {
-            touch_buttons[i].rect.x = -8000;
-            touch_buttons[i].rect.y = -8000;
             touch_buttons[i].enabled = false;
         }
+
+        buttons_disabled = true;
     }
 }

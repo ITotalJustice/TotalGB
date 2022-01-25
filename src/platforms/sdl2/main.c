@@ -353,6 +353,11 @@ static void sdl2_key_event(const SDL_KeyboardEvent* e)
     const bool ctrl = (e->keysym.mod & KMOD_CTRL) > 0;
     const bool shift = (e->keysym.mod & KMOD_SHIFT) > 0;
 
+    if (down)
+    {
+        touch_disable();
+    }
+
     if (ctrl)
     {
         if (shift)
@@ -541,6 +546,11 @@ static void sdl2_joy_event(const SDL_JoyButtonEvent* e)
 
     const bool down = e->type == SDL_JOYBUTTONDOWN;
 
+    if (down)
+    {
+        touch_disable();
+    }
+
     switch (e->button)
     {
         case JOY_A:               set_emu_button(GB_BUTTON_A, down);         break;
@@ -559,6 +569,11 @@ static void sdl2_joy_event(const SDL_JoyButtonEvent* e)
 static void sdl2_controller_event(const SDL_ControllerButtonEvent* e)
 {
     const bool down = e->type == SDL_CONTROLLERBUTTONDOWN;
+
+    if (down)
+    {
+        touch_disable();
+    }
 
     switch (e->button)
     {
@@ -1032,14 +1047,9 @@ static void events(void)
                 break;
 
             case SDL_DROPFILE:
-                if (romloader_open(e.drop.file))
-                {
-                    log_info("[DROP-EVENT] !!!!!!!!!! opened drop event: %s\n", e.drop.file);
-                }
-                else
-                {
-                    log_info("[DROP-EVENT] failed to open drop event: %s\n", e.drop.file);
-                }
+                lock_core();
+                mgb_load_rom_file(e.drop.file);
+                unlock_core();
                 SDL_free(e.drop.file);
                 break;
 
@@ -1564,8 +1574,15 @@ int main(int argc, char* argv[])
     }
     log_info("\n");
 
+#if defined(ANDROID) || (__SWITCH__)
+    touch_enable();
+#else
+    // disable touch buttons by default
+    touch_disable();
+#endif
+
 #if !defined(EMSCRIPTEN) && !defined(ANDROID)
-    if (argc > 2)
+    if (argc >= 2)
     {
         if (!mgb_load_rom_file(argv[1]))
         {
@@ -1573,10 +1590,13 @@ int main(int argc, char* argv[])
         }
     }
     #ifdef __SWITCH__
-    const char* r = "/roms/gb/Legend of Zelda, The - Link's Awakening DX (USA, Europe) (SGB Enhanced).zip";
-    if (!mgb_load_rom_file(r))
+    else
     {
-        goto fail;
+        const char* r = "/roms/gb/Legend of Zelda, The - Link's Awakening DX (USA, Europe) (SGB Enhanced).zip";
+        if (!mgb_load_rom_file(r))
+        {
+            goto fail;
+        }
     }
     #endif
 #elif defined(ANDROID)
@@ -1615,10 +1635,10 @@ int main(int argc, char* argv[])
 
         if (IsMobileBrowser()) {
             console.log("is a mobile browser");
-            // _em_set_browser_type(true);
+             _em_set_browser_type(true);
         } else {
             console.log("is NOT a mobile browser");
-            // _em_set_browser_type(false);
+             _em_set_browser_type(false);
         }
     );
 

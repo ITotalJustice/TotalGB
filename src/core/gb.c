@@ -38,6 +38,7 @@ void GB_reset(struct GB_Core* gb)
 {
     memset(&gb->mem, 0, sizeof(gb->mem));
     memset(&gb->cpu, 0, sizeof(gb->cpu));
+    memset(&gb->apu, 0, sizeof(gb->apu));
     memset(&gb->ppu, 0, sizeof(gb->ppu));
     memset(&gb->timer, 0, sizeof(gb->timer));
     memset(&gb->joypad, 0, sizeof(gb->joypad));
