@@ -224,41 +224,41 @@ jobs:
     container: devkitpro/devkita64:latest
 
     steps:
-    - name: Checkout
-      uses: actions/checkout@master
+      - name: Checkout
+        uses: actions/checkout@master
 
-    - name: Get latest CMake and ninja
-      # Using 'latest' branch, the most recent CMake and ninja are installed.
-      uses: lukka/get-cmake@latest
+      - name: Get latest CMake and ninja
+        # Using 'latest' branch, the most recent CMake and ninja are installed.
+        uses: lukka/get-cmake@latest
 
-    - name: Build
-      run: |
-          cmake -B build -DPLATFORM_SDL2=ON -DGB_SINGLE_FILE=ON -DCMAKE_TOOLCHAIN_FILE=$DEVKITPRO/cmake/Switch.cmake
-          cmake --build build -j2
+      - name: Build
+        run: |
+            cmake -B build -DPLATFORM_SDL2=ON -DGB_SINGLE_FILE=ON -DCMAKE_TOOLCHAIN_FILE=$DEVKITPRO/cmake/Switch.cmake
+            cmake --build build -j2
 
-    - name: Upload files
-    - uses: actions/upload-artifact@master
-      with:
-        name: TotalGB_SDL2-nx
-        path: build/src/platforms/sdl2/TotalGB_SDL2.nro
+      - name: Upload files
+        uses: actions/upload-artifact@master
+        with:
+          name: TotalGB_SDL2-nx
+          path: build/src/platforms/sdl2/TotalGB_SDL2.nro
 
   build-android:
     runs-on: ubuntu-latest
     steps:
-    - name: Checkout
-      uses: actions/checkout@master
+      - name: Checkout
+        uses: actions/checkout@master
 
-    - name: Install ninja
-      run: sudo apt-get install -y ninja
+      - name: Install ninja
+        run: sudo apt-get install -y ninja
 
-    - name: Build the app
-      run: |
-        cd ./android
-        ./gradlew build
-        mv ./app/build/outputs/apk/debug/*.apk ./TotalGB_SDL2.apk
+      - name: Build the app
+        run: |
+          cd ./android
+          ./gradlew build
+          mv ./app/build/outputs/apk/debug/*.apk ./TotalGB_SDL2.apk
 
-    - name: Upload files
-    - uses: actions/upload-artifact@master
-      with:
-        name: TotalGB_SDL2-android
-        path: ./TotalGB_SDL2.apk
+      - name: Upload files
+        uses: actions/upload-artifact@master
+        with:
+          name: TotalGB_SDL2-android
+          path: ./TotalGB_SDL2.apk
