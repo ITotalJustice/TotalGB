@@ -1,6 +1,10 @@
-# TotalGB
+# TotalGB Prehistorik-man
 
-PR's, issues and any help is very much welcome!
+This branch features a hacky way of correctly rendering prehistorik man by keeping track of when palette changes occur during the scanline.
+
+While this worked, it broke pretty much every other GB game, namely zelda and a few ppu tests.
+
+so this was removed from master branch and is kept here so i can refrence it if needed, without having to go through commit history
 
 ## Building SDL2
 
