@@ -326,8 +326,17 @@ static void render_bg_gbc(struct GB_Core* gb, uint32_t pixels[160], struct GbcPr
 
     for (uint8_t tile_x = 0; tile_x <= 20; ++tile_x)
     {
+        const int16_t x_index_offset = (tile_x * 8) - sub_tile_x;
+
+        // rest of the tiles won't be drawn onscreen
+        // this only happens if sub_tile_x == 0
+        if (x_index_offset >= GB_SCREEN_WIDTH)
+        {
+            break;
+        }
+
         /* calc the map index */
-        const uint8_t map_x = ((base_tile_x + tile_x) & 31);
+        const uint8_t map_x = (base_tile_x + tile_x) & 31;
 
         /* fetch the tile number and attributes */
         const uint8_t tile_num = vram_map[map_x];
@@ -342,7 +351,7 @@ static void render_bg_gbc(struct GB_Core* gb, uint32_t pixels[160], struct GbcPr
 
         for (uint8_t x = 0; x < 8; ++x)
         {
-            const int16_t x_index = (tile_x * 8) + x - sub_tile_x;
+            const int16_t x_index = x_index_offset + x;
 
             if (x_index >= GB_SCREEN_WIDTH)
             {
@@ -382,6 +391,14 @@ static void render_win_gbc(struct GB_Core* gb, uint32_t pixels[160], struct GbcP
 
     for (uint8_t tile_x = 0; tile_x <= base_tile_x; ++tile_x)
     {
+        const uint8_t x_index_offset = (tile_x * 8) + sub_tile_x;
+
+        // skip this one as it'll never be drawn
+        if (x_index_offset >= GB_SCREEN_WIDTH && x_index_offset <= 255-7)
+        {
+            continue;
+        }
+
         /* fetch the tile number and attributes */
         const uint8_t tile_num = vram_map[tile_x];
         const struct GBC_BgAttribute* attr = &attr_map.a[tile_x];
@@ -395,11 +412,11 @@ static void render_win_gbc(struct GB_Core* gb, uint32_t pixels[160], struct GbcP
 
         for (uint8_t x = 0; x < 8; ++x)
         {
-            const uint8_t x_index = (tile_x * 8) + x + sub_tile_x;
+            const uint8_t x_index = x_index_offset + x;
 
             if (x_index >= GB_SCREEN_WIDTH)
             {
-                break;
+                continue; // we don't break because the screen scrolls in from the right
             }
 
             did_draw |= true;
