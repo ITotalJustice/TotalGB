@@ -1586,7 +1586,7 @@ int main(int argc, char* argv[])
     }
     log_info("\n");
 
-#if defined(ANDROID) || (__SWITCH__)
+#if defined(ANDROID) || defined(__SWITCH__)
     touch_enable();
 #else
     // disable touch buttons by default

@@ -1,5 +1,10 @@
 name: build and deploy (win, linux, mac, web)
-on: push
+
+# only run if pushed to the master branch
+on:
+  push
+    branches:
+      - 'master'
 
 jobs:
   build-web:

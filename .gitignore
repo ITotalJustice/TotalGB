@@ -73,26 +73,26 @@ key.properties
 # Reference: https://intellij-support.jetbrains.com/hc/en-us/articles/206544839
 
 # User-specific stuff:
-.idea/workspace.xml
-.idea/tasks.xml
-.idea/dictionaries
-.idea/vcs.xml
-.idea/jsLibraryMappings.xml
+android/.idea/workspace.xml
+android/.idea/tasks.xml
+android/.idea/dictionaries
+android/.idea/vcs.xml
+android/.idea/jsLibraryMappings.xml
 
 # Sensitive or high-churn files:
-.idea/dataSources.ids
-.idea/dataSources.xml
-.idea/dataSources.local.xml
-.idea/sqlDataSources.xml
-.idea/dynamic.xml
-.idea/uiDesigner.xml
+android/.idea/dataSources.ids
+android/.idea/dataSources.xml
+android/.idea/dataSources.local.xml
+android/.idea/sqlDataSources.xml
+android/.idea/dynamic.xml
+android/.idea/uiDesigner.xml
 
 # Gradle:
-.idea/gradle.xml
-.idea/libraries
+android/.idea/gradle.xml
+android/.idea/libraries
 
 # Mongo Explorer plugin:
-.idea/mongoSettings.xml
+android/.idea/mongoSettings.xml
 
 ## File-based project format:
 *.iws
@@ -121,3 +121,5 @@ fabric.properties
 # modules.xml
 # .idea/misc.xml
 # *.ipr
+
+android/.idea/
