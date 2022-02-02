@@ -3,7 +3,7 @@
 #include "mbc/mbc.h"
 #include "apu/apu.h"
 #include "ppu/ppu.h"
-#include "tables/io_read_table.h"
+#include "tables/io_unused_bit_table.h"
 
 #include <assert.h>
 
@@ -136,7 +136,7 @@ static inline uint8_t GB_ioread(const struct GB_Core* gb, uint16_t addr)
         }
     }
 
-    return IO[addr] | IO_READ_TABLE[addr];
+    return IO[addr] | IO_UNUSED_BIT_TABLE[addr];
 }
 
 static inline void GB_iowrite(struct GB_Core* gb, uint16_t addr, uint8_t value)
