@@ -5,10 +5,6 @@
 #include <assert.h>
 
 
-// static inline void on_nr50_write(struct GB_Core* gb, uint8_t value);
-// static inline void on_nr51_write(struct GB_Core* gb, uint8_t value);
-
-
 void GB_apu_iowrite(struct GB_Core* gb, uint16_t addr, uint8_t value)
 {
     addr &= 0x3F;
@@ -21,14 +17,31 @@ void GB_apu_iowrite(struct GB_Core* gb, uint16_t addr, uint8_t value)
     else if (UNLIKELY(gb_is_apu_enabled(gb) == false))
     {
         // on the dmg, len registers are still writable
+        // but only the length counter is updated!
+        // SOURCE: https://forums.nesdev.com/viewtopic.php?t=13730
         if (GB_get_system_type(gb) & GB_SYSTEM_TYPE_DMG)
         {
             switch (addr)
             {
-                case 0x11: IO[addr] = value; on_nr11_write(gb, value); break;
-                case 0x16: IO[addr] = value; on_nr21_write(gb, value); break;
-                case 0x1B: IO[addr] = value; on_nr31_write(gb, value); break;
-                case 0x20: IO[addr] = value; on_nr41_write(gb, value); break;
+                case 0x11:
+                    IO[addr] = (IO[addr] & ~0x3F) | (value & 0x3F);
+                    on_nr11_write(gb, value);
+                    break;
+
+                case 0x16:
+                    IO[addr] = (IO[addr] & ~0x3F) | (value & 0x3F);
+                    on_nr21_write(gb, value);
+                    break;
+
+                case 0x1B:
+                    IO[addr] = (IO[addr] & ~0x3F) | (value & 0x3F);
+                    on_nr31_write(gb, value);
+                    break;
+
+                case 0x20:
+                    IO[addr] = (IO[addr] & ~0x3F) | (value & 0x3F);
+                    on_nr41_write(gb, value);
+                    break;
             }
         }
 
@@ -87,7 +100,7 @@ void on_nr10_write(struct GB_Core* gb, uint8_t value)
     // and negate is now cleared, then disable ch1.
     if (IO_NR10.sweep_negate && !sweep_negate && CH1.did_sweep_negate)
     {
-        GB_log("APU: NR10 sweep negate cleared, disabling channel!\n");
+        GB_log("[APU] NR10 sweep negate cleared, disabling channel!\n");
         ch1_disable(gb);
     }
 
@@ -155,7 +168,7 @@ void on_nr14_write(struct GB_Core* gb, uint8_t value)
     {
         --CH1.length_counter;
 
-        GB_log("APU: edge case: extra len clock!\n");
+        GB_log("[APU] ch1 edge case: extra len clock!\n");
         // if this makes the result 0, and trigger is clear, disable channel
         if (!CH1.length_counter && !(value & 0x80))
         {
@@ -227,12 +240,9 @@ void on_nr24_write(struct GB_Core* gb, uint8_t value)
     // if next is not len and len is NOW enabled, it is clocked
     if (is_next_frame_sequencer_step_not_len(gb) && CH2.length_counter && !IO_NR24.length_enable && (value >> 6) & 0x1)
     {
-        if (CH2.length_counter)
-        {
-            --CH2.length_counter;
-        }
+        --CH2.length_counter;
 
-        GB_log("APU - edge case: extra len clock!\n");
+        GB_log("[APU] ch2 edge case: extra len clock!\n");
         // if this makes the result 0, and trigger is clear, disable channel
         if (!CH2.length_counter && !(value & 0x80))
         {
@@ -280,13 +290,9 @@ void on_nr34_write(struct GB_Core* gb, uint8_t value)
     // if next is not len and len is NOW enabled, it is clocked
     if (is_next_frame_sequencer_step_not_len(gb) && CH3.length_counter && !IO_NR34.length_enable && (value >> 6) & 0x1)
     {
-        if (CH3.length_counter)
-        {
-            --CH3.length_counter;
-        }
         --CH3.length_counter;
 
-        GB_log("APU: edge case: extra len clock!\n");
+        GB_log("[APU] ch3 edge case: extra len clock!\n");
         // if this makes the result 0, and trigger is clear, disable channel
         if (!CH3.length_counter && !(value & 0x80))
         {
@@ -361,7 +367,7 @@ void on_nr44_write(struct GB_Core* gb, uint8_t value)
     {
         --CH4.length_counter;
 
-        GB_log("APU: edge case: extra len clock!\n");
+        GB_log("[APU] ch4 edge case: extra len clock!\n");
         // if this makes the result 0, and trigger is clear, disable channel
         if (!CH4.length_counter && !(value & 0x80))
         {

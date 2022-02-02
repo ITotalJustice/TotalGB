@@ -66,7 +66,6 @@ GB_FORCE_INLINE void ch1_disable(struct GB_Core* gb);
 GB_FORCE_INLINE int8_t sample_ch1(struct GB_Core* gb);
 GB_FORCE_INLINE void clock_ch1_len(struct GB_Core* gb);
 GB_FORCE_INLINE void clock_ch1_vol(struct GB_Core* gb);
-GB_FORCE_INLINE void do_freq_sweep_calc(struct GB_Core* gb);
 GB_FORCE_INLINE void on_ch1_sweep(struct GB_Core* gb);
 GB_FORCE_INLINE void on_ch1_trigger(struct GB_Core* gb);
 

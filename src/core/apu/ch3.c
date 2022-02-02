@@ -19,11 +19,19 @@ bool is_ch3_enabled(const struct GB_Core* gb)
 
 void ch3_enable(struct GB_Core* gb)
 {
+    if ((IO_NR52 & 0x04) == 0x00)
+    {
+        GB_log("[APU] ch3 enable\n");
+    }
     IO_NR52 |= 0x04;
 }
 
 void ch3_disable(struct GB_Core* gb)
 {
+    if ((IO_NR52 & 0x04) == 0x04)
+    {
+        GB_log("[APU] ch3 disable\n");
+    }
     IO_NR52 &= ~0x04;
 }
 

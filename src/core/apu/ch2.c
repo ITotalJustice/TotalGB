@@ -19,11 +19,19 @@ bool is_ch2_enabled(const struct GB_Core* gb)
 
 void ch2_enable(struct GB_Core* gb)
 {
+    if ((IO_NR52 & 0x02) == 0x00)
+    {
+        GB_log("[APU] ch2 enable\n");
+    }
     IO_NR52 |= 0x02;
 }
 
 void ch2_disable(struct GB_Core* gb)
 {
+    if ((IO_NR52 & 0x02) == 0x02)
+    {
+        GB_log("[APU] ch2 disable\n");
+    }
     IO_NR52 &= ~0x02;
 }
 
@@ -58,28 +66,17 @@ void clock_ch2_vol(struct GB_Core* gb)
 
             if (IO_NR22.period != 0)
             {
-                uint8_t new_vol = CH2.volume;
-                if (IO_NR22.env_add_mode == ADD)
-                {
-                    ++new_vol;
-                }
-                else
-                {
-                    --new_vol;
-                }
+                const int8_t modifier = IO_NR22.env_add_mode == ADD ? +1 : -1;
+                const int8_t new_volume = CH2.volume + modifier;
 
-                if (new_vol <= 15)
+                if (new_volume >= 0 && new_volume <= 15)
                 {
-                    CH2.volume = new_vol;
+                    CH2.volume = new_volume;
                 }
                 else
                 {
                     CH2.disable_env = true;
                 }
-            }
-            else
-            {
-                CH2.disable_env = true;
             }
         }
     }

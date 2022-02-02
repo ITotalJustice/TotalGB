@@ -506,94 +506,6 @@ struct GB_Timer
     int16_t next_cycles;
 };
 
-#if 0
-struct GB_ApuCh1
-{
-    uint8_t sweep_period;
-    bool sweep_negate;
-    uint8_t sweep_shift;
-    uint8_t duty;
-    uint8_t starting_vol;
-    bool env_add_mode;
-    uint8_t period;
-    uint8_t freq_lsb;
-    uint8_t freq_msb;
-    bool length_enable;
-
-    uint16_t freq_shadow_register;
-    uint8_t internal_enable_flag;
-    bool did_sweep_negate;
-
-    int16_t timer;
-    int8_t volume_timer;
-    uint8_t duty_index;
-    uint8_t volume;
-    bool disable_env;
-
-    int8_t sweep_timer;
-
-    uint8_t length_counter;
-};
-
-struct GB_ApuCh2
-{
-    uint8_t duty;
-    uint8_t starting_vol;
-    bool env_add_mode;
-    uint8_t period;
-    uint8_t freq_lsb;
-    uint8_t freq_msb;
-    bool length_enable;
-
-    int16_t timer;
-    int8_t volume_timer;
-    uint8_t duty_index;
-    uint8_t volume;
-    bool disable_env;
-
-    uint8_t length_counter;
-};
-
-struct GB_ApuCh3
-{
-    bool dac_power;
-    uint8_t vol_code;
-    uint8_t freq_lsb;
-    uint8_t freq_msb;
-    bool length_enable;
-
-    uint16_t length_counter;
-    uint8_t sample_buffer;
-    uint8_t position_counter;
-
-    int16_t timer;
-};
-
-struct GB_ApuCh4
-{
-    uint8_t starting_vol;
-    bool env_add_mode;
-
-    uint8_t period;
-    uint8_t clock_shift;
-    bool width_mode;
-    uint8_t divisor_code;
-
-    bool length_enable;
-
-    int32_t timer;
-
-    uint16_t lfsr;
-
-    int8_t volume_timer;
-    uint8_t volume;
-    bool disable_env;
-
-    uint8_t length_counter;
-};
-
-#else
-
 struct GB_ApuCh1
 {
     int16_t timer;
@@ -606,7 +518,7 @@ struct GB_ApuCh1
     uint8_t period;
     uint8_t freq_lsb;
     uint8_t freq_msb;
-    uint8_t internal_enable_flag;
+    uint8_t sweep_enabled;
     uint8_t duty_index;
     uint8_t volume;
     uint8_t length_counter;
@@ -671,7 +583,6 @@ struct GB_ApuCh4
     bool length_enable;
     bool disable_env;
 };
-#endif
 
 struct GB_ApuCallbackData
 {

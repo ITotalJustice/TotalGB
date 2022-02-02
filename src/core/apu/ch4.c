@@ -29,11 +29,19 @@ bool is_ch4_enabled(const struct GB_Core* gb)
 
 void ch4_enable(struct GB_Core* gb)
 {
+    if ((IO_NR52 & 0x08) == 0x00)
+    {
+        GB_log("[APU] ch4 enable\n");
+    }
     IO_NR52 |= 0x08;
 }
 
 void ch4_disable(struct GB_Core* gb)
 {
+    if ((IO_NR52 & 0x08) == 0x08)
+    {
+        GB_log("[APU] ch4 disable\n");
+    }
     IO_NR52 &= ~0x08;
 }
 
@@ -70,19 +78,12 @@ void clock_ch4_vol(struct GB_Core* gb)
 
             if (IO_NR42.period != 0)
             {
-                uint8_t new_vol = CH4.volume;
-                if (IO_NR42.env_add_mode == ADD)
-                {
-                    ++new_vol;
-                }
-                else
-                {
-                    --new_vol;
-                }
+                const int8_t modifier = IO_NR42.env_add_mode == ADD ? +1 : -1;
+                const int8_t new_volume = CH4.volume + modifier;
 
-                if (new_vol <= 15)
+                if (new_volume >= 0 && new_volume <= 15)
                 {
-                    CH4.volume = new_vol;
+                    CH4.volume = new_volume;
                 }
                 else
                 {

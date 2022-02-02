@@ -19,11 +19,19 @@ bool is_ch1_enabled(const struct GB_Core* gb)
 
 void ch1_enable(struct GB_Core* gb)
 {
+    if ((IO_NR52 & 0x01) == 0x00)
+    {
+        GB_log("[APU] ch1 enable\n");
+    }
     IO_NR52 |= 0x01;
 }
 
 void ch1_disable(struct GB_Core* gb)
 {
+    if ((IO_NR52 & 0x01) == 0x01)
+    {
+        GB_log("[APU] ch1 disable\n");
+    }
     IO_NR52 &= ~0x01;
 }
 
@@ -58,28 +66,17 @@ void clock_ch1_vol(struct GB_Core* gb)
 
             if (IO_NR12.period != 0)
             {
-                uint8_t new_vol = CH1.volume;
-                if (IO_NR12.env_add_mode == ADD)
-                {
-                    new_vol++;
-                }
-                else
-                {
-                    new_vol--;
-                }
+                const int8_t modifier = IO_NR12.env_add_mode == ADD ? +1 : -1;
+                const int8_t new_volume = CH1.volume + modifier;
 
-                if (new_vol <= 15)
+                if (new_volume >= 0 && new_volume <= 15)
                 {
-                    CH1.volume = new_vol;
+                    CH1.volume = new_volume;
                 }
                 else
                 {
                     CH1.disable_env = true;
                 }
-            }
-            else
-            {
-                CH1.disable_env = true;
             }
         }
     }
@@ -100,31 +97,25 @@ static uint16_t get_new_sweep_freq(struct GB_Core* gb)
     }
 }
 
-void do_freq_sweep_calc(struct GB_Core* gb)
+static void do_freq_sweep_calc(struct GB_Core* gb, bool update_value)
 {
-    if (CH1.internal_enable_flag && IO_NR10.sweep_period)
+    const uint16_t new_freq = get_new_sweep_freq(gb);
+    bool overflowed = false;
+
+    if (new_freq > 2047)
     {
-        const uint16_t new_freq = get_new_sweep_freq(gb);
-        bool overflowed = false;
+        overflowed = true;
+    }
+    else if (IO_NR10.sweep_shift && update_value)
+    {
+        CH1.freq_shadow_register = new_freq;
+        IO_NR13.freq_lsb = new_freq & 0xFF;
+        IO_NR14.freq_msb = new_freq >> 8;
+    }
 
-        if (new_freq <= 2047 && IO_NR10.sweep_shift)
-        {
-            CH1.freq_shadow_register = new_freq;
-            IO_NR13.freq_lsb = new_freq & 0xFF;
-            IO_NR14.freq_msb = new_freq >> 8;
-
-            // for some reason, a second overflow check is performed...
-            overflowed = get_new_sweep_freq(gb) > 2047;
-        }
-        else
-        {
-            overflowed = true;
-        }
-
-        if (overflowed)
-        {
-            ch1_disable(gb);
-        }
+    if (overflowed)
+    {
+        ch1_disable(gb);
     }
 }
 
@@ -137,8 +128,22 @@ void on_ch1_sweep(struct GB_Core* gb)
     {
         // period is counted as 8 if 0...
         CH1.sweep_timer = PERIOD_TABLE[IO_NR10.sweep_period];
-        do_freq_sweep_calc(gb);
+
+        if (CH1.sweep_enabled && IO_NR10.sweep_period)
+        {
+            // first time updates the value
+            do_freq_sweep_calc(gb, true);
+            // second time does not, but still checks for overflow
+            do_freq_sweep_calc(gb, false);
+        }
+
     }
+}
+
+static void update_ch1_sweep_enabled_flag(struct GB_Core* gb)
+{
+    // sweep is enabled flag if period or shift is non zero
+    CH1.sweep_enabled = (IO_NR10.sweep_period != 0) || (IO_NR10.sweep_shift != 0);
 }
 
 void on_ch1_trigger(struct GB_Core* gb)
@@ -147,6 +152,8 @@ void on_ch1_trigger(struct GB_Core* gb)
 
     if (CH1.length_counter == 0)
     {
+        CH1.length_counter = 64;
+
         if (IO_NR14.length_enable && is_next_frame_sequencer_step_not_len(gb))
         {
             CH1.length_counter = 63;
@@ -180,15 +187,15 @@ void on_ch1_trigger(struct GB_Core* gb)
     // the freq is loaded into the shadow_freq_reg
     CH1.freq_shadow_register = (IO_NR14.freq_msb << 8) | IO_NR13.freq_lsb;
 
-    // internal flag is set is period or shift is non zero
-    CH1.internal_enable_flag = (IO_NR10.sweep_period != 0) || (IO_NR10.sweep_shift != 0);
-    // if shift is non zero, then calc is performed...
-    if (IO_NR10.sweep_shift != 0)
+    // sweep is enabled flag if period or shift is non zero
+    update_ch1_sweep_enabled_flag(gb);
+
+    // sweep calc is performed, but the value isn't updated
+    // this means that it only really checks if the value overflows
+    // if it does, then ch1 is disabled.
+    if (IO_NR10.sweep_shift)
     {
-        if (get_new_sweep_freq(gb) > 2047)
-        {
-            ch1_disable(gb);
-        }
+        do_freq_sweep_calc(gb, false);
     }
 
     if (is_ch1_dac_enabled(gb) == false)
