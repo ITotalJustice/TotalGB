@@ -85,7 +85,12 @@ void on_ch3_trigger(struct GB_Core* gb)
     // ch3 sample is NOT reloaded
     // SOURCE: https://gbdev.gg8.se/wiki/articles/Gameboy_sound_hardware#Obscure_Behavior
 
-    CH3.timer = get_ch3_freq(gb);
+    // SOURCE: https://forums.nesdev.org/viewtopic.php?t=13730
+    // SOURCE: https://github.com/kode54/Game_Music_Emu/blob/master/gme/Gb_Oscs.cpp#L303
+    // binji mentions here that blargss source (for some reason) adds
+    // 6 extra cycles when triggering the wave channel.
+    // this allows me to pass audio test 09.
+    CH3.timer = get_ch3_freq(gb) + 6;
 
     if (is_ch3_dac_enabled(gb) == false)
     {
