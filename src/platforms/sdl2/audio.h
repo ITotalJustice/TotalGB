@@ -9,14 +9,14 @@ extern "C" {
 
 enum
 {
-    VOLUME = SDL_MIX_MAXVOLUME / 2, // 50%
+    VOLUME = SDL_MIX_MAXVOLUME-20, // volume is not as loud using u8...
     CHANNELS = 2,
 #ifdef __SWITCH__
     SAMPLES = 2048,
 #else
     SAMPLES = 512,
 #endif
-    AUDIO_FORMAT = AUDIO_S8,
+    AUDIO_FORMAT = AUDIO_U8,
     AUDIO_FLAGS = SDL_AUDIO_ALLOW_ANY_CHANGE,
 
     AUDIO_FREQ_11k = 11025,

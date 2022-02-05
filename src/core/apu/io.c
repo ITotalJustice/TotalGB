@@ -53,6 +53,7 @@ void GB_apu_iowrite(struct GB_Core* gb, uint16_t addr, uint8_t value)
     }
     else
     {
+        const uint8_t previous_value = IO[addr];
         IO[addr] = value;
 
         switch (addr)
@@ -86,6 +87,7 @@ void GB_apu_iowrite(struct GB_Core* gb, uint16_t addr, uint8_t value)
             case 0x34: case 0x35: case 0x36: case 0x37:
             case 0x38: case 0x39: case 0x3A: case 0x3B:
             case 0x3C: case 0x3D: case 0x3E: case 0x3F:
+                IO[addr] = previous_value;
                 on_wave_mem_write(gb, addr & 0xFF, value);
                 break;
         }
@@ -418,10 +420,15 @@ void on_wave_mem_write(struct GB_Core* gb, uint8_t addr, uint8_t value)
     // and write to the current index.
     // otherwise, writes are ignored and reads return 0xFF.
 
-    // for now, all reads / writes that happen whilst the channel is
-    // disabled only!
-
-    if (!is_ch3_enabled(gb))
+    if (is_ch3_enabled(gb))
+    {
+        // on gbc, writes can happen, if if channel is enabled
+        if (GB_is_system_gbc(gb))
+        {
+            IO_WAVE_TABLE[CH3.position_counter >> 1] = value;
+        }
+    }
+    else
     {
         IO_WAVE_TABLE[addr & 0xF] = value;
     }

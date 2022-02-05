@@ -35,10 +35,11 @@ void ch2_disable(struct GB_Core* gb)
     IO_NR52 &= ~0x02;
 }
 
-int8_t sample_ch2(struct GB_Core* gb)
+uint8_t sample_ch2(struct GB_Core* gb)
 {
     const bool duty = SQUARE_DUTY_CYCLES[IO_NR21.duty][CH2.duty_index];
-    return (duty ? +CH2.volume : -CH2.volume) * is_ch2_enabled(gb);
+    return CH2.volume * duty * is_ch2_enabled(gb);
+    // return (duty ? +CH2.volume : -CH2.volume) * is_ch2_enabled(gb);
 }
 
 void clock_ch2_len(struct GB_Core* gb)
@@ -88,13 +89,11 @@ void on_ch2_trigger(struct GB_Core* gb)
 
     if (CH2.length_counter == 0)
     {
+        CH2.length_counter = 64;
+
         if (IO_NR24.length_enable && is_next_frame_sequencer_step_not_len(gb))
         {
-            CH2.length_counter = 63;
-        }
-        else
-        {
-            CH2.length_counter = 64;
+            CH2.length_counter--;
         }
     }
 

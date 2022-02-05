@@ -45,12 +45,11 @@ void ch4_disable(struct GB_Core* gb)
     IO_NR52 &= ~0x08;
 }
 
-int8_t sample_ch4(struct GB_Core* gb)
+uint8_t sample_ch4(struct GB_Core* gb)
 {
     // docs say that it's bit-0 INVERTED
     const bool bit = !(CH4.lfsr & 0x1);
-
-    return (bit ? +CH4.volume : -CH4.volume) * is_ch4_enabled(gb);
+    return CH4.volume * bit * is_ch4_enabled(gb);
 }
 
 void clock_ch4_len(struct GB_Core* gb)
@@ -121,13 +120,11 @@ void on_ch4_trigger(struct GB_Core* gb)
 
     if (CH4.length_counter == 0)
     {
+        CH4.length_counter = 64;
+
         if (IO_NR44.length_enable && is_next_frame_sequencer_step_not_len(gb))
         {
-            CH4.length_counter = 63;
-        }
-        else
-        {
-            CH4.length_counter = 64;
+            CH4.length_counter--;
         }
     }
 

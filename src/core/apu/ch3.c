@@ -35,7 +35,7 @@ void ch3_disable(struct GB_Core* gb)
     IO_NR52 &= ~0x04;
 }
 
-int8_t sample_ch3(struct GB_Core* gb)
+uint8_t sample_ch3(struct GB_Core* gb)
 {
     // indexed using the ch3 shift.
     // the values in this table are used to right-shift the sample
@@ -72,13 +72,11 @@ void on_ch3_trigger(struct GB_Core* gb)
 
     if (CH3.length_counter == 0)
     {
+        CH3.length_counter = 256;
+
         if (IO_NR34.length_enable && is_next_frame_sequencer_step_not_len(gb))
         {
-            CH3.length_counter = 255;
-        }
-        else
-        {
-            CH3.length_counter = 256;
+            CH3.length_counter--;
         }
     }
 
@@ -87,7 +85,12 @@ void on_ch3_trigger(struct GB_Core* gb)
     // ch3 sample is NOT reloaded
     // SOURCE: https://gbdev.gg8.se/wiki/articles/Gameboy_sound_hardware#Obscure_Behavior
 
-    CH3.timer = get_ch3_freq(gb);
+    // SOURCE: https://forums.nesdev.org/viewtopic.php?t=13730
+    // SOURCE: https://github.com/kode54/Game_Music_Emu/blob/master/gme/Gb_Oscs.cpp#L303
+    // binji mentions here that blargss source (for some reason) adds
+    // 6 extra cycles when triggering the wave channel.
+    // this allows me to pass audio test 09.
+    CH3.timer = get_ch3_freq(gb) + 6;
 
     if (is_ch3_dac_enabled(gb) == false)
     {
