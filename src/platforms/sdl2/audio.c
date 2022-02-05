@@ -43,8 +43,9 @@ static void core_auido_callback(void* user, struct GB_ApuCallbackData* data)
 
     const uint8_t unmixed_audio[2] =
     {
-        [0] = (((data->ch1[0] + data->ch2[0] + data->ch3[0] + data->ch4[0]) * data->left_amp) / 4) | 0x80,
-        [1] = (((data->ch1[1] + data->ch2[1] + data->ch3[1] + data->ch4[1]) * data->right_amp) / 4) | 0x80,
+        // | 0x80 because i think the range for u8 audio is 128-255
+        [0] = ((data->ch1[0] + data->ch2[0] + data->ch3[0] + data->ch4[0]) / 4) | 0x80,
+        [1] = ((data->ch1[1] + data->ch2[1] + data->ch3[1] + data->ch4[1]) / 4) | 0x80,
     };
 
     uint8_t mixed_audio[2] = {0};

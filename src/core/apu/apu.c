@@ -200,6 +200,9 @@ struct MixerData
 
 static FORCE_INLINE struct GB_ApuCallbackData mixer(const struct GB_Core* gb, const struct MixerData* data)
 {
+    // bit of a hack for FFA as the game uses very high frequency
+    // to silence a channel (as it would be in audable)
+    // this causes terrible aliasing, so we check if the freq is too high
     enum { LEFT, RIGHT };
     enum { MAX_SAMPLE_RATE = 8 };  // minimum for FFA
 
@@ -215,16 +218,14 @@ static FORCE_INLINE struct GB_ApuCallbackData mixer(const struct GB_Core* gb, co
 
     return (struct GB_ApuCallbackData)
     {
-        .ch1[LEFT] = data->ch1.sample * data->ch1.left * ch1_audible,
-        .ch1[RIGHT] = data->ch1.sample * data->ch1.right * ch1_audible,
-        .ch2[LEFT] = data->ch2.sample * data->ch2.left * ch2_audible,
-        .ch2[RIGHT] = data->ch2.sample * data->ch2.right * ch2_audible,
-        .ch3[LEFT] = data->ch3.sample * data->ch3.left * ch3_audible,
-        .ch3[RIGHT] = data->ch3.sample * data->ch3.right * ch3_audible,
-        .ch4[LEFT] = data->ch4.sample * data->ch4.left * ch4_audible,
-        .ch4[RIGHT] = data->ch4.sample * data->ch4.right * ch4_audible,
-        .left_amp = data->left_amp,
-        .right_amp = data->right_amp,
+        .ch1[LEFT]  = data->ch1.sample * data->ch1.left  * data->left_amp  * ch1_audible,
+        .ch1[RIGHT] = data->ch1.sample * data->ch1.right * data->right_amp * ch1_audible,
+        .ch2[LEFT]  = data->ch2.sample * data->ch2.left  * data->left_amp  * ch2_audible,
+        .ch2[RIGHT] = data->ch2.sample * data->ch2.right * data->right_amp * ch2_audible,
+        .ch3[LEFT]  = data->ch3.sample * data->ch3.left  * data->left_amp  * ch3_audible,
+        .ch3[RIGHT] = data->ch3.sample * data->ch3.right * data->right_amp * ch3_audible,
+        .ch4[LEFT]  = data->ch4.sample * data->ch4.left  * data->left_amp  * ch4_audible,
+        .ch4[RIGHT] = data->ch4.sample * data->ch4.right * data->right_amp * ch4_audible,
     };
 }
 
@@ -279,54 +280,57 @@ void GB_apu_run(struct GB_Core* gb, uint16_t cycles)
 {
     if (LIKELY(gb_is_apu_enabled(gb)))
     {
-        // still tick samples but fill empty
-        // nothing else should tick i dont think?
-
-        // bit of a hack for FFA as the game uses very high frequency
-        // to silence a channel (as it would be in audable)
-        // this causes terrible aliasing, so we check that the ch freq
-        // is at least same or lower than twice our sampling rate.
-        const uint16_t ch1_freq = get_ch1_freq(gb);
-        const uint16_t ch2_freq = get_ch2_freq(gb);
-        const uint16_t ch3_freq = get_ch3_freq(gb);
-        const uint32_t ch4_freq = get_ch4_freq(gb);
-        // while this is fine for ch1,2,3, it's awful for ch4 which often
-        // have extremely high freq, and our sampling rate is usually 48k.
-        // this is most noticable in the zelda intro when the title displays.
-
-        if (LIKELY((CH1.timer > 0 || ch1_freq)))
+        // im going to guess that the channels are only clocked if they're enabled
+        if (is_ch1_enabled(gb))
         {
-            CH1.timer -= cycles;
-            while (CH1.timer <= 0)
+            const uint16_t ch1_freq = get_ch1_freq(gb);
+
+            if (LIKELY((CH1.timer > 0 || ch1_freq)))
             {
-                CH1.timer += ch1_freq;
-                CH1.duty_index = (CH1.duty_index + 1) % 8;
+                CH1.timer -= cycles;
+                while (CH1.timer <= 0)
+                {
+                    CH1.timer += ch1_freq;
+                    CH1.duty_index = (CH1.duty_index + 1) % 8;
+                }
             }
         }
 
-        if (LIKELY((CH2.timer > 0 || ch2_freq)))
+        if (is_ch2_enabled(gb))
         {
-            CH2.timer -= cycles;
-            while (CH2.timer <= 0)
+            const uint16_t ch2_freq = get_ch2_freq(gb);
+
+            if (LIKELY((CH2.timer > 0 || ch2_freq)))
             {
-                CH2.timer += ch2_freq;
-                CH2.duty_index = (CH2.duty_index + 1) % 8;
+                CH2.timer -= cycles;
+                while (CH2.timer <= 0)
+                {
+                    CH2.timer += ch2_freq;
+                    CH2.duty_index = (CH2.duty_index + 1) % 8;
+                }
             }
         }
 
-        if (LIKELY((CH3.timer > 0 || ch3_freq)))
+        if (is_ch3_enabled(gb))
         {
-            CH3.timer -= cycles;
-            while (CH3.timer <= 0)
+            const uint16_t ch3_freq = get_ch3_freq(gb);
+
+            if (LIKELY((CH3.timer > 0 || ch3_freq)))
             {
-                CH3.timer += ch3_freq;
-                advance_ch3_position_counter(gb);
+                CH3.timer -= cycles;
+                while (CH3.timer <= 0)
+                {
+                    CH3.timer += ch3_freq;
+                    advance_ch3_position_counter(gb);
+                }
             }
         }
 
         // NOTE: ch4 lfsr is ONLY clocked if clock shift is not 14 or 15
-        if (IO_NR43.clock_shift != 14 && IO_NR43.clock_shift != 15)
+        if (is_ch4_enabled(gb) && IO_NR43.clock_shift != 14 && IO_NR43.clock_shift != 15)
         {
+            const uint32_t ch4_freq = get_ch4_freq(gb);
+
             if (LIKELY((CH4.timer > 0 || ch4_freq)))
             {
                 CH4.timer -= cycles;

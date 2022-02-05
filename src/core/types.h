@@ -590,9 +590,6 @@ struct GB_ApuCallbackData
     uint8_t ch2[2];
     uint8_t ch3[2];
     uint8_t ch4[2];
-
-    uint8_t left_amp;
-    uint8_t right_amp;
 };
 
 struct GB_Apu

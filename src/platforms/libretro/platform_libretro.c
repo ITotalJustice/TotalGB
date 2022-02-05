@@ -75,8 +75,8 @@ static void core_on_apu(void* user, struct GB_ApuCallbackData* data)
 {
     (void)user;
 
-    const uint8_t left = ((data->ch1[0] + data->ch2[0] + data->ch3[0] + data->ch4[0]) * data->left_amp) / 4;
-    const uint8_t right = ((data->ch1[1] + data->ch2[1] + data->ch3[1] + data->ch4[1]) * data->right_amp) / 4;
+    const uint8_t left = (data->ch1[0] + data->ch2[0] + data->ch3[0] + data->ch4[0]) / 4;
+    const uint8_t right = (data->ch1[1] + data->ch2[1] + data->ch3[1] + data->ch4[1]) / 4;
 
     // convert from u8 to s16 (untested, pretty sure its right tho)
     audio_cb((left ^ 0x80) << 8, (right ^ 0x80) << 8);
