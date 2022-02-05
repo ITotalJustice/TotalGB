@@ -388,7 +388,9 @@ static void sprite_ram_bug(struct GB_Core* gb, uint8_t v)
 {
     /* bug: if ppu in mode2 and H = FE, oam is corrupt */
     /* SOURCE: numism.gb */
-    if (v == 0xFE)
+    /* this ONLY happens on DMG */
+    /* SOURCE: https://gbdev.io/pandocs/OAM_Corruption_Bug.html */
+    if (v == 0xFE && !GB_is_system_gbc(gb))
     {
         if (GB_get_status_mode(gb) == 2)
         {
