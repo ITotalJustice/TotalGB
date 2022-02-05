@@ -586,13 +586,13 @@ struct GB_ApuCh4
 
 struct GB_ApuCallbackData
 {
-    int8_t ch1[2];
-    int8_t ch2[2];
-    int8_t ch3[2];
-    int8_t ch4[2];
+    uint8_t ch1[2];
+    uint8_t ch2[2];
+    uint8_t ch3[2];
+    uint8_t ch4[2];
 
-    int8_t left_amp;
-    int8_t right_amp;
+    uint8_t left_amp;
+    uint8_t right_amp;
 };
 
 struct GB_Apu

@@ -35,7 +35,7 @@ void ch3_disable(struct GB_Core* gb)
     IO_NR52 &= ~0x04;
 }
 
-int8_t sample_ch3(struct GB_Core* gb)
+uint8_t sample_ch3(struct GB_Core* gb)
 {
     // indexed using the ch3 shift.
     // the values in this table are used to right-shift the sample
@@ -72,13 +72,11 @@ void on_ch3_trigger(struct GB_Core* gb)
 
     if (CH3.length_counter == 0)
     {
+        CH3.length_counter = 256;
+
         if (IO_NR34.length_enable && is_next_frame_sequencer_step_not_len(gb))
         {
-            CH3.length_counter = 255;
-        }
-        else
-        {
-            CH3.length_counter = 256;
+            CH3.length_counter--;
         }
     }
 

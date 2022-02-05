@@ -183,7 +183,7 @@ void step_frame_sequencer(struct GB_Core* gb)
 
 struct MixerSampleData
 {
-    int8_t sample;
+    uint8_t sample;
     bool left;
     bool right;
 };
@@ -195,7 +195,7 @@ struct MixerData
     struct MixerSampleData ch3;
     struct MixerSampleData ch4;
 
-    int8_t left_amp, right_amp;
+    uint8_t left_amp, right_amp;
 };
 
 static FORCE_INLINE struct GB_ApuCallbackData mixer(const struct GB_Core* gb, const struct MixerData* data)

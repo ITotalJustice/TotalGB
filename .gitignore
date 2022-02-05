@@ -39,6 +39,8 @@ web/
 run.sh
 .clang-format
 roms/
+# had to add for symbolic links
+roms
 # dilions emu used for testing
 examples/n64/n64-emu
 

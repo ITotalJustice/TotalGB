@@ -5,6 +5,7 @@
 #include <mgb.h>
 #include <stddef.h>
 #include <stdint.h>
+#include <assert.h>
 
 
 static SDL_AudioDeviceID audio_device = 0;
@@ -13,6 +14,23 @@ static SDL_AudioStream* audio_stream = NULL;
 static uint32_t elapsed_cycles = 0;
 static int volume = VOLUME;
 
+
+static void mix_audio_u8(uint8_t* dst, const uint8_t* src, size_t len, int vol)
+{
+    assert(AUDIO_FORMAT == AUDIO_U8);
+
+    Uint8 src_sample;
+    #define ADJUST_VOLUME_U8(s, v)  (s = (((s-128)*v)/SDL_MIX_MAXVOLUME)+128)
+    while (len--) {
+        src_sample = *src;
+        ADJUST_VOLUME_U8(src_sample, vol);
+        *dst = *dst + src_sample;
+        // *dst = mix8[*dst + src_sample];
+        ++dst;
+        ++src;
+    }
+    #undef ADJUST_VOLUME_U8
+}
 
 static void core_auido_callback(void* user, struct GB_ApuCallbackData* data)
 {
@@ -25,13 +43,22 @@ static void core_auido_callback(void* user, struct GB_ApuCallbackData* data)
 
     const uint8_t unmixed_audio[2] =
     {
-        [0] = ((data->ch1[0] + data->ch2[0] + data->ch3[0] + data->ch4[0]) * data->left_amp) / 4,
-        [1] = ((data->ch1[1] + data->ch2[1] + data->ch3[1] + data->ch4[1]) * data->right_amp) / 4,
+        [0] = (((data->ch1[0] + data->ch2[0] + data->ch3[0] + data->ch4[0]) * data->left_amp) / 4) | 0x80,
+        [1] = (((data->ch1[1] + data->ch2[1] + data->ch3[1] + data->ch4[1]) * data->right_amp) / 4) | 0x80,
     };
 
     uint8_t mixed_audio[2] = {0};
 
-    SDL_MixAudioFormat(mixed_audio, unmixed_audio, AUDIO_FORMAT, sizeof(mixed_audio), volume);
+    // sdl impl for u8 is broken, the mix8 table makes zero sense
+    if (AUDIO_FORMAT == AUDIO_U8)
+    {
+        mix_audio_u8(mixed_audio, unmixed_audio, sizeof(mixed_audio), volume);
+    }
+    else
+    {
+        SDL_MixAudioFormat(mixed_audio, unmixed_audio, AUDIO_FORMAT, sizeof(mixed_audio), volume);
+    }
+
     SDL_AudioStreamPut(audio_stream, mixed_audio, sizeof(mixed_audio));
 }
 
@@ -74,7 +101,7 @@ bool audio_init(emu_t* emu)
     SDL_AudioSpec wanted_spec =
     {
         .freq = 0, // we set this later on
-        .format = AUDIO_FORMAT,
+        .format = AUDIO_U8,
         .channels = CHANNELS,
         .samples = SAMPLES,
         .callback = sdl2_audio_callback,
@@ -128,7 +155,7 @@ bool audio_init(emu_t* emu)
 
     const int core_sample_rate = audio_get_core_sample_rate(emu);
 
-    audio_stream = SDL_NewAudioStream(AUDIO_S8, CHANNELS, core_sample_rate, audio_spec.format, audio_spec.channels, audio_spec.freq);
+    audio_stream = SDL_NewAudioStream(AUDIO_FORMAT, CHANNELS, core_sample_rate, audio_spec.format, audio_spec.channels, audio_spec.freq);
     if (!audio_stream)
     {
         goto fail;
