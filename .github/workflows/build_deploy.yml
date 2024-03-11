@@ -2,7 +2,7 @@ name: build and deploy (win, linux, mac, web)
 
 # only run if pushed to the master branch
 on:
-  push
+  [push, workflow_dispatch]
 
 jobs:
   build-web:
